@@ -9,7 +9,8 @@ export interface RecurrenceRule {
   mode: 'underground' | 'national_rail' | 'bus';
   isPeak: boolean;
   daysOfWeek: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
-  intervalWeeks: number; // 1 = every week, 2 = every other week, etc.
+  intervalType: 'days' | 'weeks' | 'months' | 'years' | 'none';
+  intervalValue: number;
   startDate: Date;
   endDate: Date;
 }
@@ -48,21 +49,52 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
         lastWeek = weekNum;
       }
 
-      // Check if this day matches the rule
-      if (rule.daysOfWeek.includes(dayOfWeek)) {
-        // Check interval (every N weeks)
-        if (weekCount % rule.intervalWeeks === 0) {
-          journeys.push({
-            date: new Date(current),
-            dateStr: formatDate(current),
-            ruleId: rule.id,
-            ruleName: rule.name,
-            originZone: rule.originZone,
-            destinationZone: rule.destinationZone,
-            mode: rule.mode,
-            isPeak: rule.isPeak,
-          });
+      // Track intervals based on type
+      let shouldAdd = false;
+
+      if (rule.intervalType === 'none') {
+        // Only run on the exact start date (or end date if same)
+        if (current.getTime() === new Date(rule.startDate).setHours(0,0,0,0)) {
+          shouldAdd = true;
         }
+      } else if (rule.intervalType === 'days') {
+        const daysDiff = Math.floor((current.getTime() - new Date(rule.startDate).getTime()) / 86400000);
+        if (daysDiff >= 0 && daysDiff % rule.intervalValue === 0) {
+          shouldAdd = true;
+        }
+      } else if (rule.intervalType === 'weeks') {
+        if (rule.daysOfWeek.includes(dayOfWeek)) {
+          if (weekCount % rule.intervalValue === 0) {
+            shouldAdd = true;
+          }
+        }
+      } else if (rule.intervalType === 'months') {
+        if (rule.daysOfWeek.includes(dayOfWeek)) {
+          const monthDiff = (current.getFullYear() - new Date(rule.startDate).getFullYear()) * 12 + (current.getMonth() - new Date(rule.startDate).getMonth());
+          if (monthDiff % rule.intervalValue === 0) {
+            shouldAdd = true;
+          }
+        }
+      } else if (rule.intervalType === 'years') {
+        if (rule.daysOfWeek.includes(dayOfWeek)) {
+          const yearDiff = current.getFullYear() - new Date(rule.startDate).getFullYear();
+          if (yearDiff % rule.intervalValue === 0) {
+            shouldAdd = true;
+          }
+        }
+      }
+
+      if (shouldAdd) {
+        journeys.push({
+          date: new Date(current),
+          dateStr: formatDate(current),
+          ruleId: rule.id,
+          ruleName: rule.name,
+          originZone: rule.originZone,
+          destinationZone: rule.destinationZone,
+          mode: rule.mode,
+          isPeak: rule.isPeak,
+        });
       }
 
       current.setDate(current.getDate() + 1);
@@ -122,14 +154,14 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
   const totalWeeks = Math.max(1, (maxDate - minDate) / (7 * 24 * 60 * 60 * 1000));
 
   for (const [, data] of routeMap) {
-    if (data.journeys.length < 2) continue;
+    if (data.journeys.length < 4) continue;
 
     // Find days where this route occurs regularly
     const regularDays: number[] = [];
     for (const [day, count] of data.dayOccurrences) {
       const frequency = count / totalWeeks;
-      if (frequency >= 0.3) {
-        // occurs at least 30% of the weeks
+      if (frequency >= 0.5) {
+        // occurs at least 50% of the weeks
         regularDays.push(day);
       }
     }
@@ -138,7 +170,8 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
 
     const sample = data.journeys[0];
     const frequency = data.journeys.length / totalWeeks;
-    const confidence = Math.min(1, frequency / regularDays.length);
+    // Penalize confidence if journeys don't map cleanly to regular days
+    const confidence = Math.min(1, frequency / regularDays.length) * (regularDays.length / (data.dayOccurrences.size || 1));
 
     patterns.push({
       origin: sample.origin || 'Unknown',
@@ -172,7 +205,8 @@ export function patternToRule(
     mode: pattern.mode as 'underground' | 'national_rail' | 'bus',
     isPeak: pattern.isPeak,
     daysOfWeek: pattern.daysOfWeek,
-    intervalWeeks: 1,
+    intervalType: 'weeks',
+    intervalValue: 1,
     startDate,
     endDate,
   };

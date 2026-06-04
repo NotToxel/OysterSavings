@@ -12,17 +12,7 @@
   let sortAsc = $state(false);
   let filterMode = $state<string>('all');
 
-  // Recalculate savings when settings change
-  $effect(() => {
-    if ($classifiedJourneys.length > 0) {
-      $savingsResult = calculateRailcardSavings(
-        $classifiedJourneys,
-        $selectedRailcard,
-        $railcardCost,
-        $includeOysterCost
-      );
-    }
-  });
+
 
   let filteredJourneys = $derived.by(() => {
     let list = [...$classifiedJourneys];
@@ -50,19 +40,22 @@
     else { sortKey = key; sortAsc = true; }
   }
 
-  function getModeLabel(mode: string): string {
-    const map: Record<string, string> = {
-      underground: 'Tube', national_rail: 'NR', overground: 'OGN',
-      bus: 'Bus', tram: 'Tram', dlr: 'DLR', elizabeth: 'Eliz', unknown: '?'
-    };
-    return map[mode] || mode;
+  function getModeLabel(m: string): string {
+    if (m === 'underground') return 'Tube';
+    if (m === 'national_rail') return 'NR';
+    if (m === 'overground') return 'Overgrnd';
+    if (m === 'nr_tube') return 'NR/Tube';
+    if (m === 'elizabeth') return 'Liz Line';
+    return m.toUpperCase();
   }
 
-  function getModeBadgeClass(mode: string): string {
-    if (mode === 'bus' || mode === 'tram') return 'badge-bus';
-    if (mode === 'national_rail') return 'badge-rail';
-    if (mode === 'overground') return 'badge-overground';
-    return 'badge-underground';
+  function getModeBadgeClass(m: string): string {
+    if (m === 'bus') return 'badge-bus';
+    if (m === 'underground') return 'badge-underground';
+    if (m === 'national_rail') return 'badge-rail';
+    if (m === 'nr_tube') return 'badge-rail';
+    if (m === 'overground') return 'badge-overground';
+    return 'badge-rail';
   }
 
   function formatCapProgress(progress: number): string {
@@ -373,7 +366,9 @@
               </div>
               <div class="cap-day-journeys">{day.journeys.length} trips</div>
               {#if day.capHit}
-                <span class="badge badge-cap">Cap Hit</span>
+                <span class="badge badge-cap" class:badge-peak={day.capType === 'peak'} class:badge-off-peak={day.capType === 'off-peak'}>
+                  {day.capType === 'peak' ? 'Peak Cap Hit' : day.capType === 'off-peak' ? 'Off-Peak Cap Hit' : 'Cap Hit'}
+                </span>
               {/if}
             </div>
           {/each}

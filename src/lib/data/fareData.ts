@@ -140,7 +140,15 @@ export const TRAVELCARD_ANNUAL: Record<string, number> = {
   'Z1-6': 3264,
 };
 
-// Student Travelcard (18+ Student Oyster) — 30% off adult annual
+// Student Travelcard (18+ Student Oyster) — 30% off adult annual/monthly
+export const STUDENT_TRAVELCARD_MONTHLY: Record<string, number> = {
+  'Z1-2': 120.20,
+  'Z1-3': 141.10,
+  'Z1-4': 172.60,
+  'Z1-5': 205.40,
+  'Z1-6': 219.40,
+};
+
 export const STUDENT_TRAVELCARD_ANNUAL: Record<string, number> = {
   'Z1-2': 1252,
   'Z1-3': 1470,

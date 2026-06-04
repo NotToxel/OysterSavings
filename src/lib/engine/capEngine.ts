@@ -14,6 +14,7 @@ export interface DayCapResult {
   dailyCap: number;
   busDailyCap: number;
   capHit: boolean;
+  capType: 'peak' | 'off-peak' | 'none';
   savedByCap: number;
   capProgress: number; // 0-1 progress toward cap
 }
@@ -93,6 +94,8 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
 
     const capHit = totalSpend >= dailyCap * 0.95 || journeys.some((j) => j.journey.isCapHit);
     const savedByCap = capHit ? Math.max(0, (uncappedRailSpend + uncappedBusSpend) - totalSpend) : 0;
+    const hasPeakJourney = journeys.some((j) => j.journey.isPeak);
+    const capType = capHit ? (hasPeakJourney ? 'peak' : 'off-peak') : 'none';
 
     results.push({
       date: dateStr,
@@ -105,6 +108,7 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
       dailyCap,
       busDailyCap: BUS_DAILY_CAP,
       capHit,
+      capType,
       savedByCap: Math.round(savedByCap * 100) / 100,
       capProgress: Math.min(1, totalSpend / dailyCap),
     });

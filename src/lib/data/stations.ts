@@ -205,21 +205,31 @@ export function getStationBestZone(rawName: string, otherZone: number): number |
 }
 
 // Get transport mode from CSV Journey/Action string
-export type TransportMode = 'underground' | 'national_rail' | 'overground' | 'bus' | 'tram' | 'dlr' | 'elizabeth' | 'unknown';
+export type TransportMode = 'underground' | 'national_rail' | 'overground' | 'bus' | 'tram' | 'dlr' | 'elizabeth' | 'nr_tube' | 'unknown';
 
 export function detectTransportMode(journeyAction: string): TransportMode {
   const lower = journeyAction.toLowerCase();
 
   if (lower.includes('bus journey')) return 'bus';
   if (lower.includes('tram')) return 'tram';
-  if (lower.includes('[national rail]')) return 'national_rail';
+
+  const hasNR = lower.includes('[national rail]');
+  const hasLU = lower.includes('[london underground]') || (!hasNR && lower.includes(' to '));
+
+  if (hasNR && hasLU && lower.includes(' to ')) return 'nr_tube';
+  if (hasNR && lower.includes(' to ')) {
+    // If it says National Rail but it's a cross journey without another explicit tag,
+    // it's likely NR/Tube if one station is just a tube station. But we can't fully know without checking stations.
+    // For now, if it mentions both tags explicitly, it's nr_tube. 
+    // Or if it mentions NR and another mode.
+    if (lower.includes('[london overground]') || lower.includes('[elizabeth')) return 'nr_tube';
+  }
+
+  if (hasNR) return 'national_rail';
   if (lower.includes('[london overground]')) return 'overground';
   if (lower.includes('[dlr]')) return 'dlr';
   if (lower.includes('[elizabeth')) return 'elizabeth';
-  if (lower.includes('[london underground]')) return 'underground';
-
-  // If no explicit tag but station names are present, default to underground
-  if (lower.includes(' to ')) return 'underground';
+  if (hasLU) return 'underground';
 
   return 'unknown';
 }

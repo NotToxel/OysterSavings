@@ -9,6 +9,7 @@ import {
   TRAVELCARD_WEEKLY,
   TRAVELCARD_MONTHLY,
   TRAVELCARD_ANNUAL,
+  STUDENT_TRAVELCARD_MONTHLY,
   STUDENT_TRAVELCARD_ANNUAL,
   lookupDailyCap,
   roundToNearest10p,
@@ -51,7 +52,9 @@ export interface ProductComparisonResult {
   monthlyTravelcard: number;
   annualPayg: number;
   annualPaygRailcard: number;
+  annualPaygRailcard: number;
   annualTravelcard: number;
+  monthlyStudentTravelcard: number;
   annualStudentTravelcard: number;
   bestWeekly: string;
   bestMonthly: string;
@@ -156,7 +159,8 @@ export function calculateRailcardSavings(
 export function calculateProductComparison(
   journeys: ClassifiedJourney[],
   railcardType: RailcardType,
-  railcardCost: number
+  railcardCost: number,
+  studentPhotocardCost: number
 ): ProductComparisonResult[] {
   const zoneRanges = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
   const results: ProductComparisonResult[] = [];
@@ -173,7 +177,8 @@ export function calculateProductComparison(
     const weeklyTc = TRAVELCARD_WEEKLY[zoneRange] ?? 0;
     const monthlyTc = TRAVELCARD_MONTHLY[zoneRange] ?? 0;
     const annualTc = TRAVELCARD_ANNUAL[zoneRange] ?? 0;
-    const studentTc = STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0;
+    const studentMonthlyTc = STUDENT_TRAVELCARD_MONTHLY[zoneRange] ?? 0;
+    const studentAnnualTc = STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0;
 
     // Use actual data to project costs
     const weeklyPayg = round2(avgWeeklySpend);
@@ -190,10 +195,11 @@ export function calculateProductComparison(
       monthlyPayg: round2(weeklyPayg * 4.33),
       monthlyPaygRailcard: round2(weeklyPaygRailcard * 4.33 + railcardCost / 12),
       monthlyTravelcard: monthlyTc,
+      monthlyStudentTravelcard: studentMonthlyTc > 0 ? studentMonthlyTc + (studentPhotocardCost / 12) : 0,
       annualPayg: round2(weeklyPayg * 52),
       annualPaygRailcard: round2(weeklyPaygRailcard * 52 + railcardCost),
       annualTravelcard: annualTc,
-      annualStudentTravelcard: studentTc,
+      annualStudentTravelcard: studentAnnualTc > 0 ? studentAnnualTc + studentPhotocardCost : 0,
       bestWeekly: getBest([
         ['PAYG', weeklyPayg],
         ['PAYG + Railcard', weeklyPaygRailcard],
@@ -203,12 +209,13 @@ export function calculateProductComparison(
         ['PAYG', round2(weeklyPayg * 4.33)],
         ['PAYG + Railcard', round2(weeklyPaygRailcard * 4.33 + railcardCost / 12)],
         ['Travelcard', monthlyTc],
+        ['Student Travelcard', studentMonthlyTc > 0 ? studentMonthlyTc + (studentPhotocardCost / 12) : 0],
       ]),
       bestAnnual: getBest([
         ['PAYG', round2(weeklyPayg * 52)],
         ['PAYG + Railcard', round2(weeklyPaygRailcard * 52 + railcardCost)],
         ['Travelcard', annualTc],
-        ['Student Travelcard', studentTc],
+        ['Student Travelcard', studentAnnualTc > 0 ? studentAnnualTc + studentPhotocardCost : 0],
       ]),
     });
   }

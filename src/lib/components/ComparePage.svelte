@@ -1,10 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    classifiedJourneys, fareResults, selectedRailcard,
-    railcardCost, savingsResult
+    productComparison, savingsResult, studentPhotocardCost
   } from '$lib/stores/stores';
-  import { calculateProductComparison, calculateRailcardSavings } from '$lib/engine/savingsEngine';
   import {
     RAILCARDS, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
     TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_ANNUAL,
@@ -18,29 +16,15 @@
   let chartCanvas: HTMLCanvasElement;
   let chart: Chart | null = null;
 
-  let comparison = $derived.by(() => {
-    if ($classifiedJourneys.length > 0) {
-      return calculateProductComparison($classifiedJourneys, $selectedRailcard, $railcardCost);
-    }
-    return [];
-  });
 
-  // Recalculate savings
-  $effect(() => {
-    if ($classifiedJourneys.length > 0) {
-      $savingsResult = calculateRailcardSavings(
-        $classifiedJourneys, $selectedRailcard, $railcardCost, false
-      );
-    }
-  });
 
   // Chart data
   let chartData = $derived.by(() => {
     const zoneLabels = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
 
-    if (comparison.length === 0) return null;
+    if ($productComparison.length === 0) return null;
 
-    const getValues = (key: string) => comparison.map((c: any) => c[key]);
+    const getValues = (key: string) => $productComparison.map((c: any) => c[key]);
 
     if (activeSpan === 'weekly') {
       return {
@@ -58,6 +42,7 @@
           { label: 'PAYG', data: getValues('monthlyPayg'), backgroundColor: 'rgba(0, 159, 227, 0.7)', borderColor: '#009FE3', borderWidth: 1 },
           { label: 'PAYG + Railcard', data: getValues('monthlyPaygRailcard'), backgroundColor: 'rgba(105, 80, 161, 0.7)', borderColor: '#6950A1', borderWidth: 1 },
           { label: 'Monthly Travelcard', data: getValues('monthlyTravelcard'), backgroundColor: 'rgba(239, 123, 16, 0.7)', borderColor: '#EF7B10', borderWidth: 1 },
+          { label: 'Student Monthly TC', data: getValues('monthlyStudentTravelcard'), backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: '#10b981', borderWidth: 1 },
         ],
       };
     } else {
@@ -134,13 +119,14 @@
       'Weekly TC': TRAVELCARD_WEEKLY,
       'Monthly TC': TRAVELCARD_MONTHLY,
       'Annual TC': TRAVELCARD_ANNUAL,
+      'Student Monthly TC': STUDENT_TRAVELCARD_MONTHLY,
       'Student TC': STUDENT_TRAVELCARD_ANNUAL,
     };
     return map[product]?.[zone] ? `£${map[product][zone].toLocaleString()}` : '—';
   }
 
   function getBestForZone(zone: string): string {
-    const comp = comparison.find((c: any) => c.zoneRange === zone);
+    const comp = $productComparison.find((c: any) => c.zoneRange === zone);
     return comp ? comp.bestAnnual : 'N/A';
   }
 </script>
@@ -150,16 +136,25 @@
   <p class="page-subtitle">Compare PAYG, Railcard, and Travelcard costs based on your actual travel patterns</p>
 
   <!-- Time span tabs -->
-  <div class="tab-nav" style="margin-bottom: 1.5rem; display: inline-flex;">
-    <button class="tab-btn" class:active={activeSpan === 'weekly'} onclick={() => activeSpan = 'weekly'}>
-      1 Week
-    </button>
-    <button class="tab-btn" class:active={activeSpan === 'monthly'} onclick={() => activeSpan = 'monthly'}>
-      1 Month
-    </button>
-    <button class="tab-btn" class:active={activeSpan === 'annual'} onclick={() => activeSpan = 'annual'}>
-      1 Year
-    </button>
+  <div class="controls-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div class="tab-nav" style="display: inline-flex;">
+      <button class="tab-btn" class:active={activeSpan === 'weekly'} onclick={() => activeSpan = 'weekly'}>
+        1 Week
+      </button>
+      <button class="tab-btn" class:active={activeSpan === 'monthly'} onclick={() => activeSpan = 'monthly'}>
+        1 Month
+      </button>
+      <button class="tab-btn" class:active={activeSpan === 'annual'} onclick={() => activeSpan = 'annual'}>
+        1 Year
+      </button>
+    </div>
+
+    {#if activeSpan === 'monthly' || activeSpan === 'annual'}
+      <div class="setting-group" style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.03); padding: 0.5rem 1rem; border-radius: 8px;">
+        <label for="student-cost" style="color: var(--color-text-secondary); font-size: 0.85rem;">Student Photocard Admin Fee (£):</label>
+        <input id="student-cost" type="number" bind:value={$studentPhotocardCost} class="input-field" style="width: 80px; padding: 0.25rem 0.5rem; min-height: 32px;" min="0" step="1" />
+      </div>
+    {/if}
   </div>
 
   <!-- Chart -->
@@ -199,7 +194,13 @@
             {/each}
           </tr>
           <tr>
-            <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Travelcard</td>
+            <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Monthly TC</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getProductPrice(zone, 'Student Monthly TC')}</td>
+            {/each}
+          </tr>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Annual TC</td>
             {#each matrixZones as zone}
               <td class="price-cell">{getProductPrice(zone, 'Student TC')}</td>
             {/each}

@@ -42,11 +42,11 @@
           <button
             class="nav-pill"
             class:active={$currentPage === item.id}
-            class:disabled={item.id !== 'home' && !$hasData}
+            class:disabled={item.id !== 'home' && item.id !== 'planner' && !$hasData}
             onclick={() => {
-              if (item.id === 'home' || $hasData) navigateTo(item.id);
+              if (item.id === 'home' || item.id === 'planner' || $hasData) navigateTo(item.id);
             }}
-            disabled={item.id !== 'home' && !$hasData}
+            disabled={item.id !== 'home' && item.id !== 'planner' && !$hasData}
           >
             <span class="nav-icon">{item.icon}</span>
             <span class="nav-label">{item.label}</span>

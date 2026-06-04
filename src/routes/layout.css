@@ -111,6 +111,11 @@ body {
   background: transparent;
 }
 
+select option {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
@@ -208,11 +213,9 @@ body {
   border: 1px solid rgba(0, 159, 227, 0.2);
 }
 
-.badge-cap {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
+.badge-cap { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-peak { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.badge-off-peak { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
 
 .badge-underground {
   background: rgba(220, 36, 31, 0.15);

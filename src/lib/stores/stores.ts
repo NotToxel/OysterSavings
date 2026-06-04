@@ -1,13 +1,12 @@
-// Svelte Stores — reactive state management
 import { writable, derived } from 'svelte/store';
+import type { CapSummary, DayCapResult, WeekCapResult } from '../engine/capEngine';
 import type { ParsedJourney } from '../engine/csvParser';
+import type { FareResult } from '../engine/fareCalculator';
+import type { ForecastResult } from '../engine/forecastEngine';
 import type { ClassifiedJourney } from '../engine/journeyClassifier';
 import type { ExcludedJourney } from '../engine/journeyFilter';
-import type { FareResult } from '../engine/fareCalculator';
-import type { DayCapResult, WeekCapResult, CapSummary } from '../engine/capEngine';
-import type { RailcardSavingsResult } from '../engine/savingsEngine';
-import type { RecurrenceRule, PlannedJourney, DetectedPattern } from '../engine/recurrenceEngine';
-import type { ForecastResult } from '../engine/forecastEngine';
+import type { DetectedPattern, PlannedJourney, RecurrenceRule } from '../engine/recurrenceEngine';
+import { calculateProductComparison, calculateRailcardSavings, type ProductComparisonResult, type RailcardSavingsResult } from '../engine/savingsEngine';
 import type { RailcardType } from '../data/fareData';
 
 // Journey data store
@@ -31,9 +30,24 @@ export const capSummary = writable<CapSummary | null>(null);
 export const selectedRailcard = writable<RailcardType>('16-25');
 export const railcardCost = writable<number>(30);
 export const includeOysterCost = writable<boolean>(false);
+export const studentPhotocardCost = writable<number>(30);
 
 // Savings results
-export const savingsResult = writable<RailcardSavingsResult | null>(null);
+export const savingsResult = derived(
+  [classifiedJourneys, selectedRailcard, railcardCost, includeOysterCost],
+  ([$classifiedJourneys, $selectedRailcard, $railcardCost, $includeOysterCost]) => {
+    if ($classifiedJourneys.length === 0) return null;
+    return calculateRailcardSavings($classifiedJourneys, $selectedRailcard, $railcardCost, $includeOysterCost);
+  }
+);
+
+export const productComparison = derived(
+  [classifiedJourneys, selectedRailcard, railcardCost, studentPhotocardCost],
+  ([$classifiedJourneys, $selectedRailcard, $railcardCost, $studentPhotocardCost]) => {
+    if ($classifiedJourneys.length === 0) return [];
+    return calculateProductComparison($classifiedJourneys, $selectedRailcard, $railcardCost, $studentPhotocardCost);
+  }
+);
 
 // Planner
 export const recurrenceRules = writable<RecurrenceRule[]>([]);
@@ -68,7 +82,6 @@ export function resetData() {
   dailyCapResults.set([]);
   weeklyCapResults.set([]);
   capSummary.set(null);
-  savingsResult.set(null);
   recurrenceRules.set([]);
   plannedJourneys.set([]);
   detectedPatterns.set([]);

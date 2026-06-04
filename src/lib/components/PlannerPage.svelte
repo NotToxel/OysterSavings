@@ -21,7 +21,9 @@
   let newMode = $state<'underground' | 'national_rail' | 'bus'>('national_rail');
   let newIsPeak = $state(true);
   let newDays = $state<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
-  let newInterval = $state(1);
+  let newIntervalType = $state<'days' | 'weeks' | 'months' | 'years' | 'none'>('weeks');
+  let newIntervalValue = $state(1);
+  let editRuleId = $state<string | null>(null);
 
   // Date range for planning
   let planStart = $state(formatInputDate(new Date()));
@@ -99,24 +101,53 @@
     }
   }
 
-  function addRule() {
+  function saveRule() {
+    if (newIntervalType === 'none') {
+      newDays = [new Date(planStart).getDay()];
+    }
+
     const rule: RecurrenceRule = {
-      id: crypto.randomUUID(),
-      name: newRuleName || `Zone ${newOriginZone} → Zone ${newDestZone}`,
+      id: editRuleId || crypto.randomUUID(),
+      name: newRuleName || (newIntervalType === 'none' ? 'One-off Journey' : `Zone ${newOriginZone} → Zone ${newDestZone}`),
       originZone: newOriginZone,
       destinationZone: newDestZone,
       mode: newMode,
       isPeak: newIsPeak,
       daysOfWeek: newDays,
-      intervalWeeks: newInterval,
+      intervalType: newIntervalType,
+      intervalValue: newIntervalValue,
       startDate: new Date(planStart),
-      endDate: new Date(planEnd),
+      endDate: newIntervalType === 'none' ? new Date(planStart) : new Date(planEnd),
     };
 
-    $recurrenceRules = [...$recurrenceRules, rule];
+    if (editRuleId) {
+      $recurrenceRules = $recurrenceRules.map(r => r.id === editRuleId ? rule : r);
+    } else {
+      $recurrenceRules = [...$recurrenceRules, rule];
+    }
+    
     regenerate();
     showRecurrenceModal = false;
     resetForm();
+  }
+
+  function editRule(rule: RecurrenceRule) {
+    editRuleId = rule.id;
+    newRuleName = rule.name;
+    newOriginZone = rule.originZone;
+    newDestZone = rule.destinationZone;
+    newMode = rule.mode;
+    newIsPeak = rule.isPeak;
+    newDays = [...rule.daysOfWeek];
+    newIntervalType = rule.intervalType;
+    newIntervalValue = rule.intervalValue;
+    showRecurrenceModal = true;
+  }
+
+  function quickAdd() {
+    resetForm();
+    newIntervalType = 'none';
+    showRecurrenceModal = true;
   }
 
   function removeRule(id: string) {
@@ -141,13 +172,15 @@
   }
 
   function resetForm() {
+    editRuleId = null;
     newRuleName = '';
     newOriginZone = 3;
     newDestZone = 1;
     newMode = 'national_rail';
     newIsPeak = true;
     newDays = [1, 2, 3, 4, 5];
-    newInterval = 1;
+    newIntervalType = 'weeks';
+    newIntervalValue = 1;
   }
 
   function getCapColor(progress: number): string {
@@ -173,8 +206,11 @@
 <div class="planner-page">
   <div class="planner-header">
     <h1 class="page-title">Journey Planner</h1>
-    <div class="planner-actions">
-      <button class="btn-primary" onclick={() => showRecurrenceModal = true}>
+    <div class="planner-actions" style="display: flex; gap: 0.5rem;">
+      <button class="btn-secondary" onclick={quickAdd}>
+        ⚡ Quick Add
+      </button>
+      <button class="btn-primary" onclick={() => { resetForm(); showRecurrenceModal = true; }}>
         + Add Schedule
       </button>
     </div>
@@ -210,7 +246,10 @@
                   {rule.daysOfWeek.map(d => ['Su','Mo','Tu','We','Th','Fr','Sa'][d]).join(',')}
                 </div>
               </div>
-              <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+              <div class="rule-actions" style="display: flex; gap: 0.25rem;">
+                <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
+                <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+              </div>
             </div>
           {/each}
         {/if}
@@ -328,76 +367,90 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label class="setting-label">Origin Zone</label>
-              <select class="input-field" bind:value={newOriginZone}>
-                {#each [1,2,3,4,5,6] as z}
-                  <option value={z}>Zone {z}</option>
-                {/each}
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="setting-label">Destination Zone</label>
-              <select class="input-field" bind:value={newDestZone}>
-                {#each [1,2,3,4,5,6] as z}
-                  <option value={z}>Zone {z}</option>
-                {/each}
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
               <label class="setting-label">Transport Mode</label>
               <select class="input-field" bind:value={newMode}>
-                <option value="underground">Underground</option>
+                <option value="underground">Underground / Tube</option>
                 <option value="national_rail">National Rail</option>
                 <option value="bus">Bus</option>
               </select>
             </div>
+            {#if newMode !== 'bus'}
+              <div class="form-group">
+                <label class="setting-label">Time Period</label>
+                <select class="input-field" bind:value={newIsPeak}>
+                  <option value={true}>Peak</option>
+                  <option value={false}>Off-Peak</option>
+                </select>
+              </div>
+            {/if}
+          </div>
+
+          {#if newMode !== 'bus'}
+            <div class="form-row">
+              <div class="form-group">
+                <label class="setting-label">Origin Zone</label>
+                <select class="input-field" bind:value={newOriginZone}>
+                  {#each [1,2,3,4,5,6] as z}
+                    <option value={z}>Zone {z}</option>
+                  {/each}
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="setting-label">Destination Zone</label>
+                <select class="input-field" bind:value={newDestZone}>
+                  {#each [1,2,3,4,5,6] as z}
+                    <option value={z}>Zone {z}</option>
+                  {/each}
+                </select>
+              </div>
+            </div>
+          {/if}
+
+          {#if newIntervalType !== 'none'}
             <div class="form-group">
-              <label class="setting-label">Time Period</label>
-              <select class="input-field" bind:value={newIsPeak}>
-                <option value={true}>Peak</option>
-                <option value={false}>Off-Peak</option>
-              </select>
+              <label class="setting-label">Days of Week</label>
+              <div class="day-selector">
+                {#each dayLabels as label, i}
+                  <button
+                    class="day-btn"
+                    class:selected={newDays.includes(dayValues[i])}
+                    onclick={() => toggleDay(dayValues[i])}
+                  >
+                    {label}
+                  </button>
+                {/each}
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label class="setting-label">Days of Week</label>
-            <div class="day-selector">
-              {#each dayLabels as label, i}
-                <button
-                  class="day-btn"
-                  class:selected={newDays.includes(dayValues[i])}
-                  onclick={() => toggleDay(dayValues[i])}
-                >
-                  {label}
-                </button>
-              {/each}
+            <div class="form-row">
+              <div class="form-group">
+                <label class="setting-label">Repeat Every</label>
+                <input type="number" class="input-field" bind:value={newIntervalValue} min="1" max="52" />
+              </div>
+              <div class="form-group">
+                <label class="setting-label">Interval Type</label>
+                <select class="input-field" bind:value={newIntervalType}>
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                  <option value="years">Years</option>
+                </select>
+              </div>
             </div>
-          </div>
+          {/if}
 
-          <div class="form-group">
-            <label class="setting-label">Repeat Interval</label>
-            <select class="input-field" bind:value={newInterval}>
-              <option value={1}>Every week</option>
-              <option value={2}>Every 2 weeks</option>
-              <option value={3}>Every 3 weeks</option>
-              <option value={4}>Every 4 weeks</option>
-            </select>
-          </div>
-
-          <div class="form-group" style="margin-top: 0.5rem;">
-            <div class="zone-preview">
-              Fare zone: <strong>{getZoneRange(newOriginZone, newDestZone)}</strong>
+          {#if newMode !== 'bus'}
+            <div class="form-group" style="margin-top: 0.5rem;">
+              <div class="zone-preview">
+                Fare zone: <strong>{getZoneRange(newOriginZone, newDestZone)}</strong>
+              </div>
             </div>
-          </div>
+          {/if}
         </div>
 
         <div class="modal-footer">
           <button class="btn-secondary" onclick={() => showRecurrenceModal = false}>Cancel</button>
-          <button class="btn-primary" onclick={addRule} disabled={newDays.length === 0}>Add Schedule</button>
+          <button class="btn-primary" onclick={saveRule} disabled={newIntervalType !== 'none' && newDays.length === 0}>{editRuleId ? 'Save Schedule' : 'Add Schedule'}</button>
         </div>
       </div>
     </div>
