@@ -1,0 +1,631 @@
+<script lang="ts">
+  import {
+    classifiedJourneys, detectedPatterns, recurrenceRules,
+    plannedJourneys, forecastResult, selectedRailcard, railcardCost
+  } from '$lib/stores/stores';
+  import {
+    type RecurrenceRule, generatePlannedJourneys,
+    patternToRule
+  } from '$lib/engine/recurrenceEngine';
+  import { runForecast } from '$lib/engine/forecastEngine';
+  import { getZoneRange } from '$lib/data/fareData';
+
+  // Calendar state
+  let calendarDate = $state(new Date());
+  let showRecurrenceModal = $state(false);
+
+  // New rule form
+  let newRuleName = $state('');
+  let newOriginZone = $state(3);
+  let newDestZone = $state(1);
+  let newMode = $state<'underground' | 'national_rail' | 'bus'>('national_rail');
+  let newIsPeak = $state(true);
+  let newDays = $state<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
+  let newInterval = $state(1);
+
+  // Date range for planning
+  let planStart = $state(formatInputDate(new Date()));
+  let planEnd = $state(formatInputDate(addMonths(new Date(), 1)));
+
+  let calendarMonth = $derived(calendarDate.getMonth());
+  let calendarYear = $derived(calendarDate.getFullYear());
+
+  // Generate calendar grid
+  let calendarDays = $derived.by(() => {
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+
+    const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
+    const days: { date: Date; isCurrentMonth: boolean }[] = [];
+
+    // Previous month fill
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const d = new Date(firstDay);
+      d.setDate(d.getDate() - i - 1);
+      days.push({ date: d, isCurrentMonth: false });
+    }
+
+    // Current month
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      days.push({ date: new Date(calendarYear, calendarMonth, d), isCurrentMonth: true });
+    }
+
+    // Next month fill
+    while (days.length < 42) {
+      const d = new Date(lastDay);
+      d.setDate(d.getDate() + days.length - (startOffset + lastDay.getDate()) + 1);
+      days.push({ date: d, isCurrentMonth: false });
+    }
+
+    return days;
+  });
+
+  // Map planned journeys to calendar
+  let journeysByDate = $derived.by(() => {
+    const map = new Map<string, typeof $plannedJourneys>();
+    for (const j of $plannedJourneys) {
+      const key = j.date.toISOString().split('T')[0];
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(j);
+    }
+    return map;
+  });
+
+  // Forecast day data by date
+  let forecastByDate = $derived.by(() => {
+    const map = new Map<string, NonNullable<typeof $forecastResult>['days'][0]>();
+    if ($forecastResult) {
+      for (const day of $forecastResult.days) {
+        const key = day.date.toISOString().split('T')[0];
+        map.set(key, day);
+      }
+    }
+    return map;
+  });
+
+  function prevMonth() {
+    calendarDate = new Date(calendarYear, calendarMonth - 1, 1);
+  }
+
+  function nextMonth() {
+    calendarDate = new Date(calendarYear, calendarMonth + 1, 1);
+  }
+
+  function toggleDay(day: number) {
+    if (newDays.includes(day)) {
+      newDays = newDays.filter(d => d !== day);
+    } else {
+      newDays = [...newDays, day].sort();
+    }
+  }
+
+  function addRule() {
+    const rule: RecurrenceRule = {
+      id: crypto.randomUUID(),
+      name: newRuleName || `Zone ${newOriginZone} → Zone ${newDestZone}`,
+      originZone: newOriginZone,
+      destinationZone: newDestZone,
+      mode: newMode,
+      isPeak: newIsPeak,
+      daysOfWeek: newDays,
+      intervalWeeks: newInterval,
+      startDate: new Date(planStart),
+      endDate: new Date(planEnd),
+    };
+
+    $recurrenceRules = [...$recurrenceRules, rule];
+    regenerate();
+    showRecurrenceModal = false;
+    resetForm();
+  }
+
+  function removeRule(id: string) {
+    $recurrenceRules = $recurrenceRules.filter(r => r.id !== id);
+    regenerate();
+  }
+
+  function importPattern(patternIndex: number) {
+    const pattern = $detectedPatterns[patternIndex];
+    const rule = patternToRule(pattern, new Date(planStart), new Date(planEnd));
+    $recurrenceRules = [...$recurrenceRules, rule];
+    regenerate();
+  }
+
+  function regenerate() {
+    $plannedJourneys = generatePlannedJourneys($recurrenceRules);
+    if ($plannedJourneys.length > 0) {
+      $forecastResult = runForecast($plannedJourneys, $selectedRailcard, $railcardCost);
+    } else {
+      $forecastResult = null;
+    }
+  }
+
+  function resetForm() {
+    newRuleName = '';
+    newOriginZone = 3;
+    newDestZone = 1;
+    newMode = 'national_rail';
+    newIsPeak = true;
+    newDays = [1, 2, 3, 4, 5];
+    newInterval = 1;
+  }
+
+  function getCapColor(progress: number): string {
+    if (progress >= 1) return '#10b981';
+    if (progress >= 0.7) return '#f59e0b';
+    return '#009FE3';
+  }
+
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayValues = [1, 2, 3, 4, 5, 6, 0]; // JS day values for Mon-Sun
+
+  function formatInputDate(d: Date): string {
+    return d.toISOString().split('T')[0];
+  }
+
+  function addMonths(d: Date, months: number): Date {
+    const result = new Date(d);
+    result.setMonth(result.getMonth() + months);
+    return result;
+  }
+</script>
+
+<div class="planner-page">
+  <div class="planner-header">
+    <h1 class="page-title">Journey Planner</h1>
+    <div class="planner-actions">
+      <button class="btn-primary" onclick={() => showRecurrenceModal = true}>
+        + Add Schedule
+      </button>
+    </div>
+  </div>
+
+  <div class="planner-layout">
+    <!-- Sidebar: Rules & patterns -->
+    <div class="planner-sidebar">
+      <!-- Date range -->
+      <div class="glass-card sidebar-section">
+        <h3 class="sidebar-title">📅 Planning Period</h3>
+        <div class="date-inputs">
+          <label class="setting-label" for="plan-start">Start</label>
+          <input type="date" class="input-field" id="plan-start" bind:value={planStart} onchange={regenerate} />
+          <label class="setting-label" for="plan-end" style="margin-top: 0.5rem;">End</label>
+          <input type="date" class="input-field" id="plan-end" bind:value={planEnd} onchange={regenerate} />
+        </div>
+      </div>
+
+      <!-- Active rules -->
+      <div class="glass-card sidebar-section">
+        <h3 class="sidebar-title">🔄 Active Schedules</h3>
+        {#if $recurrenceRules.length === 0}
+          <p class="empty-text">No schedules yet. Add one or import from your CSV data.</p>
+        {:else}
+          {#each $recurrenceRules as rule}
+            <div class="rule-card">
+              <div class="rule-info">
+                <div class="rule-name">{rule.name}</div>
+                <div class="rule-detail">
+                  Z{rule.originZone}→Z{rule.destinationZone} •
+                  {rule.isPeak ? 'Peak' : 'Off-Peak'} •
+                  {rule.daysOfWeek.map(d => ['Su','Mo','Tu','We','Th','Fr','Sa'][d]).join(',')}
+                </div>
+              </div>
+              <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+            </div>
+          {/each}
+        {/if}
+      </div>
+
+      <!-- Detected patterns -->
+      {#if $detectedPatterns.length > 0}
+        <div class="glass-card sidebar-section">
+          <h3 class="sidebar-title">🔍 Detected from CSV</h3>
+          {#each $detectedPatterns.slice(0, 5) as pattern, i}
+            <div class="pattern-card">
+              <div class="pattern-info">
+                <div class="pattern-route">{pattern.origin.replace(/\s*\[.*?\]/g, '')} → {pattern.destination.replace(/\s*\[.*?\]/g, '')}</div>
+                <div class="pattern-detail">
+                  {pattern.frequency}x/week •
+                  {pattern.isPeak ? 'Peak' : 'Off-Peak'} •
+                  {Math.round(pattern.confidence * 100)}% confidence
+                </div>
+              </div>
+              <button class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick={() => importPattern(i)}>
+                Import
+              </button>
+            </div>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Forecast summary -->
+      {#if $forecastResult}
+        <div class="glass-card sidebar-section forecast-summary">
+          <h3 class="sidebar-title">💰 Forecast Summary</h3>
+          <div class="forecast-stat">
+            <span>Total PAYG (capped)</span>
+            <span class="forecast-value">£{$forecastResult.totalPaygCapped.toFixed(2)}</span>
+          </div>
+          <div class="forecast-stat">
+            <span>With Railcard (capped)</span>
+            <span class="forecast-value green">£{$forecastResult.totalPaygRailcardCapped.toFixed(2)}</span>
+          </div>
+          <div class="forecast-stat highlight">
+            <span>Potential Saving</span>
+            <span class="forecast-value green">
+              £{($forecastResult.totalPaygCapped - $forecastResult.totalPaygRailcardCapped).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Calendar -->
+    <div class="calendar-area">
+      <div class="glass-card" style="padding: 1.25rem;">
+        <!-- Calendar header -->
+        <div class="calendar-nav">
+          <button class="btn-secondary" style="padding: 0.375rem 0.75rem;" onclick={prevMonth}>←</button>
+          <h2 class="calendar-month-label">
+            {calendarDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+          </h2>
+          <button class="btn-secondary" style="padding: 0.375rem 0.75rem;" onclick={nextMonth}>→</button>
+        </div>
+
+        <!-- Calendar grid -->
+        <div class="calendar-grid">
+          {#each dayLabels as label}
+            <div class="calendar-header">{label}</div>
+          {/each}
+
+          {#each calendarDays as day}
+            {@const dateKey = day.date.toISOString().split('T')[0]}
+            {@const dayJourneys = journeysByDate.get(dateKey) || []}
+            {@const forecast = forecastByDate.get(dateKey)}
+            <div
+              class="calendar-cell"
+              class:other-month={!day.isCurrentMonth}
+              class:cap-hit={forecast?.capHit}
+              class:has-journeys={dayJourneys.length > 0}
+            >
+              <div class="day-number">{day.date.getDate()}</div>
+              {#if dayJourneys.length > 0}
+                <div class="day-journey-count">{dayJourneys.length} trip{dayJourneys.length > 1 ? 's' : ''}</div>
+                {#if forecast}
+                  <div class="day-spend">£{forecast.cappedFare.toFixed(2)}</div>
+                  <div class="mini-cap-bar">
+                    <div
+                      class="mini-cap-fill"
+                      style="width: {forecast.capProgress * 100}%; background: {getCapColor(forecast.capProgress)};"
+                    ></div>
+                  </div>
+                  {#if forecast.capHit}
+                    <div class="cap-hit-label">Cap Hit ✓</div>
+                  {/if}
+                {/if}
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurrence Modal -->
+  {#if showRecurrenceModal}
+    <div class="modal-overlay" onclick={() => showRecurrenceModal = false} onkeydown={(e) => { if (e.key === 'Escape') showRecurrenceModal = false; }} role="dialog" tabindex="-1" aria-label="Add recurring schedule">
+      <div class="modal-content glass-card" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
+        <div class="modal-header">
+          <h2>Add Recurring Schedule</h2>
+          <button class="modal-close" onclick={() => showRecurrenceModal = false}>✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="setting-label">Schedule Name</label>
+            <input type="text" class="input-field" bind:value={newRuleName} placeholder="e.g., Morning Commute" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="setting-label">Origin Zone</label>
+              <select class="input-field" bind:value={newOriginZone}>
+                {#each [1,2,3,4,5,6] as z}
+                  <option value={z}>Zone {z}</option>
+                {/each}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="setting-label">Destination Zone</label>
+              <select class="input-field" bind:value={newDestZone}>
+                {#each [1,2,3,4,5,6] as z}
+                  <option value={z}>Zone {z}</option>
+                {/each}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="setting-label">Transport Mode</label>
+              <select class="input-field" bind:value={newMode}>
+                <option value="underground">Underground</option>
+                <option value="national_rail">National Rail</option>
+                <option value="bus">Bus</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="setting-label">Time Period</label>
+              <select class="input-field" bind:value={newIsPeak}>
+                <option value={true}>Peak</option>
+                <option value={false}>Off-Peak</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="setting-label">Days of Week</label>
+            <div class="day-selector">
+              {#each dayLabels as label, i}
+                <button
+                  class="day-btn"
+                  class:selected={newDays.includes(dayValues[i])}
+                  onclick={() => toggleDay(dayValues[i])}
+                >
+                  {label}
+                </button>
+              {/each}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="setting-label">Repeat Interval</label>
+            <select class="input-field" bind:value={newInterval}>
+              <option value={1}>Every week</option>
+              <option value={2}>Every 2 weeks</option>
+              <option value={3}>Every 3 weeks</option>
+              <option value={4}>Every 4 weeks</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <div class="zone-preview">
+              Fare zone: <strong>{getZoneRange(newOriginZone, newDestZone)}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick={() => showRecurrenceModal = false}>Cancel</button>
+          <button class="btn-primary" onclick={addRule} disabled={newDays.length === 0}>Add Schedule</button>
+        </div>
+      </div>
+    </div>
+  {/if}
+</div>
+
+<style>
+  .planner-page { max-width: 1200px; margin: 0 auto; }
+
+  .planner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .planner-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* Sidebar */
+  .sidebar-section { padding: 1.25rem; margin-bottom: 1rem; }
+  .sidebar-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; }
+
+  .date-inputs { display: flex; flex-direction: column; gap: 0.25rem; }
+  .setting-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .empty-text { font-size: 0.8rem; color: var(--color-text-muted); }
+
+  .rule-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .rule-name { font-size: 0.8rem; font-weight: 600; }
+  .rule-detail { font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.125rem; }
+
+  .rule-remove {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.25rem;
+    transition: color 0.2s;
+  }
+  .rule-remove:hover { color: var(--color-danger); }
+
+  .pattern-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    gap: 0.5rem;
+  }
+
+  .pattern-route { font-size: 0.75rem; font-weight: 600; }
+  .pattern-detail { font-size: 0.65rem; color: var(--color-text-muted); margin-top: 0.125rem; }
+
+  .forecast-summary { border-color: rgba(16, 185, 129, 0.2); }
+  .forecast-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.375rem 0;
+    font-size: 0.8rem;
+  }
+  .forecast-stat.highlight {
+    font-weight: 700;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+  }
+  .forecast-value { font-weight: 600; font-family: monospace; }
+  .forecast-value.green { color: #34d399; }
+
+  /* Calendar area */
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .calendar-month-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .calendar-cell.has-journeys {
+    background: rgba(0, 159, 227, 0.04);
+    border-color: rgba(0, 159, 227, 0.15);
+  }
+
+  .day-journey-count {
+    font-size: 0.65rem;
+    color: var(--color-oyster-blue);
+    font-weight: 500;
+  }
+
+  .day-spend {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-top: 0.125rem;
+  }
+
+  .mini-cap-bar {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+  }
+
+  .mini-cap-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .cap-hit-label {
+    font-size: 0.55rem;
+    color: #34d399;
+    font-weight: 700;
+    margin-top: 0.125rem;
+    text-transform: uppercase;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1rem;
+  }
+
+  .modal-content {
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
+
+  .modal-body { padding: 1.5rem; }
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+
+  .form-group { margin-bottom: 1rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .day-selector { display: flex; gap: 0.375rem; }
+  .day-btn {
+    flex: 1;
+    padding: 0.5rem 0;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .day-btn:hover { border-color: var(--color-border-accent); }
+  .day-btn.selected {
+    background: rgba(0, 159, 227, 0.15);
+    border-color: rgba(0, 159, 227, 0.4);
+    color: var(--color-oyster-blue);
+  }
+
+  .zone-preview {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .planner-layout { grid-template-columns: 1fr; }
+  }
+</style>
