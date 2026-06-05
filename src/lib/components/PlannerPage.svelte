@@ -8,7 +8,7 @@
     patternToRule
   } from '$lib/engine/recurrenceEngine';
   import { runForecast } from '$lib/engine/forecastEngine';
-  import { getZoneRange, lookupFare, BUS_SINGLE_FARE } from '$lib/data/fareData';
+  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, roundToNearest10p, type RailcardType } from '$lib/data/fareData';
 
   // Calendar state
   let calendarDate = $state(new Date());
@@ -19,11 +19,50 @@
   let newOriginZone = $state(3);
   let newDestZone = $state(1);
   let newMode = $state<'underground' | 'national_rail' | 'nr_tube' | 'bus'>('national_rail');
-  let newIsPeak = $state(true);
+  let newTimePeriod = $state('06:30-09:30');
+  let newIsReturn = $state(false);
+  let newReturnTimePeriod = $state('16:00-19:00');
   let newDays = $state<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
   let newIntervalType = $state<'days' | 'weeks' | 'months' | 'years' | 'none'>('weeks');
   let newIntervalValue = $state(1);
   let editRuleId = $state<string | null>(null);
+
+  function getEstimatedFare(origin: number, dest: number, timePeriod: string, mode: string, discount: string): number {
+    const isPeakFare = timePeriod === '06:30-09:30' || timePeriod === '16:00-19:00';
+    const zoneRange = getZoneRange(origin, dest);
+    const rawFare = mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, mode);
+    
+    if (discount === 'none' || discount === 'student' || mode === 'bus') {
+      return rawFare;
+    }
+    
+    const rc = RAILCARDS[discount as RailcardType];
+    if (rc) {
+      if (!isPeakFare || rc.appliesToPeak) {
+        return roundToNearest10p(rawFare * (1 - rc.discount));
+      }
+    }
+    return rawFare;
+  }
+
+  const TIME_PERIODS = [
+    { value: '04:30-06:29', label: '04:30 - 06:29' },
+    { value: '06:30-09:30', label: '06:30 - 09:30' },
+    { value: '09:31-15:59', label: '09:31 - 15:59' },
+    { value: '16:00-19:00', label: '16:00 - 19:00' },
+    { value: '19:01-04:29', label: '19:01 - 04:29' },
+  ];
+
+  let returnTimePeriodOptions = $derived(
+    TIME_PERIODS.filter((_, i) => i >= TIME_PERIODS.findIndex(t => t.value === newTimePeriod))
+  );
+
+  $effect(() => {
+    const validValues = returnTimePeriodOptions.map(t => t.value);
+    if (!validValues.includes(newReturnTimePeriod)) {
+      newReturnTimePeriod = validValues[0];
+    }
+  });
 
   // Date range for planning
   let planStart = $state(formatInputDate(new Date()));
@@ -112,7 +151,9 @@
       originZone: newOriginZone,
       destinationZone: newDestZone,
       mode: newMode,
-      isPeak: newIsPeak,
+      timePeriod: newTimePeriod,
+      isReturn: newIsReturn,
+      returnTimePeriod: newReturnTimePeriod,
       daysOfWeek: newDays,
       intervalType: newIntervalType,
       intervalValue: newIntervalValue,
@@ -137,7 +178,9 @@
     newOriginZone = rule.originZone;
     newDestZone = rule.destinationZone;
     newMode = rule.mode;
-    newIsPeak = rule.isPeak;
+    newTimePeriod = rule.timePeriod || '06:30-09:30';
+    newIsReturn = rule.isReturn || false;
+    newReturnTimePeriod = rule.returnTimePeriod || '16:00-19:00';
     newDays = [...rule.daysOfWeek];
     newIntervalType = rule.intervalType;
     newIntervalValue = rule.intervalValue;
@@ -184,7 +227,9 @@
     newOriginZone = 3;
     newDestZone = 1;
     newMode = 'national_rail';
-    newIsPeak = true;
+    newTimePeriod = '06:30-09:30';
+    newIsReturn = false;
+    newReturnTimePeriod = '16:00-19:00';
     newDays = [1, 2, 3, 4, 5];
     newIntervalType = 'weeks';
     newIntervalValue = 1;
@@ -240,8 +285,25 @@
         </div>
       </div>
 
-      <!-- Active rules -->
       <div class="glass-card sidebar-section">
+        <h3 class="sidebar-title">🏷️ Planner Discount</h3>
+        <div class="date-inputs">
+          <label class="setting-label">Discount Applied</label>
+          <select class="input-field" bind:value={$selectedRailcard} onchange={regenerate}>
+            <option value="none">Adult / Contactless</option>
+            <option value="student">18+ Student</option>
+            <option value="16-25">16-25 Railcard</option>
+            <option value="26-30">26-30 Railcard</option>
+            <option value="senior">Senior Railcard</option>
+            <option value="disabled">Disabled Persons Railcard</option>
+            <option value="hmforces">HM Forces Railcard</option>
+            <option value="veterans">Veterans Railcard</option>
+            <option value="network">Network Railcard / Gold Card</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="glass-card sidebar-section" style="max-height: 400px; overflow-y: auto;">
         <h3 class="sidebar-title">🔄 Active Schedules</h3>
         {#if $recurrenceRules.filter(r => r.intervalType !== 'none').length === 0}
           <p class="empty-text">No recurring schedules yet.</p>
@@ -252,7 +314,7 @@
                 <div class="rule-name">{rule.name}</div>
                 <div class="rule-detail">
                   Z{rule.originZone}→Z{rule.destinationZone} •
-                  {rule.isPeak ? 'Peak' : 'Off-Peak'} •
+                  {rule.timePeriod} •
                   {rule.daysOfWeek.map(d => ['Su','Mo','Tu','We','Th','Fr','Sa'][d]).join(',')}
                 </div>
               </div>
@@ -266,16 +328,15 @@
       </div>
 
       <!-- One-off rules -->
-      {#if $recurrenceRules.some(r => r.intervalType === 'none')}
-      <div class="glass-card sidebar-section">
-        <h3 class="sidebar-title">⚡ One-Off Journeys</h3>
+      <div class="glass-card sidebar-section" style="max-height: 400px; overflow-y: auto;">
+        <h3 class="sidebar-title">📌 One-off Journeys</h3>
         {#each $recurrenceRules.filter(r => r.intervalType === 'none') as rule}
           <div class="rule-card">
             <div class="rule-info">
               <div class="rule-name">{rule.name}</div>
               <div class="rule-detail">
                 {rule.startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} •
-                Z{rule.originZone}→Z{rule.destinationZone} • {rule.isPeak ? 'Peak' : 'Off-Peak'}
+                Z{rule.originZone}→Z{rule.destinationZone} • {rule.timePeriod}
               </div>
             </div>
             <div class="rule-actions" style="display: flex; gap: 0.25rem;">
@@ -285,7 +346,6 @@
           </div>
         {/each}
       </div>
-      {/if}
 
       <!-- Detected patterns -->
       {#if $detectedPatterns.length > 0}
@@ -397,9 +457,11 @@
         </div>
 
         <div class="modal-body">
-          <div class="form-group">
-            <label class="setting-label">Schedule Name</label>
-            <input type="text" class="input-field" bind:value={newRuleName} placeholder="e.g., Morning Commute" />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="setting-label">{newIntervalType === 'none' ? 'Journey Name' : 'Schedule Name'}</label>
+              <input type="text" class="input-field" bind:value={newRuleName} placeholder="e.g., Morning Commute" />
+            </div>
           </div>
 
           <div class="form-row">
@@ -415,20 +477,37 @@
             {#if newMode !== 'bus'}
               <div class="form-group">
                 <label class="setting-label">Time Period</label>
-                <select class="input-field" bind:value={newIsPeak}>
-                  <option value={true}>Peak</option>
-                  <option value={false}>Off-Peak</option>
+                <select class="input-field" bind:value={newTimePeriod}>
+                  {#each TIME_PERIODS as t}
+                    <option value={t.value}>{t.label}</option>
+                  {/each}
                 </select>
               </div>
             {/if}
           </div>
 
           {#if newMode !== 'bus'}
+            <div class="form-row" style="margin-top: 0.5rem; align-items: center;">
+              <label class="setting-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" bind:checked={newIsReturn} style="width: 1rem; height: 1rem;" />
+                Include Return Journey
+              </label>
+              {#if newIsReturn}
+                <select class="input-field" bind:value={newReturnTimePeriod}>
+                  {#each returnTimePeriodOptions as t}
+                    <option value={t.value}>Return {t.label}</option>
+                  {/each}
+                </select>
+              {/if}
+            </div>
+          {/if}
+
+          {#if newMode !== 'bus'}
             <div class="form-row">
               <div class="form-group">
                 <label class="setting-label">Origin Zone</label>
                 <select class="input-field" bind:value={newOriginZone}>
-                  {#each [1,2,3,4,5,6] as z}
+                  {#each [1,2,3,4,5,6,7,8,9] as z}
                     <option value={z}>Zone {z}</option>
                   {/each}
                 </select>
@@ -436,7 +515,7 @@
               <div class="form-group">
                 <label class="setting-label">Destination Zone</label>
                 <select class="input-field" bind:value={newDestZone}>
-                  {#each [1,2,3,4,5,6] as z}
+                  {#each [1,2,3,4,5,6,7,8,9] as z}
                     <option value={z}>Zone {z}</option>
                   {/each}
                 </select>
@@ -482,7 +561,7 @@
               <div class="zone-preview">
                 Fare zone: <strong>{getZoneRange(newOriginZone, newDestZone)}</strong>
                 <span style="margin: 0 0.5rem;">•</span>
-                Estimated Fare: <strong>£{lookupFare(getZoneRange(newOriginZone, newDestZone), newIsPeak, newMode).toFixed(2)}</strong>
+                Estimated Fare: <strong>£{getEstimatedFare(newOriginZone, newDestZone, newTimePeriod, newMode, $selectedRailcard).toFixed(2)}</strong>
               </div>
             </div>
           {:else}

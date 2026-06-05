@@ -69,7 +69,11 @@ export function calculateRailcardSavings(
   includeOysterCost: boolean
 ): RailcardSavingsResult {
   const railcard = RAILCARDS[railcardType];
-  const oysterCost = includeOysterCost ? OYSTER_CARD_COST : 0;
+  const STUDENT_PHOTOCARD_FEE = 12;
+  let oysterCost = includeOysterCost ? OYSTER_CARD_COST : 0;
+  if (railcardType === 'student' && includeOysterCost) {
+    oysterCost = STUDENT_PHOTOCARD_FEE;
+  }
 
   let totalExpected = 0;
   let totalRailcard = 0;
@@ -160,8 +164,9 @@ export function calculateProductComparison(
   journeys: ClassifiedJourney[],
   railcardType: RailcardType,
   railcardCost: number,
-  studentPhotocardCost: number
+  includeStudentPhotocardFee: boolean
 ): ProductComparisonResult[] {
+  const studentPhotocardCost = includeStudentPhotocardFee ? 12 : 0;
   const zoneRanges = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
   const results: ProductComparisonResult[] = [];
 

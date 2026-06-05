@@ -43,13 +43,27 @@
     else { sortKey = key; sortAsc = true; }
   }
 
-  function getModeLabel(m: string): string {
-    if (m === 'underground') return 'Tube';
-    if (m === 'national_rail') return 'NR';
-    if (m === 'overground') return 'Overgrnd';
-    if (m === 'nr_tube') return 'NR/Tube';
-    if (m === 'elizabeth') return 'Liz Line';
-    return m.toUpperCase();
+  function getModeLabel(mode: string): string {
+    if (mode === 'underground') return 'Tube';
+    if (mode === 'overground') return 'Overground';
+    if (mode === 'elizabeth') return 'Elizabeth';
+    if (mode === 'dlr') return 'DLR';
+    if (mode === 'national_rail') return 'Rail';
+    if (mode === 'nr_tube') return 'NR/Tube';
+    if (mode === 'bus') return 'Bus';
+    return mode;
+  }
+
+  function getZoneColor(zoneRange: string): string {
+    if (!zoneRange) return 'var(--color-text-muted)';
+    if (zoneRange.includes('Z1-2')) return '#3b82f6'; // blue
+    if (zoneRange.includes('Z1-3')) return '#10b981'; // green
+    if (zoneRange.includes('Z1-4')) return '#f59e0b'; // amber
+    if (zoneRange.includes('Z1-5')) return '#f97316'; // orange
+    if (zoneRange.includes('Z1-6')) return '#8b5cf6'; // purple
+    if (zoneRange.includes('Z1-7') || zoneRange.includes('Z1-8') || zoneRange.includes('Z1-9')) return '#ec4899'; // pink
+    if (zoneRange.includes('Z1')) return '#0ea5e9'; // light blue
+    return 'var(--color-oyster-blue)';
   }
 
   function getModeBadgeClass(m: string): string {
@@ -238,7 +252,7 @@
         </div>
 
         <div class="setting-group">
-          <span class="setting-label">Include Oyster Card Cost</span>
+          <span class="setting-label">Include {$selectedRailcard === 'student' ? '18+ Student Photocard' : 'Oyster Card'} Cost</span>
           <div class="toggle-row">
             <button
               class="toggle"
@@ -300,7 +314,7 @@
               </div>
               {#if $savingsResult.oysterCost > 0}
                 <div class="be-row">
-                  <span>Oyster card cost</span>
+                  <span>{$selectedRailcard === 'student' ? '18+ Student Photocard fee' : 'Oyster card cost'}</span>
                   <span>£{$savingsResult.oysterCost.toFixed(2)}</span>
                 </div>
               {/if}
@@ -369,7 +383,7 @@
           {#each $dailyCapResults as day}
             <div class="cap-day-row" class:cap-hit={day.capHit}>
               <div class="cap-day-date">{day.date}</div>
-              <div class="cap-day-zones" style="font-size: 0.75rem; color: var(--color-text-muted); min-width: 60px;">{day.maxZoneRange}</div>
+              <div class="cap-day-zones" style="font-size: 0.8rem; font-weight: 700; color: {getZoneColor(day.maxZoneRange)}; min-width: 60px;">{day.maxZoneRange}</div>
               <div class="cap-day-bar-container">
                 <div class="cap-progress">
                   <div

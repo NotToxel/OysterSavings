@@ -92,73 +92,154 @@ export const PAYG_FARES: FareScales = {
   }
 };
 
-// Daily caps (anytime) — frozen until 2027
+// Generated Daily Caps
 export const DAILY_CAPS: Record<string, number> = {
-  'Z1':   8.90,
+  'Z1': 8.90,
   'Z1-2': 8.90,
   'Z1-3': 10.50,
   'Z1-4': 12.80,
   'Z1-5': 15.30,
   'Z1-6': 16.30,
-  'Z2':   8.90,
-  'Z2-3': 8.90,
-  'Z2-6': 10.50,
-  'Z3':   8.90,
-  'Z3-5': 8.90,
-  'Z3-6': 8.90,
-  'Z4':   8.90,
-  'Z4-6': 8.90,
-  'Z5':   8.90,
-  'Z5-6': 8.90,
-  'Z6':   8.90,
+  'Z1-7': 17.80,
+  'Z1-8': 21.00,
+  'Z1-9': 23.30,
+  'Z2': 8.90,
+  'Z2-3': 10.50,
+  'Z2-4': 12.80,
+  'Z2-5': 15.30,
+  'Z2-6': 16.30,
+  'Z2-7': 17.80,
+  'Z2-8': 21.00,
+  'Z2-9': 23.30,
+  'Z3': 10.50,
+  'Z3-4': 12.80,
+  'Z3-5': 15.30,
+  'Z3-6': 16.30,
+  'Z3-7': 17.80,
+  'Z3-8': 21.00,
+  'Z3-9': 23.30,
+  'Z4': 12.80,
+  'Z4-5': 15.30,
+  'Z4-6': 16.30,
+  'Z4-7': 17.80,
+  'Z4-8': 21.00,
+  'Z4-9': 23.30,
+  'Z5': 15.30,
+  'Z5-6': 16.30,
+  'Z5-7': 17.80,
+  'Z5-8': 21.00,
+  'Z5-9': 23.30,
+  'Z6': 16.30,
+  'Z6-7': 17.80,
+  'Z6-8': 21.00,
+  'Z6-9': 23.30,
+  'Z7': 17.80,
+  'Z7-8': 21.00,
+  'Z7-9': 23.30,
+  'Z8': 21.00,
+  'Z8-9': 23.30,
 };
 
-// Off-peak daily caps (for railcard holders - approx 1/3 discount)
 export const DAILY_CAPS_OFFPEAK: Record<string, number> = {
-  'Z1':   5.90,
+  'Z1': 5.90,
   'Z1-2': 5.90,
-  'Z1-3': 6.90,
-  'Z1-4': 8.40,
-  'Z1-5': 10.10,
-  'Z1-6': 10.75,
-  'Z2':   5.90,
-  'Z2-3': 5.90,
-  'Z2-6': 6.90,
-  'Z3':   5.90,
-  'Z3-5': 5.90,
-  'Z3-6': 5.90,
-  'Z4':   5.90,
-  'Z4-6': 5.90,
-  'Z5':   5.90,
-  'Z5-6': 5.90,
-  'Z6':   5.90,
+  'Z1-3': 6.95,
+  'Z1-4': 8.50,
+  'Z1-5': 10.15,
+  'Z1-6': 10.85,
+  'Z1-7': 10.85,
+  'Z1-8': 10.85,
+  'Z1-9': 10.85,
+  'Z2': 5.90,
+  'Z2-3': 6.95,
+  'Z2-4': 8.50,
+  'Z2-5': 10.15,
+  'Z2-6': 10.85,
+  'Z2-7': 10.85,
+  'Z2-8': 10.85,
+  'Z2-9': 10.85,
+  'Z3': 6.95,
+  'Z3-4': 8.50,
+  'Z3-5': 10.15,
+  'Z3-6': 10.85,
+  'Z3-7': 10.85,
+  'Z3-8': 10.85,
+  'Z3-9': 10.85,
+  'Z4': 8.50,
+  'Z4-5': 10.15,
+  'Z4-6': 10.85,
+  'Z4-7': 10.85,
+  'Z4-8': 10.85,
+  'Z4-9': 10.85,
+  'Z5': 10.15,
+  'Z5-6': 10.85,
+  'Z5-7': 10.85,
+  'Z5-8': 10.85,
+  'Z5-9': 10.85,
+  'Z6': 10.85,
+  'Z6-7': 10.85,
+  'Z6-8': 10.85,
+  'Z6-9': 10.85,
+  'Z7': 10.85,
+  'Z7-8': 10.85,
+  'Z7-9': 10.85,
+  'Z8': 10.85,
+  'Z8-9': 10.85,
 };
 
-// Weekly caps (Mon–Sun) — frozen until 2027
 export const WEEKLY_CAPS: Record<string, number> = {
-  'Z1':   44.70,
+  'Z1': 44.70,
   'Z1-2': 44.70,
   'Z1-3': 52.50,
   'Z1-4': 64.20,
   'Z1-5': 76.40,
   'Z1-6': 81.60,
-  'Z2':   29.10,
-  'Z2-3': 29.10,
-  'Z2-6': 52.50,
-  'Z3':   29.10,
-  'Z3-5': 29.10,
-  'Z3-6': 29.10,
-  'Z4':   29.10,
-  'Z4-6': 29.10,
-  'Z5':   29.10,
-  'Z5-6': 29.10,
-  'Z6':   29.10,
+  'Z1-7': 88.90,
+  'Z1-8': 104.90,
+  'Z1-9': 116.40,
+  'Z2': 33.50,
+  'Z2-3': 33.50,
+  'Z2-4': 37.10,
+  'Z2-5': 44.50,
+  'Z2-6': 55.90,
+  'Z2-7': 57.90,
+  'Z2-8': 78.90,
+  'Z2-9': 78.90,
+  'Z3': 33.50,
+  'Z3-4': 33.50,
+  'Z3-5': 37.10,
+  'Z3-6': 44.50,
+  'Z3-7': 57.90,
+  'Z3-8': 78.90,
+  'Z3-9': 78.90,
+  'Z4': 33.50,
+  'Z4-5': 33.50,
+  'Z4-6': 37.10,
+  'Z4-7': 41.90,
+  'Z4-8': 70.70,
+  'Z4-9': 70.70,
+  'Z5': 33.50,
+  'Z5-6': 33.50,
+  'Z5-7': 41.90,
+  'Z5-8': 70.70,
+  'Z5-9': 70.70,
+  'Z6': 33.50,
+  'Z6-7': 41.90,
+  'Z6-8': 70.70,
+  'Z6-9': 70.70,
+  'Z7': 41.90,
+  'Z7-8': 70.70,
+  'Z7-9': 70.70,
+  'Z8': 70.70,
+  'Z8-9': 70.70,
 };
 
 // Bus & Tram
 export const BUS_SINGLE_FARE = 1.75;
 export const BUS_DAILY_CAP = 5.25;
 export const HOPPER_WINDOW_MINUTES = 60;
+
+export const STUDENT_PHOTOCARD_FEE = 12;
 
 // Travelcard prices — frozen until March 2027
 export const TRAVELCARD_WEEKLY: Record<string, number> = {
@@ -204,12 +285,15 @@ export const STUDENT_TRAVELCARD_ANNUAL: Record<string, number> = {
 
 // Railcard types and their discounts
 export type RailcardType =
+  | 'none'
+  | 'student'
   | '16-25'
   | '26-30'
   | 'senior'
   | 'disabled'
   | 'hmforces'
-  | 'veterans';
+  | 'veterans'
+  | 'network';
 
 export interface RailcardInfo {
   name: string;
@@ -220,26 +304,40 @@ export interface RailcardInfo {
 }
 
 export const RAILCARDS: Record<RailcardType, RailcardInfo> = {
+  'none': {
+    name: 'Adult / Contactless',
+    discount: 0,
+    appliesToPeak: false,
+    cost1Year: 0,
+    cost3Year: 0,
+  },
+  'student': {
+    name: '18+ Student',
+    discount: 0, // Gets 30% off travelcards, no PAYG discount natively without adding a 16-25 railcard
+    appliesToPeak: false,
+    cost1Year: 0, // Admin fee handled by STUDENT_PHOTOCARD_FEE
+    cost3Year: 0,
+  },
   '16-25': {
     name: '16-25 Railcard',
     discount: 1 / 3,
     appliesToPeak: false,
-    cost1Year: 30,
-    cost3Year: 70,
+    cost1Year: 35,
+    cost3Year: 80,
   },
   '26-30': {
     name: '26-30 Railcard',
     discount: 1 / 3,
     appliesToPeak: false,
-    cost1Year: 30,
-    cost3Year: 70,
+    cost1Year: 35,
+    cost3Year: 0,
   },
   senior: {
     name: 'Senior Railcard',
     discount: 1 / 3,
     appliesToPeak: false,
-    cost1Year: 30,
-    cost3Year: 70,
+    cost1Year: 35,
+    cost3Year: 80,
   },
   disabled: {
     name: 'Disabled Persons Railcard',
@@ -253,13 +351,20 @@ export const RAILCARDS: Record<RailcardType, RailcardInfo> = {
     discount: 1 / 3,
     appliesToPeak: false,
     cost1Year: 21,
-    cost3Year: 0, // not available
+    cost3Year: 0,
   },
   veterans: {
     name: 'Veterans Railcard',
     discount: 1 / 3,
     appliesToPeak: false,
-    cost1Year: 21,
+    cost1Year: 35,
+    cost3Year: 80,
+  },
+  'network': {
+    name: 'Network Railcard',
+    discount: 1 / 3,
+    appliesToPeak: false, // only applies after 10am weekdays
+    cost1Year: 30,
     cost3Year: 0,
   },
 };

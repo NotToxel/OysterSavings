@@ -1,7 +1,7 @@
 // Cap Engine — daily and weekly cap tracking
 import type { ClassifiedJourney } from './journeyClassifier';
 import type { FareResult } from './fareCalculator';
-import { lookupDailyCap, lookupWeeklyCap, BUS_DAILY_CAP } from '../data/fareData';
+import { lookupDailyCap, lookupWeeklyCap, BUS_DAILY_CAP, DAILY_CAPS, DAILY_CAPS_OFFPEAK } from '../data/fareData';
 
 export interface DayCapResult {
   date: string;
@@ -66,8 +66,13 @@ function getMaxZoneRange(journeys: FareResult[]): string {
     maxZone = Math.max(maxZone, z1, z2);
   }
 
-  if (!hasRail) return 'Z1'; // Default for bus-only or no-zone rail
-  return minZone === maxZone ? `Z${minZone}` : `Z${minZone}-${maxZone}`;
+  if (!hasRail) return 'Z1-2'; // Default for bus-only or no-zone rail
+  
+  let result = minZone === maxZone ? `Z${minZone}` : `Z${minZone}-${maxZone}`;
+  if (result === 'Z1' || result === 'Z2') {
+    result = 'Z1-2';
+  }
+  return result;
 }
 
 // Calculate daily cap analysis
@@ -79,7 +84,7 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
     const railJourneys = journeys.filter((j) => !j.journey.isBus);
     const busJourneys = journeys.filter((j) => j.journey.isBus);
 
-    const maxZoneRange = getMaxZoneRange(journeys);
+    let maxZoneRange = getMaxZoneRange(journeys);
 
     // Determine off-peak vs peak cap based on the first journey of the day
     let isPeakDay = false;
@@ -94,12 +99,50 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
       }
     }
     
-    const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
-
-    // Calculate actual spend
+    // Calculate actual spend first to infer cap if needed
     const railSpend = railJourneys.reduce((sum, j) => sum + j.actualCharge, 0);
     const busSpend = busJourneys.reduce((sum, j) => sum + j.actualCharge, 0);
     const totalSpend = railSpend + busSpend;
+    
+    let dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
+    const explicitCapHit = journeys.some((j) => j.journey.isCapHit);
+    
+    if (explicitCapHit) {
+      // Only infer if the current maxZoneRange's cap doesn't match the total spend
+      const currentCapValue = isPeakDay ? DAILY_CAPS[maxZoneRange] ?? 16.30 : DAILY_CAPS_OFFPEAK[maxZoneRange] ?? 16.30;
+      
+      if (Math.abs(currentCapValue - totalSpend) > 0.05) {
+        // Current cap does not match the actual spend! We need to infer it.
+        const caps = isPeakDay ? DAILY_CAPS : DAILY_CAPS_OFFPEAK;
+        let inferredZone: string | null = null;
+        
+        // Direct match - find the first one to avoid picking Z6 when Z1-2 matches
+        for (const [zone, cap] of Object.entries(caps)) {
+          if (Math.abs(cap - totalSpend) < 0.05) {
+            inferredZone = zone;
+            break; // Stop at the first match (e.g. Z1 or Z1-2)
+          }
+        }
+        
+        // Railcard off-peak match
+        if (!inferredZone && !isPeakDay) {
+          const unDiscounted = totalSpend / (2/3);
+          for (const [zone, cap] of Object.entries(caps)) {
+            if (Math.abs(cap - unDiscounted) < 0.20) {
+              inferredZone = zone;
+              break;
+            }
+          }
+        }
+        
+        if (inferredZone) {
+          maxZoneRange = inferredZone;
+        }
+      }
+      
+      // The total spend IS the daily cap
+      dailyCap = totalSpend;
+    }
 
     // Calculate how much was saved by capping
     const uncappedRailSpend = railJourneys.reduce((sum, j) => sum + j.expectedFare, 0);

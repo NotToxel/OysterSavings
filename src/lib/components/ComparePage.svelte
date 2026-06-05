@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    productComparison, savingsResult, studentPhotocardCost
+    productComparison, savingsResult,
+    includeStudentPhotocardFee
   } from '$lib/stores/stores';
   import {
     RAILCARDS, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
@@ -151,8 +152,8 @@
 
     {#if activeSpan === 'monthly' || activeSpan === 'annual'}
       <div class="setting-group" style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.03); padding: 0.5rem 1rem; border-radius: 8px;">
-        <label for="student-cost" style="color: var(--color-text-secondary); font-size: 0.85rem;">Student Photocard Admin Fee (£):</label>
-        <input id="student-cost" type="number" bind:value={$studentPhotocardCost} class="input-field" style="width: 80px; padding: 0.25rem 0.5rem; min-height: 32px;" min="0" step="1" />
+        <input type="checkbox" id="student-cost-toggle" bind:checked={$includeStudentPhotocardFee} style="accent-color: var(--color-oyster-blue); width: 1.1rem; height: 1.1rem; cursor: pointer;" />
+        <label for="student-cost-toggle" style="color: var(--color-text-secondary); font-size: 0.85rem; cursor: pointer;">Include £12 18+ Student Photocard admin fee</label>
       </div>
     {/if}
   </div>

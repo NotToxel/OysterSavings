@@ -1,6 +1,6 @@
 // Journey Classifier — extracts mode, zones, peak/off-peak from CSV journey strings
 import type { ParsedJourney } from './csvParser';
-import { detectTransportMode, getStationZone, getStationBestZone, type TransportMode } from '../data/stations';
+import { detectTransportMode, getStationZone, getStationBestZone, getStationInfo, type TransportMode } from '../data/stations';
 import { getZoneRange } from '../data/fareData';
 
 export interface ClassifiedJourney {
@@ -81,7 +81,15 @@ function extractStations(journeyAction: string): { origin: string; destination: 
   if (journeyAction.toLowerCase().includes('bus journey')) return null;
 
   const toIndex = journeyAction.indexOf(' to ');
-  if (toIndex === -1) return null;
+  if (toIndex === -1) {
+    // Check for "Entered and exited X"
+    const enteredMatch = journeyAction.match(/Entered and exited (.+)/i);
+    if (enteredMatch) {
+      const station = enteredMatch[1].trim();
+      return { origin: station, destination: station, via: null };
+    }
+    return null;
+  }
 
   const origin = journeyAction.substring(0, toIndex).trim();
   const destination = journeyAction.substring(toIndex + 4).trim();
@@ -96,7 +104,7 @@ function extractBusRoute(journeyAction: string): string | null {
 }
 
 export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
-  const mode = detectTransportMode(journey.journeyAction);
+  let mode = detectTransportMode(journey.journeyAction);
   const isBus = mode === 'bus' || mode === 'tram';
   const busRoute = isBus ? extractBusRoute(journey.journeyAction) : null;
 
@@ -124,6 +132,28 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
         originZone = getStationBestZone(stations.origin, basicDestZone) ?? basicOriginZone;
         destinationZone = getStationBestZone(stations.destination, basicOriginZone) ?? basicDestZone;
         zoneRange = getZoneRange(originZone, destinationZone);
+      }
+      
+      // Refine mode if it's ambiguous
+      if (mode === 'unknown' || mode === 'underground' || mode === 'national_rail') {
+        const oInfo = getStationInfo(stations.origin);
+        const dInfo = getStationInfo(stations.destination);
+        if (oInfo && dInfo) {
+          const oNR = oInfo.modes.includes('national_rail') && !oInfo.modes.includes('underground');
+          const dNR = dInfo.modes.includes('national_rail') && !dInfo.modes.includes('underground');
+          const oLU = oInfo.modes.includes('underground') && !oInfo.modes.includes('national_rail');
+          const dLU = dInfo.modes.includes('underground') && !dInfo.modes.includes('national_rail');
+
+          if ((oNR && dLU) || (oLU && dNR)) {
+            mode = 'nr_tube';
+          } else if (mode === 'unknown') {
+             if (oInfo.modes.includes('underground') || dInfo.modes.includes('underground')) mode = 'underground';
+             else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
+          }
+        } else if (mode === 'unknown' && oInfo) {
+          if (oInfo.modes.includes('underground')) mode = 'underground';
+          else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
+        }
       }
     }
   }

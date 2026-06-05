@@ -6,8 +6,10 @@ export interface RecurrenceRule {
   name: string;
   originZone: number;
   destinationZone: number;
-  mode: 'underground' | 'national_rail' | 'bus';
-  isPeak: boolean;
+  mode: 'underground' | 'national_rail' | 'nr_tube' | 'bus';
+  timePeriod: string;
+  isReturn?: boolean;
+  returnTimePeriod?: string;
   daysOfWeek: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
   intervalType: 'days' | 'weeks' | 'months' | 'years' | 'none';
   intervalValue: number;
@@ -22,8 +24,8 @@ export interface PlannedJourney {
   ruleName: string;
   originZone: number;
   destinationZone: number;
-  mode: 'underground' | 'national_rail' | 'bus';
-  isPeak: boolean;
+  mode: 'underground' | 'national_rail' | 'nr_tube' | 'bus';
+  timePeriod: string;
 }
 
 // Generate concrete journey instances from recurrence rules
@@ -93,8 +95,21 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
           originZone: rule.originZone,
           destinationZone: rule.destinationZone,
           mode: rule.mode,
-          isPeak: rule.isPeak,
+          timePeriod: rule.timePeriod,
         });
+
+        if (rule.isReturn && rule.returnTimePeriod) {
+          journeys.push({
+            date: new Date(current),
+            dateStr: formatDate(current),
+            ruleId: rule.id + '-return',
+            ruleName: rule.name + ' (Return)',
+            originZone: rule.destinationZone,
+            destinationZone: rule.originZone,
+            mode: rule.mode,
+            timePeriod: rule.returnTimePeriod,
+          });
+        }
       }
 
       current.setDate(current.getDate() + 1);
@@ -113,7 +128,7 @@ export interface DetectedPattern {
   originZone: number;
   destinationZone: number;
   mode: string;
-  isPeak: boolean;
+  timePeriod: string;
   daysOfWeek: number[];
   frequency: number; // times per week
   confidence: number; // 0-1 how strong the pattern is
@@ -129,7 +144,7 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
   for (const j of journeys) {
     if (j.isBus || !j.origin || !j.destination) continue;
 
-    const routeKey = `${j.originZone}-${j.destinationZone}|${j.isPeak}`;
+    const routeKey = `${j.originZone}-${j.destinationZone}|${j.isPeak ? '06:30-09:30' : '09:31-15:59'}`;
 
     if (!routeMap.has(routeKey)) {
       routeMap.set(routeKey, {
@@ -179,7 +194,7 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
       originZone: sample.originZone || 1,
       destinationZone: sample.destinationZone || 1,
       mode: sample.mode,
-      isPeak: sample.isPeak,
+      timePeriod: sample.isPeak ? '06:30-09:30' : '09:31-15:59',
       daysOfWeek: regularDays.sort(),
       frequency: Math.round(frequency * 10) / 10,
       confidence,
@@ -202,8 +217,8 @@ export function patternToRule(
     name: `${pattern.origin} → ${pattern.destination}`,
     originZone: pattern.originZone,
     destinationZone: pattern.destinationZone,
-    mode: pattern.mode as 'underground' | 'national_rail' | 'bus',
-    isPeak: pattern.isPeak,
+    mode: pattern.mode as 'underground' | 'national_rail' | 'nr_tube' | 'bus',
+    timePeriod: pattern.timePeriod,
     daysOfWeek: pattern.daysOfWeek,
     intervalType: 'weeks',
     intervalValue: 1,

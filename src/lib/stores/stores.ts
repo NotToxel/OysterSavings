@@ -30,7 +30,7 @@ export const capSummary = writable<CapSummary | null>(null);
 export const selectedRailcard = writable<RailcardType>('16-25');
 export const railcardCost = writable<number>(30);
 export const includeOysterCost = writable<boolean>(false);
-export const studentPhotocardCost = writable<number>(30);
+export const includeStudentPhotocardFee = writable<boolean>(true);
 
 // Savings results
 export const savingsResult = derived(
@@ -42,10 +42,10 @@ export const savingsResult = derived(
 );
 
 export const productComparison = derived(
-  [classifiedJourneys, selectedRailcard, railcardCost, studentPhotocardCost],
-  ([$classifiedJourneys, $selectedRailcard, $railcardCost, $studentPhotocardCost]) => {
+  [classifiedJourneys, selectedRailcard, railcardCost, includeStudentPhotocardFee],
+  ([$classifiedJourneys, $selectedRailcard, $railcardCost, $includeStudentPhotocardFee]) => {
     if ($classifiedJourneys.length === 0) return [];
-    return calculateProductComparison($classifiedJourneys, $selectedRailcard, $railcardCost, $studentPhotocardCost);
+    return calculateProductComparison($classifiedJourneys, $selectedRailcard, $railcardCost, $includeStudentPhotocardFee);
   }
 );
 
