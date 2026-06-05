@@ -1,7 +1,7 @@
 // Cap Engine — daily and weekly cap tracking
 import type { ClassifiedJourney } from './journeyClassifier';
 import type { FareResult } from './fareCalculator';
-import { lookupDailyCap, lookupWeeklyCap, BUS_DAILY_CAP, DAILY_CAPS, DAILY_CAPS_OFFPEAK } from '../data/fareData';
+import { lookupDailyCap, lookupWeeklyCap, BUS_DAILY_CAP, DAILY_CAPS, DAILY_CAPS_OFFPEAK, type RailcardType } from '../data/fareData';
 
 export interface DayCapResult {
   date: string;
@@ -77,7 +77,7 @@ function getMaxZoneRange(journeys: FareResult[]): string {
 }
 
 // Calculate daily cap analysis
-export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
+export function calculateDailyCaps(fareResults: FareResult[], railcardType: RailcardType = 'none'): DayCapResult[] {
   const dayGroups = groupByDay(fareResults);
   const results: DayCapResult[] = [];
 
@@ -118,7 +118,7 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
       }
     }
 
-    let dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
+    let dailyCap = lookupDailyCap(maxZoneRange, isPeakDay, railcardType);
     const explicitCapHit = journeys.some((j) => j.journey.isCapHit);
     
     if (explicitCapHit) {
@@ -196,7 +196,7 @@ function getMonday(date: Date): Date {
 }
 
 // Calculate weekly cap analysis
-export function calculateWeeklyCaps(dailyResults: DayCapResult[]): WeekCapResult[] {
+export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: RailcardType = 'none'): WeekCapResult[] {
   // Group by week (Mon-Sun)
   const weekMap = new Map<string, DayCapResult[]>();
 
@@ -220,7 +220,7 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[]): WeekCapResult
     // Widest zone range across the week
     const allJourneys = days.flatMap((d) => d.journeys);
     const maxZoneRange = getMaxZoneRange(allJourneys);
-    const weeklyCap = lookupWeeklyCap(maxZoneRange);
+    const weeklyCap = lookupWeeklyCap(maxZoneRange, railcardType);
 
     const totalSpend = days.reduce((sum, d) => sum + d.totalSpend, 0);
     const capHit = totalSpend >= weeklyCap;

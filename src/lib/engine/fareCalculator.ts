@@ -43,9 +43,12 @@ export function calculateRailcardFare(
 ): number {
   const railcard = RAILCARDS[railcardType];
 
-  // Bus fares are not discounted by railcards
+  // Bus fares are generally not discounted by railcards, except Jobcentre Plus
   if (journey.isBus) {
     if (journey.isHopperFree) return 0;
+    if (railcardType === 'jobcentre') {
+      return roundToNearest10p(BUS_SINGLE_FARE * 0.5);
+    }
     return BUS_SINGLE_FARE;
   }
 

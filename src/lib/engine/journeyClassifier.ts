@@ -86,7 +86,7 @@ function extractStations(journeyAction: string): { origin: string; destination: 
     const enteredMatch = journeyAction.match(/Entered and exited (.+)/i);
     if (enteredMatch) {
       const station = enteredMatch[1].trim();
-      return { origin: station, destination: station, via: null };
+      return { origin: station, destination: station };
     }
     return null;
   }

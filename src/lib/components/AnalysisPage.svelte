@@ -273,7 +273,7 @@
             >
               <span class="toggle-dot"></span>
             </button>
-            <span class="toggle-label">{$includeOysterCost ? '+£7.00' : 'Not included'}</span>
+            <span class="toggle-label">{$includeOysterCost ? ($selectedRailcard === 'student' ? '+£25.00' : '+£7.00') : 'Not included'}</span>
           </div>
         </div>
       </div>
@@ -301,7 +301,7 @@
             <div class="glass-card" style="padding: 1.5rem; border-color: rgba(52, 211, 153, 0.2);">
               <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">💡 Potential Savings with a Railcard</h3>
               <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 1rem;">
-                {$selectedRailcard === 'student' ? 'The 18+ Student Oyster gives 30% off Travelcards but has no PAYG single fare discount. To get 1/3 off PAYG fares, add a 16-25 Railcard to your 18+ Student Oyster.' : 'Adult / Contactless has standard fares with no discount. Select a railcard above to see how much you could save.'}
+                {$selectedRailcard === 'student' ? 'The 18+ Student Oyster gives 30% off Travelcards but has no standard PAYG single fare discount. To get 1/3 off PAYG fares, add a 16-25 Railcard to your 18+ Student Oyster.' : 'Adult / Contactless has standard fares with no discount. Select a railcard above to see how much you could save.'}
               </p>
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                 <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedRailcard = '16-25'}>

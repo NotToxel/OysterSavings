@@ -212,11 +212,6 @@
     box-shadow: 0 2px 12px rgba(0, 159, 227, 0.35);
   }
 
-  .nav-pill.disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-
   .nav-icon {
     font-size: 0.9rem;
   }

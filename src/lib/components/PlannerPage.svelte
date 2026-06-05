@@ -40,7 +40,12 @@
     const zoneRange = getZoneRange(origin, dest);
     const rawFare = mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, mode);
     
-    if (discount === 'none' || discount === 'student' || mode === 'bus') {
+    if (mode === 'bus') {
+      if (discount === 'jobcentre') return roundToNearest10p(rawFare * 0.5);
+      return rawFare;
+    }
+
+    if (discount === 'none' || discount === 'student') {
       return rawFare;
     }
     
@@ -357,7 +362,7 @@
                 <div class="pattern-route">{pattern.origin.replace(/\s*\[.*?\]/g, '')} → {pattern.destination.replace(/\s*\[.*?\]/g, '')}</div>
                 <div class="pattern-detail">
                   {pattern.frequency}x/week •
-                  {pattern.isPeak ? 'Peak' : 'Off-Peak'} •
+                  {pattern.timePeriod.includes('06:30') || pattern.timePeriod.includes('16:00') ? 'Peak' : 'Off-Peak'} •
                   {Math.round(pattern.confidence * 100)}% confidence
                 </div>
               </div>
@@ -754,6 +759,11 @@
   .calendar-cell.has-journeys {
     background: rgba(0, 159, 227, 0.04);
     border-color: rgba(0, 159, 227, 0.15);
+  }
+
+  .calendar-cell.in-planning-period {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
   }
 
   .day-journey-count {

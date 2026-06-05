@@ -1,0 +1,260 @@
+{
+  "tfl": {
+    "Z1": {
+      "peak": 3.1,
+      "offPeak": 3
+    },
+    "Z1-2": {
+      "peak": 3.6,
+      "offPeak": 3.1
+    },
+    "Z1-3": {
+      "peak": 3.9,
+      "offPeak": 3.3
+    },
+    "Z1-4": {
+      "peak": 4.8,
+      "offPeak": 3.6
+    },
+    "Z1-5": {
+      "peak": 5.3,
+      "offPeak": 3.8
+    },
+    "Z1-6": {
+      "peak": 5.9,
+      "offPeak": 4
+    },
+    "Z2": {
+      "peak": 2.3,
+      "offPeak": 2.2
+    },
+    "Z2-3": {
+      "peak": 2.5,
+      "offPeak": 2.3
+    },
+    "Z2-4": {
+      "peak": 3.2,
+      "offPeak": 2.4
+    },
+    "Z2-5": {
+      "peak": 3.4,
+      "offPeak": 2.5
+    },
+    "Z2-6": {
+      "peak": 3.8,
+      "offPeak": 2.6
+    },
+    "Z3": {
+      "peak": 2.3,
+      "offPeak": 2.2
+    },
+    "Z3-4": {
+      "peak": 2.5,
+      "offPeak": 2.3
+    },
+    "Z3-5": {
+      "peak": 3.2,
+      "offPeak": 2.4
+    },
+    "Z3-6": {
+      "peak": 3.4,
+      "offPeak": 2.5
+    },
+    "Z4-5": {
+      "peak": 2.5,
+      "offPeak": 2.3
+    },
+    "Z4-6": {
+      "peak": 3.2,
+      "offPeak": 2.4
+    },
+    "Z5": {
+      "peak": 2.3,
+      "offPeak": 2.2
+    },
+    "Z5-6": {
+      "peak": 2.5,
+      "offPeak": 2.3
+    },
+    "Z6": {
+      "peak": 2.3,
+      "offPeak": 2.2
+    },
+    "Z4": {
+      "peak": 2.3,
+      "offPeak": 2.2
+    }
+  },
+  "national_rail": {
+    "Z1-2": {
+      "peak": 3.6,
+      "offPeak": 3.1
+    },
+    "Z1-3": {
+      "peak": 4.6,
+      "offPeak": 3.7
+    },
+    "Z1-4": {
+      "peak": 4.6,
+      "offPeak": 3.7
+    },
+    "Z1-5": {
+      "peak": 5.3,
+      "offPeak": 4
+    },
+    "Z1-6": {
+      "peak": 8.5,
+      "offPeak": 5.2
+    },
+    "Z2-3": {
+      "peak": 3.6,
+      "offPeak": 3
+    },
+    "Z2-4": {
+      "peak": 3.6,
+      "offPeak": 3
+    },
+    "Z2-5": {
+      "peak": 4,
+      "offPeak": 3.2
+    },
+    "Z2-6": {
+      "peak": 5.5,
+      "offPeak": 3.9
+    },
+    "Z3": {
+      "peak": 4.6,
+      "offPeak": 3.7
+    },
+    "Z3-4": {
+      "peak": 3,
+      "offPeak": 2.7
+    },
+    "Z3-5": {
+      "peak": 3.6,
+      "offPeak": 3
+    },
+    "Z3-6": {
+      "peak": 4.8,
+      "offPeak": 3.7
+    },
+    "Z4": {
+      "peak": 4.6,
+      "offPeak": 3.7
+    },
+    "Z4-5": {
+      "peak": 3,
+      "offPeak": 2.7
+    },
+    "Z4-6": {
+      "peak": 4,
+      "offPeak": 3.2
+    },
+    "Z5": {
+      "peak": 5.3,
+      "offPeak": 4
+    },
+    "Z5-6": {
+      "peak": 4,
+      "offPeak": 3.2
+    },
+    "Z1": {
+      "peak": 3.1,
+      "offPeak": 3
+    },
+    "Z2": {
+      "peak": 3,
+      "offPeak": 2.7
+    },
+    "Z6": {
+      "peak": 3,
+      "offPeak": 2.7
+    }
+  },
+  "nr_tube": {
+    "Z1": {
+      "peak": 3.1,
+      "offPeak": 3
+    },
+    "Z1-2": {
+      "peak": 3.6,
+      "offPeak": 3.1
+    },
+    "Z1-3": {
+      "peak": 3.9,
+      "offPeak": 3.3
+    },
+    "Z1-4": {
+      "peak": 4.8,
+      "offPeak": 3.6
+    },
+    "Z1-5": {
+      "peak": 5.3,
+      "offPeak": 3.8
+    },
+    "Z1-6": {
+      "peak": 5.9,
+      "offPeak": 4
+    },
+    "Z2": {
+      "peak": 3.6,
+      "offPeak": 3.1
+    },
+    "Z2-3": {
+      "peak": 3.9,
+      "offPeak": 3.3
+    },
+    "Z2-4": {
+      "peak": 4.8,
+      "offPeak": 3.6
+    },
+    "Z2-5": {
+      "peak": 5.3,
+      "offPeak": 3.8
+    },
+    "Z2-6": {
+      "peak": 5.9,
+      "offPeak": 4
+    },
+    "Z3": {
+      "peak": 6.6,
+      "offPeak": 5.4
+    },
+    "Z3-4": {
+      "peak": 7.3,
+      "offPeak": 5.9
+    },
+    "Z3-5": {
+      "peak": 8.8,
+      "offPeak": 6.3
+    },
+    "Z3-6": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z4": {
+      "peak": 7.3,
+      "offPeak": 5.9
+    },
+    "Z4-5": {
+      "peak": 8.8,
+      "offPeak": 6.3
+    },
+    "Z4-6": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z5": {
+      "peak": 8.8,
+      "offPeak": 6.3
+    },
+    "Z5-6": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z6": {
+      "peak": 10.4,
+      "offPeak": 7
+    }
+  }
+}

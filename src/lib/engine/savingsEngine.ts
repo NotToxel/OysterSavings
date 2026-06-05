@@ -11,8 +11,6 @@ import {
   TRAVELCARD_ANNUAL,
   STUDENT_TRAVELCARD_MONTHLY,
   STUDENT_TRAVELCARD_ANNUAL,
-  lookupDailyCap,
-  roundToNearest10p,
 } from '../data/fareData';
 
 export interface RailcardSavingsResult {
@@ -69,7 +67,7 @@ export function calculateRailcardSavings(
   includeOysterCost: boolean
 ): RailcardSavingsResult {
   const railcard = RAILCARDS[railcardType];
-  const STUDENT_PHOTOCARD_FEE = 12;
+  const STUDENT_PHOTOCARD_FEE = 25;
   let oysterCost = includeOysterCost ? OYSTER_CARD_COST : 0;
   if (railcardType === 'student' && includeOysterCost) {
     oysterCost = STUDENT_PHOTOCARD_FEE;
@@ -91,7 +89,7 @@ export function calculateRailcardSavings(
 
   // 3. Railcard Scenario
   const railcardFares = baseFares.map(f => ({ ...f, actualCharge: f.railcardFare ?? f.expectedFare }));
-  const railcardCaps = calculateDailyCaps(railcardFares);
+  const railcardCaps = calculateDailyCaps(railcardFares, railcardType);
   let totalRailcard = 0;
   for (const day of railcardCaps) totalRailcard += day.totalSpend;
 
