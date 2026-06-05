@@ -202,15 +202,15 @@ select option {
 }
 
 .badge-bus {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(220, 36, 31, 0.15);
+  color: #ef6461;
+  border: 1px solid rgba(220, 36, 31, 0.2);
 }
 
 .badge-rail {
-  background: rgba(0, 159, 227, 0.15);
-  color: #33b5ea;
-  border: 1px solid rgba(0, 159, 227, 0.2);
+  background: rgba(255, 211, 0, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(255, 211, 0, 0.2);
 }
 
 .badge-cap { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
@@ -218,9 +218,9 @@ select option {
 .badge-off-peak { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
 
 .badge-underground {
-  background: rgba(220, 36, 31, 0.15);
-  color: #ef6461;
-  border: 1px solid rgba(220, 36, 31, 0.2);
+  background: rgba(0, 54, 136, 0.2);
+  color: #6fa8dc;
+  border: 1px solid rgba(0, 54, 136, 0.3);
 }
 
 .badge-overground {

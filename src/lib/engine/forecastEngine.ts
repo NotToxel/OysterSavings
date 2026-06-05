@@ -134,8 +134,10 @@ export function runForecast(
     }
     
     const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
+    // Jobcentre Plus gets 50% off caps
+    const railcardDailyCap = railcardType === 'jobcentre' ? roundToNearest10p(dailyCap * 0.5) : dailyCap;
     const cappedFare = Math.min(totalFare, dailyCap);
-    const cappedFareRailcard = Math.min(totalFareRailcard, dailyCap);
+    const cappedFareRailcard = Math.min(totalFareRailcard, railcardDailyCap);
     const capHit = totalFare >= dailyCap;
 
     days.push({
@@ -184,13 +186,18 @@ export function runForecast(
     }
 
     const weeklyCap = lookupWeeklyCap(maxRange);
+    const railcardWeeklyCap = railcardType === 'jobcentre' ? roundToNearest10p(weeklyCap * 0.5) : weeklyCap;
+
+    // Apply weekly cap to total if needed
+    const cappedTotalFare = Math.min(totalFare, weeklyCap);
+    const cappedTotalFareRailcard = Math.min(totalFareRailcard, railcardWeeklyCap);
 
     weeklyBreakdown.push({
       weekStart,
       weekEnd,
       days: weekDays,
-      totalFare: round2(totalFare),
-      totalFareRailcard: round2(totalFareRailcard),
+      totalFare: round2(cappedTotalFare),
+      totalFareRailcard: round2(cappedTotalFareRailcard),
       weeklyCap,
       capHit: totalFare >= weeklyCap,
       capProgress: Math.min(1, totalFare / weeklyCap),

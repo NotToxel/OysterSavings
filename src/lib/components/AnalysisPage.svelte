@@ -13,6 +13,17 @@
   let filterMode = $state<string>('all');
   let overrideCost = $state(false);
 
+  // Auto-sync railcard cost when selection changes
+  $effect(() => {
+    if (!overrideCost) {
+      const rc = RAILCARDS[$selectedRailcard];
+      $railcardCost = rc.cost1Year;
+    }
+  });
+
+  // Detect railcards with no PAYG discount
+  let isNoDiscount = $derived($selectedRailcard === 'none' || $selectedRailcard === 'student');
+
 
 
   let filteredJourneys = $derived.by(() => {
@@ -270,79 +281,136 @@
       <!-- Results -->
       <div class="savings-results">
         {#if $savingsResult}
-          <!-- Main savings stat -->
-          <div class="glass-card savings-hero" class:positive={netSaving > 0} class:negative={netSaving <= 0}>
-            <div class="savings-hero-label">
-              {netSaving > 0 ? '✅ Net Saving with' : '⚠️ Net Result with'} {$savingsResult.railcardName}
-            </div>
-            <div class="savings-hero-value" class:green={netSaving > 0} class:red={netSaving <= 0}>
-              {netSaving >= 0 ? '+' : ''}£{netSaving.toFixed(2)}
-            </div>
-            <div class="savings-hero-sub">
-              Over {$savingsResult.totalJourneys} journeys
-              ({$savingsResult.eligibleJourneys} eligible for discount)
-            </div>
-          </div>
-
-          <!-- Breakdown cards -->
-          <div class="savings-cards">
-            <div class="stat-card">
-              <div class="stat-value">£{$savingsResult.totalExpectedSpend.toFixed(2)}</div>
-              <div class="stat-label">Standard PAYG</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" style="color: #34d399;">£{$savingsResult.totalRailcardSpend.toFixed(2)}</div>
-              <div class="stat-label">With Railcard</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" style="color: #fbbf24;">£{$savingsResult.totalSaving.toFixed(2)}</div>
-              <div class="stat-label">Gross Saving</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">£{$savingsResult.perJourneySaving.toFixed(2)}</div>
-              <div class="stat-label">Per Journey</div>
-            </div>
-          </div>
-
-          <!-- Break-even -->
-          <div class="glass-card break-even-card">
-            <h3>📈 Break-Even Analysis</h3>
-            <div class="break-even-detail">
-              <div class="be-row">
-                <span>Railcard cost</span>
-                <span>£{$savingsResult.railcardCost.toFixed(2)}</span>
+          {#if isNoDiscount}
+            <!-- No discount info panel -->
+            <div class="glass-card savings-hero" style="border-color: rgba(59, 130, 246, 0.3);">
+              <div class="savings-hero-label">
+                ℹ️ {$savingsResult.railcardName} — No PAYG Fare Discount
               </div>
-              {#if $savingsResult.oysterCost > 0}
+              <div class="savings-hero-value" style="color: #60a5fa; font-size: 2rem;">
+                £{$savingsResult.totalExpectedSpend.toFixed(2)}
+              </div>
+              <div class="savings-hero-sub">
+                Total PAYG cost across {$savingsResult.totalJourneys} journeys (no fare discount applies)
+                <br>
+                <span style="font-size: 0.75rem; opacity: 0.8;">Actual historical spend: £{$savingsResult.totalActualSpend.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <!-- Potential savings teaser -->
+            <div class="glass-card" style="padding: 1.5rem; border-color: rgba(52, 211, 153, 0.2);">
+              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">💡 Potential Savings with a Railcard</h3>
+              <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 1rem;">
+                {$selectedRailcard === 'student' ? 'The 18+ Student Oyster gives 30% off Travelcards but has no PAYG single fare discount. To get 1/3 off PAYG fares, add a 16-25 Railcard to your 18+ Student Oyster.' : 'Adult / Contactless has standard fares with no discount. Select a railcard above to see how much you could save.'}
+              </p>
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedRailcard = '16-25'}>
+                  Try 16-25 Railcard
+                </button>
+                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedRailcard = 'jobcentre'}>
+                  Try Jobcentre Plus
+                </button>
+                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedRailcard = 'disabled'}>
+                  Try Disabled Persons
+                </button>
+              </div>
+            </div>
+          {:else if $savingsResult.hasExistingDiscount}
+            <!-- Already discounted info panel -->
+            <div class="glass-card savings-hero positive">
+              <div class="savings-hero-label">
+                ✅ Discount correctly detected in your travel history!
+              </div>
+              <div class="savings-hero-value green">
+                You saved £{($savingsResult.totalExpectedSpend - $savingsResult.totalActualSpend).toFixed(2)}
+              </div>
+              <div class="savings-hero-sub">
+                Compared to standard Adult PAYG fares over {$savingsResult.totalJourneys} journeys.
+                <br>
+                <span style="font-size: 0.75rem; opacity: 0.8;">(We detected that your actual spend of £{$savingsResult.totalActualSpend.toFixed(2)} closely matches the {$savingsResult.railcardName} rate)</span>
+              </div>
+            </div>
+          {:else}
+            <!-- Main savings stat -->
+            <div class="glass-card savings-hero" class:positive={netSaving > 0} class:negative={netSaving <= 0}>
+              <div class="savings-hero-label">
+                {#if $savingsResult.totalActualSpend > $savingsResult.totalRailcardSpend + 5}
+                  {netSaving > 0 ? '❌ Missed Net Saving with' : '⚠️ Net Result with'} {$savingsResult.railcardName}
+                {:else}
+                  {netSaving > 0 ? '✅ Achieved Net Saving with' : '⚠️ Net Result with'} {$savingsResult.railcardName}
+                {/if}
+              </div>
+              <div class="savings-hero-value" class:green={netSaving > 0} class:red={netSaving <= 0}>
+                {netSaving >= 0 ? '+' : ''}£{netSaving.toFixed(2)}
+              </div>
+              <div class="savings-hero-sub">
+                Over {$savingsResult.totalJourneys} journeys
+                ({$savingsResult.eligibleJourneys} eligible for discount)
+                <br>
+                <span style="font-size: 0.75rem; opacity: 0.8;">Actual historical spend: £{$savingsResult.totalActualSpend.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <!-- Breakdown cards -->
+            <div class="savings-cards">
+              <div class="stat-card">
+                <div class="stat-value">£{$savingsResult.totalExpectedSpend.toFixed(2)}</div>
+                <div class="stat-label">Simulated Adult PAYG</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: #34d399;">£{$savingsResult.totalRailcardSpend.toFixed(2)}</div>
+                <div class="stat-label">Simulated Railcard</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: #60a5fa;">£{$savingsResult.totalActualSpend.toFixed(2)}</div>
+                <div class="stat-label">Actual Spend</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: #fbbf24;">£{$savingsResult.totalSaving.toFixed(2)}</div>
+                <div class="stat-label">Potential Saving</div>
+              </div>
+            </div>
+
+            <!-- Break-even -->
+            <div class="glass-card break-even-card">
+              <h3>📈 Break-Even Analysis</h3>
+              <div class="break-even-detail">
                 <div class="be-row">
-                  <span>{$selectedRailcard === 'student' ? '18+ Student Photocard fee' : 'Oyster card cost'}</span>
-                  <span>£{$savingsResult.oysterCost.toFixed(2)}</span>
+                  <span>Railcard cost</span>
+                  <span>£{$savingsResult.railcardCost.toFixed(2)}</span>
+                </div>
+                {#if $savingsResult.oysterCost > 0}
+                  <div class="be-row">
+                    <span>{$selectedRailcard === 'student' ? '18+ Student Photocard fee' : 'Oyster card cost'}</span>
+                    <span>£{$savingsResult.oysterCost.toFixed(2)}</span>
+                  </div>
+                {/if}
+                <div class="be-row">
+                  <span>Total upfront cost</span>
+                  <span>£{($savingsResult.railcardCost + $savingsResult.oysterCost).toFixed(2)}</span>
+                </div>
+                <div class="be-row highlight">
+                  <span>Break-even point</span>
+                  <span>{breakEvenText}</span>
+                </div>
+              </div>
+
+              {#if $savingsResult.breakEvenJourneys > 0 && $savingsResult.breakEvenJourneys !== -1}
+                <div class="be-progress">
+                  <div class="be-progress-bar">
+                    <div
+                      class="be-progress-fill"
+                      style="width: {Math.min(100, ($savingsResult.eligibleJourneys / $savingsResult.breakEvenJourneys) * 100)}%"
+                    ></div>
+                  </div>
+                  <div class="be-progress-labels">
+                    <span>{$savingsResult.eligibleJourneys} journeys taken</span>
+                    <span>{$savingsResult.breakEvenJourneys} to break even</span>
+                  </div>
                 </div>
               {/if}
-              <div class="be-row">
-                <span>Total upfront cost</span>
-                <span>£{($savingsResult.railcardCost + $savingsResult.oysterCost).toFixed(2)}</span>
-              </div>
-              <div class="be-row highlight">
-                <span>Break-even point</span>
-                <span>{breakEvenText}</span>
-              </div>
             </div>
-
-            {#if $savingsResult.breakEvenJourneys > 0 && $savingsResult.breakEvenJourneys !== -1}
-              <div class="be-progress">
-                <div class="be-progress-bar">
-                  <div
-                    class="be-progress-fill"
-                    style="width: {Math.min(100, ($savingsResult.eligibleJourneys / $savingsResult.breakEvenJourneys) * 100)}%"
-                  ></div>
-                </div>
-                <div class="be-progress-labels">
-                  <span>{$savingsResult.eligibleJourneys} journeys taken</span>
-                  <span>{$savingsResult.breakEvenJourneys} to break even</span>
-                </div>
-              </div>
-            {/if}
-          </div>
+          {/if}
         {/if}
       </div>
     </div>

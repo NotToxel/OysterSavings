@@ -14,12 +14,18 @@
   let calendarDate = $state(new Date());
   let showRecurrenceModal = $state(false);
 
+  // Default Settings for Quick Add
+  let defOriginZone = $state(3);
+  let defDestZone = $state(1);
+  let defMode = $state<'underground' | 'national_rail' | 'nr_tube' | 'bus'>('national_rail');
+  let defTimePeriod = $state('06:30-09:30');
+
   // New rule form
   let newRuleName = $state('');
-  let newOriginZone = $state(3);
-  let newDestZone = $state(1);
-  let newMode = $state<'underground' | 'national_rail' | 'nr_tube' | 'bus'>('national_rail');
-  let newTimePeriod = $state('06:30-09:30');
+  let newOriginZone = $state(defOriginZone);
+  let newDestZone = $state(defDestZone);
+  let newMode = $state(defMode);
+  let newTimePeriod = $state(defTimePeriod);
   let newIsReturn = $state(false);
   let newReturnTimePeriod = $state('16:00-19:00');
   let newDays = $state<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
@@ -187,11 +193,7 @@
     showRecurrenceModal = true;
   }
 
-  function quickAdd() {
-    resetForm();
-    newIntervalType = 'none';
-    showRecurrenceModal = true;
-  }
+
 
   function quickAddOnDate(d: Date) {
     resetForm();
@@ -224,10 +226,10 @@
   function resetForm() {
     editRuleId = null;
     newRuleName = '';
-    newOriginZone = 3;
-    newDestZone = 1;
-    newMode = 'national_rail';
-    newTimePeriod = '06:30-09:30';
+    newOriginZone = defOriginZone;
+    newDestZone = defDestZone;
+    newMode = defMode;
+    newTimePeriod = defTimePeriod;
     newIsReturn = false;
     newReturnTimePeriod = '16:00-19:00';
     newDays = [1, 2, 3, 4, 5];
@@ -262,9 +264,7 @@
   <div class="planner-header">
     <h1 class="page-title">Journey Planner</h1>
     <div class="planner-actions" style="display: flex; gap: 0.5rem;">
-      <button class="btn-secondary" onclick={quickAdd}>
-        ⚡ Quick Add
-      </button>
+
       <button class="btn-primary" onclick={() => { resetForm(); showRecurrenceModal = true; }}>
         + Add Schedule
       </button>
@@ -285,10 +285,53 @@
         </div>
       </div>
 
+      <!-- Default Settings -->
       <div class="glass-card sidebar-section">
-        <h3 class="sidebar-title">🏷️ Planner Discount</h3>
+        <h3 class="sidebar-title">⚙️ Default Journey Settings</h3>
+        <p style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">
+          These settings will be used when you click a date on the calendar to add a one-off journey.
+        </p>
         <div class="date-inputs">
-          <label class="setting-label">Discount Applied</label>
+          <label class="setting-label">Default Mode</label>
+          <select class="input-field" bind:value={defMode}>
+            <option value="underground">Underground / Tube</option>
+            <option value="national_rail">National Rail</option>
+            <option value="nr_tube">NR + Tube / Mixed</option>
+            <option value="bus">Bus / Tram</option>
+          </select>
+          
+          <label class="setting-label" style="margin-top: 0.5rem;">Default Time</label>
+          <select class="input-field" bind:value={defTimePeriod}>
+            {#each TIME_PERIODS as t}
+              <option value={t.value}>{t.label}</option>
+            {/each}
+          </select>
+
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <div style="flex: 1;">
+              <label class="setting-label">Origin Zone</label>
+              <select class="input-field" bind:value={defOriginZone}>
+                {#each [1,2,3,4,5,6,7,8,9] as z}
+                  <option value={z}>Zone {z}</option>
+                {/each}
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label class="setting-label">Dest. Zone</label>
+              <select class="input-field" bind:value={defDestZone}>
+                {#each [1,2,3,4,5,6,7,8,9] as z}
+                  <option value={z}>Zone {z}</option>
+                {/each}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card sidebar-section">
+        <h3 class="sidebar-title">🏷️ Railcard Discount</h3>
+        <div class="date-inputs">
+          <label class="setting-label">Railcard Applied</label>
           <select class="input-field" bind:value={$selectedRailcard} onchange={regenerate}>
             <option value="none">Adult / Contactless</option>
             <option value="student">18+ Student</option>
@@ -299,6 +342,7 @@
             <option value="hmforces">HM Forces Railcard</option>
             <option value="veterans">Veterans Railcard</option>
             <option value="network">Network Railcard / Gold Card</option>
+            <option value="jobcentre">Jobcentre Plus Travel Discount</option>
           </select>
         </div>
       </div>
@@ -369,30 +413,30 @@
         </div>
       {/if}
 
+    </div>
+
+    <!-- Calendar -->
+    <div class="calendar-area">
       <!-- Forecast summary -->
       {#if $forecastResult}
-        <div class="glass-card sidebar-section forecast-summary">
-          <h3 class="sidebar-title">💰 Forecast Summary</h3>
-          <div class="forecast-stat">
-            <span>Total PAYG (capped)</span>
-            <span class="forecast-value">£{$forecastResult.totalPaygCapped.toFixed(2)}</span>
+        <div class="glass-card forecast-summary" style="margin-bottom: 1.25rem; display: flex; justify-content: space-around; padding: 1.25rem;">
+          <div class="forecast-stat" style="display: flex; flex-direction: column; align-items: center; border: none; padding: 0; margin: 0;">
+            <span style="font-size: 0.85rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Standard PAYG</span>
+            <span class="forecast-value" style="font-size: 2rem;">£{$forecastResult.totalPaygCapped.toFixed(2)}</span>
           </div>
-          <div class="forecast-stat">
-            <span>With Railcard (capped)</span>
-            <span class="forecast-value green">£{$forecastResult.totalPaygRailcardCapped.toFixed(2)}</span>
+          <div class="forecast-stat" style="display: flex; flex-direction: column; align-items: center; border: none; padding: 0; margin: 0;">
+            <span style="font-size: 0.85rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">With Railcard Discount</span>
+            <span class="forecast-value green" style="font-size: 2rem; color: #34d399;">£{$forecastResult.totalPaygRailcardCapped.toFixed(2)}</span>
           </div>
-          <div class="forecast-stat highlight">
-            <span>Potential Saving</span>
-            <span class="forecast-value green">
+          <div class="forecast-stat highlight" style="display: flex; flex-direction: column; align-items: center; border: none; padding: 0; margin: 0; background: transparent;">
+            <span style="font-size: 0.85rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Potential Saving</span>
+            <span class="forecast-value green" style="font-size: 2.5rem; font-weight: 900; color: #34d399;">
               £{($forecastResult.totalPaygCapped - $forecastResult.totalPaygRailcardCapped).toFixed(2)}
             </span>
           </div>
         </div>
       {/if}
-    </div>
 
-    <!-- Calendar -->
-    <div class="calendar-area">
       <div class="glass-card" style="padding: 1.25rem;">
         <!-- Calendar header -->
         <div class="calendar-nav">

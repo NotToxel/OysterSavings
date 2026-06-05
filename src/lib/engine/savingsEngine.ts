@@ -31,6 +31,7 @@ export interface RailcardSavingsResult {
   eligibleJourneys: number; // journeys where railcard applies
   totalJourneys: number;
   dailyBreakdown: DaySavingBreakdown[];
+  hasExistingDiscount: boolean;
 }
 
 export interface DaySavingBreakdown {
@@ -52,7 +53,6 @@ export interface ProductComparisonResult {
   monthlyTravelcard: number;
   annualPayg: number;
   annualPaygRailcard: number;
-  annualPaygRailcard: number;
   annualTravelcard: number;
   monthlyStudentTravelcard: number;
   annualStudentTravelcard: number;
@@ -61,7 +61,7 @@ export interface ProductComparisonResult {
   bestAnnual: string;
 }
 
-// Calculate total railcard savings across all journeys
+// Calculate total railcard savings across all journeys using Daily Caps simulation
 export function calculateRailcardSavings(
   journeys: ClassifiedJourney[],
   railcardType: RailcardType,
@@ -75,43 +75,46 @@ export function calculateRailcardSavings(
     oysterCost = STUDENT_PHOTOCARD_FEE;
   }
 
-  let totalExpected = 0;
-  let totalRailcard = 0;
-  let totalActual = 0;
-  let eligibleCount = 0;
+  // Generate base FareResults
+  const baseFares = calculateAllFares(journeys, railcardType);
 
+  // 1. Actual Scenario (what the CSV says)
+  const actualCaps = calculateDailyCaps(baseFares);
+  let totalActual = 0;
+  for (const day of actualCaps) totalActual += day.totalSpend;
+
+  // 2. Standard PAYG Scenario (Adult)
+  const standardFares = baseFares.map(f => ({ ...f, actualCharge: f.expectedFare }));
+  const standardCaps = calculateDailyCaps(standardFares);
+  let totalExpected = 0;
+  for (const day of standardCaps) totalExpected += day.totalSpend;
+
+  // 3. Railcard Scenario
+  const railcardFares = baseFares.map(f => ({ ...f, actualCharge: f.railcardFare ?? f.expectedFare }));
+  const railcardCaps = calculateDailyCaps(railcardFares);
+  let totalRailcard = 0;
+  for (const day of railcardCaps) totalRailcard += day.totalSpend;
+
+  let eligibleCount = 0;
   const dailyMap = new Map<string, DaySavingBreakdown>();
 
-  for (const journey of journeys) {
-    const expected = calculateExpectedFare(journey);
-    const withRailcard = calculateRailcardFare(journey, railcardType);
-    const actual = journey.raw.charge;
-
-    totalExpected += expected;
-    totalRailcard += withRailcard;
-    totalActual += actual;
-
-    if (expected > withRailcard) {
+  for (let i = 0; i < standardCaps.length; i++) {
+    const stdDay = standardCaps[i];
+    const rcDay = railcardCaps[i];
+    
+    // An eligible day is one where the railcard simulation produced a lower spend than standard
+    if (stdDay.totalSpend > rcDay.totalSpend) {
       eligibleCount++;
     }
 
-    // Daily breakdown
-    const dateKey = journey.raw.dateStr;
-    if (!dailyMap.has(dateKey)) {
-      dailyMap.set(dateKey, {
-        date: dateKey,
-        dateObj: journey.raw.date,
-        standardSpend: 0,
-        railcardSpend: 0,
-        saving: 0,
-        journeyCount: 0,
-      });
-    }
-    const day = dailyMap.get(dateKey)!;
-    day.standardSpend += expected;
-    day.railcardSpend += withRailcard;
-    day.saving += Math.max(0, expected - withRailcard);
-    day.journeyCount++;
+    dailyMap.set(stdDay.date, {
+      date: stdDay.date,
+      dateObj: stdDay.dateObj,
+      standardSpend: stdDay.totalSpend,
+      railcardSpend: rcDay.totalSpend,
+      saving: Math.max(0, stdDay.totalSpend - rcDay.totalSpend),
+      journeyCount: stdDay.journeys.length,
+    });
   }
 
   const totalSaving = Math.max(0, totalExpected - totalRailcard);
@@ -122,12 +125,12 @@ export function calculateRailcardSavings(
   const breakEvenJourneys =
     avgSavingPerJourney > 0 ? Math.ceil((railcardCost + oysterCost) / avgSavingPerJourney) : Infinity;
 
-  // Estimate break-even date based on travel frequency
+  // Estimate break-even date based on travel frequency (using days instead of journeys)
   const dateRange = journeys.length > 0
     ? (journeys[journeys.length - 1].raw.date.getTime() - journeys[0].raw.date.getTime()) / (1000 * 60 * 60 * 24)
     : 0;
-  const journeysPerDay = dateRange > 0 ? eligibleCount / dateRange : 0;
-  const daysToBreakEven = journeysPerDay > 0 ? breakEvenJourneys / journeysPerDay : Infinity;
+  const daysPerEligibleDay = eligibleCount > 0 && dateRange > 0 ? dateRange / eligibleCount : 0;
+  const daysToBreakEven = breakEvenJourneys * daysPerEligibleDay;
 
   let breakEvenDate: Date | null = null;
   if (isFinite(daysToBreakEven) && journeys.length > 0) {
@@ -139,6 +142,14 @@ export function calculateRailcardSavings(
     (a, b) => a.dateObj.getTime() - b.dateObj.getTime()
   );
 
+  // Heuristic to detect if CSV fares already have the selected railcard discount
+  // If actual spend is significantly lower than expected PAYG, and very close to or less than the simulated railcard spend,
+  // it's likely they already have the railcard applied to their history.
+  let hasExistingDiscount = false;
+  if (totalActual < totalExpected * 0.85 && totalActual <= totalRailcard * 1.05) {
+    hasExistingDiscount = true;
+  }
+
   // Round everything
   return {
     railcardType,
@@ -147,15 +158,16 @@ export function calculateRailcardSavings(
     totalExpectedSpend: round2(totalExpected),
     totalRailcardSpend: round2(totalRailcard),
     totalSaving: round2(totalSaving),
+    netSaving: round2(netSaving),
     railcardCost,
     oysterCost,
-    netSaving: round2(netSaving),
     breakEvenJourneys: isFinite(breakEvenJourneys) ? breakEvenJourneys : -1,
     breakEvenDate,
+    dailyBreakdown,
+    hasExistingDiscount,
     perJourneySaving: round2(avgSavingPerJourney),
     eligibleJourneys: eligibleCount,
-    totalJourneys: journeys.length,
-    dailyBreakdown,
+    totalJourneys: journeys.length
   };
 }
 

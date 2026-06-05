@@ -62,7 +62,7 @@
         <div class="step-card">
           <div class="step-number">1</div>
           <h3>Export CSV</h3>
-          <p>Download your journey history from tfl.gov.uk/oyster</p>
+          <p>Download your journey history from <a href="https://tfl.gov.uk/fares/contactless-and-oyster-account" target="_blank" rel="noopener noreferrer">tfl.gov.uk</a></p>
         </div>
         <div class="step-card">
           <div class="step-number">2</div>

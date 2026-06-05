@@ -7,8 +7,8 @@
   const navItems = [
     { id: 'home' as const, label: 'Upload', icon: '📂' },
     { id: 'analysis' as const, label: 'Analysis', icon: '📊' },
-    { id: 'planner' as const, label: 'Planner', icon: '📅' },
     { id: 'compare' as const, label: 'Compare', icon: '⚖️' },
+    { id: 'planner' as const, label: 'Planner', icon: '📅' },
   ];
 
   function navigateTo(page: typeof $currentPage) {
@@ -39,18 +39,16 @@
 
       <nav class="nav-pills">
         {#each navItems as item}
-          <button
-            class="nav-pill"
-            class:active={$currentPage === item.id}
-            class:disabled={item.id !== 'home' && item.id !== 'planner' && !$hasData}
-            onclick={() => {
-              if (item.id === 'home' || item.id === 'planner' || $hasData) navigateTo(item.id);
-            }}
-            disabled={item.id !== 'home' && item.id !== 'planner' && !$hasData}
-          >
-            <span class="nav-icon">{item.icon}</span>
-            <span class="nav-label">{item.label}</span>
-          </button>
+          {#if item.id === 'home' || item.id === 'planner' || $hasData}
+            <button
+              class="nav-pill"
+              class:active={$currentPage === item.id}
+              onclick={() => navigateTo(item.id)}
+            >
+              <span class="nav-icon">{item.icon}</span>
+              <span class="nav-label">{item.label}</span>
+            </button>
+          {/if}
         {/each}
       </nav>
 

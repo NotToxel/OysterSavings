@@ -17,6 +17,7 @@ export interface DayCapResult {
   capType: 'peak' | 'off-peak' | 'none';
   savedByCap: number;
   capProgress: number; // 0-1 progress toward cap
+  railcardActive: boolean;
 }
 
 export interface WeekCapResult {
@@ -104,40 +105,47 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
     const busSpend = busJourneys.reduce((sum, j) => sum + j.actualCharge, 0);
     const totalSpend = railSpend + busSpend;
     
+    let railcardActive = false;
+    
+    // Heuristic 1: Check single fares for ~34% discount
+    for (const j of railJourneys) {
+      if (j.actualCharge > 0 && j.expectedFare > 0) {
+        const discountRatio = j.actualCharge / j.expectedFare;
+        if (discountRatio > 0.5 && discountRatio < 0.75) {
+          railcardActive = true;
+          break;
+        }
+      }
+    }
+
     let dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
     const explicitCapHit = journeys.some((j) => j.journey.isCapHit);
     
     if (explicitCapHit) {
-      // Only infer if the current maxZoneRange's cap doesn't match the total spend
-      const currentCapValue = isPeakDay ? DAILY_CAPS[maxZoneRange] ?? 16.30 : DAILY_CAPS_OFFPEAK[maxZoneRange] ?? 16.30;
+      // Heuristic 2: Cap inference based on actual spend
+      let inferredZone: string | null = null;
       
-      if (Math.abs(currentCapValue - totalSpend) > 0.05) {
-        // Current cap does not match the actual spend! We need to infer it.
-        const caps = isPeakDay ? DAILY_CAPS : DAILY_CAPS_OFFPEAK;
-        let inferredZone: string | null = null;
-        
-        // Direct match - find the first one to avoid picking Z6 when Z1-2 matches
-        for (const [zone, cap] of Object.entries(caps)) {
+      // Try finding an exact match in Adult Caps
+      for (const [zone, cap] of Object.entries(DAILY_CAPS)) {
+        if (Math.abs(cap - totalSpend) < 0.05) {
+          inferredZone = zone;
+          break; 
+        }
+      }
+      
+      // Try finding an exact match in Railcard Caps
+      if (!inferredZone) {
+        for (const [zone, cap] of Object.entries(DAILY_CAPS_OFFPEAK)) {
           if (Math.abs(cap - totalSpend) < 0.05) {
             inferredZone = zone;
-            break; // Stop at the first match (e.g. Z1 or Z1-2)
+            railcardActive = true; // Strict railcard cap hit
+            break; 
           }
         }
-        
-        // Railcard off-peak match
-        if (!inferredZone && !isPeakDay) {
-          const unDiscounted = totalSpend / (2/3);
-          for (const [zone, cap] of Object.entries(caps)) {
-            if (Math.abs(cap - unDiscounted) < 0.20) {
-              inferredZone = zone;
-              break;
-            }
-          }
-        }
-        
-        if (inferredZone) {
-          maxZoneRange = inferredZone;
-        }
+      }
+      
+      if (inferredZone) {
+        maxZoneRange = inferredZone;
       }
       
       // The total spend IS the daily cap
@@ -167,6 +175,7 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
       capType,
       savedByCap: Math.round(savedByCap * 100) / 100,
       capProgress: Math.min(1, totalSpend / dailyCap),
+      railcardActive,
     });
   }
 

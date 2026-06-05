@@ -28,8 +28,8 @@ export const capSummary = writable<CapSummary | null>(null);
 
 // Settings
 export const selectedRailcard = writable<RailcardType>('16-25');
-export const railcardCost = writable<number>(30);
-export const includeOysterCost = writable<boolean>(false);
+export const railcardCost = writable<number>(35);
+export const includeOysterCost = writable<boolean>(true);
 export const includeStudentPhotocardFee = writable<boolean>(true);
 
 // Savings results

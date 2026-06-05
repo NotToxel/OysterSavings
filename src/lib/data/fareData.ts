@@ -54,11 +54,11 @@ export const PAYG_FARES: FareScales = {
   },
   national_rail: {
     'Z1':   { peak: 2.80, offPeak: 2.70 },
-    'Z1-2': { peak: 3.20, offPeak: 2.60 },
-    'Z1-3': { peak: 3.70, offPeak: 2.45 },
-    'Z1-4': { peak: 4.20, offPeak: 2.80 },
-    'Z1-5': { peak: 4.90, offPeak: 3.30 },
-    'Z1-6': { peak: 5.80, offPeak: 3.70 },
+    'Z1-2': { peak: 3.90, offPeak: 3.20 },
+    'Z1-3': { peak: 4.60, offPeak: 3.70 },
+    'Z1-4': { peak: 5.40, offPeak: 4.20 },
+    'Z1-5': { peak: 6.60, offPeak: 4.90 },
+    'Z1-6': { peak: 7.50, offPeak: 5.80 },
     'Z2':   { peak: 2.60, offPeak: 2.50 },
     'Z2-3': { peak: 2.60, offPeak: 2.50 },
     'Z2-6': { peak: 3.60, offPeak: 2.90 },
@@ -94,7 +94,6 @@ export const PAYG_FARES: FareScales = {
 
 // Generated Daily Caps
 export const DAILY_CAPS: Record<string, number> = {
-  'Z1': 8.90,
   'Z1-2': 8.90,
   'Z1-3': 10.50,
   'Z1-4': 12.80,
@@ -103,7 +102,6 @@ export const DAILY_CAPS: Record<string, number> = {
   'Z1-7': 17.80,
   'Z1-8': 21.00,
   'Z1-9': 23.30,
-  'Z2': 8.90,
   'Z2-3': 10.50,
   'Z2-4': 12.80,
   'Z2-5': 15.30,
@@ -141,7 +139,6 @@ export const DAILY_CAPS: Record<string, number> = {
 };
 
 export const DAILY_CAPS_OFFPEAK: Record<string, number> = {
-  'Z1': 5.90,
   'Z1-2': 5.90,
   'Z1-3': 6.95,
   'Z1-4': 8.50,
@@ -150,7 +147,6 @@ export const DAILY_CAPS_OFFPEAK: Record<string, number> = {
   'Z1-7': 10.85,
   'Z1-8': 10.85,
   'Z1-9': 10.85,
-  'Z2': 5.90,
   'Z2-3': 6.95,
   'Z2-4': 8.50,
   'Z2-5': 10.15,
@@ -293,7 +289,8 @@ export type RailcardType =
   | 'disabled'
   | 'hmforces'
   | 'veterans'
-  | 'network';
+  | 'network'
+  | 'jobcentre';
 
 export interface RailcardInfo {
   name: string;
@@ -365,6 +362,13 @@ export const RAILCARDS: Record<RailcardType, RailcardInfo> = {
     discount: 1 / 3,
     appliesToPeak: false, // only applies after 10am weekdays
     cost1Year: 30,
+    cost3Year: 0,
+  },
+  'jobcentre': {
+    name: 'Jobcentre Plus Travel Discount',
+    discount: 0.5,
+    appliesToPeak: true, // applies to ALL fares
+    cost1Year: 0,
     cost3Year: 0,
   },
 };

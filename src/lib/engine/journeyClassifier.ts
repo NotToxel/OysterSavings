@@ -135,23 +135,38 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
       }
       
       // Refine mode if it's ambiguous
-      if (mode === 'unknown' || mode === 'underground' || mode === 'national_rail') {
+      if (mode === 'unknown' || mode === 'underground' || mode === 'national_rail' || mode === 'overground') {
         const oInfo = getStationInfo(stations.origin);
         const dInfo = getStationInfo(stations.destination);
         if (oInfo && dInfo) {
-          const oNR = oInfo.modes.includes('national_rail') && !oInfo.modes.includes('underground');
-          const dNR = dInfo.modes.includes('national_rail') && !dInfo.modes.includes('underground');
-          const oLU = oInfo.modes.includes('underground') && !oInfo.modes.includes('national_rail');
-          const dLU = dInfo.modes.includes('underground') && !dInfo.modes.includes('national_rail');
+          // Check if station is purely National Rail (not overground, not underground)
+          const oIsNR = oInfo.modes.includes('national_rail') && !oInfo.modes.includes('underground') && !oInfo.modes.includes('overground');
+          const dIsNR = dInfo.modes.includes('national_rail') && !dInfo.modes.includes('underground') && !dInfo.modes.includes('overground');
+          const oIsLU = oInfo.modes.includes('underground') && !oInfo.modes.includes('national_rail');
+          const dIsLU = dInfo.modes.includes('underground') && !dInfo.modes.includes('national_rail');
+          const oIsOG = oInfo.modes.includes('overground') && !oInfo.modes.includes('national_rail');
+          const dIsOG = dInfo.modes.includes('overground') && !dInfo.modes.includes('national_rail');
 
-          if ((oNR && dLU) || (oLU && dNR)) {
+          // Overground + Underground or Overground + Overground => TfL fares (underground)
+          if ((oIsOG && dIsLU) || (oIsLU && dIsOG) || (oIsOG && dIsOG)) {
+            mode = 'underground';
+          }
+          // NR + LU or LU + NR => nr_tube
+          else if ((oIsNR && dIsLU) || (oIsLU && dIsNR)) {
             mode = 'nr_tube';
-          } else if (mode === 'unknown') {
-             if (oInfo.modes.includes('underground') || dInfo.modes.includes('underground')) mode = 'underground';
-             else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
+          }
+          // NR + Overground => nr_tube (NR fare table for the NR leg)
+          else if ((oIsNR && dIsOG) || (oIsOG && dIsNR)) {
+            mode = 'nr_tube';
+          }
+          else if (mode === 'unknown' || mode === 'overground') {
+            if (oInfo.modes.includes('overground') || dInfo.modes.includes('overground')) mode = 'underground';
+            else if (oInfo.modes.includes('underground') || dInfo.modes.includes('underground')) mode = 'underground';
+            else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
           }
         } else if (mode === 'unknown' && oInfo) {
-          if (oInfo.modes.includes('underground')) mode = 'underground';
+          if (oInfo.modes.includes('overground')) mode = 'underground';
+          else if (oInfo.modes.includes('underground')) mode = 'underground';
           else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
         }
       }
