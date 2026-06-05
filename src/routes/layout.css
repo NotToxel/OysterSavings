@@ -444,6 +444,11 @@ select option {
   border-color: rgba(0, 159, 227, 0.2);
 }
 
+.calendar-cell.in-planning-period {
+  background: rgba(0, 159, 227, 0.03);
+  border-color: rgba(0, 159, 227, 0.1);
+}
+
 .calendar-cell.cap-hit {
   background: rgba(16, 185, 129, 0.08);
   border-color: rgba(16, 185, 129, 0.3);

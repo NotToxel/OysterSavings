@@ -13,6 +13,8 @@
   // Calendar state
   let calendarDate = $state(new Date());
   let showRecurrenceModal = $state(false);
+  let showActiveSchedules = $state(true);
+  let showOneOffJourneys = $state(true);
 
   // Default Settings for Quick Add
   let defOriginZone = $state(3);
@@ -285,110 +287,64 @@
         </div>
       </div>
 
-      <!-- Default Settings -->
-      <div class="glass-card sidebar-section">
-        <h3 class="sidebar-title">⚙️ Default Journey Settings</h3>
-        <p style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">
-          These settings will be used when you click a date on the calendar to add a one-off journey.
-        </p>
-        <div class="date-inputs">
-          <label class="setting-label">Default Mode</label>
-          <select class="input-field" bind:value={defMode}>
-            <option value="underground">Underground / Tube</option>
-            <option value="national_rail">National Rail</option>
-            <option value="nr_tube">NR + Tube / Mixed</option>
-            <option value="bus">Bus / Tram</option>
-          </select>
-          
-          <label class="setting-label" style="margin-top: 0.5rem;">Default Time</label>
-          <select class="input-field" bind:value={defTimePeriod}>
-            {#each TIME_PERIODS as t}
-              <option value={t.value}>{t.label}</option>
-            {/each}
-          </select>
 
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-            <div style="flex: 1;">
-              <label class="setting-label">Origin Zone</label>
-              <select class="input-field" bind:value={defOriginZone}>
-                {#each [1,2,3,4,5,6,7,8,9] as z}
-                  <option value={z}>Zone {z}</option>
-                {/each}
-              </select>
-            </div>
-            <div style="flex: 1;">
-              <label class="setting-label">Dest. Zone</label>
-              <select class="input-field" bind:value={defDestZone}>
-                {#each [1,2,3,4,5,6,7,8,9] as z}
-                  <option value={z}>Zone {z}</option>
-                {/each}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div class="glass-card sidebar-section">
-        <h3 class="sidebar-title">🏷️ Railcard Discount</h3>
-        <div class="date-inputs">
-          <label class="setting-label">Railcard Applied</label>
-          <select class="input-field" bind:value={$selectedRailcard} onchange={regenerate}>
-            <option value="none">Adult / Contactless</option>
-            <option value="student">18+ Student</option>
-            <option value="16-25">16-25 Railcard</option>
-            <option value="26-30">26-30 Railcard</option>
-            <option value="senior">Senior Railcard</option>
-            <option value="disabled">Disabled Persons Railcard</option>
-            <option value="hmforces">HM Forces Railcard</option>
-            <option value="veterans">Veterans Railcard</option>
-            <option value="network">Network Railcard / Gold Card</option>
-            <option value="jobcentre">Jobcentre Plus Travel Discount</option>
-          </select>
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick={() => showActiveSchedules = !showActiveSchedules}>
+          <h3 class="sidebar-title" style="margin: 0;">🔄 Active Schedules</h3>
+          <span style="font-size: 0.8rem; color: var(--color-text-muted);">{showActiveSchedules ? '▼' : '▶'}</span>
         </div>
-      </div>
-
-      <div class="glass-card sidebar-section" style="max-height: 400px; overflow-y: auto;">
-        <h3 class="sidebar-title">🔄 Active Schedules</h3>
-        {#if $recurrenceRules.filter(r => r.intervalType !== 'none').length === 0}
-          <p class="empty-text">No recurring schedules yet.</p>
-        {:else}
-          {#each $recurrenceRules.filter(r => r.intervalType !== 'none') as rule}
-            <div class="rule-card">
-              <div class="rule-info">
-                <div class="rule-name">{rule.name}</div>
-                <div class="rule-detail">
-                  Z{rule.originZone}→Z{rule.destinationZone} •
-                  {rule.timePeriod} •
-                  {rule.daysOfWeek.map(d => ['Su','Mo','Tu','We','Th','Fr','Sa'][d]).join(',')}
+        {#if showActiveSchedules}
+          <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
+            {#if $recurrenceRules.filter(r => r.intervalType !== 'none').length === 0}
+              <p class="empty-text">No recurring schedules yet.</p>
+            {:else}
+              {#each $recurrenceRules.filter(r => r.intervalType !== 'none') as rule}
+                <div class="rule-card">
+                  <div class="rule-info">
+                    <div class="rule-name">{rule.name}</div>
+                    <div class="rule-detail">
+                      Z{rule.originZone}→Z{rule.destinationZone} •
+                      {rule.timePeriod} •
+                      {rule.daysOfWeek.map(d => ['Su','Mo','Tu','We','Th','Fr','Sa'][d]).join(',')}
+                    </div>
+                  </div>
+                  <div class="rule-actions" style="display: flex; gap: 0.25rem;">
+                    <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
+                    <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+                  </div>
                 </div>
-              </div>
-              <div class="rule-actions" style="display: flex; gap: 0.25rem;">
-                <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
-                <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
-              </div>
-            </div>
-          {/each}
+              {/each}
+            {/if}
+          </div>
         {/if}
       </div>
 
       <!-- One-off rules -->
-      <div class="glass-card sidebar-section" style="max-height: 400px; overflow-y: auto;">
-        <h3 class="sidebar-title">📌 One-off Journeys</h3>
-        {#each $recurrenceRules.filter(r => r.intervalType === 'none') as rule}
-          <div class="rule-card">
-            <div class="rule-info">
-              <div class="rule-name">{rule.name}</div>
-              <div class="rule-detail">
-                {rule.startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} •
-                Z{rule.originZone}→Z{rule.destinationZone} • {rule.timePeriod}
+      <div class="glass-card sidebar-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick={() => showOneOffJourneys = !showOneOffJourneys}>
+          <h3 class="sidebar-title" style="margin: 0;">📌 One-off Journeys</h3>
+          <span style="font-size: 0.8rem; color: var(--color-text-muted);">{showOneOffJourneys ? '▼' : '▶'}</span>
+        </div>
+        {#if showOneOffJourneys}
+          <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
+            {#each $recurrenceRules.filter(r => r.intervalType === 'none') as rule}
+              <div class="rule-card">
+                <div class="rule-info">
+                  <div class="rule-name">{rule.name}</div>
+                  <div class="rule-detail">
+                    {rule.startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} •
+                    Z{rule.originZone}→Z{rule.destinationZone} • {rule.timePeriod}
+                  </div>
+                </div>
+                <div class="rule-actions" style="display: flex; gap: 0.25rem;">
+                  <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
+                  <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+                </div>
               </div>
-            </div>
-            <div class="rule-actions" style="display: flex; gap: 0.25rem;">
-              <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
-              <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
-            </div>
+            {/each}
           </div>
-        {/each}
+        {/if}
       </div>
 
       <!-- Detected patterns -->
@@ -415,7 +371,7 @@
 
     </div>
 
-    <!-- Calendar -->
+    <!-- Calendar and Settings -->
     <div class="calendar-area">
       <!-- Forecast summary -->
       {#if $forecastResult}
@@ -462,6 +418,7 @@
               class:other-month={!day.isCurrentMonth}
               class:cap-hit={forecast?.capHit}
               class:has-journeys={dayJourneys.length > 0}
+              class:in-planning-period={dateKey >= planStart && dateKey <= planEnd}
               role="button"
               tabindex="0"
               onclick={() => quickAddOnDate(day.date)}
@@ -486,6 +443,72 @@
               {/if}
             </div>
           {/each}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar for Settings -->
+    <div class="planner-sidebar">
+      <!-- Default Settings -->
+      <div class="glass-card sidebar-section">
+        <h3 class="sidebar-title">⚙️ Default Journey Settings</h3>
+        <p style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">
+          These settings apply when adding one-off journeys from the calendar.
+        </p>
+        <div class="date-inputs">
+          <label class="setting-label">Default Mode</label>
+          <select class="input-field" bind:value={defMode}>
+            <option value="underground">Underground / Tube</option>
+            <option value="national_rail">National Rail</option>
+            <option value="nr_tube">NR + Tube / Mixed</option>
+            <option value="bus">Bus / Tram</option>
+          </select>
+          
+          <label class="setting-label" style="margin-top: 0.5rem;">Default Time</label>
+          <select class="input-field" bind:value={defTimePeriod}>
+            {#each TIME_PERIODS as t}
+              <option value={t.value}>{t.label}</option>
+            {/each}
+          </select>
+
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <div style="flex: 1;">
+              <label class="setting-label">Origin Zone</label>
+              <select class="input-field" bind:value={defOriginZone}>
+                {#each [1,2,3,4,5,6,7,8,9] as z}
+                  <option value={z}>Zone {z}</option>
+                {/each}
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label class="setting-label">Dest. Zone</label>
+              <select class="input-field" bind:value={defDestZone}>
+                {#each [1,2,3,4,5,6,7,8,9] as z}
+                  <option value={z}>Zone {z}</option>
+                {/each}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Railcard Discount -->
+      <div class="glass-card sidebar-section">
+        <h3 class="sidebar-title">🏷️ Railcard Discount</h3>
+        <div class="date-inputs">
+          <label class="setting-label">Railcard Applied to Planner</label>
+          <select class="input-field" bind:value={$selectedRailcard} onchange={regenerate}>
+            <option value="none">Adult / Contactless</option>
+            <option value="student">18+ Student</option>
+            <option value="16-25">16-25 Railcard</option>
+            <option value="26-30">26-30 Railcard</option>
+            <option value="senior">Senior Railcard</option>
+            <option value="disabled">Disabled Persons Railcard</option>
+            <option value="hmforces">HM Forces Railcard</option>
+            <option value="veterans">Veterans Railcard</option>
+            <option value="network">Network Railcard / Gold Card</option>
+            <option value="jobcentre">Jobcentre Plus Travel Discount</option>
+          </select>
         </div>
       </div>
     </div>
@@ -644,7 +667,7 @@
 
   .planner-layout {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 280px 1fr 280px;
     gap: 1.5rem;
     align-items: start;
   }
