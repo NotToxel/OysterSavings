@@ -29,7 +29,7 @@ export function calculateExpectedFare(journey: ClassifiedJourney): number {
 
   // Rail/tube: zone-based
   if (journey.zoneRange) {
-    return lookupFare(journey.zoneRange, journey.isPeak);
+    return lookupFare(journey.zoneRange, journey.isPeak, journey.mode);
   }
 
   // Unknown zone — use actual charge as fallback

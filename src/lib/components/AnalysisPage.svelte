@@ -11,6 +11,7 @@
   let sortKey = $state<string>('date');
   let sortAsc = $state(false);
   let filterMode = $state<string>('all');
+  let overrideCost = $state(false);
 
 
 
@@ -20,7 +21,9 @@
     if (filterMode === 'peak') list = list.filter(j => j.isPeak);
     else if (filterMode === 'offpeak') list = list.filter(j => !j.isPeak);
     else if (filterMode === 'bus') list = list.filter(j => j.isBus);
-    else if (filterMode === 'rail') list = list.filter(j => !j.isBus);
+    else if (filterMode === 'tube') list = list.filter(j => j.mode === 'underground');
+    else if (filterMode === 'rail') list = list.filter(j => ['national_rail', 'overground', 'elizabeth', 'dlr'].includes(j.mode));
+    else if (filterMode === 'nrtube') list = list.filter(j => j.mode === 'nr_tube');
     else if (filterMode === 'capped') list = list.filter(j => j.isCapHit);
 
     // Sort
@@ -107,8 +110,10 @@
         { id: 'all', label: 'All', count: $classifiedJourneys.length },
         { id: 'peak', label: 'Peak', count: $classifiedJourneys.filter(j => j.isPeak).length },
         { id: 'offpeak', label: 'Off-Peak', count: $classifiedJourneys.filter(j => !j.isPeak).length },
-        { id: 'bus', label: 'Bus', count: $classifiedJourneys.filter(j => j.isBus).length },
-        { id: 'rail', label: 'Rail/Tube', count: $classifiedJourneys.filter(j => !j.isBus).length },
+        { id: 'tube', label: 'Tube', count: $classifiedJourneys.filter(j => j.mode === 'underground').length },
+        { id: 'rail', label: 'Rail', count: $classifiedJourneys.filter(j => ['national_rail', 'overground', 'elizabeth', 'dlr'].includes(j.mode)).length },
+        { id: 'nrtube', label: 'NR/Tube', count: $classifiedJourneys.filter(j => j.mode === 'nr_tube').length },
+        { id: 'bus', label: 'Bus & Tram', count: $classifiedJourneys.filter(j => j.isBus).length },
         { id: 'capped', label: 'Cap Hit', count: $classifiedJourneys.filter(j => j.isCapHit).length },
       ] as pill}
         <button
@@ -212,11 +217,24 @@
 
         <div class="setting-group">
           <label class="setting-label" for="railcard-cost">Railcard Cost (£)</label>
-          <div class="cost-buttons">
-            <button class="cost-btn" class:active={$railcardCost === 30} onclick={() => $railcardCost = 30}>£30 (1yr)</button>
-            <button class="cost-btn" class:active={$railcardCost === 70} onclick={() => $railcardCost = 70}>£70 (3yr)</button>
+          <div class="toggle-row" style="margin-bottom: 0.75rem;">
+            <input type="checkbox" id="override-cost" bind:checked={overrideCost} style="accent-color: var(--color-oyster-blue);" />
+            <label for="override-cost" style="font-size: 0.8rem; color: var(--color-text-secondary); cursor: pointer;">Override standard cost</label>
           </div>
-          <input type="number" class="input-field" id="railcard-cost" bind:value={$railcardCost} min="0" step="1" />
+          {#if overrideCost}
+            <input type="number" class="input-field" id="railcard-cost" bind:value={$railcardCost} min="0" step="1" />
+          {:else}
+            <div class="cost-buttons">
+              <button class="cost-btn" class:active={$railcardCost === RAILCARDS[$selectedRailcard].cost1Year} onclick={() => $railcardCost = RAILCARDS[$selectedRailcard].cost1Year}>
+                £{RAILCARDS[$selectedRailcard].cost1Year} (1yr)
+              </button>
+              {#if RAILCARDS[$selectedRailcard].cost3Year > 0}
+              <button class="cost-btn" class:active={$railcardCost === RAILCARDS[$selectedRailcard].cost3Year} onclick={() => $railcardCost = RAILCARDS[$selectedRailcard].cost3Year}>
+                £{RAILCARDS[$selectedRailcard].cost3Year} (3yr)
+              </button>
+              {/if}
+            </div>
+          {/if}
         </div>
 
         <div class="setting-group">
@@ -351,6 +369,7 @@
           {#each $dailyCapResults as day}
             <div class="cap-day-row" class:cap-hit={day.capHit}>
               <div class="cap-day-date">{day.date}</div>
+              <div class="cap-day-zones" style="font-size: 0.75rem; color: var(--color-text-muted); min-width: 60px;">{day.maxZoneRange}</div>
               <div class="cap-day-bar-container">
                 <div class="cap-progress">
                   <div
@@ -362,7 +381,9 @@
               <div class="cap-day-values">
                 <span class="cap-day-spend">£{day.totalSpend.toFixed(2)}</span>
                 <span class="cap-day-divider">/</span>
-                <span class="cap-day-cap">£{day.dailyCap.toFixed(2)}</span>
+                <span class="cap-day-cap" title="{day.capType === 'peak' ? 'Peak Cap' : day.capType === 'off-peak' ? 'Off-Peak Cap' : 'Cap'}">
+                  £{day.dailyCap.toFixed(2)}
+                </span>
               </div>
               <div class="cap-day-journeys">{day.journeys.length} trips</div>
               {#if day.capHit}
@@ -460,6 +481,11 @@
   /* Table */
   .table-container { margin-top: 0.5rem; }
   .table-scroll { overflow-x: auto; max-height: 600px; overflow-y: auto; }
+
+  .data-table th {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+  }
 
   .sortable { cursor: pointer; user-select: none; }
   .sortable:hover { color: var(--color-oyster-blue); }

@@ -25,26 +25,71 @@ export interface SingleFare {
   offPeak: number;
 }
 
-// PAYG single fares for Tube, DLR, London Overground, Elizabeth line, National Rail (within London)
-export const PAYG_FARES: Record<string, SingleFare> = {
-  'Z1':   { peak: 3.10, offPeak: 3.00 },
-  'Z1-2': { peak: 3.60, offPeak: 3.10 },
-  'Z1-3': { peak: 3.90, offPeak: 3.30 },
-  'Z1-4': { peak: 4.80, offPeak: 3.60 },
-  'Z1-5': { peak: 5.30, offPeak: 3.80 },
-  'Z1-6': { peak: 5.90, offPeak: 4.00 },
-  // Non-Zone-1 journeys
-  'Z2':   { peak: 2.30, offPeak: 2.20 },
-  'Z2-3': { peak: 2.30, offPeak: 2.20 },
-  'Z2-6': { peak: 3.10, offPeak: 2.50 },
-  'Z3':   { peak: 2.30, offPeak: 2.20 },
-  'Z3-5': { peak: 2.30, offPeak: 2.20 },
-  'Z3-6': { peak: 2.30, offPeak: 2.20 },
-  'Z4':   { peak: 2.30, offPeak: 2.20 },
-  'Z4-6': { peak: 2.30, offPeak: 2.20 },
-  'Z5':   { peak: 2.30, offPeak: 2.20 },
-  'Z5-6': { peak: 2.30, offPeak: 2.20 },
-  'Z6':   { peak: 2.30, offPeak: 2.20 },
+export interface FareScales {
+  tfl: Record<string, SingleFare>;
+  national_rail: Record<string, SingleFare>;
+  nr_tube: Record<string, SingleFare>;
+}
+
+// PAYG single fares broken down by transport mode
+export const PAYG_FARES: FareScales = {
+  tfl: {
+    'Z1':   { peak: 3.10, offPeak: 3.00 },
+    'Z1-2': { peak: 3.60, offPeak: 3.10 },
+    'Z1-3': { peak: 3.90, offPeak: 3.30 },
+    'Z1-4': { peak: 4.80, offPeak: 3.60 },
+    'Z1-5': { peak: 5.30, offPeak: 3.80 },
+    'Z1-6': { peak: 5.90, offPeak: 4.00 },
+    'Z2':   { peak: 2.30, offPeak: 2.20 },
+    'Z2-3': { peak: 2.30, offPeak: 2.20 },
+    'Z2-6': { peak: 3.10, offPeak: 2.50 },
+    'Z3':   { peak: 2.30, offPeak: 2.20 },
+    'Z3-5': { peak: 2.30, offPeak: 2.20 },
+    'Z3-6': { peak: 2.30, offPeak: 2.20 },
+    'Z4':   { peak: 2.30, offPeak: 2.20 },
+    'Z4-6': { peak: 2.30, offPeak: 2.20 },
+    'Z5':   { peak: 2.30, offPeak: 2.20 },
+    'Z5-6': { peak: 2.30, offPeak: 2.20 },
+    'Z6':   { peak: 2.30, offPeak: 2.20 },
+  },
+  national_rail: {
+    'Z1':   { peak: 2.80, offPeak: 2.70 },
+    'Z1-2': { peak: 3.20, offPeak: 2.60 },
+    'Z1-3': { peak: 3.70, offPeak: 2.45 },
+    'Z1-4': { peak: 4.20, offPeak: 2.80 },
+    'Z1-5': { peak: 4.90, offPeak: 3.30 },
+    'Z1-6': { peak: 5.80, offPeak: 3.70 },
+    'Z2':   { peak: 2.60, offPeak: 2.50 },
+    'Z2-3': { peak: 2.60, offPeak: 2.50 },
+    'Z2-6': { peak: 3.60, offPeak: 2.90 },
+    'Z3':   { peak: 2.60, offPeak: 2.50 },
+    'Z3-5': { peak: 2.60, offPeak: 2.50 },
+    'Z3-6': { peak: 2.60, offPeak: 2.50 },
+    'Z4':   { peak: 2.60, offPeak: 2.50 },
+    'Z4-6': { peak: 2.60, offPeak: 2.50 },
+    'Z5':   { peak: 2.60, offPeak: 2.50 },
+    'Z5-6': { peak: 2.60, offPeak: 2.50 },
+    'Z6':   { peak: 2.60, offPeak: 2.50 },
+  },
+  nr_tube: {
+    'Z1':   { peak: 3.60, offPeak: 3.10 },
+    'Z1-2': { peak: 4.20, offPeak: 3.60 },
+    'Z1-3': { peak: 4.80, offPeak: 3.60 },
+    'Z1-4': { peak: 5.40, offPeak: 4.20 },
+    'Z1-5': { peak: 6.60, offPeak: 4.80 },
+    'Z1-6': { peak: 7.50, offPeak: 5.20 },
+    'Z2':   { peak: 3.10, offPeak: 2.50 },
+    'Z2-3': { peak: 3.10, offPeak: 2.50 },
+    'Z2-6': { peak: 4.60, offPeak: 3.90 },
+    'Z3':   { peak: 3.10, offPeak: 2.50 },
+    'Z3-5': { peak: 3.10, offPeak: 2.50 },
+    'Z3-6': { peak: 3.10, offPeak: 2.50 },
+    'Z4':   { peak: 3.10, offPeak: 2.50 },
+    'Z4-6': { peak: 3.10, offPeak: 2.50 },
+    'Z5':   { peak: 3.10, offPeak: 2.50 },
+    'Z5-6': { peak: 3.10, offPeak: 2.50 },
+    'Z6':   { peak: 3.10, offPeak: 2.50 },
+  }
 };
 
 // Daily caps (anytime) — frozen until 2027
@@ -68,25 +113,25 @@ export const DAILY_CAPS: Record<string, number> = {
   'Z6':   8.90,
 };
 
-// Off-peak daily caps (for railcard holders)
+// Off-peak daily caps (for railcard holders - approx 1/3 discount)
 export const DAILY_CAPS_OFFPEAK: Record<string, number> = {
-  'Z1':   8.90,
-  'Z1-2': 8.90,
-  'Z1-3': 10.50,
-  'Z1-4': 12.80,
-  'Z1-5': 15.30,
-  'Z1-6': 16.30,
-  'Z2':   8.90,
-  'Z2-3': 8.90,
-  'Z2-6': 10.50,
-  'Z3':   8.90,
-  'Z3-5': 8.90,
-  'Z3-6': 8.90,
-  'Z4':   8.90,
-  'Z4-6': 8.90,
-  'Z5':   8.90,
-  'Z5-6': 8.90,
-  'Z6':   8.90,
+  'Z1':   5.90,
+  'Z1-2': 5.90,
+  'Z1-3': 6.90,
+  'Z1-4': 8.40,
+  'Z1-5': 10.10,
+  'Z1-6': 10.75,
+  'Z2':   5.90,
+  'Z2-3': 5.90,
+  'Z2-6': 6.90,
+  'Z3':   5.90,
+  'Z3-5': 5.90,
+  'Z3-6': 5.90,
+  'Z4':   5.90,
+  'Z4-6': 5.90,
+  'Z5':   5.90,
+  'Z5-6': 5.90,
+  'Z6':   5.90,
 };
 
 // Weekly caps (Mon–Sun) — frozen until 2027
@@ -238,18 +283,28 @@ export function getZoneRange(originZone: number, destZone: number): string {
 }
 
 // Lookup PAYG fare for a given zone range and peak status
-export function lookupFare(zoneRange: string, isPeak: boolean): number {
-  const fare = PAYG_FARES[zoneRange];
+export function lookupFare(zoneRange: string, isPeak: boolean, mode: string = 'underground'): number {
+  let scale = PAYG_FARES.tfl;
+  if (mode === 'national_rail') {
+    scale = PAYG_FARES.national_rail;
+  } else if (mode === 'nr_tube') {
+    scale = PAYG_FARES.nr_tube;
+  }
+  
+  const fare = scale[zoneRange] || PAYG_FARES.tfl[zoneRange];
   if (!fare) {
-    // Fallback: find the widest matching range
+    // Fallback: use generic max or infer
     return isPeak ? 5.90 : 4.00;
   }
   return isPeak ? fare.peak : fare.offPeak;
 }
 
 // Lookup daily cap for a given zone range
-export function lookupDailyCap(zoneRange: string): number {
-  return DAILY_CAPS[zoneRange] ?? 16.30;
+export function lookupDailyCap(zoneRange: string, isPeak: boolean = true): number {
+  if (isPeak) {
+    return DAILY_CAPS[zoneRange] ?? 16.30;
+  }
+  return DAILY_CAPS_OFFPEAK[zoneRange] ?? 16.30;
 }
 
 // Lookup weekly cap for a given zone range

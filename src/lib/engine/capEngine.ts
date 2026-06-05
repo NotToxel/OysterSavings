@@ -48,27 +48,26 @@ function groupByDay(fareResults: FareResult[]): Map<string, FareResult[]> {
 
 // Get the widest zone range for a set of journeys (determines which cap applies)
 function getMaxZoneRange(journeys: FareResult[]): string {
-  let maxSpread = 0;
-  let maxRange = 'Z1';
+  let minZone = 99;
+  let maxZone = 0;
+  let hasRail = false;
 
   for (const j of journeys) {
     if (j.journey.isBus) continue;
     const range = j.journey.zoneRange;
     if (!range) continue;
 
-    // Parse zone range to get spread
+    hasRail = true;
     const parts = range.replace('Z', '').split('-');
-    const min = parseInt(parts[0], 10);
-    const max = parts.length > 1 ? parseInt(parts[1], 10) : min;
-    const spread = max - min;
+    const z1 = parseInt(parts[0], 10);
+    const z2 = parts.length > 1 ? parseInt(parts[1], 10) : z1;
 
-    if (spread > maxSpread || (spread === maxSpread && min < parseInt(maxRange.replace('Z', '').split('-')[0], 10))) {
-      maxSpread = spread;
-      maxRange = range;
-    }
+    minZone = Math.min(minZone, z1, z2);
+    maxZone = Math.max(maxZone, z1, z2);
   }
 
-  return maxRange;
+  if (!hasRail) return 'Z1'; // Default for bus-only or no-zone rail
+  return minZone === maxZone ? `Z${minZone}` : `Z${minZone}-${maxZone}`;
 }
 
 // Calculate daily cap analysis
@@ -81,7 +80,21 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
     const busJourneys = journeys.filter((j) => j.journey.isBus);
 
     const maxZoneRange = getMaxZoneRange(journeys);
-    const dailyCap = lookupDailyCap(maxZoneRange);
+
+    // Determine off-peak vs peak cap based on the first journey of the day
+    let isPeakDay = false;
+    if (journeys.length > 0) {
+      const sortedJourneys = [...journeys].sort((a, b) => (a.journey.raw.startTime || '').localeCompare(b.journey.raw.startTime || ''));
+      const firstTime = sortedJourneys[0].journey.raw.startTime;
+      const dayOfWeek = sortedJourneys[0].journey.raw.date.getDay();
+      
+      // Peak cap applies if the first journey on a weekday is between 04:30 and 09:30
+      if (dayOfWeek >= 1 && dayOfWeek <= 5 && firstTime >= '04:30' && firstTime < '09:30') {
+        isPeakDay = true;
+      }
+    }
+    
+    const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
 
     // Calculate actual spend
     const railSpend = railJourneys.reduce((sum, j) => sum + j.actualCharge, 0);
@@ -94,8 +107,8 @@ export function calculateDailyCaps(fareResults: FareResult[]): DayCapResult[] {
 
     const capHit = totalSpend >= dailyCap * 0.95 || journeys.some((j) => j.journey.isCapHit);
     const savedByCap = capHit ? Math.max(0, (uncappedRailSpend + uncappedBusSpend) - totalSpend) : 0;
-    const hasPeakJourney = journeys.some((j) => j.journey.isPeak);
-    const capType = capHit ? (hasPeakJourney ? 'peak' : 'off-peak') : 'none';
+    
+    const capType = capHit ? (isPeakDay ? 'peak' : 'off-peak') : (isPeakDay ? 'peak' : 'off-peak');
 
     results.push({
       date: dateStr,

@@ -5,7 +5,7 @@
   } from '$lib/stores/stores';
   import {
     RAILCARDS, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
-    TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_ANNUAL,
+    TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_MONTHLY, STUDENT_TRAVELCARD_ANNUAL,
     type RailcardType
   } from '$lib/data/fareData';
   import { Chart, registerables } from 'chart.js';

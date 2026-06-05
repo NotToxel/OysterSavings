@@ -8,7 +8,7 @@
     patternToRule
   } from '$lib/engine/recurrenceEngine';
   import { runForecast } from '$lib/engine/forecastEngine';
-  import { getZoneRange } from '$lib/data/fareData';
+  import { getZoneRange, lookupFare, BUS_SINGLE_FARE } from '$lib/data/fareData';
 
   // Calendar state
   let calendarDate = $state(new Date());
@@ -18,7 +18,7 @@
   let newRuleName = $state('');
   let newOriginZone = $state(3);
   let newDestZone = $state(1);
-  let newMode = $state<'underground' | 'national_rail' | 'bus'>('national_rail');
+  let newMode = $state<'underground' | 'national_rail' | 'nr_tube' | 'bus'>('national_rail');
   let newIsPeak = $state(true);
   let newDays = $state<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
   let newIntervalType = $state<'days' | 'weeks' | 'months' | 'years' | 'none'>('weeks');
@@ -150,6 +150,13 @@
     showRecurrenceModal = true;
   }
 
+  function quickAddOnDate(d: Date) {
+    resetForm();
+    newIntervalType = 'none';
+    planStart = formatInputDate(d);
+    showRecurrenceModal = true;
+  }
+
   function removeRule(id: string) {
     $recurrenceRules = $recurrenceRules.filter(r => r.id !== id);
     regenerate();
@@ -193,7 +200,10 @@
   const dayValues = [1, 2, 3, 4, 5, 6, 0]; // JS day values for Mon-Sun
 
   function formatInputDate(d: Date): string {
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   function addMonths(d: Date, months: number): Date {
@@ -233,10 +243,10 @@
       <!-- Active rules -->
       <div class="glass-card sidebar-section">
         <h3 class="sidebar-title">🔄 Active Schedules</h3>
-        {#if $recurrenceRules.length === 0}
-          <p class="empty-text">No schedules yet. Add one or import from your CSV data.</p>
+        {#if $recurrenceRules.filter(r => r.intervalType !== 'none').length === 0}
+          <p class="empty-text">No recurring schedules yet.</p>
         {:else}
-          {#each $recurrenceRules as rule}
+          {#each $recurrenceRules.filter(r => r.intervalType !== 'none') as rule}
             <div class="rule-card">
               <div class="rule-info">
                 <div class="rule-name">{rule.name}</div>
@@ -254,6 +264,28 @@
           {/each}
         {/if}
       </div>
+
+      <!-- One-off rules -->
+      {#if $recurrenceRules.some(r => r.intervalType === 'none')}
+      <div class="glass-card sidebar-section">
+        <h3 class="sidebar-title">⚡ One-Off Journeys</h3>
+        {#each $recurrenceRules.filter(r => r.intervalType === 'none') as rule}
+          <div class="rule-card">
+            <div class="rule-info">
+              <div class="rule-name">{rule.name}</div>
+              <div class="rule-detail">
+                {rule.startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} •
+                Z{rule.originZone}→Z{rule.destinationZone} • {rule.isPeak ? 'Peak' : 'Off-Peak'}
+              </div>
+            </div>
+            <div class="rule-actions" style="display: flex; gap: 0.25rem;">
+              <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
+              <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+            </div>
+          </div>
+        {/each}
+      </div>
+      {/if}
 
       <!-- Detected patterns -->
       {#if $detectedPatterns.length > 0}
@@ -326,6 +358,11 @@
               class:other-month={!day.isCurrentMonth}
               class:cap-hit={forecast?.capHit}
               class:has-journeys={dayJourneys.length > 0}
+              role="button"
+              tabindex="0"
+              onclick={() => quickAddOnDate(day.date)}
+              onkeydown={(e) => { if (e.key === 'Enter') quickAddOnDate(day.date); }}
+              style="cursor: pointer;"
             >
               <div class="day-number">{day.date.getDate()}</div>
               {#if dayJourneys.length > 0}
@@ -355,7 +392,7 @@
     <div class="modal-overlay" onclick={() => showRecurrenceModal = false} onkeydown={(e) => { if (e.key === 'Escape') showRecurrenceModal = false; }} role="dialog" tabindex="-1" aria-label="Add recurring schedule">
       <div class="modal-content glass-card" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
         <div class="modal-header">
-          <h2>Add Recurring Schedule</h2>
+          <h2>{newIntervalType === 'none' ? 'Add One-off Journey' : 'Add Recurring Schedule'}</h2>
           <button class="modal-close" onclick={() => showRecurrenceModal = false}>✕</button>
         </div>
 
@@ -371,7 +408,8 @@
               <select class="input-field" bind:value={newMode}>
                 <option value="underground">Underground / Tube</option>
                 <option value="national_rail">National Rail</option>
-                <option value="bus">Bus</option>
+                <option value="nr_tube">National Rail & Tube</option>
+                <option value="bus">Bus / Tram</option>
               </select>
             </div>
             {#if newMode !== 'bus'}
@@ -443,6 +481,14 @@
             <div class="form-group" style="margin-top: 0.5rem;">
               <div class="zone-preview">
                 Fare zone: <strong>{getZoneRange(newOriginZone, newDestZone)}</strong>
+                <span style="margin: 0 0.5rem;">•</span>
+                Estimated Fare: <strong>£{lookupFare(getZoneRange(newOriginZone, newDestZone), newIsPeak, newMode).toFixed(2)}</strong>
+              </div>
+            </div>
+          {:else}
+            <div class="form-group" style="margin-top: 0.5rem;">
+              <div class="zone-preview">
+                Estimated Fare: <strong>£{BUS_SINGLE_FARE.toFixed(2)}</strong>
               </div>
             </div>
           {/if}

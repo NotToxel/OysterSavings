@@ -90,9 +90,10 @@ export function runForecast(
     let maxZoneRange = 'Z1';
 
     for (const j of journeys) {
+      // Calculate raw single fare
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
-      const fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, j.isPeak);
-
+      const fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, j.isPeak, j.mode);
+      
       let railcardFare = fare;
       if (j.mode !== 'bus') {
         if (!j.isPeak || railcard.appliesToPeak) {
@@ -112,7 +113,8 @@ export function runForecast(
       }
     }
 
-    const dailyCap = lookupDailyCap(maxZoneRange);
+    const isPeakDay = journeys.some(j => j.isPeak);
+    const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
     const cappedFare = Math.min(totalFare, dailyCap);
     const cappedFareRailcard = Math.min(totalFareRailcard, dailyCap);
     const capHit = totalFare >= dailyCap;
