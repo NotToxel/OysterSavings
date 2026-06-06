@@ -390,14 +390,11 @@ export const STUDENT_TRAVELCARD_ANNUAL: Record<string, number> = {
 export type RailcardType =
   | 'none'
   | 'student'
-  | '16-25'
-  | '26-30'
-  | 'senior'
+  | 'zip_11_15'
+  | 'zip_16_17'
+  | 'jobcentre'
   | 'disabled'
-  | 'hmforces'
-  | 'veterans'
-  | 'network'
-  | 'jobcentre';
+  | 'railcard';
 
 export interface RailcardInfo {
   name: string;
@@ -416,67 +413,46 @@ export const RAILCARDS: Record<RailcardType, RailcardInfo> = {
     cost3Year: 0,
   },
   'student': {
-    name: '18+ Student',
-    discount: 0, // Gets 30% off travelcards, no PAYG discount natively without adding a 16-25 railcard
+    name: 'Apprentice / 18+ Student Oyster',
+    discount: 0, // Gets 30% off travelcards, no PAYG discount natively without adding a railcard
     appliesToPeak: false,
-    cost1Year: 0, // Admin fee handled by STUDENT_PHOTOCARD_FEE
+    cost1Year: 0,
     cost3Year: 0,
   },
-  '16-25': {
-    name: '16-25 Railcard',
-    discount: 1 / 3,
-    appliesToPeak: false,
-    cost1Year: 35,
-    cost3Year: 80,
-  },
-  '26-30': {
-    name: '26-30 Railcard',
-    discount: 1 / 3,
-    appliesToPeak: false,
-    cost1Year: 35,
+  'zip_11_15': {
+    name: '11-15 Zip Oyster Card',
+    discount: 0.5,
+    appliesToPeak: true,
+    cost1Year: 0,
     cost3Year: 0,
   },
-  senior: {
-    name: 'Senior Railcard',
-    discount: 1 / 3,
-    appliesToPeak: false,
-    cost1Year: 35,
-    cost3Year: 80,
-  },
-  disabled: {
-    name: 'Disabled Persons Railcard',
-    discount: 1 / 3,
-    appliesToPeak: true, // applies to ALL fares
-    cost1Year: 20,
-    cost3Year: 54,
-  },
-  hmforces: {
-    name: 'HM Forces Railcard',
-    discount: 1 / 3,
-    appliesToPeak: false,
-    cost1Year: 21,
-    cost3Year: 0,
-  },
-  veterans: {
-    name: 'Veterans Railcard',
-    discount: 1 / 3,
-    appliesToPeak: false,
-    cost1Year: 35,
-    cost3Year: 80,
-  },
-  'network': {
-    name: 'Network Railcard',
-    discount: 1 / 3,
-    appliesToPeak: false, // only applies after 10am weekdays
-    cost1Year: 30,
+  'zip_16_17': {
+    name: '16+ Zip Oyster Card',
+    discount: 0.5,
+    appliesToPeak: true,
+    cost1Year: 0,
     cost3Year: 0,
   },
   'jobcentre': {
     name: 'Jobcentre Plus Travel Discount',
     discount: 0.5,
-    appliesToPeak: true, // applies to ALL fares
+    appliesToPeak: true,
     cost1Year: 0,
     cost3Year: 0,
+  },
+  'disabled': {
+    name: 'Disabled Persons Railcard',
+    discount: 1 / 3,
+    appliesToPeak: true,
+    cost1Year: 20,
+    cost3Year: 54,
+  },
+  'railcard': {
+    name: 'National Railcard / Gold Card',
+    discount: 1 / 3,
+    appliesToPeak: false,
+    cost1Year: 30,
+    cost3Year: 70,
   },
 };
 
@@ -491,13 +467,41 @@ export function roundToNearest10p(amount: number): number {
 // - Standard Railcards (16-25, 26-30, Senior, Disabled, Network, etc.) get 1/3 off off-peak fares,
 //   which uses a 33.4% discount (0.666 multiplier) and rounds down to the nearest 5p.
 // - Jobcentre Plus Travel Discount gets a 50% discount (0.5 multiplier) and rounds down to the nearest 5p.
-export function calculateDiscountedFare(baseFare: number, railcardType: RailcardType, isPeak: boolean, isBus: boolean = false): number {
+export function calculateDiscountedFare(
+  baseFare: number,
+  railcardType: RailcardType,
+  isPeak: boolean,
+  isBus: boolean = false,
+  originZone?: number,
+  destinationZone?: number,
+  mode?: string
+): number {
   if (railcardType === 'none' || railcardType === 'student') {
     return baseFare;
   }
 
   const railcard = RAILCARDS[railcardType];
   if (!railcard) return baseFare;
+
+  // 11-15 Zip: Free bus/tram, flat child fares on TfL Rail in Zones 1-6
+  if (railcardType === 'zip_11_15') {
+    if (isBus) return 0.00;
+    
+    const isTfLOnly = mode !== undefined && mode !== 'national_rail' && mode !== 'nr_tube';
+    const isWithinZones1To6 = originZone !== undefined && destinationZone !== undefined && originZone >= 1 && originZone <= 6 && destinationZone >= 1 && destinationZone <= 6;
+    
+    if (isTfLOnly && isWithinZones1To6) {
+      return isPeak ? 1.05 : 0.95;
+    }
+    
+    return Math.floor(baseFare * 0.5 * 20) / 20;
+  }
+
+  // 16+ Zip: Free bus/tram, 50% off rail single fares
+  if (railcardType === 'zip_16_17') {
+    if (isBus) return 0.00;
+    return Math.floor(baseFare * 0.5 * 20) / 20;
+  }
 
   if (isBus) {
     if (railcardType === 'jobcentre') {
@@ -560,7 +564,7 @@ export function lookupExactFare(originId: string, destId: string, isPeak: boolea
 export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, railcardType: RailcardType = 'none'): number {
   const adultCap = DAILY_CAPS[zoneRange] ?? 16.30;
   
-  if (railcardType === 'jobcentre') {
+  if (railcardType === 'jobcentre' || railcardType === 'zip_11_15' || railcardType === 'zip_16_17') {
     return Math.floor(adultCap * 0.5 * 20) / 20;
   }
   
@@ -569,7 +573,7 @@ export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, railca
     return adultCap;
   }
   
-  // Standard Railcards (16-25, 26-30, Senior, Network, etc.) get off-peak daily caps.
+  // Standard Railcards (National Railcard / Gold Card) get off-peak daily caps.
   // Disabled Persons Railcard gets 1/3 discount on both peak and off-peak daily caps.
   const isEligibleForDiscount = !isPeak || railcardType === 'disabled';
   if (isEligibleForDiscount) {
@@ -580,6 +584,150 @@ export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, railca
 }
 
 // Lookup weekly cap for a given zone range
-export function lookupWeeklyCap(zoneRange: string): number {
-  return WEEKLY_CAPS[zoneRange] ?? 81.60;
+export function lookupWeeklyCap(zoneRange: string, railcardType: RailcardType = 'none'): number {
+  const baseCap = WEEKLY_CAPS[zoneRange] ?? 81.60;
+  if (railcardType === 'jobcentre' || railcardType === 'zip_11_15' || railcardType === 'zip_16_17') {
+    return Math.round(baseCap * 0.5 * 10) / 10; // Round to nearest 10p
+  }
+  return baseCap;
+}
+
+// Meeus/Jones/Butcher Gregorian Easter Algorithm
+export function getEasterDate(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const L = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * L) / 451);
+  const monthIndex = Math.floor((h + L - 7 * m + 114) / 31) - 1; // 0-based index
+  const day = ((h + L - 7 * m + 114) % 31) + 1;
+  return new Date(year, monthIndex, day);
+}
+
+// England & Wales Bank Holidays
+export function isUKBankHoliday(date: Date): boolean {
+  const y = date.getFullYear();
+  const m = date.getMonth(); // 0-based
+  const d = date.getDate();
+
+  // 1. New Year's Day (Jan 1) or substitute Monday
+  // If Jan 1 is Sat, sub is Monday Jan 3. If Jan 1 is Sun, sub is Monday Jan 2.
+  const jan1 = new Date(y, 0, 1);
+  const jan1Day = jan1.getDay();
+  let nydSub = 1;
+  if (jan1Day === 6) nydSub = 3; // Sat -> Monday Jan 3
+  else if (jan1Day === 0) nydSub = 2; // Sun -> Monday Jan 2
+  
+  if (m === 0 && d === 1 && jan1Day !== 0 && jan1Day !== 6) return true;
+  if (m === 0 && d === nydSub && (jan1Day === 0 || jan1Day === 6)) return true;
+
+  // Easter Holidays
+  const easter = getEasterDate(y);
+  
+  // Good Friday (Easter - 2 days)
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(easter.getDate() - 2);
+  if (m === goodFriday.getMonth() && d === goodFriday.getDate()) return true;
+
+  // Easter Monday (Easter + 1 day)
+  const easterMonday = new Date(easter);
+  easterMonday.setDate(easter.getDate() + 1);
+  if (m === easterMonday.getMonth() && d === easterMonday.getDate()) return true;
+
+  // Early May Bank Holiday: First Monday in May
+  let firstMay = new Date(y, 4, 1);
+  while (firstMay.getDay() !== 1) {
+    firstMay.setDate(firstMay.getDate() + 1);
+  }
+  if (m === 4 && d === firstMay.getDate()) return true;
+
+  // Spring Bank Holiday: Last Monday in May
+  let lastMay = new Date(y, 4, 31);
+  while (lastMay.getDay() !== 1) {
+    lastMay.setDate(lastMay.getDate() - 1);
+  }
+  if (m === 4 && d === lastMay.getDate()) return true;
+
+  // Summer Bank Holiday: Last Monday in August
+  let lastAug = new Date(y, 7, 31);
+  while (lastAug.getDay() !== 1) {
+    lastAug.setDate(lastAug.getDate() - 1);
+  }
+  if (m === 7 && d === lastAug.getDate()) return true;
+
+  // Christmas Day & Boxing Day
+  const xmasDayOfWeek = new Date(y, 11, 25).getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  if (xmasDayOfWeek === 6) {
+    // Christmas is Saturday -> Monday 27th and Tuesday 28th are substitute holidays
+    if (m === 11 && (d === 27 || d === 28)) return true;
+  } else if (xmasDayOfWeek === 0) {
+    // Christmas is Sunday -> Monday 26th (Boxing Day) and Tuesday 27th (Christmas substitute) are holidays
+    if (m === 11 && (d === 26 || d === 27)) return true;
+  } else if (xmasDayOfWeek === 5) {
+    // Christmas is Friday -> Boxing Day is Saturday -> Monday 28th is Boxing Day substitute holiday
+    if (m === 11 && (d === 25 || d === 28)) return true;
+  } else {
+    // Christmas is Monday-Thursday -> standard Dec 25 and Dec 26 holidays
+    if (m === 11 && (d === 25 || d === 26)) return true;
+  }
+
+  return false;
+}
+
+// peak hours: Monday to Friday (except bank holidays) 06:30 - 09:30 and 16:00 - 19:00
+export function isPeakJourney(
+  date: Date,
+  timeStr: string, // "HH:MM"
+  originZone: number | null,
+  destZone: number | null
+): boolean {
+  const dayOfWeek = date.getDay();
+  // Weekends are always off-peak
+  if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+
+  // Bank holidays are always off-peak
+  if (isUKBankHoliday(date)) return false;
+
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return false;
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  if (isNaN(hours) || isNaN(minutes)) return false;
+
+  const totalMinutes = hours * 60 + minutes;
+
+  // Morning peak: 06:30 - 09:30
+  const isMorningPeak = totalMinutes >= 390 && totalMinutes < 570;
+
+  // Evening peak: 16:00 - 19:00
+  const isEveningPeak = totalMinutes >= 960 && totalMinutes < 1140;
+
+  if (isMorningPeak) return true;
+
+  if (isEveningPeak) {
+    // Evening Peak Exemption: travel from outside Zone 1 to Zone 1
+    if (originZone !== null && destZone !== null && originZone > 1 && destZone === 1) {
+      return false; // Inbound to Zone 1 is off-peak
+    }
+    return true;
+  }
+
+  return false;
+}
+
+// Representative time for Planner ranges
+export function getRepresentativeTime(timePeriod: string): string {
+  if (timePeriod === '06:30-09:30') return '07:30';
+  if (timePeriod === '16:00-19:00') return '17:30';
+  if (timePeriod === '04:30-06:29') return '05:30';
+  if (timePeriod === '09:31-15:59') return '11:00';
+  if (timePeriod === '19:01-04:29') return '21:00';
+  return '12:00';
 }

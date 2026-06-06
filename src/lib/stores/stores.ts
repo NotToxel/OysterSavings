@@ -27,8 +27,8 @@ export const weeklyCapResults = writable<WeekCapResult[]>([]);
 export const capSummary = writable<CapSummary | null>(null);
 
 // Settings
-export const selectedRailcard = writable<RailcardType>('16-25');
-export const railcardCost = writable<number>(35);
+export const selectedRailcard = writable<RailcardType>('none');
+export const railcardCost = writable<number>(0);
 export const includeOysterCost = writable<boolean>(true);
 export const includeStudentPhotocardFee = writable<boolean>(true);
 

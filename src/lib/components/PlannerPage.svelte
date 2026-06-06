@@ -8,7 +8,7 @@
     patternToRule
   } from '$lib/engine/recurrenceEngine';
   import { runForecast } from '$lib/engine/forecastEngine';
-  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, calculateDiscountedFare, type RailcardType } from '$lib/data/fareData';
+  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, calculateDiscountedFare, type RailcardType, isPeakJourney, getRepresentativeTime } from '$lib/data/fareData';
 
   // Calendar state
   let calendarDate = $state(new Date());
@@ -34,12 +34,21 @@
   let newIntervalType = $state<'days' | 'weeks' | 'months' | 'years' | 'none'>('weeks');
   let newIntervalValue = $state(1);
   let editRuleId = $state<string | null>(null);
+  let newRuleDate = $state('');
+  let newRuleEndDate = $state('');
+
+  function parseLocalDate(dateStr: string): Date {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
 
   function getEstimatedFare(origin: number, dest: number, timePeriod: string, mode: string, discount: string): number {
-    const isPeakFare = timePeriod === '06:30-09:30' || timePeriod === '16:00-19:00';
+    const dateObj = parseLocalDate(planStart);
+    const repTime = getRepresentativeTime(timePeriod);
+    const isPeakFare = isPeakJourney(dateObj, repTime, origin, dest);
     const zoneRange = getZoneRange(origin, dest);
     const rawFare = mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, mode);
-    return calculateDiscountedFare(rawFare, discount as RailcardType, isPeakFare, mode === 'bus');
+    return calculateDiscountedFare(rawFare, discount as RailcardType, isPeakFare, mode === 'bus', origin, dest, mode);
   }
 
   const TIME_PERIODS = [
@@ -59,6 +68,15 @@
     if (!validValues.includes(newReturnTimePeriod)) {
       newReturnTimePeriod = validValues[0];
     }
+  });
+
+  $effect(() => {
+    // Automatically regenerate planned journeys and forecast when dates, rules, or selected railcard change
+    planStart;
+    planEnd;
+    $recurrenceRules;
+    $selectedRailcard;
+    regenerate();
   });
 
   let estimatedTotalFare = $derived.by(() => {
@@ -148,7 +166,7 @@
 
   function saveRule() {
     if (newIntervalType === 'none') {
-      newDays = [new Date(planStart).getDay()];
+      newDays = [parseLocalDate(newRuleDate).getDay()];
     }
 
     const rule: RecurrenceRule = {
@@ -169,8 +187,8 @@
       daysOfWeek: newDays,
       intervalType: newIntervalType,
       intervalValue: newIntervalValue,
-      startDate: new Date(planStart),
-      endDate: newIntervalType === 'none' ? new Date(planStart) : new Date(planEnd),
+      startDate: parseLocalDate(newRuleDate),
+      endDate: newIntervalType === 'none' ? parseLocalDate(newRuleDate) : parseLocalDate(newRuleEndDate),
     };
 
     if (editRuleId) {
@@ -196,6 +214,8 @@
     newDays = [...rule.daysOfWeek];
     newIntervalType = rule.intervalType;
     newIntervalValue = rule.intervalValue;
+    newRuleDate = formatInputDate(rule.startDate);
+    newRuleEndDate = formatInputDate(rule.endDate);
     showRecurrenceModal = true;
   }
 
@@ -204,7 +224,8 @@
   function quickAddOnDate(d: Date) {
     resetForm();
     newIntervalType = 'none';
-    planStart = formatInputDate(d);
+    newRuleDate = formatInputDate(d);
+    newRuleEndDate = formatInputDate(d);
     showRecurrenceModal = true;
   }
 
@@ -245,15 +266,16 @@
 
   function importPattern(patternIndex: number) {
     const pattern = $detectedPatterns[patternIndex];
-    const rule = patternToRule(pattern, new Date(planStart), new Date(planEnd));
+    const rule = patternToRule(pattern, parseLocalDate(planStart), parseLocalDate(planEnd));
     $recurrenceRules = [...$recurrenceRules, rule];
     regenerate();
   }
 
   function regenerate() {
-    $plannedJourneys = generatePlannedJourneys($recurrenceRules);
-    if ($plannedJourneys.length > 0) {
-      $forecastResult = runForecast($plannedJourneys, $selectedRailcard, $railcardCost);
+    const journeys = generatePlannedJourneys($recurrenceRules);
+    $plannedJourneys = journeys;
+    if (journeys.length > 0) {
+      $forecastResult = runForecast(journeys, $selectedRailcard, $railcardCost);
     } else {
       $forecastResult = null;
     }
@@ -271,6 +293,8 @@
     newDays = [1, 2, 3, 4, 5];
     newIntervalType = 'weeks';
     newIntervalValue = 1;
+    newRuleDate = planStart;
+    newRuleEndDate = planEnd;
   }
 
   function getCapColor(progress: number): string {
@@ -459,7 +483,7 @@
             <div
               class="calendar-cell"
               class:other-month={!day.isCurrentMonth}
-              class:cap-hit={$selectedRailcard === 'none' ? forecast?.capHit : forecast?.capHitRailcard}
+              class:cap-hit={forecast?.capHitRailcard}
               class:has-journeys={dayJourneys.length > 0}
               class:in-planning-period={dateKey >= planStart && dateKey <= planEnd}
               role="button"
@@ -479,14 +503,14 @@
                 </button>
                 <div class="day-journey-count">{dayJourneys.length} trip{dayJourneys.length > 1 ? 's' : ''}</div>
                 {#if forecast}
-                  <div class="day-spend">£{($selectedRailcard === 'none' ? forecast.cappedFare : forecast.cappedFareRailcard).toFixed(2)}</div>
+                  <div class="day-spend">£{forecast.cappedFareRailcard.toFixed(2)}</div>
                   <div class="mini-cap-bar">
                     <div
                       class="mini-cap-fill"
-                      style="width: {($selectedRailcard === 'none' ? forecast.capProgress : forecast.capProgressRailcard) * 100}%; background: {getCapColor($selectedRailcard === 'none' ? forecast.capProgress : forecast.capProgressRailcard)};"
+                      style="width: {forecast.capProgressRailcard * 100}%; background: {getCapColor(forecast.capProgressRailcard)};"
                     ></div>
                   </div>
-                  {#if ($selectedRailcard === 'none' ? forecast.capHit : forecast.capHitRailcard)}
+                  {#if forecast.capHitRailcard}
                     <div class="cap-hit-label">Cap Hit ✓</div>
                   {/if}
                 {/if}
@@ -549,15 +573,12 @@
           <label class="setting-label">Railcard Applied to Planner</label>
           <select class="input-field" bind:value={$selectedRailcard} onchange={regenerate}>
             <option value="none">Adult / Contactless</option>
-            <option value="student">18+ Student</option>
-            <option value="16-25">16-25 Railcard</option>
-            <option value="26-30">26-30 Railcard</option>
-            <option value="senior">Senior Railcard</option>
-            <option value="disabled">Disabled Persons Railcard</option>
-            <option value="hmforces">HM Forces Railcard</option>
-            <option value="veterans">Veterans Railcard</option>
-            <option value="network">Network Railcard / Gold Card</option>
+            <option value="student">Apprentice / 18+ Student Oyster</option>
+            <option value="zip_11_15">11-15 Zip Oyster Card</option>
+            <option value="zip_16_17">16+ Zip Oyster Card</option>
             <option value="jobcentre">Jobcentre Plus Travel Discount</option>
+            <option value="disabled">Disabled Persons Railcard</option>
+            <option value="railcard">National Railcard / Gold Card</option>
           </select>
         </div>
       </div>
@@ -576,10 +597,29 @@
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group">
-              <label class="setting-label">{newIntervalType === 'none' ? 'Journey Name' : 'Schedule Name'}</label>
-              <input type="text" class="input-field" bind:value={newRuleName} placeholder="e.g., Morning Commute" />
+              <label class="setting-label" for="modal-rule-name">{newIntervalType === 'none' ? 'Journey Name' : 'Schedule Name'}</label>
+              <input type="text" class="input-field" id="modal-rule-name" bind:value={newRuleName} placeholder="e.g., Morning Commute" />
             </div>
+            {#if newIntervalType === 'none'}
+              <div class="form-group">
+                <label class="setting-label" for="modal-journey-date">Journey Date</label>
+                <input type="date" class="input-field" id="modal-journey-date" bind:value={newRuleDate} />
+              </div>
+            {/if}
           </div>
+
+          {#if newIntervalType !== 'none'}
+            <div class="form-row">
+              <div class="form-group">
+                <label class="setting-label" for="modal-start-date">Start Date</label>
+                <input type="date" class="input-field" id="modal-start-date" bind:value={newRuleDate} />
+              </div>
+              <div class="form-group">
+                <label class="setting-label" for="modal-end-date">End Date</label>
+                <input type="date" class="input-field" id="modal-end-date" bind:value={newRuleEndDate} />
+              </div>
+            </div>
+          {/if}
 
           <div class="form-row">
             <div class="form-group">

@@ -68,9 +68,12 @@ export function calculateRailcardSavings(
 ): RailcardSavingsResult {
   const railcard = RAILCARDS[railcardType];
   const STUDENT_PHOTOCARD_FEE = 25;
+  const ZIP_CARD_FEE = 15;
   let oysterCost = includeOysterCost ? OYSTER_CARD_COST : 0;
   if (railcardType === 'student' && includeOysterCost) {
     oysterCost = STUDENT_PHOTOCARD_FEE;
+  } else if ((railcardType === 'zip_11_15' || railcardType === 'zip_16_17') && includeOysterCost) {
+    oysterCost = ZIP_CARD_FEE;
   }
 
   // Generate base FareResults
@@ -189,11 +192,12 @@ export function calculateProductComparison(
   const avgWeeklySpend = fareResults.reduce((s, j) => s + j.actualCharge, 0) / totalWeeks;
 
   for (const zoneRange of zoneRanges) {
-    const weeklyTc = TRAVELCARD_WEEKLY[zoneRange] ?? 0;
-    const monthlyTc = TRAVELCARD_MONTHLY[zoneRange] ?? 0;
-    const annualTc = TRAVELCARD_ANNUAL[zoneRange] ?? 0;
-    const studentMonthlyTc = STUDENT_TRAVELCARD_MONTHLY[zoneRange] ?? 0;
-    const studentAnnualTc = STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0;
+    const isZip = railcardType === 'zip_11_15' || railcardType === 'zip_16_17';
+    const weeklyTc = isZip ? (TRAVELCARD_WEEKLY[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_WEEKLY[zoneRange] ?? 0);
+    const monthlyTc = isZip ? (TRAVELCARD_MONTHLY[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_MONTHLY[zoneRange] ?? 0);
+    const annualTc = isZip ? (TRAVELCARD_ANNUAL[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_ANNUAL[zoneRange] ?? 0);
+    const studentMonthlyTc = isZip ? 0 : (STUDENT_TRAVELCARD_MONTHLY[zoneRange] ?? 0);
+    const studentAnnualTc = isZip ? 0 : (STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0);
 
     // Use actual data to project costs
     const weeklyPayg = round2(avgWeeklySpend);

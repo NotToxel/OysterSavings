@@ -220,8 +220,7 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
     // Widest zone range across the week
     const allJourneys = days.flatMap((d) => d.journeys);
     const maxZoneRange = getMaxZoneRange(allJourneys);
-    const weeklyCapBase = lookupWeeklyCap(maxZoneRange);
-    const weeklyCap = railcardType === 'jobcentre' ? roundToNearest10p(weeklyCapBase * 0.5) : weeklyCapBase;
+    const weeklyCap = lookupWeeklyCap(maxZoneRange, railcardType);
 
     const totalSpend = days.reduce((sum, d) => sum + d.totalSpend, 0);
     const capHit = totalSpend >= weeklyCap;

@@ -16,6 +16,8 @@ import {
   TRAVELCARD_ANNUAL,
   STUDENT_TRAVELCARD_ANNUAL,
   STUDENT_PHOTOCARD_FEE,
+  isPeakJourney,
+  getRepresentativeTime,
 } from '../data/fareData';
 
 export interface ForecastDay {
@@ -94,21 +96,14 @@ export function runForecast(
     let maxZoneRange = 'Z1';
 
     for (const j of journeys) {
-      const dayOfWeek = j.date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      
-      let isPeakFare = false;
-      if (!isWeekend) {
-        if (j.timePeriod === '06:30-09:30' || j.timePeriod === '16:00-19:00') {
-          isPeakFare = true;
-        }
-      }
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
 
       // Calculate raw single fare
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       const fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
       
-      let railcardFare = calculateDiscountedFare(fare, railcardType, isPeakFare, j.mode === 'bus');
+      let railcardFare = calculateDiscountedFare(fare, railcardType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
       totalFare += fare;
       totalFareRailcard += railcardFare;
@@ -123,8 +118,8 @@ export function runForecast(
     }
 
     const isPeakDay = journeys.some(j => {
-      const dayOfWeek = j.date.getDay();
-      return (dayOfWeek >= 1 && dayOfWeek <= 5) && (j.timePeriod === '04:30-06:29' || j.timePeriod === '06:30-09:30');
+      const repTime = getRepresentativeTime(j.timePeriod);
+      return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
     });
     
     if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
@@ -186,12 +181,40 @@ export function runForecast(
       if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
     }
 
-    const weeklyCap = lookupWeeklyCap(maxRange);
-    const railcardWeeklyCap = railcardType === 'jobcentre' ? roundToNearest10p(weeklyCap * 0.5) : weeklyCap;
+    const weeklyCap = lookupWeeklyCap(maxRange, 'none');
+    const railcardWeeklyCap = lookupWeeklyCap(maxRange, railcardType);
 
     // Apply weekly cap to total if needed
     const cappedTotalFare = Math.min(totalFare, weeklyCap);
     const cappedTotalFareRailcard = Math.min(totalFareRailcard, railcardWeeklyCap);
+
+    // Distribute the weekly caps chronologically across daily spend boxes
+    weekDays.sort((a, b) => a.date.getTime() - b.date.getTime());
+    let runningWeekTotal = 0;
+    let runningWeekTotalRailcard = 0;
+    for (const d of weekDays) {
+      const remainingWeeklyCap = Math.max(0, weeklyCap - runningWeekTotal);
+      const remainingWeeklyCapRailcard = Math.max(0, railcardWeeklyCap - runningWeekTotalRailcard);
+
+      const oldCappedFare = d.cappedFare;
+      const oldCappedFareRailcard = d.cappedFareRailcard;
+
+      d.cappedFare = round2(Math.min(oldCappedFare, remainingWeeklyCap));
+      d.cappedFareRailcard = round2(Math.min(oldCappedFareRailcard, remainingWeeklyCapRailcard));
+
+      runningWeekTotal += d.cappedFare;
+      runningWeekTotalRailcard += d.cappedFareRailcard;
+
+      // Mark cap hit and progress as complete if daily cap OR weekly cap is hit
+      if (oldCappedFareRailcard > d.cappedFareRailcard || runningWeekTotalRailcard >= railcardWeeklyCap) {
+        d.capHitRailcard = true;
+        d.capProgressRailcard = 1.0;
+      }
+      if (oldCappedFare > d.cappedFare || runningWeekTotal >= weeklyCap) {
+        d.capHit = true;
+        d.capProgress = 1.0;
+      }
+    }
 
     weeklyBreakdown.push({
       weekStart,

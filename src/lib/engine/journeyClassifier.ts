@@ -1,7 +1,7 @@
 // Journey Classifier — extracts mode, zones, peak/off-peak from CSV journey strings
 import type { ParsedJourney } from './csvParser';
 import { detectTransportMode, getStationZone, getStationBestZone, getStationInfo, type TransportMode } from '../data/stations';
-import { getZoneRange } from '../data/fareData';
+import { getZoneRange, isPeakJourney, isUKBankHoliday } from '../data/fareData';
 
 export interface ClassifiedJourney {
   raw: ParsedJourney;
@@ -178,14 +178,14 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
   let eveningException = false;
 
   if (time && !isBus) {
-    isPeak = isPeakTime(time, dayOfWeek);
+    isPeak = isPeakJourney(journey.date, journey.startTime, originZone, destinationZone);
 
-    // Check evening peak exception
-    if (isPeak) {
-      eveningException = isEveningPeakException(time, dayOfWeek, originZone, destinationZone);
-      if (eveningException) {
-        isPeak = false; // Override to off-peak
-      }
+    // Track if it fell in the evening peak window but was exempted
+    const totalMinutes = time.hours * 60 + time.minutes;
+    const inEveningWindow = totalMinutes >= 960 && totalMinutes < 1140;
+    const isWeekDay = dayOfWeek !== 0 && dayOfWeek !== 6;
+    if (inEveningWindow && isWeekDay && !isUKBankHoliday(journey.date) && originZone !== null && destinationZone !== null && originZone > 1 && destinationZone === 1) {
+      eveningException = true;
     }
   }
 

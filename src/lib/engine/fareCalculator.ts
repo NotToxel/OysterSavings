@@ -43,7 +43,15 @@ export function calculateRailcardFare(
 ): number {
   if (journey.isBus && journey.isHopperFree) return 0;
   const baseFare = calculateExpectedFare(journey);
-  return calculateDiscountedFare(baseFare, railcardType, journey.isPeak, journey.isBus);
+  return calculateDiscountedFare(
+    baseFare,
+    railcardType,
+    journey.isPeak,
+    journey.isBus,
+    journey.originZone ?? undefined,
+    journey.destinationZone ?? undefined,
+    journey.mode
+  );
 }
 
 // Process hopper fare logic for a day's bus journeys
