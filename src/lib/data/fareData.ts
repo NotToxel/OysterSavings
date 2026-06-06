@@ -731,3 +731,17 @@ export function getRepresentativeTime(timePeriod: string): string {
   if (timePeriod === '19:01-04:29') return '21:00';
   return '12:00';
 }
+
+// Local YYYY-MM-DD date formatter
+export function formatLocalDate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Local date string parser
+export function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}

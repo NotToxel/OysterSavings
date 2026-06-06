@@ -8,7 +8,7 @@
     patternToRule
   } from '$lib/engine/recurrenceEngine';
   import { runForecast } from '$lib/engine/forecastEngine';
-  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, calculateDiscountedFare, type RailcardType, isPeakJourney, getRepresentativeTime } from '$lib/data/fareData';
+  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, calculateDiscountedFare, type RailcardType, isPeakJourney, getRepresentativeTime, formatLocalDate, parseLocalDate } from '$lib/data/fareData';
 
   // Calendar state
   let calendarDate = $state(new Date());
@@ -37,10 +37,7 @@
   let newRuleDate = $state('');
   let newRuleEndDate = $state('');
 
-  function parseLocalDate(dateStr: string): Date {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  }
+
 
   function getEstimatedFare(origin: number, dest: number, timePeriod: string, mode: string, discount: string): number {
     const dateObj = parseLocalDate(planStart);
@@ -129,7 +126,7 @@
   let journeysByDate = $derived.by(() => {
     const map = new Map<string, typeof $plannedJourneys>();
     for (const j of $plannedJourneys) {
-      const key = j.date.toISOString().split('T')[0];
+      const key = formatLocalDate(j.date);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(j);
     }
@@ -141,7 +138,7 @@
     const map = new Map<string, NonNullable<typeof $forecastResult>['days'][0]>();
     if ($forecastResult) {
       for (const day of $forecastResult.days) {
-        const key = day.date.toISOString().split('T')[0];
+        const key = formatLocalDate(day.date);
         map.set(key, day);
       }
     }
@@ -477,7 +474,7 @@
           {/each}
 
           {#each calendarDays as day}
-            {@const dateKey = day.date.toISOString().split('T')[0]}
+            {@const dateKey = formatLocalDate(day.date)}
             {@const dayJourneys = journeysByDate.get(dateKey) || []}
             {@const forecast = forecastByDate.get(dateKey)}
             <div
@@ -847,8 +844,8 @@
   }
 
   .calendar-cell.in-planning-period {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    background: rgba(0, 159, 227, 0.05) !important;
+    border: 1.5px dashed rgba(0, 159, 227, 0.35) !important;
   }
 
   .day-journey-count {

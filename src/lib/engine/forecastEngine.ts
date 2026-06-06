@@ -18,6 +18,8 @@ import {
   STUDENT_PHOTOCARD_FEE,
   isPeakJourney,
   getRepresentativeTime,
+  formatLocalDate,
+  parseLocalDate,
 } from '../data/fareData';
 
 export interface ForecastDay {
@@ -156,14 +158,14 @@ export function runForecast(
   const weekMap = new Map<string, ForecastDay[]>();
   for (const day of days) {
     const monday = getMonday(day.date);
-    const key = monday.toISOString().split('T')[0];
+    const key = formatLocalDate(monday);
     if (!weekMap.has(key)) weekMap.set(key, []);
     weekMap.get(key)!.push(day);
   }
 
   const weeklyBreakdown: ForecastWeek[] = [];
   for (const [weekKey, weekDays] of weekMap) {
-    const weekStart = new Date(weekKey);
+    const weekStart = parseLocalDate(weekKey);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
 

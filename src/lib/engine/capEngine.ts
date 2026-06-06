@@ -1,7 +1,17 @@
 // Cap Engine — daily and weekly cap tracking
 import type { ClassifiedJourney } from './journeyClassifier';
 import type { FareResult } from './fareCalculator';
-import { lookupDailyCap, lookupWeeklyCap, BUS_DAILY_CAP, DAILY_CAPS, DAILY_CAPS_OFFPEAK, roundToNearest10p, type RailcardType } from '../data/fareData';
+import {
+  lookupDailyCap,
+  lookupWeeklyCap,
+  BUS_DAILY_CAP,
+  DAILY_CAPS,
+  DAILY_CAPS_OFFPEAK,
+  roundToNearest10p,
+  type RailcardType,
+  formatLocalDate,
+  parseLocalDate,
+} from '../data/fareData';
 
 export interface DayCapResult {
   date: string;
@@ -202,7 +212,7 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
 
   for (const day of dailyResults) {
     const monday = getMonday(day.dateObj);
-    const weekKey = monday.toISOString().split('T')[0];
+    const weekKey = formatLocalDate(monday);
 
     if (!weekMap.has(weekKey)) {
       weekMap.set(weekKey, []);
@@ -213,7 +223,7 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
   const results: WeekCapResult[] = [];
 
   for (const [weekKey, days] of weekMap) {
-    const weekStart = new Date(weekKey);
+    const weekStart = parseLocalDate(weekKey);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
 

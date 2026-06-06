@@ -15,9 +15,20 @@
 
   // Auto-sync railcard cost when selection changes
   $effect(() => {
-    if (!overrideCost) {
-      const rc = RAILCARDS[$selectedRailcard];
+    const rc = RAILCARDS[$selectedRailcard];
+    if (rc.cost1Year === 0) {
+      $railcardCost = 0;
+    } else if (!overrideCost) {
       $railcardCost = rc.cost1Year;
+    }
+  });
+
+  // Auto-sync includeOysterCost when selection changes
+  $effect(() => {
+    if ($selectedRailcard === 'none' || $selectedRailcard === 'jobcentre') {
+      $includeOysterCost = false;
+    } else {
+      $includeOysterCost = true;
     }
   });
 
@@ -240,6 +251,7 @@
           </select>
         </div>
 
+        {#if $selectedRailcard === 'railcard' || $selectedRailcard === 'disabled'}
         <div class="setting-group">
           <label class="setting-label" for="railcard-cost">Railcard Cost (£)</label>
           <div class="toggle-row" style="margin-bottom: 0.75rem;">
@@ -261,19 +273,45 @@
             </div>
           {/if}
         </div>
+        {/if}
 
         <div class="setting-group">
-          <span class="setting-label">Include {$selectedRailcard === 'student' ? '18+ Student Photocard' : 'Oyster Card'} Cost</span>
+          <span class="setting-label">
+            {#if $selectedRailcard === 'student'}
+              Include Apprentice / 18+ Student Photocard Fee
+            {:else if $selectedRailcard === 'zip_11_15' || $selectedRailcard === 'zip_16_17'}
+              Include Zip Photocard Fee
+            {:else if $selectedRailcard === 'jobcentre'}
+              Include Card Cost
+            {:else if $selectedRailcard === 'none'}
+              Oyster / Contactless Card Fee
+            {:else}
+              Include Oyster Card Cost
+            {/if}
+          </span>
           <div class="toggle-row">
             <button
               class="toggle"
-              class:active={$includeOysterCost}
+              class:active={$includeOysterCost && $selectedRailcard !== 'jobcentre' && $selectedRailcard !== 'none'}
               onclick={() => $includeOysterCost = !$includeOysterCost}
               aria-label="Toggle Oyster card cost"
+              disabled={$selectedRailcard === 'jobcentre' || $selectedRailcard === 'none'}
             >
               <span class="toggle-dot"></span>
             </button>
-            <span class="toggle-label">{$includeOysterCost ? ($selectedRailcard === 'student' ? '+£25.00' : '+£7.00') : 'Not included'}</span>
+            <span class="toggle-label">
+              {#if !$includeOysterCost || $selectedRailcard === 'jobcentre' || $selectedRailcard === 'none'}
+                Not included / Free
+              {:else if $selectedRailcard === 'student'}
+                +£12.00
+              {:else if $selectedRailcard === 'zip_11_15'}
+                +£16.50
+              {:else if $selectedRailcard === 'zip_16_17'}
+                +£22.00
+              {:else}
+                +£7.00
+              {/if}
+            </span>
           </div>
         </div>
       </div>
@@ -351,23 +389,25 @@
               </div>
             </div>
 
-            <!-- Breakdown cards -->
+             <!-- Breakdown cards -->
             <div class="savings-cards">
               <div class="stat-card">
                 <div class="stat-value">£{$savingsResult.totalExpectedSpend.toFixed(2)}</div>
                 <div class="stat-label">Simulated Adult PAYG</div>
               </div>
               <div class="stat-card">
-                <div class="stat-value" style="color: #34d399;">£{$savingsResult.totalRailcardSpend.toFixed(2)}</div>
-                <div class="stat-label">Simulated Railcard</div>
+                <div class="stat-value" style="color: #34d399;">
+                  £{($savingsResult.totalRailcardSpend + $savingsResult.railcardCost + $savingsResult.oysterCost).toFixed(2)}
+                </div>
+                <div class="stat-label">Simulated Railcard (Total Cost)</div>
               </div>
               <div class="stat-card">
                 <div class="stat-value" style="color: #60a5fa;">£{$savingsResult.totalActualSpend.toFixed(2)}</div>
                 <div class="stat-label">Actual Spend</div>
               </div>
               <div class="stat-card">
-                <div class="stat-value" style="color: #fbbf24;">£{$savingsResult.totalSaving.toFixed(2)}</div>
-                <div class="stat-label">Potential Saving</div>
+                <div class="stat-value" style="color: #fbbf24;">£{netSaving.toFixed(2)}</div>
+                <div class="stat-label">Net Saving</div>
               </div>
             </div>
 

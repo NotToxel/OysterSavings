@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import {
-    productComparison, savingsResult,
-    includeStudentPhotocardFee
+    productComparison, classifiedJourneys,
+    includeStudentPhotocardFee, selectedRailcard,
+    railcardCost, capSummary, weeklyCapResults
   } from '$lib/stores/stores';
   import {
     RAILCARDS, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
@@ -17,44 +17,171 @@
   let chartCanvas: HTMLCanvasElement;
   let chart: Chart | null = null;
 
+  // Build railcard options list
+  const railcardOptions = Object.entries(RAILCARDS).map(([key, info]) => ({
+    value: key as RailcardType,
+    label: info.name,
+  }));
 
+  // Human-readable short name for chart labels
+  let railcardShortName = $derived.by(() => {
+    const rc = RAILCARDS[$selectedRailcard];
+    if ($selectedRailcard === 'none') return '';
+    if ($selectedRailcard === 'railcard') return 'National Railcard';
+    if ($selectedRailcard === 'disabled') return 'Disabled Persons';
+    if ($selectedRailcard === 'jobcentre') return 'Jobcentre Plus';
+    if ($selectedRailcard === 'zip_11_15') return '11-15 Zip';
+    if ($selectedRailcard === 'zip_16_17') return '16+ Zip';
+    if ($selectedRailcard === 'student') return '18+ Student';
+    return rc.name;
+  });
+
+  let isNoDiscount = $derived($selectedRailcard === 'none' || $selectedRailcard === 'student');
+  let hasCardCosts = $derived($selectedRailcard !== 'none' && $selectedRailcard !== 'jobcentre');
+
+  // Derive discount description badge
+  let discountBadge = $derived.by(() => {
+    const rc = RAILCARDS[$selectedRailcard];
+    if ($selectedRailcard === 'none') return 'Standard adult fares — no discount applied';
+    if ($selectedRailcard === 'student') return '30% off Travelcards only — no PAYG discount';
+    if (rc.discount === 0.5) return '50% off all fares (peak & off-peak)';
+    if (rc.discount === 1/3 && rc.appliesToPeak) return '⅓ off all fares (peak & off-peak)';
+    if (rc.discount === 1/3) return '⅓ off off-peak fares only';
+    return `${Math.round(rc.discount * 100)}% discount`;
+  });
+
+  // Derive card cost label
+  let cardCostLabel = $derived.by(() => {
+    if ($selectedRailcard === 'zip_11_15') return '£16.50 Zip Photocard fee';
+    if ($selectedRailcard === 'zip_16_17') return '£22.00 Zip Photocard fee';
+    if ($selectedRailcard === 'student') return '£12.00 Student Photocard fee';
+    if ($selectedRailcard === 'disabled') return '£7.00 Oyster card cost';
+    if ($selectedRailcard === 'railcard') return '£7.00 Oyster card cost';
+    return '';
+  });
+
+  // Travel data summary
+  let travelSummary = $derived.by(() => {
+    const j = $classifiedJourneys;
+    if (j.length === 0) return null;
+
+    const weeks = $weeklyCapResults?.length ?? 0;
+    const totalSpend = j.reduce((s, jj) => s + jj.raw.charge, 0);
+    const avgWeekly = weeks > 0 ? totalSpend / weeks : totalSpend;
+
+    // Find most common zone range
+    const zoneCounts = new Map<string, number>();
+    for (const jj of j) {
+      if (jj.zoneRange) {
+        zoneCounts.set(jj.zoneRange, (zoneCounts.get(jj.zoneRange) ?? 0) + 1);
+      }
+    }
+    let topZone = 'Z1-2';
+    let topCount = 0;
+    for (const [z, c] of zoneCounts) {
+      if (c > topCount) { topZone = z; topCount = c; }
+    }
+
+    return {
+      journeys: j.length,
+      weeks,
+      avgWeekly: Math.round(avgWeekly * 100) / 100,
+      totalSpend: Math.round(totalSpend * 100) / 100,
+      topZone,
+    };
+  });
+
+  // Best option for current time span
+  let bestOption = $derived.by(() => {
+    if ($productComparison.length === 0 || !travelSummary) return null;
+
+    // Try to match the user's primary travel zone
+    const comp = $productComparison.find(c => c.zoneRange === travelSummary.topZone)
+      ?? $productComparison[0];
+
+    const span = activeSpan;
+    const best = span === 'weekly' ? comp.bestWeekly
+      : span === 'monthly' ? comp.bestMonthly
+      : comp.bestAnnual;
+
+    const paygCost = span === 'weekly' ? comp.weeklyPayg
+      : span === 'monthly' ? comp.monthlyPayg
+      : comp.annualPayg;
+
+    const rcCost = span === 'weekly' ? comp.weeklyPaygRailcard
+      : span === 'monthly' ? comp.monthlyPaygRailcard
+      : comp.annualPaygRailcard;
+
+    const tcCost = span === 'weekly' ? comp.weeklyTravelcard
+      : span === 'monthly' ? comp.monthlyTravelcard
+      : comp.annualTravelcard;
+
+    return {
+      best,
+      zoneRange: comp.zoneRange,
+      payg: paygCost,
+      railcard: rcCost,
+      travelcard: tcCost,
+    };
+  });
 
   // Chart data
   let chartData = $derived.by(() => {
     const zoneLabels = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
-
     if ($productComparison.length === 0) return null;
 
     const getValues = (key: string) => $productComparison.map((c: any) => c[key]);
 
+    const paygLabel = 'PAYG (Adult)';
+    const rcLabel = isNoDiscount
+      ? `PAYG + ${railcardShortName || 'No Discount'}`
+      : `PAYG + ${railcardShortName}`;
+
+    // Build datasets — skip railcard bar when it's identical to PAYG
+    const buildDatasets = (paygKey: string, rcKey: string, tcKey: string, tcLabel: string, studentKey?: string, studentLabel?: string) => {
+      const ds: any[] = [
+        { label: paygLabel, data: getValues(paygKey), backgroundColor: 'rgba(0, 159, 227, 0.7)', borderColor: '#009FE3', borderWidth: 1 },
+      ];
+
+      if (!isNoDiscount) {
+        ds.push({
+          label: rcLabel, data: getValues(rcKey),
+          backgroundColor: 'rgba(105, 80, 161, 0.7)', borderColor: '#6950A1', borderWidth: 1,
+        });
+      }
+
+      ds.push({
+        label: tcLabel, data: getValues(tcKey),
+        backgroundColor: 'rgba(239, 123, 16, 0.7)', borderColor: '#EF7B10', borderWidth: 1,
+      });
+
+      if (studentKey && studentLabel) {
+        const vals = getValues(studentKey);
+        if (vals.some((v: number) => v > 0)) {
+          ds.push({
+            label: studentLabel, data: vals,
+            backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: '#10b981', borderWidth: 1,
+          });
+        }
+      }
+
+      return ds;
+    };
+
     if (activeSpan === 'weekly') {
       return {
         labels: zoneLabels,
-        datasets: [
-          { label: 'PAYG', data: getValues('weeklyPayg'), backgroundColor: 'rgba(0, 159, 227, 0.7)', borderColor: '#009FE3', borderWidth: 1 },
-          { label: 'PAYG + Railcard', data: getValues('weeklyPaygRailcard'), backgroundColor: 'rgba(105, 80, 161, 0.7)', borderColor: '#6950A1', borderWidth: 1 },
-          { label: 'Weekly Travelcard', data: getValues('weeklyTravelcard'), backgroundColor: 'rgba(239, 123, 16, 0.7)', borderColor: '#EF7B10', borderWidth: 1 },
-        ],
+        datasets: buildDatasets('weeklyPayg', 'weeklyPaygRailcard', 'weeklyTravelcard', 'Weekly Travelcard'),
       };
     } else if (activeSpan === 'monthly') {
       return {
         labels: zoneLabels,
-        datasets: [
-          { label: 'PAYG', data: getValues('monthlyPayg'), backgroundColor: 'rgba(0, 159, 227, 0.7)', borderColor: '#009FE3', borderWidth: 1 },
-          { label: 'PAYG + Railcard', data: getValues('monthlyPaygRailcard'), backgroundColor: 'rgba(105, 80, 161, 0.7)', borderColor: '#6950A1', borderWidth: 1 },
-          { label: 'Monthly Travelcard', data: getValues('monthlyTravelcard'), backgroundColor: 'rgba(239, 123, 16, 0.7)', borderColor: '#EF7B10', borderWidth: 1 },
-          { label: 'Student Monthly TC', data: getValues('monthlyStudentTravelcard'), backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: '#10b981', borderWidth: 1 },
-        ],
+        datasets: buildDatasets('monthlyPayg', 'monthlyPaygRailcard', 'monthlyTravelcard', 'Monthly Travelcard', 'monthlyStudentTravelcard', 'Student Monthly TC'),
       };
     } else {
       return {
         labels: zoneLabels,
-        datasets: [
-          { label: 'PAYG', data: getValues('annualPayg'), backgroundColor: 'rgba(0, 159, 227, 0.7)', borderColor: '#009FE3', borderWidth: 1 },
-          { label: 'PAYG + Railcard', data: getValues('annualPaygRailcard'), backgroundColor: 'rgba(105, 80, 161, 0.7)', borderColor: '#6950A1', borderWidth: 1 },
-          { label: 'Annual Travelcard', data: getValues('annualTravelcard'), backgroundColor: 'rgba(239, 123, 16, 0.7)', borderColor: '#EF7B10', borderWidth: 1 },
-          { label: 'Student Travelcard', data: getValues('annualStudentTravelcard'), backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: '#10b981', borderWidth: 1 },
-        ],
+        datasets: buildDatasets('annualPayg', 'annualPaygRailcard', 'annualTravelcard', 'Annual Travelcard', 'annualStudentTravelcard', 'Student Annual TC'),
       };
     }
   });
@@ -128,16 +255,57 @@
 
   function getBestForZone(zone: string): string {
     const comp = $productComparison.find((c: any) => c.zoneRange === zone);
-    return comp ? comp.bestAnnual : 'N/A';
+    if (!comp) return 'N/A';
+    return activeSpan === 'weekly' ? comp.bestWeekly
+      : activeSpan === 'monthly' ? comp.bestMonthly
+      : comp.bestAnnual;
+  }
+
+  function getCostForZone(zone: string, key: string): string {
+    const comp = $productComparison.find((c: any) => c.zoneRange === zone);
+    if (!comp) return '—';
+    const val = (comp as any)[key];
+    return val > 0 ? `£${val.toFixed(2)}` : '—';
+  }
+
+  function getSpanLabel(): string {
+    return activeSpan === 'weekly' ? 'per week' : activeSpan === 'monthly' ? 'per month' : 'per year';
   }
 </script>
 
 <div class="compare-page">
   <h1 class="page-title">Product Comparison</h1>
-  <p class="page-subtitle">Compare PAYG, Railcard, and Travelcard costs based on your actual travel patterns</p>
+  <p class="page-subtitle">See how PAYG, Travelcards, and concession discounts compare based on your actual travel patterns</p>
+
+  <!-- Settings bar -->
+  <div class="glass-card settings-bar">
+    <div class="settings-row">
+      <div class="setting-inline">
+        <label class="setting-label-inline" for="compare-railcard">Simulate with</label>
+        <select class="input-field compact-select" id="compare-railcard" bind:value={$selectedRailcard}>
+          {#each railcardOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
+        </select>
+      </div>
+
+      {#if hasCardCosts}
+        <div class="setting-inline card-cost-toggle">
+          <input type="checkbox" id="compare-card-cost" bind:checked={$includeStudentPhotocardFee}
+            style="accent-color: var(--color-oyster-blue); width: 1rem; height: 1rem; cursor: pointer;" />
+          <label for="compare-card-cost" class="card-cost-label">Include {cardCostLabel}</label>
+        </div>
+      {/if}
+    </div>
+
+    <div class="discount-badge">
+      <span class="badge-dot" style="background: {isNoDiscount ? '#64748b' : '#009FE3'};"></span>
+      {discountBadge}
+    </div>
+  </div>
 
   <!-- Time span tabs -->
-  <div class="controls-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div class="controls-row">
     <div class="tab-nav" style="display: inline-flex;">
       <button class="tab-btn" class:active={activeSpan === 'weekly'} onclick={() => activeSpan = 'weekly'}>
         1 Week
@@ -150,10 +318,10 @@
       </button>
     </div>
 
-    {#if activeSpan === 'monthly' || activeSpan === 'annual'}
-      <div class="setting-group" style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.03); padding: 0.5rem 1rem; border-radius: 8px;">
-        <input type="checkbox" id="student-cost-toggle" bind:checked={$includeStudentPhotocardFee} style="accent-color: var(--color-oyster-blue); width: 1.1rem; height: 1.1rem; cursor: pointer;" />
-        <label for="student-cost-toggle" style="color: var(--color-text-secondary); font-size: 0.85rem; cursor: pointer;">Include £12 18+ Student Photocard admin fee</label>
+    {#if travelSummary}
+      <div class="travel-context">
+        Based on <strong>{travelSummary.journeys}</strong> journeys over <strong>{travelSummary.weeks}</strong> weeks
+        • Avg <strong>£{travelSummary.avgWeekly.toFixed(2)}</strong>/week
       </div>
     {/if}
   </div>
@@ -163,8 +331,107 @@
     <canvas bind:this={chartCanvas}></canvas>
   </div>
 
-  <!-- Comparison table -->
+  <!-- Dynamic cost table -->
   <div class="glass-card" style="padding: 0; overflow: hidden; margin-top: 1.5rem;">
+    <div style="overflow-x: auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Product ({getSpanLabel()})</th>
+            {#each matrixZones as zone}
+              <th>{zone}</th>
+            {/each}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #009FE3;"></span> PAYG (Adult)</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyPayg' : activeSpan === 'monthly' ? 'monthlyPayg' : 'annualPayg')}</td>
+            {/each}
+          </tr>
+          {#if !isNoDiscount}
+            <tr>
+              <td class="product-name"><span class="product-dot" style="background: #6950A1;"></span> PAYG + {railcardShortName}</td>
+              {#each matrixZones as zone}
+                <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyPaygRailcard' : activeSpan === 'monthly' ? 'monthlyPaygRailcard' : 'annualPaygRailcard')}</td>
+              {/each}
+            </tr>
+          {/if}
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #EF7B10;"></span> Travelcard</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyTravelcard' : activeSpan === 'monthly' ? 'monthlyTravelcard' : 'annualTravelcard')}</td>
+            {/each}
+          </tr>
+          {#if activeSpan !== 'weekly'}
+            <tr>
+              <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Travelcard</td>
+              {#each matrixZones as zone}
+                <td class="price-cell">{getCostForZone(zone, activeSpan === 'monthly' ? 'monthlyStudentTravelcard' : 'annualStudentTravelcard')}</td>
+              {/each}
+            </tr>
+          {/if}
+          <tr class="best-row">
+            <td class="product-name"><strong>🏆 Best Option</strong></td>
+            {#each matrixZones as zone}
+              <td class="price-cell best-cell">{getBestForZone(zone)}</td>
+            {/each}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Contextual insights -->
+  {#if travelSummary && bestOption}
+    <div class="insights-grid" style="margin-top: 1.5rem;">
+      <div class="glass-card insight-card">
+        <div class="insight-icon">📊</div>
+        <h3>Your Travel Profile</h3>
+        <p>
+          You averaged <strong>£{travelSummary.avgWeekly.toFixed(2)}</strong> per week across
+          <strong>{travelSummary.weeks}</strong> weeks of data.
+          Your most common route was <strong>{travelSummary.topZone}</strong>.
+          {#if travelSummary.weeks >= 4}
+            That projects to roughly <strong>£{(travelSummary.avgWeekly * 4.33).toFixed(2)}</strong> per month
+            or <strong>£{(travelSummary.avgWeekly * 52).toFixed(0)}</strong> per year.
+          {/if}
+        </p>
+      </div>
+      <div class="glass-card insight-card">
+        <div class="insight-icon">🏆</div>
+        <h3>Best Option ({activeSpan === 'weekly' ? 'Weekly' : activeSpan === 'monthly' ? 'Monthly' : 'Annual'})</h3>
+        <p>
+          For <strong>{bestOption.zoneRange}</strong> travel {getSpanLabel()},
+          {#if bestOption.best === 'PAYG'}
+            <strong style="color: #009FE3;">PAYG</strong> at <strong>£{bestOption.payg.toFixed(2)}</strong> is your cheapest option.
+            {#if !isNoDiscount}
+              PAYG + {railcardShortName} would cost £{bestOption.railcard.toFixed(2)} and a Travelcard £{bestOption.travelcard.toFixed(2)}.
+            {:else}
+              A Travelcard would cost £{bestOption.travelcard.toFixed(2)} — only worth it if you travel much more frequently.
+            {/if}
+          {:else if bestOption.best === 'PAYG + Railcard'}
+            <strong style="color: #6950A1;">PAYG + {railcardShortName}</strong> at <strong>£{bestOption.railcard.toFixed(2)}</strong> beats
+            standard PAYG (£{bestOption.payg.toFixed(2)}) and Travelcard (£{bestOption.travelcard.toFixed(2)}).
+          {:else if bestOption.best === 'Travelcard'}
+            a <strong style="color: #EF7B10;">Travelcard</strong> at <strong>£{bestOption.travelcard.toFixed(2)}</strong> is cheapest.
+            You travel enough that unlimited rides saves over PAYG (£{bestOption.payg.toFixed(2)}).
+          {:else if bestOption.best === 'Student Travelcard'}
+            a <strong style="color: #10b981;">Student Travelcard</strong> offers the best value with 30% off the standard Travelcard price.
+          {:else}
+            <strong>{bestOption.best}</strong> is the cheapest option for this combination.
+          {/if}
+        </p>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Static travelcard price reference -->
+  <div class="glass-card" style="padding: 0; overflow: hidden; margin-top: 1.5rem;">
+    <div style="padding: 1rem 1.25rem 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">
+      <h3 style="font-size: 0.9rem; font-weight: 600; color: var(--color-text-secondary); margin: 0;">📋 Travelcard Price Reference</h3>
+    </div>
     <div style="overflow-x: auto;">
       <table class="data-table">
         <thead>
@@ -177,7 +444,7 @@
         </thead>
         <tbody>
           <tr>
-            <td class="product-name"><span class="product-dot" style="background: #009FE3;"></span> Weekly Travelcard</td>
+            <td class="product-name"><span class="product-dot" style="background: #EF7B10;"></span> Weekly Travelcard</td>
             {#each matrixZones as zone}
               <td class="price-cell">{getProductPrice(zone, 'Weekly TC')}</td>
             {/each}
@@ -206,45 +473,10 @@
               <td class="price-cell">{getProductPrice(zone, 'Student TC')}</td>
             {/each}
           </tr>
-          <tr class="best-row">
-            <td class="product-name"><strong>🏆 Best Annual Option</strong></td>
-            {#each matrixZones as zone}
-              <td class="price-cell best-cell">{getBestForZone(zone)}</td>
-            {/each}
-          </tr>
         </tbody>
       </table>
     </div>
   </div>
-
-  <!-- Key insights -->
-  {#if $savingsResult}
-    <div class="insights-grid" style="margin-top: 1.5rem;">
-      <div class="glass-card insight-card">
-        <div class="insight-icon">📊</div>
-        <h3>Your Travel Pattern</h3>
-        <p>
-          {$savingsResult.totalJourneys} journeys over the period.
-          {$savingsResult.eligibleJourneys} eligible for railcard discount
-          ({Math.round(($savingsResult.eligibleJourneys / Math.max(1, $savingsResult.totalJourneys)) * 100)}% off-peak).
-        </p>
-      </div>
-      <div class="glass-card insight-card">
-        <div class="insight-icon">💡</div>
-        <h3>Recommendation</h3>
-        <p>
-          {#if $savingsResult.netSaving > 0}
-            A <strong>{$savingsResult.railcardName}</strong> would save you
-            <strong style="color: #34d399;">£{$savingsResult.netSaving.toFixed(2)}</strong>
-            over this period. It pays for itself after {$savingsResult.breakEvenJourneys} journeys.
-          {:else}
-            Based on your travel patterns, a railcard would not provide net savings for this period.
-            Consider a Travelcard if you travel frequently in specific zones.
-          {/if}
-        </p>
-      </div>
-    </div>
-  {/if}
 </div>
 
 <style>
@@ -261,6 +493,89 @@
     color: var(--color-text-secondary);
     font-size: 0.9rem;
     margin-bottom: 1.5rem;
+  }
+
+  /* Settings bar */
+  .settings-bar {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .setting-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .setting-label-inline {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .compact-select {
+    min-width: 240px;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .card-cost-toggle {
+    padding: 0.375rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    gap: 0.5rem;
+  }
+
+  .card-cost-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .discount-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 0.625rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Controls row */
+  .controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .travel-context {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.375rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
 
   .chart-container {
@@ -333,5 +648,7 @@
   @media (max-width: 768px) {
     .chart-container { height: 300px; }
     .insights-grid { grid-template-columns: 1fr; }
+    .settings-row { flex-direction: column; align-items: flex-start; }
+    .compact-select { min-width: 100%; }
   }
 </style>
