@@ -4,7 +4,7 @@ import {
   lookupFare,
   BUS_SINGLE_FARE,
   HOPPER_WINDOW_MINUTES,
-  roundToNearest10p,
+  calculateDiscountedFare,
   type RailcardType,
   RAILCARDS,
 } from '../data/fareData';
@@ -41,28 +41,9 @@ export function calculateRailcardFare(
   journey: ClassifiedJourney,
   railcardType: RailcardType
 ): number {
-  const railcard = RAILCARDS[railcardType];
-
-  // Bus fares are generally not discounted by railcards, except Jobcentre Plus
-  if (journey.isBus) {
-    if (journey.isHopperFree) return 0;
-    if (railcardType === 'jobcentre') {
-      return roundToNearest10p(BUS_SINGLE_FARE * 0.5);
-    }
-    return BUS_SINGLE_FARE;
-  }
-
+  if (journey.isBus && journey.isHopperFree) return 0;
   const baseFare = calculateExpectedFare(journey);
-
-  // Check if railcard applies to this journey type
-  if (journey.isPeak && !railcard.appliesToPeak) {
-    // Railcard doesn't apply to peak journeys (except Disabled Persons)
-    return baseFare;
-  }
-
-  // Apply 1/3 discount and round to nearest 10p
-  const discountedFare = baseFare * (1 - railcard.discount);
-  return roundToNearest10p(discountedFare);
+  return calculateDiscountedFare(baseFare, railcardType, journey.isPeak, journey.isBus);
 }
 
 // Process hopper fare logic for a day's bus journeys

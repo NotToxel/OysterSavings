@@ -1,7 +1,7 @@
 // Cap Engine — daily and weekly cap tracking
 import type { ClassifiedJourney } from './journeyClassifier';
 import type { FareResult } from './fareCalculator';
-import { lookupDailyCap, lookupWeeklyCap, BUS_DAILY_CAP, DAILY_CAPS, DAILY_CAPS_OFFPEAK, type RailcardType } from '../data/fareData';
+import { lookupDailyCap, lookupWeeklyCap, BUS_DAILY_CAP, DAILY_CAPS, DAILY_CAPS_OFFPEAK, roundToNearest10p, type RailcardType } from '../data/fareData';
 
 export interface DayCapResult {
   date: string;
@@ -220,7 +220,8 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
     // Widest zone range across the week
     const allJourneys = days.flatMap((d) => d.journeys);
     const maxZoneRange = getMaxZoneRange(allJourneys);
-    const weeklyCap = lookupWeeklyCap(maxZoneRange, railcardType);
+    const weeklyCapBase = lookupWeeklyCap(maxZoneRange);
+    const weeklyCap = railcardType === 'jobcentre' ? roundToNearest10p(weeklyCapBase * 0.5) : weeklyCapBase;
 
     const totalSpend = days.reduce((sum, d) => sum + d.totalSpend, 0);
     const capHit = totalSpend >= weeklyCap;

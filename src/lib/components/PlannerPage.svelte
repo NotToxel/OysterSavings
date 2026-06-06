@@ -8,7 +8,7 @@
     patternToRule
   } from '$lib/engine/recurrenceEngine';
   import { runForecast } from '$lib/engine/forecastEngine';
-  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, roundToNearest10p, type RailcardType } from '$lib/data/fareData';
+  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, calculateDiscountedFare, type RailcardType } from '$lib/data/fareData';
 
   // Calendar state
   let calendarDate = $state(new Date());
@@ -39,23 +39,7 @@
     const isPeakFare = timePeriod === '06:30-09:30' || timePeriod === '16:00-19:00';
     const zoneRange = getZoneRange(origin, dest);
     const rawFare = mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, mode);
-    
-    if (mode === 'bus') {
-      if (discount === 'jobcentre') return roundToNearest10p(rawFare * 0.5);
-      return rawFare;
-    }
-
-    if (discount === 'none' || discount === 'student') {
-      return rawFare;
-    }
-    
-    const rc = RAILCARDS[discount as RailcardType];
-    if (rc) {
-      if (!isPeakFare || rc.appliesToPeak) {
-        return roundToNearest10p(rawFare * (1 - rc.discount));
-      }
-    }
-    return rawFare;
+    return calculateDiscountedFare(rawFare, discount as RailcardType, isPeakFare, mode === 'bus');
   }
 
   const TIME_PERIODS = [
@@ -75,6 +59,15 @@
     if (!validValues.includes(newReturnTimePeriod)) {
       newReturnTimePeriod = validValues[0];
     }
+  });
+
+  let estimatedTotalFare = $derived.by(() => {
+    const outbound = getEstimatedFare(newOriginZone, newDestZone, newTimePeriod, newMode, $selectedRailcard);
+    if (newIsReturn) {
+      const ret = getEstimatedFare(newDestZone, newOriginZone, newReturnTimePeriod, newMode, $selectedRailcard);
+      return outbound + ret;
+    }
+    return outbound;
   });
 
   // Date range for planning
@@ -160,7 +153,13 @@
 
     const rule: RecurrenceRule = {
       id: editRuleId || crypto.randomUUID(),
-      name: newRuleName || (newIntervalType === 'none' ? 'One-off Journey' : `Zone ${newOriginZone} → Zone ${newDestZone}`),
+      name: newRuleName || (newIntervalType === 'none'
+        ? (newIsReturn ? 'One-off Return Journey' : 'One-off Journey')
+        : (newMode === 'bus'
+            ? (newIsReturn ? 'Bus Commute (Return)' : 'Bus Commute')
+            : `Zone ${newOriginZone} ${newIsReturn ? '↔' : '→'} Zone ${newDestZone}`
+          )
+      ),
       originZone: newOriginZone,
       destinationZone: newDestZone,
       mode: newMode,
@@ -211,6 +210,36 @@
 
   function removeRule(id: string) {
     $recurrenceRules = $recurrenceRules.filter(r => r.id !== id);
+    regenerate();
+  }
+
+  function clearJourneysForDate(dateKey: string) {
+    const dayJourneys = journeysByDate.get(dateKey) || [];
+    if (dayJourneys.length === 0) return;
+
+    const ruleIdsToAffect = new Set(
+      dayJourneys.map(j => j.ruleId.replace('-return', ''))
+    );
+
+    $recurrenceRules = $recurrenceRules
+      .map(rule => {
+        if (ruleIdsToAffect.has(rule.id)) {
+          if (rule.intervalType === 'none') {
+            return null;
+          } else {
+            const currentExcludes = rule.excludeDates || [];
+            if (!currentExcludes.includes(dateKey)) {
+              return {
+                ...rule,
+                excludeDates: [...currentExcludes, dateKey]
+              };
+            }
+          }
+        }
+        return rule;
+      })
+      .filter((rule): rule is RecurrenceRule => rule !== null);
+
     regenerate();
   }
 
@@ -309,8 +338,12 @@
                   <div class="rule-info">
                     <div class="rule-name">{rule.name}</div>
                     <div class="rule-detail">
-                      Z{rule.originZone}→Z{rule.destinationZone} •
-                      {rule.timePeriod} •
+                      {#if rule.mode === 'bus'}
+                        Bus •
+                      {:else}
+                        Z{rule.originZone}{rule.isReturn ? '↔' : '→'}Z{rule.destinationZone} •
+                      {/if}
+                      {rule.timePeriod}{rule.isReturn ? ` (+${rule.returnTimePeriod})` : ''} •
                       {rule.daysOfWeek.map(d => ['Su','Mo','Tu','We','Th','Fr','Sa'][d]).join(',')}
                     </div>
                   </div>
@@ -339,7 +372,12 @@
                   <div class="rule-name">{rule.name}</div>
                   <div class="rule-detail">
                     {rule.startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} •
-                    Z{rule.originZone}→Z{rule.destinationZone} • {rule.timePeriod}
+                    {#if rule.mode === 'bus'}
+                      Bus
+                    {:else}
+                      Z{rule.originZone}{rule.isReturn ? '↔' : '→'}Z{rule.destinationZone}
+                    {/if}
+                    • {rule.timePeriod}{rule.isReturn ? ` (+${rule.returnTimePeriod})` : ''}
                   </div>
                 </div>
                 <div class="rule-actions" style="display: flex; gap: 0.25rem;">
@@ -421,7 +459,7 @@
             <div
               class="calendar-cell"
               class:other-month={!day.isCurrentMonth}
-              class:cap-hit={forecast?.capHit}
+              class:cap-hit={$selectedRailcard === 'none' ? forecast?.capHit : forecast?.capHitRailcard}
               class:has-journeys={dayJourneys.length > 0}
               class:in-planning-period={dateKey >= planStart && dateKey <= planEnd}
               role="button"
@@ -432,16 +470,23 @@
             >
               <div class="day-number">{day.date.getDate()}</div>
               {#if dayJourneys.length > 0}
+                <button
+                  class="clear-day-btn"
+                  onclick={(e) => { e.stopPropagation(); clearJourneysForDate(dateKey); }}
+                  aria-label="Clear journeys for this day"
+                >
+                  ✕
+                </button>
                 <div class="day-journey-count">{dayJourneys.length} trip{dayJourneys.length > 1 ? 's' : ''}</div>
                 {#if forecast}
-                  <div class="day-spend">£{forecast.cappedFare.toFixed(2)}</div>
+                  <div class="day-spend">£{($selectedRailcard === 'none' ? forecast.cappedFare : forecast.cappedFareRailcard).toFixed(2)}</div>
                   <div class="mini-cap-bar">
                     <div
                       class="mini-cap-fill"
-                      style="width: {forecast.capProgress * 100}%; background: {getCapColor(forecast.capProgress)};"
+                      style="width: {($selectedRailcard === 'none' ? forecast.capProgress : forecast.capProgressRailcard) * 100}%; background: {getCapColor($selectedRailcard === 'none' ? forecast.capProgress : forecast.capProgressRailcard)};"
                     ></div>
                   </div>
-                  {#if forecast.capHit}
+                  {#if ($selectedRailcard === 'none' ? forecast.capHit : forecast.capHitRailcard)}
                     <div class="cap-hit-label">Cap Hit ✓</div>
                   {/if}
                 {/if}
@@ -558,21 +603,24 @@
             {/if}
           </div>
 
-          {#if newMode !== 'bus'}
-            <div class="form-row" style="margin-top: 0.5rem; align-items: center;">
-              <label class="setting-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                <input type="checkbox" bind:checked={newIsReturn} style="width: 1rem; height: 1rem;" />
-                Include Return Journey
+          <div class="form-row return-journey-row" style="margin-top: 0.5rem; align-items: flex-end;">
+            <div class="form-group checkbox-group" style="margin-bottom: 0;">
+              <label class="setting-label" style="margin-bottom: 0.5rem; display: block;">Return Trip</label>
+              <label class="checkbox-field" class:active={newIsReturn}>
+                <input type="checkbox" bind:checked={newIsReturn} />
+                <span class="checkmark"></span>
+                <span class="checkbox-text">Add Return Journey</span>
               </label>
-              {#if newIsReturn}
-                <select class="input-field" bind:value={newReturnTimePeriod}>
-                  {#each returnTimePeriodOptions as t}
-                    <option value={t.value}>Return {t.label}</option>
-                  {/each}
-                </select>
-              {/if}
             </div>
-          {/if}
+            <div class="form-group" style="margin-bottom: 0;" class:hidden-field={!newIsReturn}>
+              <label class="setting-label">Return Time</label>
+              <select class="input-field" bind:value={newReturnTimePeriod} disabled={!newIsReturn}>
+                {#each returnTimePeriodOptions as t}
+                  <option value={t.value}>{t.label}</option>
+                {/each}
+              </select>
+            </div>
+          </div>
 
           {#if newMode !== 'bus'}
             <div class="form-row">
@@ -628,21 +676,18 @@
             </div>
           {/if}
 
-          {#if newMode !== 'bus'}
-            <div class="form-group" style="margin-top: 0.5rem;">
-              <div class="zone-preview">
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <div class="zone-preview">
+              {#if newMode !== 'bus'}
                 Fare zone: <strong>{getZoneRange(newOriginZone, newDestZone)}</strong>
                 <span style="margin: 0 0.5rem;">•</span>
-                Estimated Fare: <strong>£{getEstimatedFare(newOriginZone, newDestZone, newTimePeriod, newMode, $selectedRailcard).toFixed(2)}</strong>
-              </div>
+              {/if}
+              Estimated Fare: <strong>£{estimatedTotalFare.toFixed(2)}</strong>
+              {#if newIsReturn}
+                <span style="font-size: 0.75rem; color: var(--color-text-muted);"> (includes return)</span>
+              {/if}
             </div>
-          {:else}
-            <div class="form-group" style="margin-top: 0.5rem;">
-              <div class="zone-preview">
-                Estimated Fare: <strong>£{BUS_SINGLE_FARE.toFixed(2)}</strong>
-              </div>
-            </div>
-          {/if}
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -878,6 +923,134 @@
     background: rgba(255, 255, 255, 0.03);
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
+  }
+
+  /* Checkbox and field alignments */
+  .checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    height: 38px; /* Perfectly matches input-field height */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    width: 100%;
+  }
+
+  .checkbox-field:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .checkbox-field.active {
+    border-color: var(--color-oyster-blue);
+    background: rgba(0, 159, 227, 0.05);
+  }
+
+  .checkbox-field input {
+    display: none;
+  }
+
+  .checkbox-field .checkmark {
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.02);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .checkbox-field:hover .checkmark {
+    border-color: rgba(0, 159, 227, 0.5);
+  }
+
+  .checkbox-field input:checked + .checkmark {
+    background: var(--color-oyster-blue);
+    border-color: var(--color-oyster-blue);
+    box-shadow: 0 0 8px rgba(0, 159, 227, 0.4);
+  }
+
+  .checkbox-field input:checked + .checkmark::after {
+    content: "";
+    width: 0.25rem;
+    height: 0.45rem;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    position: absolute;
+    top: 3px;
+    left: 6px;
+  }
+
+  .checkbox-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: color 0.2s ease;
+  }
+
+  .checkbox-field.active .checkbox-text {
+    color: var(--color-text-primary);
+  }
+
+  .input-field:disabled {
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+    color: var(--color-text-muted);
+  }
+
+  .hidden-field {
+    opacity: 0.35;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .calendar-cell {
+    position: relative;
+  }
+
+  .clear-day-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    font-size: 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 5;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .calendar-cell:hover .clear-day-btn {
+    opacity: 1;
+  }
+
+  .clear-day-btn:hover {
+    background: rgba(239, 68, 68, 0.35);
+    border-color: rgba(239, 68, 68, 0.6);
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    transform: scale(1.1);
   }
 
   @media (max-width: 768px) {

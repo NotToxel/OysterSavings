@@ -83,24 +83,120 @@
     "Z4": {
       "peak": 2.3,
       "offPeak": 2.2
+    },
+    "Z1-7": {
+      "peak": 7.1,
+      "offPeak": 5.2
+    },
+    "Z1-8": {
+      "peak": 8.7,
+      "offPeak": 5.2
+    },
+    "Z1-9": {
+      "peak": 8.8,
+      "offPeak": 5.3
+    },
+    "Z2-7": {
+      "peak": 5.2,
+      "offPeak": 3.7
+    },
+    "Z2-8": {
+      "peak": 5.9,
+      "offPeak": 3.8
+    },
+    "Z2-9": {
+      "peak": 5.9,
+      "offPeak": 3.8
+    },
+    "Z3-7": {
+      "peak": 4.2,
+      "offPeak": 2.4
+    },
+    "Z3-8": {
+      "peak": 5.1,
+      "offPeak": 2.4
+    },
+    "Z3-9": {
+      "peak": 5.3,
+      "offPeak": 2.4
+    },
+    "Z4-7": {
+      "peak": 3.4,
+      "offPeak": 2.4
+    },
+    "Z4-8": {
+      "peak": 4.2,
+      "offPeak": 2.4
+    },
+    "Z4-9": {
+      "peak": 4.3,
+      "offPeak": 2.4
+    },
+    "Z5-7": {
+      "peak": 3.1,
+      "offPeak": 2.4
+    },
+    "Z5-8": {
+      "peak": 3.4,
+      "offPeak": 2.4
+    },
+    "Z5-9": {
+      "peak": 3.7,
+      "offPeak": 2.4
+    },
+    "Z6-7": {
+      "peak": 2.3,
+      "offPeak": 2.1
+    },
+    "Z6-8": {
+      "peak": 3.1,
+      "offPeak": 2.3
+    },
+    "Z6-9": {
+      "peak": 3.2,
+      "offPeak": 2.4
+    },
+    "Z7-8": {
+      "peak": 2.3,
+      "offPeak": 2.1
+    },
+    "Z7-9": {
+      "peak": 2.4,
+      "offPeak": 2.2
+    },
+    "Z8-9": {
+      "peak": 2.3,
+      "offPeak": 2.1
+    },
+    "Z7": {
+      "peak": 2.1,
+      "offPeak": 2
+    },
+    "Z8": {
+      "peak": 2.3,
+      "offPeak": 2.1
+    },
+    "Z9": {
+      "peak": 2.3,
+      "offPeak": 2.1
     }
   },
   "national_rail": {
     "Z1-2": {
-      "peak": 3.6,
-      "offPeak": 3.1
+      "peak": 3.9,
+      "offPeak": 3.2
     },
     "Z1-3": {
       "peak": 4.6,
       "offPeak": 3.7
     },
     "Z1-4": {
-      "peak": 4.6,
-      "offPeak": 3.7
-    },
-    "Z1-5": {
       "peak": 5.3,
       "offPeak": 4
+    },
+    "Z1-5": {
+      "peak": 6.6,
+      "offPeak": 4.4
     },
     "Z1-6": {
       "peak": 8.5,
@@ -111,52 +207,52 @@
       "offPeak": 3
     },
     "Z2-4": {
-      "peak": 3.6,
-      "offPeak": 3
+      "peak": 5.3,
+      "offPeak": 4
     },
     "Z2-5": {
-      "peak": 4,
-      "offPeak": 3.2
+      "peak": 6.6,
+      "offPeak": 4.4
     },
     "Z2-6": {
-      "peak": 5.5,
-      "offPeak": 3.9
+      "peak": 8.5,
+      "offPeak": 5.2
     },
     "Z3": {
-      "peak": 4.6,
-      "offPeak": 3.7
-    },
-    "Z3-4": {
       "peak": 3,
       "offPeak": 2.7
     },
-    "Z3-5": {
+    "Z3-4": {
       "peak": 3.6,
       "offPeak": 3
+    },
+    "Z3-5": {
+      "peak": 4,
+      "offPeak": 3.2
     },
     "Z3-6": {
       "peak": 4.8,
       "offPeak": 3.7
     },
     "Z4": {
-      "peak": 4.6,
-      "offPeak": 3.7
-    },
-    "Z4-5": {
       "peak": 3,
       "offPeak": 2.7
     },
-    "Z4-6": {
+    "Z4-5": {
       "peak": 4,
       "offPeak": 3.2
+    },
+    "Z4-6": {
+      "peak": 4.8,
+      "offPeak": 3.7
     },
     "Z5": {
-      "peak": 5.3,
-      "offPeak": 4
+      "peak": 3,
+      "offPeak": 2.7
     },
     "Z5-6": {
-      "peak": 4,
-      "offPeak": 3.2
+      "peak": 3.6,
+      "offPeak": 3
     },
     "Z1": {
       "peak": 3.1,
@@ -169,6 +265,102 @@
     "Z6": {
       "peak": 3,
       "offPeak": 2.7
+    },
+    "Z1-7": {
+      "peak": 10.6,
+      "offPeak": 6.2
+    },
+    "Z1-8": {
+      "peak": 9.6,
+      "offPeak": 5.7
+    },
+    "Z1-9": {
+      "peak": 9.4,
+      "offPeak": 6.4
+    },
+    "Z2-7": {
+      "peak": 10.6,
+      "offPeak": 6.2
+    },
+    "Z2-8": {
+      "peak": 9.6,
+      "offPeak": 5.7
+    },
+    "Z2-9": {
+      "peak": 9.4,
+      "offPeak": 6.4
+    },
+    "Z3-7": {
+      "peak": 10.6,
+      "offPeak": 6.2
+    },
+    "Z3-8": {
+      "peak": 5.8,
+      "offPeak": 3.7
+    },
+    "Z3-9": {
+      "peak": 9.4,
+      "offPeak": 6.4
+    },
+    "Z4-7": {
+      "peak": 10.6,
+      "offPeak": 6.2
+    },
+    "Z4-8": {
+      "peak": 5.8,
+      "offPeak": 3.7
+    },
+    "Z4-9": {
+      "peak": 9.4,
+      "offPeak": 6.4
+    },
+    "Z5-7": {
+      "peak": 10.6,
+      "offPeak": 6.2
+    },
+    "Z5-8": {
+      "peak": 4.8,
+      "offPeak": 3.7
+    },
+    "Z5-9": {
+      "peak": 9.4,
+      "offPeak": 6.4
+    },
+    "Z6-7": {
+      "peak": 10.6,
+      "offPeak": 6.2
+    },
+    "Z6-8": {
+      "peak": 4.8,
+      "offPeak": 3.7
+    },
+    "Z6-9": {
+      "peak": 9.4,
+      "offPeak": 6.4
+    },
+    "Z7-8": {
+      "peak": 14.6,
+      "offPeak": 9.6
+    },
+    "Z7-9": {
+      "peak": 13.4,
+      "offPeak": 10.3
+    },
+    "Z8-9": {
+      "peak": 13.4,
+      "offPeak": 9.6
+    },
+    "Z7": {
+      "peak": 2.1,
+      "offPeak": 2
+    },
+    "Z8": {
+      "peak": 5.8,
+      "offPeak": 3.7
+    },
+    "Z9": {
+      "peak": 2.1,
+      "offPeak": 2
     }
   },
   "nr_tube": {
@@ -177,24 +369,24 @@
       "offPeak": 3
     },
     "Z1-2": {
-      "peak": 3.6,
-      "offPeak": 3.1
+      "peak": 5.9,
+      "offPeak": 5.1
     },
     "Z1-3": {
-      "peak": 3.9,
-      "offPeak": 3.3
+      "peak": 6.6,
+      "offPeak": 5.4
     },
     "Z1-4": {
-      "peak": 4.8,
-      "offPeak": 3.6
+      "peak": 7.3,
+      "offPeak": 5.9
     },
     "Z1-5": {
-      "peak": 5.3,
-      "offPeak": 3.8
+      "peak": 8.8,
+      "offPeak": 6.3
     },
     "Z1-6": {
-      "peak": 5.9,
-      "offPeak": 4
+      "peak": 10.4,
+      "offPeak": 7
     },
     "Z2": {
       "peak": 3.6,
@@ -255,6 +447,102 @@
     "Z6": {
       "peak": 10.4,
       "offPeak": 7
+    },
+    "Z1-7": {
+      "peak": 13.5,
+      "offPeak": 9
+    },
+    "Z1-8": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z1-9": {
+      "peak": 12.3,
+      "offPeak": 9.2
+    },
+    "Z2-7": {
+      "peak": 7.1,
+      "offPeak": 5.2
+    },
+    "Z2-8": {
+      "peak": 8.7,
+      "offPeak": 5.2
+    },
+    "Z2-9": {
+      "peak": 8.8,
+      "offPeak": 5.3
+    },
+    "Z3-7": {
+      "peak": 7.1,
+      "offPeak": 5.2
+    },
+    "Z3-8": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z3-9": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z4-7": {
+      "peak": 7.1,
+      "offPeak": 5.2
+    },
+    "Z4-8": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z4-9": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z5-7": {
+      "peak": 7.1,
+      "offPeak": 5.2
+    },
+    "Z5-8": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z5-9": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z6-7": {
+      "peak": 7.1,
+      "offPeak": 5.2
+    },
+    "Z6-8": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z6-9": {
+      "peak": 10.4,
+      "offPeak": 7
+    },
+    "Z7-8": {
+      "peak": 2.3,
+      "offPeak": 2.1
+    },
+    "Z7-9": {
+      "peak": 2.4,
+      "offPeak": 2.2
+    },
+    "Z8-9": {
+      "peak": 2.3,
+      "offPeak": 2.1
+    },
+    "Z7": {
+      "peak": 2.1,
+      "offPeak": 2
+    },
+    "Z8": {
+      "peak": 2.3,
+      "offPeak": 2.1
+    },
+    "Z9": {
+      "peak": 2.1,
+      "offPeak": 2
     }
   }
 }

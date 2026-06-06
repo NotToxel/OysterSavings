@@ -15,6 +15,7 @@ export interface RecurrenceRule {
   intervalValue: number;
   startDate: Date;
   endDate: Date;
+  excludeDates?: string[]; // Array of YYYY-MM-DD strings
 }
 
 export interface PlannedJourney {
@@ -37,6 +38,8 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
     current.setHours(0, 0, 0, 0);
     const end = new Date(rule.endDate);
     end.setHours(23, 59, 59, 999);
+
+    const excludeSet = new Set(rule.excludeDates || []);
 
     let weekCount = 0;
     let lastWeek = -1;
@@ -86,7 +89,12 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
         }
       }
 
-      if (shouldAdd) {
+      const year = current.getFullYear();
+      const month = String(current.getMonth() + 1).padStart(2, '0');
+      const day = String(current.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+
+      if (shouldAdd && !excludeSet.has(dateKey)) {
         journeys.push({
           date: new Date(current),
           dateStr: formatDate(current),

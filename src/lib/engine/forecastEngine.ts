@@ -7,6 +7,7 @@ import {
   BUS_SINGLE_FARE,
   lookupDailyCap,
   lookupWeeklyCap,
+  calculateDiscountedFare,
   roundToNearest10p,
   type RailcardType,
   RAILCARDS,
@@ -28,6 +29,8 @@ export interface ForecastDay {
   cappedFareRailcard: number;
   capHit: boolean;
   capProgress: number;
+  capHitRailcard: boolean;
+  capProgressRailcard: number;
 }
 
 export interface ForecastResult {
@@ -105,12 +108,7 @@ export function runForecast(
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       const fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
       
-      let railcardFare = fare;
-      if (j.mode !== 'bus') {
-        if (!isPeakFare || railcard.appliesToPeak) {
-          railcardFare = roundToNearest10p(fare * (1 - railcard.discount));
-        }
-      }
+      let railcardFare = calculateDiscountedFare(fare, railcardType, isPeakFare, j.mode === 'bus');
 
       totalFare += fare;
       totalFareRailcard += railcardFare;
@@ -133,12 +131,13 @@ export function runForecast(
       maxZoneRange = 'Z1-2';
     }
     
-    const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay);
-    // Jobcentre Plus gets 50% off caps
-    const railcardDailyCap = railcardType === 'jobcentre' ? roundToNearest10p(dailyCap * 0.5) : dailyCap;
+    const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay, 'none');
+    const railcardDailyCap = lookupDailyCap(maxZoneRange, isPeakDay, railcardType);
     const cappedFare = Math.min(totalFare, dailyCap);
     const cappedFareRailcard = Math.min(totalFareRailcard, railcardDailyCap);
     const capHit = totalFare >= dailyCap;
+    const capHitRailcard = totalFareRailcard >= railcardDailyCap;
+    const capProgressRailcard = railcardDailyCap > 0 ? Math.min(1, totalFareRailcard / railcardDailyCap) : 0;
 
     days.push({
       date: journeys[0].date,
@@ -151,6 +150,8 @@ export function runForecast(
       cappedFareRailcard: round2(cappedFareRailcard),
       capHit,
       capProgress: Math.min(1, totalFare / dailyCap),
+      capHitRailcard,
+      capProgressRailcard,
     });
   }
 

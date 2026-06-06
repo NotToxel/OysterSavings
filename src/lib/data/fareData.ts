@@ -8,22 +8,22 @@ const exactFares: Record<string, { peak: number, offPeak: number }> = sampledZon
 
 export type ZoneRange =
   | 'Z1'
-  | 'Z1-2'
-  | 'Z1-3'
-  | 'Z1-4'
-  | 'Z1-5'
-  | 'Z1-6'
+  | 'Z1-2' | 'Z1-3' | 'Z1-4' | 'Z1-5' | 'Z1-6' | 'Z1-7' | 'Z1-8' | 'Z1-9'
   | 'Z2'
-  | 'Z2-3'
-  | 'Z2-6'
+  | 'Z2-3' | 'Z2-4' | 'Z2-5' | 'Z2-6' | 'Z2-7' | 'Z2-8' | 'Z2-9'
   | 'Z3'
-  | 'Z3-5'
-  | 'Z3-6'
+  | 'Z3-4' | 'Z3-5' | 'Z3-6' | 'Z3-7' | 'Z3-8' | 'Z3-9'
   | 'Z4'
-  | 'Z4-6'
+  | 'Z4-5' | 'Z4-6' | 'Z4-7' | 'Z4-8' | 'Z4-9'
   | 'Z5'
-  | 'Z5-6'
-  | 'Z6';
+  | 'Z5-6' | 'Z5-7' | 'Z5-8' | 'Z5-9'
+  | 'Z6'
+  | 'Z6-7' | 'Z6-8' | 'Z6-9'
+  | 'Z7'
+  | 'Z7-8' | 'Z7-9'
+  | 'Z8'
+  | 'Z8-9'
+  | 'Z9';
 
 export interface SingleFare {
   peak: number;
@@ -37,6 +37,7 @@ export interface FareScales {
 }
 
 // PAYG single fares broken down by transport mode
+// Updated from TfL API — June 2026 (Metropolitan + Southeastern line sampling)
 export const PAYG_FARES: FareScales = {
   tfl: {
     'Z1':   { peak: 3.10, offPeak: 3.00 },
@@ -45,55 +46,139 @@ export const PAYG_FARES: FareScales = {
     'Z1-4': { peak: 4.80, offPeak: 3.60 },
     'Z1-5': { peak: 5.30, offPeak: 3.80 },
     'Z1-6': { peak: 5.90, offPeak: 4.00 },
+    'Z1-7': { peak: 7.10, offPeak: 5.20 },
+    'Z1-8': { peak: 8.70, offPeak: 5.20 },
+    'Z1-9': { peak: 8.80, offPeak: 5.30 },
     'Z2':   { peak: 2.30, offPeak: 2.20 },
-    'Z2-3': { peak: 2.30, offPeak: 2.20 },
-    'Z2-6': { peak: 3.10, offPeak: 2.50 },
+    'Z2-3': { peak: 2.50, offPeak: 2.30 },
+    'Z2-4': { peak: 3.20, offPeak: 2.40 },
+    'Z2-5': { peak: 3.40, offPeak: 2.50 },
+    'Z2-6': { peak: 3.80, offPeak: 2.60 },
+    'Z2-7': { peak: 5.20, offPeak: 3.70 },
+    'Z2-8': { peak: 5.90, offPeak: 3.80 },
+    'Z2-9': { peak: 5.90, offPeak: 3.80 },
     'Z3':   { peak: 2.30, offPeak: 2.20 },
-    'Z3-5': { peak: 2.30, offPeak: 2.20 },
-    'Z3-6': { peak: 2.30, offPeak: 2.20 },
+    'Z3-4': { peak: 2.50, offPeak: 2.30 },
+    'Z3-5': { peak: 3.20, offPeak: 2.40 },
+    'Z3-6': { peak: 3.40, offPeak: 2.50 },
+    'Z3-7': { peak: 4.20, offPeak: 2.40 },
+    'Z3-8': { peak: 5.10, offPeak: 2.40 },
+    'Z3-9': { peak: 5.30, offPeak: 2.40 },
     'Z4':   { peak: 2.30, offPeak: 2.20 },
-    'Z4-6': { peak: 2.30, offPeak: 2.20 },
+    'Z4-5': { peak: 2.50, offPeak: 2.30 },
+    'Z4-6': { peak: 3.20, offPeak: 2.40 },
+    'Z4-7': { peak: 3.40, offPeak: 2.40 },
+    'Z4-8': { peak: 4.20, offPeak: 2.40 },
+    'Z4-9': { peak: 4.30, offPeak: 2.40 },
     'Z5':   { peak: 2.30, offPeak: 2.20 },
-    'Z5-6': { peak: 2.30, offPeak: 2.20 },
+    'Z5-6': { peak: 2.50, offPeak: 2.30 },
+    'Z5-7': { peak: 3.10, offPeak: 2.40 },
+    'Z5-8': { peak: 3.40, offPeak: 2.40 },
+    'Z5-9': { peak: 3.70, offPeak: 2.40 },
     'Z6':   { peak: 2.30, offPeak: 2.20 },
+    'Z6-7': { peak: 2.30, offPeak: 2.10 },
+    'Z6-8': { peak: 3.10, offPeak: 2.30 },
+    'Z6-9': { peak: 3.20, offPeak: 2.40 },
+    'Z7':   { peak: 2.10, offPeak: 2.00 },
+    'Z7-8': { peak: 2.30, offPeak: 2.10 },
+    'Z7-9': { peak: 2.40, offPeak: 2.20 },
+    'Z8':   { peak: 2.30, offPeak: 2.10 },
+    'Z8-9': { peak: 2.30, offPeak: 2.10 },
+    'Z9':   { peak: 2.30, offPeak: 2.10 },
   },
   national_rail: {
-    'Z1':   { peak: 2.80, offPeak: 2.70 },
-    'Z1-2': { peak: 3.90, offPeak: 3.20 },
-    'Z1-3': { peak: 4.60, offPeak: 3.70 },
-    'Z1-4': { peak: 5.40, offPeak: 4.20 },
-    'Z1-5': { peak: 6.60, offPeak: 4.90 },
-    'Z1-6': { peak: 7.50, offPeak: 5.80 },
-    'Z2':   { peak: 2.60, offPeak: 2.50 },
-    'Z2-3': { peak: 2.60, offPeak: 2.50 },
-    'Z2-6': { peak: 3.60, offPeak: 2.90 },
-    'Z3':   { peak: 2.60, offPeak: 2.50 },
-    'Z3-5': { peak: 2.60, offPeak: 2.50 },
-    'Z3-6': { peak: 2.60, offPeak: 2.50 },
-    'Z4':   { peak: 2.60, offPeak: 2.50 },
-    'Z4-6': { peak: 2.60, offPeak: 2.50 },
-    'Z5':   { peak: 2.60, offPeak: 2.50 },
-    'Z5-6': { peak: 2.60, offPeak: 2.50 },
-    'Z6':   { peak: 2.60, offPeak: 2.50 },
+    'Z1':    { peak: 3.10, offPeak: 3.00 },
+    'Z1-2':  { peak: 3.90, offPeak: 3.20 },
+    'Z1-3':  { peak: 4.60, offPeak: 3.70 },
+    'Z1-4':  { peak: 5.30, offPeak: 4.00 },
+    'Z1-5':  { peak: 6.60, offPeak: 4.40 },
+    'Z1-6':  { peak: 8.50, offPeak: 5.20 },
+    'Z1-7':  { peak: 7.10, offPeak: 5.20 },
+    'Z1-8':  { peak: 9.60, offPeak: 5.70 },
+    'Z1-9':  { peak: 11.20, offPeak: 7.70 },
+    'Z2':    { peak: 3.00, offPeak: 2.70 },
+    'Z2-3':  { peak: 3.60, offPeak: 3.00 },
+    'Z2-4':  { peak: 5.30, offPeak: 4.00 },
+    'Z2-5':  { peak: 6.60, offPeak: 4.40 },
+    'Z2-6':  { peak: 8.50, offPeak: 5.20 },
+    'Z2-7':  { peak: 5.80, offPeak: 4.20 },
+    'Z2-8':  { peak: 9.60, offPeak: 5.70 },
+    'Z2-9':  { peak: 8.70, offPeak: 5.80 },
+    'Z3':    { peak: 3.00, offPeak: 2.70 },
+    'Z3-4':  { peak: 3.60, offPeak: 3.00 },
+    'Z3-5':  { peak: 4.00, offPeak: 3.20 },
+    'Z3-6':  { peak: 4.80, offPeak: 3.70 },
+    'Z3-7':  { peak: 5.80, offPeak: 4.20 },
+    'Z3-8':  { peak: 5.80, offPeak: 3.70 },
+    'Z3-9':  { peak: 8.70, offPeak: 5.80 },
+    'Z4':    { peak: 3.00, offPeak: 2.70 },
+    'Z4-5':  { peak: 4.00, offPeak: 3.20 },
+    'Z4-6':  { peak: 4.80, offPeak: 3.70 },
+    'Z4-7':  { peak: 5.80, offPeak: 4.20 },
+    'Z4-8':  { peak: 5.80, offPeak: 3.70 },
+    'Z4-9':  { peak: 8.70, offPeak: 5.80 },
+    'Z5':    { peak: 3.00, offPeak: 2.70 },
+    'Z5-6':  { peak: 3.60, offPeak: 3.00 },
+    'Z5-7':  { peak: 10.40, offPeak: 7.00 },
+    'Z5-8':  { peak: 4.80, offPeak: 3.70 },
+    'Z5-9':  { peak: 10.60, offPeak: 7.30 },
+    'Z6':    { peak: 3.00, offPeak: 2.70 },
+    'Z6-7':  { peak: 5.80, offPeak: 4.20 },
+    'Z6-8':  { peak: 4.80, offPeak: 3.70 },
+    'Z6-9':  { peak: 8.70, offPeak: 5.80 },
+    'Z7':    { peak: 2.10, offPeak: 2.00 },
+    'Z7-8':  { peak: 10.40, offPeak: 7.00 },
+    'Z7-9':  { peak: 7.80, offPeak: 4.70 },
+    'Z8':    { peak: 5.80, offPeak: 3.70 },
+    'Z8-9':  { peak: 10.40, offPeak: 7.00 },
+    'Z9':    { peak: 2.10, offPeak: 2.00 },
   },
   nr_tube: {
-    'Z1':   { peak: 3.60, offPeak: 3.10 },
-    'Z1-2': { peak: 4.20, offPeak: 3.60 },
-    'Z1-3': { peak: 4.80, offPeak: 3.60 },
-    'Z1-4': { peak: 5.40, offPeak: 4.20 },
-    'Z1-5': { peak: 6.60, offPeak: 4.80 },
-    'Z1-6': { peak: 7.50, offPeak: 5.20 },
-    'Z2':   { peak: 3.10, offPeak: 2.50 },
-    'Z2-3': { peak: 3.10, offPeak: 2.50 },
-    'Z2-6': { peak: 4.60, offPeak: 3.90 },
-    'Z3':   { peak: 3.10, offPeak: 2.50 },
-    'Z3-5': { peak: 3.10, offPeak: 2.50 },
-    'Z3-6': { peak: 3.10, offPeak: 2.50 },
-    'Z4':   { peak: 3.10, offPeak: 2.50 },
-    'Z4-6': { peak: 3.10, offPeak: 2.50 },
-    'Z5':   { peak: 3.10, offPeak: 2.50 },
-    'Z5-6': { peak: 3.10, offPeak: 2.50 },
-    'Z6':   { peak: 3.10, offPeak: 2.50 },
+    'Z1':    { peak: 3.10, offPeak: 3.00 },
+    'Z1-2':  { peak: 5.90, offPeak: 5.10 },
+    'Z1-3':  { peak: 6.60, offPeak: 5.40 },
+    'Z1-4':  { peak: 7.30, offPeak: 5.90 },
+    'Z1-5':  { peak: 8.80, offPeak: 6.30 },
+    'Z1-6':  { peak: 10.40, offPeak: 7.00 },
+    'Z1-7':  { peak: 13.50, offPeak: 9.00 },
+    'Z1-8':  { peak: 10.40, offPeak: 7.00 },
+    'Z1-9':  { peak: 12.30, offPeak: 9.20 },
+    'Z2':    { peak: 3.60, offPeak: 3.10 },
+    'Z2-3':  { peak: 3.90, offPeak: 3.30 },
+    'Z2-4':  { peak: 4.80, offPeak: 3.60 },
+    'Z2-5':  { peak: 5.30, offPeak: 3.80 },
+    'Z2-6':  { peak: 5.90, offPeak: 4.00 },
+    'Z2-7':  { peak: 7.10, offPeak: 5.20 },
+    'Z2-8':  { peak: 10.40, offPeak: 7.00 },
+    'Z2-9':  { peak: 11.20, offPeak: 7.70 },
+    'Z3':    { peak: 6.60, offPeak: 5.40 },
+    'Z3-4':  { peak: 7.30, offPeak: 5.90 },
+    'Z3-5':  { peak: 8.80, offPeak: 6.30 },
+    'Z3-6':  { peak: 10.40, offPeak: 7.00 },
+    'Z3-7':  { peak: 7.10, offPeak: 5.20 },
+    'Z3-8':  { peak: 10.40, offPeak: 7.00 },
+    'Z3-9':  { peak: 10.40, offPeak: 7.00 },
+    'Z4':    { peak: 7.30, offPeak: 5.90 },
+    'Z4-5':  { peak: 8.80, offPeak: 6.30 },
+    'Z4-6':  { peak: 10.40, offPeak: 7.00 },
+    'Z4-7':  { peak: 7.10, offPeak: 5.20 },
+    'Z4-8':  { peak: 10.40, offPeak: 7.00 },
+    'Z4-9':  { peak: 10.40, offPeak: 7.00 },
+    'Z5':    { peak: 8.80, offPeak: 6.30 },
+    'Z5-6':  { peak: 10.40, offPeak: 7.00 },
+    'Z5-7':  { peak: 7.10, offPeak: 5.20 },
+    'Z5-8':  { peak: 10.40, offPeak: 7.00 },
+    'Z5-9':  { peak: 10.40, offPeak: 7.00 },
+    'Z6':    { peak: 10.40, offPeak: 7.00 },
+    'Z6-7':  { peak: 7.10, offPeak: 5.20 },
+    'Z6-8':  { peak: 10.40, offPeak: 7.00 },
+    'Z6-9':  { peak: 10.40, offPeak: 7.00 },
+    'Z7-8':  { peak: 2.30, offPeak: 2.10 },
+    'Z7-9':  { peak: 2.40, offPeak: 2.20 },
+    'Z8-9':  { peak: 2.30, offPeak: 2.10 },
+    'Z7':    { peak: 2.10, offPeak: 2.00 },
+    'Z8':    { peak: 2.30, offPeak: 2.10 },
+    'Z9':    { peak: 2.10, offPeak: 2.00 }
   }
 };
 
@@ -204,15 +289,15 @@ export const DAILY_CAPS_OFFPEAK: Record<string, number> = {
 };
 
 export const WEEKLY_CAPS: Record<string, number> = {
-  'Z1': 42.70,
-  'Z1-2': 42.70,
-  'Z1-3': 50.20,
-  'Z1-4': 61.40,
-  'Z1-5': 73.00,
-  'Z1-6': 78.00,
-  'Z1-7': 85.00,
-  'Z1-8': 100.30,
-  'Z1-9': 111.30,
+  'Z1': 44.70,
+  'Z1-2': 44.70,
+  'Z1-3': 52.50,
+  'Z1-4': 64.20,
+  'Z1-5': 76.40,
+  'Z1-6': 81.60,
+  'Z1-7': 88.90,
+  'Z1-8': 104.90,
+  'Z1-9': 116.40,
   'Z2': 33.50,
   'Z2-3': 33.50,
   'Z2-4': 37.10,
@@ -402,6 +487,34 @@ export function roundToNearest10p(amount: number): number {
   return Math.round(amount * 10) / 10;
 }
 
+// Calculate discounted fare based on TfL's rules:
+// - Standard Railcards (16-25, 26-30, Senior, Disabled, Network, etc.) get 1/3 off off-peak fares,
+//   which uses a 33.4% discount (0.666 multiplier) and rounds down to the nearest 5p.
+// - Jobcentre Plus Travel Discount gets a 50% discount (0.5 multiplier) and rounds down to the nearest 5p.
+export function calculateDiscountedFare(baseFare: number, railcardType: RailcardType, isPeak: boolean, isBus: boolean = false): number {
+  if (railcardType === 'none' || railcardType === 'student') {
+    return baseFare;
+  }
+
+  const railcard = RAILCARDS[railcardType];
+  if (!railcard) return baseFare;
+
+  if (isBus) {
+    if (railcardType === 'jobcentre') {
+      return Math.floor(baseFare * 0.5 * 20) / 20;
+    }
+    return baseFare;
+  }
+
+  // Peak fares do not get discount unless appliesToPeak is true (Disabled Persons / Jobcentre)
+  if (isPeak && !railcard.appliesToPeak) {
+    return baseFare;
+  }
+
+  const multiplier = railcardType === 'jobcentre' ? 0.5 : 0.666;
+  return Math.floor(baseFare * multiplier * 20) / 20;
+}
+
 // Determine zone range string from origin/destination zones
 export function getZoneRange(originZone: number, destZone: number): string {
   const minZone = Math.min(originZone, destZone);
@@ -445,18 +558,28 @@ export function lookupExactFare(originId: string, destId: string, isPeak: boolea
 
 // Lookup daily cap for a given zone range
 export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, railcardType: RailcardType = 'none'): number {
-  let cap = isPeak ? (DAILY_CAPS[zoneRange] ?? 16.30) : (DAILY_CAPS_OFFPEAK[zoneRange] ?? 16.30);
+  const adultCap = DAILY_CAPS[zoneRange] ?? 16.30;
+  
   if (railcardType === 'jobcentre') {
-    cap = (DAILY_CAPS[zoneRange] ?? 16.30) * 0.5; // Jobcentre Plus gets 50% off adult standard caps
+    return Math.floor(adultCap * 0.5 * 20) / 20;
   }
-  return roundToNearest10p(cap);
+  
+  if (railcardType === 'none' || railcardType === 'student') {
+    // Standard adults pay the standard cap whether peak or off-peak
+    return adultCap;
+  }
+  
+  // Standard Railcards (16-25, 26-30, Senior, Network, etc.) get off-peak daily caps.
+  // Disabled Persons Railcard gets 1/3 discount on both peak and off-peak daily caps.
+  const isEligibleForDiscount = !isPeak || railcardType === 'disabled';
+  if (isEligibleForDiscount) {
+    return DAILY_CAPS_OFFPEAK[zoneRange] ?? Math.floor(adultCap * 0.666 * 20) / 20;
+  }
+  
+  return adultCap;
 }
 
 // Lookup weekly cap for a given zone range
-export function lookupWeeklyCap(zoneRange: string, railcardType: RailcardType = 'none'): number {
-  let cap = WEEKLY_CAPS[zoneRange] ?? 78.00;
-  if (railcardType === 'jobcentre') {
-    cap = cap * 0.5;
-  }
-  return roundToNearest10p(cap);
+export function lookupWeeklyCap(zoneRange: string): number {
+  return WEEKLY_CAPS[zoneRange] ?? 81.60;
 }
