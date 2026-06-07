@@ -8,7 +8,7 @@ import {
   DAILY_CAPS,
   DAILY_CAPS_OFFPEAK,
   roundToNearest10p,
-  type RailcardType,
+  type FareType,
   formatLocalDate,
   parseLocalDate,
 } from '../data/fareData';
@@ -87,7 +87,7 @@ function getMaxZoneRange(journeys: FareResult[]): string {
 }
 
 // Calculate daily cap analysis
-export function calculateDailyCaps(fareResults: FareResult[], railcardType: RailcardType = 'none'): DayCapResult[] {
+export function calculateDailyCaps(fareResults: FareResult[], railcardType: FareType = 'none'): DayCapResult[] {
   const dayGroups = groupByDay(fareResults);
   const results: DayCapResult[] = [];
 
@@ -206,7 +206,7 @@ function getMonday(date: Date): Date {
 }
 
 // Calculate weekly cap analysis
-export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: RailcardType = 'none'): WeekCapResult[] {
+export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: FareType = 'none'): WeekCapResult[] {
   // Group by week (Mon-Sun)
   const weekMap = new Map<string, DayCapResult[]>();
 

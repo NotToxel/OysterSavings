@@ -31,6 +31,7 @@ export const selectedFareType = writable<FareType>('none');
 export const fareTypeCost = writable<number>(0);
 export const includeOysterCost = writable<boolean>(true);
 export const includeStudentPhotocardFee = writable<boolean>(true);
+export const isDemoMode = writable<boolean>(false);
 
 // Savings results
 export const savingsResult = derived(
@@ -86,4 +87,6 @@ export function resetData() {
   plannedJourneys.set([]);
   detectedPatterns.set([]);
   forecastResult.set(null);
+  isDemoMode.set(false);
+  currentPage.set('home');
 }

@@ -5,6 +5,7 @@
     classifiedJourneys, excludedJourneys, dailyCapResults,
     capSummary, currentPage
   } from '$lib/stores/stores';
+  import { loadDemoData } from '$lib/data/demoData';
 
   let showStats = $derived($fileLoaded);
   let journeyCount = $derived($totalJourneys);
@@ -12,6 +13,54 @@
   let excluded = $derived($excludedJourneys.length);
   let capDays = $derived($capSummary?.daysCapHit ?? 0);
   let totalCapSaved = $derived($capSummary?.totalSavedByDailyCap ?? 0);
+
+  const demoProfiles = [
+    {
+      id: 'sarah',
+      name: 'Sarah',
+      avatar: '👩‍💼',
+      badge: 'Balanced Hybrid',
+      zones: 'Zone 1-3',
+      description: '3-day Wimbledon ↔ Bank Tube/NR commute. Includes weekend leisure trips, hopper buses, and a penalty refund.',
+      color: 'var(--color-oyster-blue)'
+    },
+    {
+      id: 'james',
+      name: 'James',
+      avatar: '👨‍💻',
+      badge: 'Tube Heavy',
+      zones: 'Zone 1-2',
+      description: '5-day Finsbury Park ↔ Oxford Circus Tube commute. Includes mid-week Overground hops and a cap-hitting Saturday in central London.',
+      color: '#009FE3'
+    },
+    {
+      id: 'chloe',
+      name: 'Chloe',
+      avatar: '👩‍⚕️',
+      badge: 'National Rail Heavy',
+      zones: 'Zone 1-6',
+      description: '4-day Surbiton ↔ Waterloo National Rail commute, connecting via local buses. Features Kingston local travel and weekend rail trips.',
+      color: '#EF7B10'
+    },
+    {
+      id: 'marcus',
+      name: 'Marcus',
+      avatar: '👨‍🍳',
+      badge: 'Bus Heavy',
+      zones: 'Zone 2',
+      description: 'Wed-Sun Peckham Rye hospitality shift commute using exclusively buses. Regularly hits the daily bus cap (£5.25).',
+      color: '#10b981'
+    },
+    {
+      id: 'amir',
+      name: 'Amir',
+      avatar: '👨‍💼',
+      badge: 'Hybrid Mixed',
+      zones: 'Zone 1-4',
+      description: '2-day Richmond ↔ Bank mixed National Rail + Tube hybrid schedule. Showcases mixed fare calculation and off-peak travel.',
+      color: '#6950A1'
+    }
+  ];
 </script>
 
 <div class="home-page">
@@ -53,6 +102,37 @@
     <!-- Upload Section -->
     <section class="upload-section animate-slide-up" style="animation-delay: 0.2s">
       <FileUpload />
+      
+      <div class="demo-profiles-container">
+        <h2 class="demo-section-title">✨ Try OysterSavings Demo Profiles</h2>
+        <p class="demo-section-subtitle">
+          Don't have a TfL CSV export handy? Select a realistic London commuter profile below to explore the dashboard and optimization engine.
+        </p>
+        
+        <div class="demo-grid">
+          {#each demoProfiles as profile}
+            <div class="demo-card glass-card" style="--profile-accent: {profile.color}">
+              <div class="demo-card-header">
+                <span class="demo-avatar">{profile.avatar}</span>
+                <div>
+                  <h3 class="demo-name">{profile.name}</h3>
+                  <div class="demo-badges">
+                    <span class="demo-badge">{profile.badge}</span>
+                    <span class="demo-zone-badge">{profile.zones}</span>
+                  </div>
+                </div>
+              </div>
+              <p class="demo-description">{profile.description}</p>
+              <button 
+                class="btn-primary btn-demo-load" 
+                onclick={() => loadDemoData(profile.id)}
+              >
+                ⚡ Load {profile.name}'s Log
+              </button>
+            </div>
+          {/each}
+        </div>
+      </div>
     </section>
 
     <!-- How it works -->
@@ -413,5 +493,146 @@
     .stats-grid {
       grid-template-columns: repeat(2, 1fr);
     }
+  }
+
+  /* Demo Profiles Grid and Cards */
+  .demo-profiles-container {
+    margin-top: 3.5rem;
+    text-align: center;
+  }
+
+  .demo-section-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: white;
+  }
+
+  .demo-section-subtitle {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.5;
+  }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .demo-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.5rem;
+    text-align: left;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .demo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--profile-accent);
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+
+  .demo-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 
+                0 0 15px rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .demo-card:hover::before {
+    opacity: 1;
+  }
+
+  .demo-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .demo-avatar {
+    font-size: 2.25rem;
+    line-height: 1;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.4rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .demo-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+  }
+
+  .demo-badges {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  .demo-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-secondary);
+    border-radius: 999px;
+  }
+
+  .demo-zone-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    background: rgba(0, 159, 227, 0.1);
+    border: 1px solid rgba(0, 159, 227, 0.2);
+    color: #009fe3;
+    border-radius: 999px;
+  }
+
+  .demo-description {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin: 0 0 1.5rem 0;
+    flex-grow: 1;
+  }
+
+  .btn-demo-load {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.65rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    transition: all 0.2s ease;
+  }
+
+  .btn-demo-load:hover {
+    background: var(--profile-accent);
+    border-color: var(--profile-accent);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
   }
 </style>

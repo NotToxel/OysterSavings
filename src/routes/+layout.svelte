@@ -1,6 +1,6 @@
 <script lang="ts">
   import './layout.css';
-  import { currentPage, hasData } from '$lib/stores/stores';
+  import { currentPage, hasData, isDemoMode, resetData } from '$lib/stores/stores';
 
   let { children } = $props();
 
@@ -13,6 +13,10 @@
 
   function navigateTo(page: typeof $currentPage) {
     $currentPage = page;
+  }
+
+  function handleExitDemo() {
+    resetData();
   }
 </script>
 
@@ -31,6 +35,17 @@
 
   <!-- Top nav bar -->
   <header class="top-bar">
+    {#if $isDemoMode}
+      <div class="demo-banner animate-fade-in">
+        <div class="demo-banner-content">
+          <span class="demo-flash">⚡</span>
+          <span>Running in <strong>Demo Mode</strong> with a pre-configured 5-week travel routine.</span>
+        </div>
+        <button class="btn-demo-exit" onclick={handleExitDemo}>
+          ✕ Exit Demo
+        </button>
+      </div>
+    {/if}
     <div class="top-bar-inner">
       <button class="logo" onclick={() => navigateTo('home')}>
         <span class="logo-icon">🦪</span>
@@ -276,6 +291,68 @@
 
     .main-content {
       padding: 1rem;
+    }
+  }
+
+  /* Demo banner */
+  .demo-banner {
+    background: linear-gradient(90deg, rgba(0, 159, 227, 0.95) 0%, rgba(105, 80, 161, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.8rem;
+    z-index: 100;
+  }
+
+  .demo-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .demo-flash {
+    animation: flashPulse 1.5s infinite;
+  }
+
+  @keyframes flashPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+
+  .btn-demo-exit {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .btn-demo-exit:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: white;
+  }
+
+  @media (max-width: 768px) {
+    .demo-banner {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0.5rem 1rem;
+      gap: 0.5rem;
+    }
+    
+    .btn-demo-exit {
+      width: 100%;
     }
   }
 </style>
