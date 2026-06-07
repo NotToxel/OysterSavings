@@ -108,7 +108,7 @@
   <input
     type="file"
     id="file-input"
-    accept=".csv"
+    accept=".csv, text/csv, application/csv, text/comma-separated-values, application/vnd.ms-excel"
     style="display: none;"
     onchange={handleFileInput}
   />
