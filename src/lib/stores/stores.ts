@@ -27,7 +27,20 @@ export const weeklyCapResults = writable<WeekCapResult[]>([]);
 export const capSummary = writable<CapSummary | null>(null);
 
 // Settings
-export const selectedFareType = writable<FareType>('none');
+const isBrowser = typeof window !== 'undefined';
+
+const initialFareType = isBrowser && localStorage.getItem('oystersavings_selected_fare_type')
+  ? localStorage.getItem('oystersavings_selected_fare_type') as FareType
+  : 'none';
+
+export const selectedFareType = writable<FareType>(initialFareType);
+
+if (isBrowser) {
+  selectedFareType.subscribe(value => {
+    localStorage.setItem('oystersavings_selected_fare_type', value);
+  });
+}
+
 export const fareTypeCost = writable<number>(0);
 export const includeOysterCost = writable<boolean>(true);
 export const includeStudentPhotocardFee = writable<boolean>(true);
@@ -51,7 +64,32 @@ export const productComparison = derived(
 );
 
 // Planner
-export const recurrenceRules = writable<RecurrenceRule[]>([]);
+function parseStoredRules(jsonStr: string): RecurrenceRule[] {
+  try {
+    const rules = JSON.parse(jsonStr) as RecurrenceRule[];
+    return rules.map(rule => ({
+      ...rule,
+      startDate: new Date(rule.startDate),
+      endDate: new Date(rule.endDate)
+    }));
+  } catch (e) {
+    console.error('Failed to parse stored recurrence rules:', e);
+    return [];
+  }
+}
+
+const initialRules = isBrowser && localStorage.getItem('oystersavings_recurrence_rules')
+  ? parseStoredRules(localStorage.getItem('oystersavings_recurrence_rules')!)
+  : [];
+
+export const recurrenceRules = writable<RecurrenceRule[]>(initialRules);
+
+if (isBrowser) {
+  recurrenceRules.subscribe(value => {
+    localStorage.setItem('oystersavings_recurrence_rules', JSON.stringify(value));
+  });
+}
+
 export const plannedJourneys = writable<PlannedJourney[]>([]);
 export const detectedPatterns = writable<DetectedPattern[]>([]);
 export const forecastResult = writable<ForecastResult | null>(null);

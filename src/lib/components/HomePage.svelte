@@ -1,11 +1,17 @@
 <script lang="ts">
-  import FileUpload from './FileUpload.svelte';
+  import FileUpload from "./FileUpload.svelte";
   import {
-    fileLoaded, fileName, totalSpend, totalJourneys,
-    classifiedJourneys, excludedJourneys, dailyCapResults,
-    capSummary, currentPage
-  } from '$lib/stores/stores';
-  import { loadDemoData } from '$lib/data/demoData';
+    fileLoaded,
+    fileName,
+    totalSpend,
+    totalJourneys,
+    classifiedJourneys,
+    excludedJourneys,
+    dailyCapResults,
+    capSummary,
+    currentPage,
+  } from "$lib/stores/stores";
+  import { loadDemoData } from "$lib/data/demoData";
 
   let showStats = $derived($fileLoaded);
   let journeyCount = $derived($totalJourneys);
@@ -16,50 +22,55 @@
 
   const demoProfiles = [
     {
-      id: 'sarah',
-      name: 'Sarah',
-      avatar: '👩‍💼',
-      badge: 'Balanced Hybrid',
-      zones: 'Zone 1-3',
-      description: '3-day Wimbledon ↔ Bank Tube/NR commute. Includes weekend leisure trips, hopper buses, and a penalty refund.',
-      color: 'var(--color-oyster-blue)'
+      id: "sarah",
+      name: "Sarah",
+      avatar: "👩‍💼",
+      badge: "Balanced Hybrid",
+      zones: "Zone 1-3",
+      description:
+        "3-day Wimbledon ↔ Bank Tube/NR commute. Includes weekend leisure trips, hopper buses, and a penalty refund.",
+      color: "var(--color-oyster-blue)",
     },
     {
-      id: 'james',
-      name: 'James',
-      avatar: '👨‍💻',
-      badge: 'Tube Heavy',
-      zones: 'Zone 1-2',
-      description: '5-day Finsbury Park ↔ Oxford Circus Tube commute. Includes mid-week Overground hops and a cap-hitting Saturday in central London.',
-      color: '#009FE3'
+      id: "james",
+      name: "James",
+      avatar: "👨‍💻",
+      badge: "Tube Heavy",
+      zones: "Zone 1-2",
+      description:
+        "5-day Finsbury Park ↔ Oxford Circus Tube commute. Includes mid-week Overground hops and a cap-hitting Saturday in central London.",
+      color: "#009FE3",
     },
     {
-      id: 'chloe',
-      name: 'Chloe',
-      avatar: '👩‍⚕️',
-      badge: 'National Rail Heavy',
-      zones: 'Zone 1-6',
-      description: '4-day Surbiton ↔ Waterloo National Rail commute, connecting via local buses. Features Kingston local travel and weekend rail trips.',
-      color: '#EF7B10'
+      id: "chloe",
+      name: "Chloe",
+      avatar: "👩‍⚕️",
+      badge: "National Rail Heavy",
+      zones: "Zone 1-6",
+      description:
+        "4-day Surbiton ↔ Waterloo National Rail commute, connecting via local buses. Features Kingston local travel and weekend rail trips.",
+      color: "#EF7B10",
     },
     {
-      id: 'marcus',
-      name: 'Marcus',
-      avatar: '👨‍🍳',
-      badge: 'Bus Heavy',
-      zones: 'Zone 2',
-      description: 'Wed-Sun Peckham Rye hospitality shift commute using exclusively buses. Regularly hits the daily bus cap (£5.25).',
-      color: '#10b981'
+      id: "marcus",
+      name: "Marcus",
+      avatar: "👨‍🍳",
+      badge: "Bus Heavy",
+      zones: "Zone 2",
+      description:
+        "Wed-Sun Peckham Rye hospitality shift commute using exclusively buses. Regularly hits the daily bus cap (£5.25).",
+      color: "#10b981",
     },
     {
-      id: 'amir',
-      name: 'Amir',
-      avatar: '👨‍💼',
-      badge: 'Hybrid Mixed',
-      zones: 'Zone 1-4',
-      description: '2-day Richmond ↔ Bank mixed National Rail + Tube hybrid schedule. Showcases mixed fare calculation and off-peak travel.',
-      color: '#6950A1'
-    }
+      id: "amir",
+      name: "Amir",
+      avatar: "👨‍💼",
+      badge: "Hybrid Mixed",
+      zones: "Zone 1-4",
+      description:
+        "2-day Richmond ↔ Bank mixed National Rail + Tube hybrid schedule. Showcases mixed fare calculation and off-peak travel.",
+      color: "#6950A1",
+    },
   ];
 </script>
 
@@ -75,8 +86,9 @@
         <span class="gradient-text">Oyster Savings</span>
       </h1>
       <p class="hero-subtitle">
-        Upload your TfL travel history CSV and discover exactly how much you could save
-        with Fare Types, Travelcards, and smarter travel planning.
+        Upload your TfL travel history CSV and discover exactly how much you
+        could save with discounted fares, Travelcards, and smarter travel
+        planning.
       </p>
 
       <div class="hero-features">
@@ -100,18 +112,25 @@
     </section>
 
     <!-- Upload Section -->
-    <section class="upload-section animate-slide-up" style="animation-delay: 0.2s">
+    <section
+      class="upload-section animate-slide-up"
+      style="animation-delay: 0.2s"
+    >
       <FileUpload />
-      
+
       <div class="demo-profiles-container">
         <h2 class="demo-section-title">✨ Try OysterSavings Demo Profiles</h2>
         <p class="demo-section-subtitle">
-          Don't have a TfL CSV export handy? Select a realistic London commuter profile below to explore the dashboard and optimization engine.
+          Don't have a TfL CSV export handy? Select a realistic London commuter
+          profile below to explore the dashboard and optimization engine.
         </p>
-        
+
         <div class="demo-grid">
           {#each demoProfiles as profile}
-            <div class="demo-card glass-card" style="--profile-accent: {profile.color}">
+            <div
+              class="demo-card glass-card"
+              style="--profile-accent: {profile.color}"
+            >
               <div class="demo-card-header">
                 <span class="demo-avatar">{profile.avatar}</span>
                 <div>
@@ -123,8 +142,8 @@
                 </div>
               </div>
               <p class="demo-description">{profile.description}</p>
-              <button 
-                class="btn-primary btn-demo-load" 
+              <button
+                class="btn-primary btn-demo-load"
                 onclick={() => loadDemoData(profile.id)}
               >
                 ⚡ Load {profile.name}'s Log
@@ -136,13 +155,22 @@
     </section>
 
     <!-- How it works -->
-    <section class="how-it-works animate-slide-up" style="animation-delay: 0.4s">
+    <section
+      class="how-it-works animate-slide-up"
+      style="animation-delay: 0.4s"
+    >
       <h2 class="section-title">How It Works</h2>
       <div class="steps-grid">
         <div class="step-card">
           <div class="step-number">1</div>
           <h3>Export CSV</h3>
-          <p>Download your journey history from <a href="https://tfl.gov.uk/fares/contactless-and-oyster-account" target="_blank" rel="noopener noreferrer">tfl.gov.uk</a></p>
+          <p>
+            Download your journey history from <a
+              href="https://tfl.gov.uk/fares/contactless-and-oyster-account"
+              target="_blank"
+              rel="noopener noreferrer">tfl.gov.uk</a
+            >
+          </p>
         </div>
         <div class="step-card">
           <div class="step-number">2</div>
@@ -152,7 +180,7 @@
         <div class="step-card">
           <div class="step-number">3</div>
           <h3>Discover Savings</h3>
-          <p>See exactly how much Fare Types and Travelcards could save you</p>
+          <p>See exactly how much Railcards and Travelcards could save you</p>
         </div>
         <div class="step-card">
           <div class="step-number">4</div>
@@ -167,9 +195,16 @@
       <div class="dashboard-header">
         <div>
           <h1 class="dashboard-title">Dashboard</h1>
-          <p class="dashboard-subtitle">Analyzing <strong>{$fileName}</strong></p>
+          <p class="dashboard-subtitle">
+            Analyzing <strong>{$fileName}</strong>
+          </p>
         </div>
-        <button class="btn-secondary" onclick={() => { import('$lib/stores/stores').then(m => m.resetData()) }}>
+        <button
+          class="btn-secondary"
+          onclick={() => {
+            import("$lib/stores/stores").then((m) => m.resetData());
+          }}
+        >
           ↻ New Upload
         </button>
       </div>
@@ -200,27 +235,35 @@
 
       <!-- Quick actions -->
       <div class="quick-actions">
-        <button class="action-card" onclick={() => $currentPage = 'analysis'}>
+        <button class="action-card" onclick={() => ($currentPage = "analysis")}>
           <div class="action-icon">📊</div>
           <div class="action-content">
             <h3>Journey Analysis</h3>
-            <p>View detailed journey breakdown, fare analysis, and fare type savings</p>
+            <p>
+              View detailed journey breakdown, fare analysis, and fare type
+              savings
+            </p>
           </div>
           <span class="action-arrow">→</span>
         </button>
-        <button class="action-card" onclick={() => $currentPage = 'planner'}>
+        <button class="action-card" onclick={() => ($currentPage = "planner")}>
           <div class="action-icon">📅</div>
           <div class="action-content">
             <h3>Journey Planner</h3>
-            <p>Plan future travel with recurring schedules and cap forecasting</p>
+            <p>
+              Plan future travel with recurring schedules and cap forecasting
+            </p>
           </div>
           <span class="action-arrow">→</span>
         </button>
-        <button class="action-card" onclick={() => $currentPage = 'compare'}>
+        <button class="action-card" onclick={() => ($currentPage = "compare")}>
           <div class="action-icon">⚖️</div>
           <div class="action-content">
             <h3>Product Comparison</h3>
-            <p>Compare PAYG, Fare Types, and Travelcards across time periods</p>
+            <p>
+              Compare PAYG, Discounted Travel Fares, and Travelcards across time
+              periods
+            </p>
           </div>
           <span class="action-arrow">→</span>
         </button>
@@ -264,7 +307,7 @@
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #009FE3 0%, #6950A1 50%, #EF7B10 100%);
+    background: linear-gradient(135deg, #009fe3 0%, #6950a1 50%, #ef7b10 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -345,7 +388,7 @@
     width: 32px;
     height: 32px;
     margin: 0 auto 0.75rem;
-    background: linear-gradient(135deg, #009FE3, #6950A1);
+    background: linear-gradient(135deg, #009fe3, #6950a1);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -537,7 +580,7 @@
   }
 
   .demo-card::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -551,8 +594,9 @@
   .demo-card:hover {
     transform: translateY(-4px);
     border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 
-                0 0 15px rgba(255, 255, 255, 0.02);
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.3),
+      0 0 15px rgba(255, 255, 255, 0.02);
     background: rgba(255, 255, 255, 0.04);
   }
 
@@ -623,7 +667,11 @@
     justify-content: center;
     font-size: 0.8rem;
     padding: 0.65rem;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: white;
     transition: all 0.2s ease;

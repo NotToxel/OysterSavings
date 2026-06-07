@@ -1,14 +1,31 @@
 <script lang="ts">
   import {
-    classifiedJourneys, detectedPatterns, recurrenceRules,
-    plannedJourneys, forecastResult, selectedFareType, fareTypeCost
-  } from '$lib/stores/stores';
+    classifiedJourneys,
+    detectedPatterns,
+    recurrenceRules,
+    plannedJourneys,
+    forecastResult,
+    selectedFareType,
+    fareTypeCost,
+  } from "$lib/stores/stores";
   import {
-    type RecurrenceRule, generatePlannedJourneys,
-    patternToRule
-  } from '$lib/engine/recurrenceEngine';
-  import { runForecast } from '$lib/engine/forecastEngine';
-  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, FARE_TYPES, calculateDiscountedFare, type FareType, isPeakJourney, getRepresentativeTime, formatLocalDate, parseLocalDate } from '$lib/data/fareData';
+    type RecurrenceRule,
+    generatePlannedJourneys,
+    patternToRule,
+  } from "$lib/engine/recurrenceEngine";
+  import { runForecast } from "$lib/engine/forecastEngine";
+  import {
+    getZoneRange,
+    lookupFare,
+    BUS_SINGLE_FARE,
+    FARE_TYPES,
+    calculateDiscountedFare,
+    type FareType,
+    isPeakJourney,
+    getRepresentativeTime,
+    formatLocalDate,
+    parseLocalDate,
+  } from "$lib/data/fareData";
 
   // Calendar state
   let calendarDate = $state(new Date());
@@ -19,54 +36,73 @@
   // Default Settings for Quick Add
   let defOriginZone = $state(3);
   let defDestZone = $state(1);
-  let defMode = $state<'underground' | 'national_rail' | 'nr_tube' | 'bus'>('national_rail');
-  let defTimePeriod = $state('06:30-09:30');
+  let defMode = $state<"underground" | "national_rail" | "nr_tube" | "bus">(
+    "national_rail",
+  );
+  let defTimePeriod = $state("06:30-09:30");
 
   // New rule form
-  let newRuleName = $state('');
+  let newRuleName = $state("");
   let newOriginZone = $state(defOriginZone);
   let newDestZone = $state(defDestZone);
   let newMode = $state(defMode);
   let newTimePeriod = $state(defTimePeriod);
   let newIsReturn = $state(false);
-  let newReturnTimePeriod = $state('16:00-19:00');
+  let newReturnTimePeriod = $state("16:00-19:00");
   let newDays = $state<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
-  let newIntervalType = $state<'days' | 'weeks' | 'months' | 'years' | 'none'>('weeks');
+  let newIntervalType = $state<"days" | "weeks" | "months" | "years" | "none">(
+    "weeks",
+  );
   let newIntervalValue = $state(1);
   let editRuleId = $state<string | null>(null);
-  let newRuleDate = $state('');
-  let newRuleEndDate = $state('');
+  let newRuleDate = $state("");
+  let newRuleEndDate = $state("");
 
-
-
-  function getEstimatedFare(origin: number, dest: number, timePeriod: string, mode: string, discount: string): number {
+  function getEstimatedFare(
+    origin: number,
+    dest: number,
+    timePeriod: string,
+    mode: string,
+    discount: string,
+  ): number {
     const dateObj = parseLocalDate(planStart);
     const repTime = getRepresentativeTime(timePeriod);
     const isPeakFare = isPeakJourney(dateObj, repTime, origin, dest);
     const zoneRange = getZoneRange(origin, dest);
-    const rawFare = mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, mode);
-    return calculateDiscountedFare(rawFare, discount as FareType, isPeakFare, mode === 'bus', origin, dest, mode);
+    const rawFare =
+      mode === "bus"
+        ? BUS_SINGLE_FARE
+        : lookupFare(zoneRange, isPeakFare, mode);
+    return calculateDiscountedFare(
+      rawFare,
+      discount as FareType,
+      isPeakFare,
+      mode === "bus",
+      origin,
+      dest,
+      mode,
+    );
   }
 
   const TIME_PERIODS = [
-    { value: '04:30-06:29', label: '04:30 - 06:29' },
-    { value: '06:30-09:30', label: '06:30 - 09:30' },
-    { value: '09:31-15:59', label: '09:31 - 15:59' },
-    { value: '16:00-19:00', label: '16:00 - 19:00' },
-    { value: '19:01-04:29', label: '19:01 - 04:29' },
+    { value: "04:30-06:29", label: "04:30 - 06:29" },
+    { value: "06:30-09:30", label: "06:30 - 09:30" },
+    { value: "09:31-15:59", label: "09:31 - 15:59" },
+    { value: "16:00-19:00", label: "16:00 - 19:00" },
+    { value: "19:01-04:29", label: "19:01 - 04:29" },
   ];
-
   let returnTimePeriodOptions = $derived(
-    TIME_PERIODS.filter((_, i) => i >= TIME_PERIODS.findIndex(t => t.value === newTimePeriod))
+    TIME_PERIODS.filter(
+      (_, i) => i >= TIME_PERIODS.findIndex((t) => t.value === newTimePeriod),
+    ),
   );
 
   $effect(() => {
-    const validValues = returnTimePeriodOptions.map(t => t.value);
+    const validValues = returnTimePeriodOptions.map((t) => t.value);
     if (!validValues.includes(newReturnTimePeriod)) {
       newReturnTimePeriod = validValues[0];
     }
   });
-
   $effect(() => {
     // Automatically regenerate planned journeys and forecast when dates, rules, or selected fare type change
     planStart;
@@ -77,9 +113,21 @@
   });
 
   let estimatedTotalFare = $derived.by(() => {
-    const outbound = getEstimatedFare(newOriginZone, newDestZone, newTimePeriod, newMode, $selectedFareType);
+    const outbound = getEstimatedFare(
+      newOriginZone,
+      newDestZone,
+      newTimePeriod,
+      newMode,
+      $selectedFareType,
+    );
     if (newIsReturn) {
-      const ret = getEstimatedFare(newDestZone, newOriginZone, newReturnTimePeriod, newMode, $selectedFareType);
+      const ret = getEstimatedFare(
+        newDestZone,
+        newOriginZone,
+        newReturnTimePeriod,
+        newMode,
+        $selectedFareType,
+      );
       return outbound + ret;
     }
     return outbound;
@@ -109,13 +157,18 @@
 
     // Current month
     for (let d = 1; d <= lastDay.getDate(); d++) {
-      days.push({ date: new Date(calendarYear, calendarMonth, d), isCurrentMonth: true });
+      days.push({
+        date: new Date(calendarYear, calendarMonth, d),
+        isCurrentMonth: true,
+      });
     }
 
     // Next month fill
     while (days.length < 42) {
       const d = new Date(lastDay);
-      d.setDate(d.getDate() + days.length - (startOffset + lastDay.getDate()) + 1);
+      d.setDate(
+        d.getDate() + days.length - (startOffset + lastDay.getDate()) + 1,
+      );
       days.push({ date: d, isCurrentMonth: false });
     }
 
@@ -135,7 +188,10 @@
 
   // Forecast day data by date
   let forecastByDate = $derived.by(() => {
-    const map = new Map<string, NonNullable<typeof $forecastResult>['days'][0]>();
+    const map = new Map<
+      string,
+      NonNullable<typeof $forecastResult>["days"][0]
+    >();
     if ($forecastResult) {
       for (const day of $forecastResult.days) {
         const key = formatLocalDate(day.date);
@@ -155,26 +211,30 @@
 
   function toggleDay(day: number) {
     if (newDays.includes(day)) {
-      newDays = newDays.filter(d => d !== day);
+      newDays = newDays.filter((d) => d !== day);
     } else {
       newDays = [...newDays, day].sort();
     }
   }
 
   function saveRule() {
-    if (newIntervalType === 'none') {
+    if (newIntervalType === "none") {
       newDays = [parseLocalDate(newRuleDate).getDay()];
     }
 
     const rule: RecurrenceRule = {
       id: editRuleId || crypto.randomUUID(),
-      name: newRuleName || (newIntervalType === 'none'
-        ? (newIsReturn ? 'One-off Return Journey' : 'One-off Journey')
-        : (newMode === 'bus'
-            ? (newIsReturn ? 'Bus Commute (Return)' : 'Bus Commute')
-            : `Zone ${newOriginZone} ${newIsReturn ? '↔' : '→'} Zone ${newDestZone}`
-          )
-      ),
+      name:
+        newRuleName ||
+        (newIntervalType === "none"
+          ? newIsReturn
+            ? "One-off Return Journey"
+            : "One-off Journey"
+          : newMode === "bus"
+            ? newIsReturn
+              ? "Bus Commute (Return)"
+              : "Bus Commute"
+            : `Zone ${newOriginZone} ${newIsReturn ? "↔" : "→"} Zone ${newDestZone}`),
       originZone: newOriginZone,
       destinationZone: newDestZone,
       mode: newMode,
@@ -185,15 +245,20 @@
       intervalType: newIntervalType,
       intervalValue: newIntervalValue,
       startDate: parseLocalDate(newRuleDate),
-      endDate: newIntervalType === 'none' ? parseLocalDate(newRuleDate) : parseLocalDate(newRuleEndDate),
+      endDate:
+        newIntervalType === "none"
+          ? parseLocalDate(newRuleDate)
+          : parseLocalDate(newRuleEndDate),
     };
 
     if (editRuleId) {
-      $recurrenceRules = $recurrenceRules.map(r => r.id === editRuleId ? rule : r);
+      $recurrenceRules = $recurrenceRules.map((r) =>
+        r.id === editRuleId ? rule : r,
+      );
     } else {
       $recurrenceRules = [...$recurrenceRules, rule];
     }
-    
+
     regenerate();
     showRecurrenceModal = false;
     resetForm();
@@ -205,9 +270,9 @@
     newOriginZone = rule.originZone;
     newDestZone = rule.destinationZone;
     newMode = rule.mode;
-    newTimePeriod = rule.timePeriod || '06:30-09:30';
+    newTimePeriod = rule.timePeriod || "06:30-09:30";
     newIsReturn = rule.isReturn || false;
-    newReturnTimePeriod = rule.returnTimePeriod || '16:00-19:00';
+    newReturnTimePeriod = rule.returnTimePeriod || "16:00-19:00";
     newDays = [...rule.daysOfWeek];
     newIntervalType = rule.intervalType;
     newIntervalValue = rule.intervalValue;
@@ -216,18 +281,16 @@
     showRecurrenceModal = true;
   }
 
-
-
   function quickAddOnDate(d: Date) {
     resetForm();
-    newIntervalType = 'none';
+    newIntervalType = "none";
     newRuleDate = formatInputDate(d);
     newRuleEndDate = formatInputDate(d);
     showRecurrenceModal = true;
   }
 
   function removeRule(id: string) {
-    $recurrenceRules = $recurrenceRules.filter(r => r.id !== id);
+    $recurrenceRules = $recurrenceRules.filter((r) => r.id !== id);
     regenerate();
   }
 
@@ -236,20 +299,20 @@
     if (dayJourneys.length === 0) return;
 
     const ruleIdsToAffect = new Set(
-      dayJourneys.map(j => j.ruleId.replace('-return', ''))
+      dayJourneys.map((j) => j.ruleId.replace("-return", "")),
     );
 
     $recurrenceRules = $recurrenceRules
-      .map(rule => {
+      .map((rule) => {
         if (ruleIdsToAffect.has(rule.id)) {
-          if (rule.intervalType === 'none') {
+          if (rule.intervalType === "none") {
             return null;
           } else {
             const currentExcludes = rule.excludeDates || [];
             if (!currentExcludes.includes(dateKey)) {
               return {
                 ...rule,
-                excludeDates: [...currentExcludes, dateKey]
+                excludeDates: [...currentExcludes, dateKey],
               };
             }
           }
@@ -263,7 +326,11 @@
 
   function importPattern(patternIndex: number) {
     const pattern = $detectedPatterns[patternIndex];
-    const rule = patternToRule(pattern, parseLocalDate(planStart), parseLocalDate(planEnd));
+    const rule = patternToRule(
+      pattern,
+      parseLocalDate(planStart),
+      parseLocalDate(planEnd),
+    );
     $recurrenceRules = [...$recurrenceRules, rule];
     regenerate();
   }
@@ -280,45 +347,45 @@
 
   function resetForm() {
     editRuleId = null;
-    newRuleName = '';
+    newRuleName = "";
     newOriginZone = defOriginZone;
     newDestZone = defDestZone;
     newMode = defMode;
     newTimePeriod = defTimePeriod;
     newIsReturn = false;
-    newReturnTimePeriod = '16:00-19:00';
+    newReturnTimePeriod = "16:00-19:00";
     newDays = [1, 2, 3, 4, 5];
-    newIntervalType = 'weeks';
+    newIntervalType = "weeks";
     newIntervalValue = 1;
     newRuleDate = planStart;
     newRuleEndDate = planEnd;
   }
 
   function getCapColor(progress: number): string {
-    if (progress >= 1) return '#10b981';
-    if (progress >= 0.7) return '#f59e0b';
-    return '#009FE3';
+    if (progress >= 1) return "#10b981";
+    if (progress >= 0.7) return "#f59e0b";
+    return "#009FE3";
   }
 
   let fareTypeShortName = $derived.by(() => {
     const rc = FARE_TYPES[$selectedFareType];
-    if ($selectedFareType === 'none') return '';
-    if ($selectedFareType === 'railcard') return 'National Railcard';
-    if ($selectedFareType === 'disabled') return 'Disabled Persons';
-    if ($selectedFareType === 'jobcentre') return 'Jobcentre Plus';
-    if ($selectedFareType === 'zip_11_15') return '11-15 Zip';
-    if ($selectedFareType === 'zip_16_17') return '16+ Zip';
-    if ($selectedFareType === 'student') return '18+ Student';
+    if ($selectedFareType === "none") return "";
+    if ($selectedFareType === "railcard") return "National Railcard";
+    if ($selectedFareType === "disabled") return "Disabled Persons";
+    if ($selectedFareType === "jobcentre") return "Jobcentre Plus";
+    if ($selectedFareType === "zip_11_15") return "11-15 Zip";
+    if ($selectedFareType === "zip_16_17") return "16+ Zip";
+    if ($selectedFareType === "student") return "18+ Student";
     return rc.name;
   });
 
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const dayValues = [1, 2, 3, 4, 5, 6, 0]; // JS day values for Mon-Sun
 
   function formatInputDate(d: Date): string {
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
@@ -333,8 +400,13 @@
   <div class="planner-header">
     <h1 class="page-title">Journey Planner</h1>
     <div class="planner-actions" style="display: flex; gap: 0.5rem;">
-
-      <button class="btn-primary" onclick={() => { resetForm(); showRecurrenceModal = true; }}>
+      <button
+        class="btn-primary"
+        onclick={() => {
+          resetForm();
+          showRecurrenceModal = true;
+        }}
+      >
         + Add Schedule
       </button>
     </div>
@@ -348,41 +420,79 @@
         <h3 class="sidebar-title">📅 Planning Period</h3>
         <div class="date-inputs">
           <label class="setting-label" for="plan-start">Start</label>
-          <input type="date" class="input-field" id="plan-start" bind:value={planStart} onchange={regenerate} />
-          <label class="setting-label" for="plan-end" style="margin-top: 0.5rem;">End</label>
-          <input type="date" class="input-field" id="plan-end" bind:value={planEnd} onchange={regenerate} />
+          <input
+            type="date"
+            class="input-field"
+            id="plan-start"
+            bind:value={planStart}
+            onchange={regenerate}
+          />
+          <label
+            class="setting-label"
+            for="plan-end"
+            style="margin-top: 0.5rem;">End</label
+          >
+          <input
+            type="date"
+            class="input-field"
+            id="plan-end"
+            bind:value={planEnd}
+            onchange={regenerate}
+          />
         </div>
       </div>
 
-
-
       <div class="glass-card sidebar-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick={() => showActiveSchedules = !showActiveSchedules}>
+        <button
+          type="button"
+          style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; background: none; border: none; padding: 0; text-align: left; font-family: inherit; color: inherit;"
+          onclick={() => (showActiveSchedules = !showActiveSchedules)}
+        >
           <h3 class="sidebar-title" style="margin: 0;">🔄 Active Schedules</h3>
-          <span style="font-size: 0.8rem; color: var(--color-text-muted);">{showActiveSchedules ? '▼' : '▶'}</span>
-        </div>
+          <span style="font-size: 0.8rem; color: var(--color-text-muted);"
+            >{showActiveSchedules ? "▼" : "▶"}</span
+          >
+        </button>
         {#if showActiveSchedules}
           <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
-            {#if $recurrenceRules.filter(r => r.intervalType !== 'none').length === 0}
+            {#if $recurrenceRules.filter((r) => r.intervalType !== "none").length === 0}
               <p class="empty-text">No recurring schedules yet.</p>
             {:else}
-              {#each $recurrenceRules.filter(r => r.intervalType !== 'none') as rule}
+              {#each $recurrenceRules.filter((r) => r.intervalType !== "none") as rule}
                 <div class="rule-card">
                   <div class="rule-info">
                     <div class="rule-name">{rule.name}</div>
                     <div class="rule-detail">
-                      {#if rule.mode === 'bus'}
+                      {#if rule.mode === "bus"}
                         Bus •
                       {:else}
-                        Z{rule.originZone}{rule.isReturn ? '↔' : '→'}Z{rule.destinationZone} •
+                        Z{rule.originZone}{rule.isReturn
+                          ? "↔"
+                          : "→"}Z{rule.destinationZone} •
                       {/if}
-                      {rule.timePeriod}{rule.isReturn ? ` (+${rule.returnTimePeriod})` : ''} •
-                      {rule.daysOfWeek.map(d => ['Su','Mo','Tu','We','Th','Fr','Sa'][d]).join(',')}
+                      {rule.timePeriod}{rule.isReturn
+                        ? ` (+${rule.returnTimePeriod})`
+                        : ""} •
+                      {rule.daysOfWeek
+                        .map(
+                          (d) => ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][d],
+                        )
+                        .join(",")}
                     </div>
                   </div>
-                  <div class="rule-actions" style="display: flex; gap: 0.25rem;">
-                    <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
-                    <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+                  <div
+                    class="rule-actions"
+                    style="display: flex; gap: 0.25rem;"
+                  >
+                    <button
+                      class="rule-edit"
+                      style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;"
+                      onclick={() => editRule(rule)}>✏️</button
+                    >
+                    <button
+                      class="rule-remove"
+                      onclick={() => removeRule(rule.id)}>✕</button
+                    >
                   </div>
                 </div>
               {/each}
@@ -393,29 +503,49 @@
 
       <!-- One-off rules -->
       <div class="glass-card sidebar-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick={() => showOneOffJourneys = !showOneOffJourneys}>
+        <button
+          type="button"
+          style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; background: none; border: none; padding: 0; text-align: left; font-family: inherit; color: inherit;"
+          onclick={() => (showOneOffJourneys = !showOneOffJourneys)}
+        >
           <h3 class="sidebar-title" style="margin: 0;">📌 One-off Journeys</h3>
-          <span style="font-size: 0.8rem; color: var(--color-text-muted);">{showOneOffJourneys ? '▼' : '▶'}</span>
-        </div>
+          <span style="font-size: 0.8rem; color: var(--color-text-muted);"
+            >{showOneOffJourneys ? "▼" : "▶"}</span
+          >
+        </button>
         {#if showOneOffJourneys}
           <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
-            {#each $recurrenceRules.filter(r => r.intervalType === 'none') as rule}
+            {#each $recurrenceRules.filter((r) => r.intervalType === "none") as rule}
               <div class="rule-card">
                 <div class="rule-info">
                   <div class="rule-name">{rule.name}</div>
                   <div class="rule-detail">
-                    {rule.startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} •
-                    {#if rule.mode === 'bus'}
+                    {rule.startDate.toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                    })} •
+                    {#if rule.mode === "bus"}
                       Bus
                     {:else}
-                      Z{rule.originZone}{rule.isReturn ? '↔' : '→'}Z{rule.destinationZone}
+                      Z{rule.originZone}{rule.isReturn
+                        ? "↔"
+                        : "→"}Z{rule.destinationZone}
                     {/if}
-                    • {rule.timePeriod}{rule.isReturn ? ` (+${rule.returnTimePeriod})` : ''}
+                    • {rule.timePeriod}{rule.isReturn
+                      ? ` (+${rule.returnTimePeriod})`
+                      : ""}
                   </div>
                 </div>
                 <div class="rule-actions" style="display: flex; gap: 0.25rem;">
-                  <button class="rule-edit" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;" onclick={() => editRule(rule)}>✏️</button>
-                  <button class="rule-remove" onclick={() => removeRule(rule.id)}>✕</button>
+                  <button
+                    class="rule-edit"
+                    style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;"
+                    onclick={() => editRule(rule)}>✏️</button
+                  >
+                  <button
+                    class="rule-remove"
+                    onclick={() => removeRule(rule.id)}>✕</button
+                  >
                 </div>
               </div>
             {/each}
@@ -430,21 +560,32 @@
           {#each $detectedPatterns.slice(0, 5) as pattern, i}
             <div class="pattern-card">
               <div class="pattern-info">
-                <div class="pattern-route">{pattern.origin.replace(/\s*\[.*?\]/g, '')} → {pattern.destination.replace(/\s*\[.*?\]/g, '')}</div>
+                <div class="pattern-route">
+                  {pattern.origin.replace(/\s*\[.*?\]/g, "")} → {pattern.destination.replace(
+                    /\s*\[.*?\]/g,
+                    "",
+                  )}
+                </div>
                 <div class="pattern-detail">
                   {pattern.frequency}x/week •
-                  {pattern.timePeriod.includes('06:30') || pattern.timePeriod.includes('16:00') ? 'Peak' : 'Off-Peak'} •
+                  {pattern.timePeriod.includes("06:30") ||
+                  pattern.timePeriod.includes("16:00")
+                    ? "Peak"
+                    : "Off-Peak"} •
                   {Math.round(pattern.confidence * 100)}% confidence
                 </div>
               </div>
-              <button class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick={() => importPattern(i)}>
+              <button
+                class="btn-secondary"
+                style="padding: 0.25rem 0.5rem; font-size: 0.7rem;"
+                onclick={() => importPattern(i)}
+              >
                 Import
               </button>
             </div>
           {/each}
         </div>
       {/if}
-
     </div>
 
     <!-- Calendar and Settings -->
@@ -454,16 +595,26 @@
         <div class="glass-card forecast-summary">
           <div class="forecast-stat">
             <span class="forecast-label">Standard PAYG</span>
-            <span class="forecast-value">£{$forecastResult.totalPaygCapped.toFixed(2)}</span>
+            <span class="forecast-value"
+              >£{$forecastResult.totalPaygCapped.toFixed(2)}</span
+            >
           </div>
           <div class="forecast-stat">
-            <span class="forecast-label">{#if $selectedFareType === 'none'}Adult / Contactless{:else}With {fareTypeShortName} Discount{/if}</span>
-            <span class="forecast-value green">£{$forecastResult.totalPaygFareTypeCapped.toFixed(2)}</span>
+            <span class="forecast-label"
+              >{#if $selectedFareType === "none"}Adult / Contactless{:else}With {fareTypeShortName}
+                Discount{/if}</span
+            >
+            <span class="forecast-value green"
+              >£{$forecastResult.totalPaygFareTypeCapped.toFixed(2)}</span
+            >
           </div>
           <div class="forecast-stat highlight">
             <span class="forecast-label">Potential Saving</span>
             <span class="forecast-value green large">
-              £{($forecastResult.totalPaygCapped - $forecastResult.totalPaygFareTypeCapped).toFixed(2)}
+              £{(
+                $forecastResult.totalPaygCapped -
+                $forecastResult.totalPaygFareTypeCapped
+              ).toFixed(2)}
             </span>
           </div>
         </div>
@@ -472,11 +623,22 @@
       <div class="glass-card" style="padding: 1.25rem;">
         <!-- Calendar header -->
         <div class="calendar-nav">
-          <button class="btn-secondary" style="padding: 0.375rem 0.75rem;" onclick={prevMonth}>←</button>
+          <button
+            class="btn-secondary"
+            style="padding: 0.375rem 0.75rem;"
+            onclick={prevMonth}>←</button
+          >
           <h2 class="calendar-month-label">
-            {calendarDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+            {calendarDate.toLocaleDateString("en-GB", {
+              month: "long",
+              year: "numeric",
+            })}
           </h2>
-          <button class="btn-secondary" style="padding: 0.375rem 0.75rem;" onclick={nextMonth}>→</button>
+          <button
+            class="btn-secondary"
+            style="padding: 0.375rem 0.75rem;"
+            onclick={nextMonth}>→</button
+          >
         </div>
 
         <!-- Calendar grid -->
@@ -494,29 +656,42 @@
               class:other-month={!day.isCurrentMonth}
               class:cap-hit={forecast?.capHitFareType}
               class:has-journeys={dayJourneys.length > 0}
-              class:in-planning-period={dateKey >= planStart && dateKey <= planEnd}
+              class:in-planning-period={dateKey >= planStart &&
+                dateKey <= planEnd}
               role="button"
               tabindex="0"
               onclick={() => quickAddOnDate(day.date)}
-              onkeydown={(e) => { if (e.key === 'Enter') quickAddOnDate(day.date); }}
+              onkeydown={(e) => {
+                if (e.key === "Enter") quickAddOnDate(day.date);
+              }}
               style="cursor: pointer;"
             >
               <div class="day-number">{day.date.getDate()}</div>
               {#if dayJourneys.length > 0}
                 <button
                   class="clear-day-btn"
-                  onclick={(e) => { e.stopPropagation(); clearJourneysForDate(dateKey); }}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    clearJourneysForDate(dateKey);
+                  }}
                   aria-label="Clear journeys for this day"
                 >
                   ✕
                 </button>
-                <div class="day-journey-count">{dayJourneys.length} trip{dayJourneys.length > 1 ? 's' : ''}</div>
+                <div class="day-journey-count">
+                  {dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}
+                </div>
                 {#if forecast}
-                  <div class="day-spend">£{forecast.cappedFareFareType.toFixed(2)}</div>
+                  <div class="day-spend">
+                    £{forecast.cappedFareFareType.toFixed(2)}
+                  </div>
                   <div class="mini-cap-bar">
                     <div
                       class="mini-cap-fill"
-                      style="width: {forecast.capProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)};"
+                      style="width: {forecast.capProgressFareType *
+                        100}%; background: {getCapColor(
+                        forecast.capProgressFareType,
+                      )};"
                     ></div>
                   </div>
                   {#if forecast.capHitFareType}
@@ -535,20 +710,30 @@
       <!-- Default Settings -->
       <div class="glass-card sidebar-section">
         <h3 class="sidebar-title">⚙️ Default Journey Settings</h3>
-        <p style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">
+        <p
+          style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;"
+        >
           These settings apply when adding one-off journeys from the calendar.
         </p>
         <div class="date-inputs">
-          <label class="setting-label">Default Mode</label>
-          <select class="input-field" bind:value={defMode}>
+          <label class="setting-label" for="def-mode">Default Mode</label>
+          <select class="input-field" id="def-mode" bind:value={defMode}>
             <option value="underground">Underground / Tube</option>
             <option value="national_rail">National Rail</option>
             <option value="nr_tube">NR + Tube / Mixed</option>
             <option value="bus">Bus / Tram</option>
           </select>
-          
-          <label class="setting-label" style="margin-top: 0.5rem;">Default Time</label>
-          <select class="input-field" bind:value={defTimePeriod}>
+
+          <label
+            class="setting-label"
+            for="def-time-period"
+            style="margin-top: 0.5rem;">Default Time</label
+          >
+          <select
+            class="input-field"
+            id="def-time-period"
+            bind:value={defTimePeriod}
+          >
             {#each TIME_PERIODS as t}
               <option value={t.value}>{t.label}</option>
             {/each}
@@ -556,17 +741,28 @@
 
           <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
             <div style="flex: 1;">
-              <label class="setting-label">Origin Zone</label>
-              <select class="input-field" bind:value={defOriginZone}>
-                {#each [1,2,3,4,5,6,7,8,9] as z}
+              <label class="setting-label" for="def-origin-zone"
+                >Origin Zone</label
+              >
+              <select
+                class="input-field"
+                id="def-origin-zone"
+                bind:value={defOriginZone}
+              >
+                {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
                   <option value={z}>Zone {z}</option>
                 {/each}
               </select>
             </div>
             <div style="flex: 1;">
-              <label class="setting-label">Dest. Zone</label>
-              <select class="input-field" bind:value={defDestZone}>
-                {#each [1,2,3,4,5,6,7,8,9] as z}
+              <label class="setting-label" for="def-dest-zone">Dest. Zone</label
+              >
+              <select
+                class="input-field"
+                id="def-dest-zone"
+                bind:value={defDestZone}
+              >
+                {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
                   <option value={z}>Zone {z}</option>
                 {/each}
               </select>
@@ -579,8 +775,15 @@
       <div class="glass-card sidebar-section">
         <h3 class="sidebar-title">🏷️ Fare Type</h3>
         <div class="date-inputs">
-          <label class="setting-label">Fare Type Applied to Planner</label>
-          <select class="input-field" bind:value={$selectedFareType} onchange={regenerate}>
+          <label class="setting-label" for="sel-fare-type"
+            >Fare Type Applied to Planner</label
+          >
+          <select
+            class="input-field"
+            id="sel-fare-type"
+            bind:value={$selectedFareType}
+            onchange={regenerate}
+          >
             <option value="none">Adult / Contactless</option>
             <option value="student">Apprentice / 18+ Student Oyster</option>
             <option value="zip_11_15">11-15 Zip Oyster Card</option>
@@ -596,54 +799,115 @@
 
   <!-- Recurrence Modal -->
   {#if showRecurrenceModal}
-    <div class="modal-overlay" onclick={() => showRecurrenceModal = false} onkeydown={(e) => { if (e.key === 'Escape') showRecurrenceModal = false; }} role="dialog" tabindex="-1" aria-label="Add recurring schedule">
-      <div class="modal-content glass-card" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
+    <div
+      class="modal-overlay"
+      onclick={(e) => {
+        if (e.target === e.currentTarget) showRecurrenceModal = false;
+      }}
+      onkeydown={(e) => {
+        if (e.key === "Escape") showRecurrenceModal = false;
+      }}
+      role="dialog"
+      tabindex="-1"
+      aria-label="Add recurring schedule"
+    >
+      <div class="modal-content glass-card">
         <div class="modal-header">
-          <h2>{newIntervalType === 'none' ? 'Add One-off Journey' : 'Add Recurring Schedule'}</h2>
-          <button class="modal-close" onclick={() => showRecurrenceModal = false}>✕</button>
+          <h2>
+            {newIntervalType === "none"
+              ? "Add One-off Journey"
+              : "Add Recurring Schedule"}
+          </h2>
+          <button
+            class="modal-close"
+            onclick={() => (showRecurrenceModal = false)}>✕</button
+          >
         </div>
 
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group">
-              <label class="setting-label" for="modal-rule-name">{newIntervalType === 'none' ? 'Journey Name' : 'Schedule Name'}</label>
-              <input type="text" class="input-field" id="modal-rule-name" bind:value={newRuleName} placeholder="e.g., Morning Commute" />
+              <label class="setting-label" for="modal-rule-name"
+                >{newIntervalType === "none"
+                  ? "Journey Name"
+                  : "Schedule Name"}</label
+              >
+              <input
+                type="text"
+                class="input-field"
+                id="modal-rule-name"
+                bind:value={newRuleName}
+                placeholder="e.g., Morning Commute"
+              />
             </div>
-            {#if newIntervalType === 'none'}
+            {#if newIntervalType === "none"}
               <div class="form-group">
-                <label class="setting-label" for="modal-journey-date">Journey Date</label>
-                <input type="date" class="input-field" id="modal-journey-date" bind:value={newRuleDate} />
+                <label class="setting-label" for="modal-journey-date"
+                  >Journey Date</label
+                >
+                <input
+                  type="date"
+                  class="input-field"
+                  id="modal-journey-date"
+                  bind:value={newRuleDate}
+                />
               </div>
             {/if}
           </div>
 
-          {#if newIntervalType !== 'none'}
+          {#if newIntervalType !== "none"}
             <div class="form-row">
               <div class="form-group">
-                <label class="setting-label" for="modal-start-date">Start Date</label>
-                <input type="date" class="input-field" id="modal-start-date" bind:value={newRuleDate} />
+                <label class="setting-label" for="modal-start-date"
+                  >Start Date</label
+                >
+                <input
+                  type="date"
+                  class="input-field"
+                  id="modal-start-date"
+                  bind:value={newRuleDate}
+                />
               </div>
               <div class="form-group">
-                <label class="setting-label" for="modal-end-date">End Date</label>
-                <input type="date" class="input-field" id="modal-end-date" bind:value={newRuleEndDate} />
+                <label class="setting-label" for="modal-end-date"
+                  >End Date</label
+                >
+                <input
+                  type="date"
+                  class="input-field"
+                  id="modal-end-date"
+                  bind:value={newRuleEndDate}
+                />
               </div>
             </div>
           {/if}
 
           <div class="form-row">
             <div class="form-group">
-              <label class="setting-label">Transport Mode</label>
-              <select class="input-field" bind:value={newMode}>
+              <label class="setting-label" for="modal-transport-mode"
+                >Transport Mode</label
+              >
+              <select
+                class="input-field"
+                id="modal-transport-mode"
+                bind:value={newMode}
+              >
                 <option value="underground">Underground / Tube</option>
                 <option value="national_rail">National Rail</option>
                 <option value="nr_tube">National Rail & Tube</option>
                 <option value="bus">Bus / Tram</option>
               </select>
             </div>
-            {#if newMode !== 'bus'}
+            {#if newMode !== "bus"}
               <div class="form-group">
-                <label class="setting-label">Time Period</label>
-                <select class="input-field" bind:value={newTimePeriod}>
+                <label class="setting-label" for="modal-time-period"
+                  >Time Period</label
+                >
+                <select
+                  class="input-field"
+                  id="modal-time-period"
+                  bind:value={newTimePeriod}
+                >
                   {#each TIME_PERIODS as t}
                     <option value={t.value}>{t.label}</option>
                   {/each}
@@ -652,39 +916,80 @@
             {/if}
           </div>
 
-          <div class="form-row return-journey-row" style="margin-top: 0.5rem; align-items: flex-end;">
+          <div
+            class="form-row return-journey-row"
+            style="margin-top: 0.5rem; align-items: flex-end;"
+          >
             <div class="form-group checkbox-group" style="margin-bottom: 0;">
-              <label class="setting-label" style="margin-bottom: 0.5rem; display: block;">Return Trip</label>
-              <label class="checkbox-field" class:active={newIsReturn}>
-                <input type="checkbox" bind:checked={newIsReturn} />
+              <div
+                class="setting-label"
+                style="margin-bottom: 0.5rem; display: block;"
+              >
+                Return Trip
+              </div>
+              <label
+                class="checkbox-field"
+                class:active={newIsReturn}
+                for="modal-is-return"
+              >
+                <input
+                  type="checkbox"
+                  id="modal-is-return"
+                  bind:checked={newIsReturn}
+                />
                 <span class="checkmark"></span>
                 <span class="checkbox-text">Add Return Journey</span>
               </label>
             </div>
-            <div class="form-group" style="margin-bottom: 0;" class:hidden-field={!newIsReturn}>
-              <label class="setting-label">Return Time</label>
-              <select class="input-field" bind:value={newReturnTimePeriod} disabled={!newIsReturn}>
-                {#each returnTimePeriodOptions as t}
-                  <option value={t.value}>{t.label}</option>
-                {/each}
-              </select>
-            </div>
+            {#if newMode !== "bus"}
+              <div
+                class="form-group"
+                style="margin-bottom: 0;"
+                class:hidden-field={!newIsReturn}
+              >
+                <label class="setting-label" for="modal-return-time-period"
+                  >Return Time</label
+                >
+                <select
+                  class="input-field"
+                  id="modal-return-time-period"
+                  bind:value={newReturnTimePeriod}
+                  disabled={!newIsReturn}
+                >
+                  {#each returnTimePeriodOptions as t}
+                    <option value={t.value}>{t.label}</option>
+                  {/each}
+                </select>
+              </div>
+            {/if}
           </div>
 
-          {#if newMode !== 'bus'}
+          {#if newMode !== "bus"}
             <div class="form-row">
               <div class="form-group">
-                <label class="setting-label">Origin Zone</label>
-                <select class="input-field" bind:value={newOriginZone}>
-                  {#each [1,2,3,4,5,6,7,8,9] as z}
+                <label class="setting-label" for="modal-origin-zone"
+                  >Origin Zone</label
+                >
+                <select
+                  class="input-field"
+                  id="modal-origin-zone"
+                  bind:value={newOriginZone}
+                >
+                  {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
                     <option value={z}>Zone {z}</option>
                   {/each}
                 </select>
               </div>
               <div class="form-group">
-                <label class="setting-label">Destination Zone</label>
-                <select class="input-field" bind:value={newDestZone}>
-                  {#each [1,2,3,4,5,6,7,8,9] as z}
+                <label class="setting-label" for="modal-dest-zone"
+                  >Destination Zone</label
+                >
+                <select
+                  class="input-field"
+                  id="modal-dest-zone"
+                  bind:value={newDestZone}
+                >
+                  {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
                     <option value={z}>Zone {z}</option>
                   {/each}
                 </select>
@@ -692,9 +997,9 @@
             </div>
           {/if}
 
-          {#if newIntervalType !== 'none'}
+          {#if newIntervalType !== "none"}
             <div class="form-group">
-              <label class="setting-label">Days of Week</label>
+              <div class="setting-label">Days of Week</div>
               <div class="day-selector">
                 {#each dayLabels as label, i}
                   <button
@@ -710,12 +1015,27 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="setting-label">Repeat Every</label>
-                <input type="number" class="input-field" bind:value={newIntervalValue} min="1" max="52" />
+                <label class="setting-label" for="modal-interval-value"
+                  >Repeat Every</label
+                >
+                <input
+                  type="number"
+                  class="input-field"
+                  id="modal-interval-value"
+                  bind:value={newIntervalValue}
+                  min="1"
+                  max="52"
+                />
               </div>
               <div class="form-group">
-                <label class="setting-label">Interval Type</label>
-                <select class="input-field" bind:value={newIntervalType}>
+                <label class="setting-label" for="modal-interval-type"
+                  >Interval Type</label
+                >
+                <select
+                  class="input-field"
+                  id="modal-interval-type"
+                  bind:value={newIntervalType}
+                >
                   <option value="days">Days</option>
                   <option value="weeks">Weeks</option>
                   <option value="months">Months</option>
@@ -727,21 +1047,35 @@
 
           <div class="form-group" style="margin-top: 0.5rem;">
             <div class="zone-preview">
-              {#if newMode !== 'bus'}
-                Fare zone: <strong>{getZoneRange(newOriginZone, newDestZone)}</strong>
+              {#if newMode !== "bus"}
+                Fare zone: <strong
+                  >{getZoneRange(newOriginZone, newDestZone)}</strong
+                >
                 <span style="margin: 0 0.5rem;">•</span>
               {/if}
               Estimated Fare: <strong>£{estimatedTotalFare.toFixed(2)}</strong>
               {#if newIsReturn}
-                <span style="font-size: 0.75rem; color: var(--color-text-muted);"> (includes return)</span>
+                <span
+                  style="font-size: 0.75rem; color: var(--color-text-muted);"
+                >
+                  (includes return)</span
+                >
               {/if}
             </div>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button class="btn-secondary" onclick={() => showRecurrenceModal = false}>Cancel</button>
-          <button class="btn-primary" onclick={saveRule} disabled={newIntervalType !== 'none' && newDays.length === 0}>{editRuleId ? 'Save Schedule' : 'Add Schedule'}</button>
+          <button
+            class="btn-secondary"
+            onclick={() => (showRecurrenceModal = false)}>Cancel</button
+          >
+          <button
+            class="btn-primary"
+            onclick={saveRule}
+            disabled={newIntervalType !== "none" && newDays.length === 0}
+            >{editRuleId ? "Save Schedule" : "Add Schedule"}</button
+          >
         </div>
       </div>
     </div>
@@ -749,7 +1083,10 @@
 </div>
 
 <style>
-  .planner-page { max-width: 1200px; margin: 0 auto; }
+  .planner-page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 
   .planner-header {
     display: flex;
@@ -772,10 +1109,21 @@
   }
 
   /* Sidebar */
-  .sidebar-section { padding: 1.25rem; margin-bottom: 1rem; }
-  .sidebar-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; }
+  .sidebar-section {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .sidebar-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
 
-  .date-inputs { display: flex; flex-direction: column; gap: 0.25rem; }
+  .date-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
   .setting-label {
     font-size: 0.7rem;
     font-weight: 600;
@@ -784,7 +1132,10 @@
     letter-spacing: 0.05em;
   }
 
-  .empty-text { font-size: 0.8rem; color: var(--color-text-muted); }
+  .empty-text {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
 
   .rule-card {
     display: flex;
@@ -794,8 +1145,15 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  .rule-name { font-size: 0.8rem; font-weight: 600; }
-  .rule-detail { font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.125rem; }
+  .rule-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .rule-detail {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    margin-top: 0.125rem;
+  }
 
   .rule-remove {
     background: none;
@@ -806,7 +1164,9 @@
     padding: 0.25rem;
     transition: color 0.2s;
   }
-  .rule-remove:hover { color: var(--color-danger); }
+  .rule-remove:hover {
+    color: var(--color-danger);
+  }
 
   .pattern-card {
     display: flex;
@@ -817,8 +1177,15 @@
     gap: 0.5rem;
   }
 
-  .pattern-route { font-size: 0.75rem; font-weight: 600; }
-  .pattern-detail { font-size: 0.65rem; color: var(--color-text-muted); margin-top: 0.125rem; }
+  .pattern-route {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .pattern-detail {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    margin-top: 0.125rem;
+  }
 
   .forecast-summary {
     border-color: rgba(16, 185, 129, 0.2);
@@ -946,7 +1313,10 @@
     border-bottom: 1px solid var(--color-border);
   }
 
-  .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+  .modal-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
 
   .modal-close {
     background: none;
@@ -957,7 +1327,9 @@
     padding: 0.25rem;
   }
 
-  .modal-body { padding: 1.5rem; }
+  .modal-body {
+    padding: 1.5rem;
+  }
   .modal-footer {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--color-border);
@@ -966,10 +1338,19 @@
     justify-content: flex-end;
   }
 
-  .form-group { margin-bottom: 1rem; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
 
-  .day-selector { display: flex; gap: 0.375rem; }
+  .day-selector {
+    display: flex;
+    gap: 0.375rem;
+  }
   .day-btn {
     flex: 1;
     padding: 0.5rem 0;
@@ -982,7 +1363,9 @@
     cursor: pointer;
     transition: all 0.2s ease;
   }
-  .day-btn:hover { border-color: var(--color-border-accent); }
+  .day-btn:hover {
+    border-color: var(--color-border-accent);
+  }
   .day-btn.selected {
     background: rgba(0, 159, 227, 0.15);
     border-color: rgba(0, 159, 227, 0.4);
@@ -1080,13 +1463,11 @@
     border-color: rgba(255, 255, 255, 0.04);
     color: var(--color-text-muted);
   }
-
   .hidden-field {
     opacity: 0.35;
     pointer-events: none;
     transition: opacity 0.2s ease;
   }
-
   .calendar-cell {
     position: relative;
   }
@@ -1126,7 +1507,9 @@
   }
 
   @media (max-width: 768px) {
-    .planner-layout { grid-template-columns: 1fr; }
+    .planner-layout {
+      grid-template-columns: 1fr;
+    }
     .forecast-summary {
       display: grid;
       grid-template-columns: 1fr 1fr;
