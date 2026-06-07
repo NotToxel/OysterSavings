@@ -1,0 +1,202 @@
+[
+  {
+    "x0": 70.142578125,
+    "y0": 97.4652328491211,
+    "x1": 142.0351104736328,
+    "y1": 257.20068359375,
+    "text": "A\nAbbey Road \nG2\nAbbey Wood \nH4\nActon Central \nB3\nActon Main Line \nB3\nActon Town \nB3\nAddington Village \nF6\nAddiscombe \nF6\nAlbany Park \nH5\nAldgate \nF3\nAldgate East \nF3\nAlexandra Palace \nE1\nAll Saints \nG3\nAlperton \nB2\nAmersham \nA1\nAmpere Way \nD6\nAnerley \nF5\nAngel \nE3\nArchway \nE2\nArena \nF6\nArnos Grove \nE1\nArsenal \nE2\nAvenue Road \nF5",
+    "block_no": 0
+  },
+  {
+    "x0": 70.1426010131836,
+    "y0": 263.03692626953125,
+    "x1": 142.03512573242188,
+    "y1": 642.5824584960938,
+    "text": "B\nBaker Street \nD3\nBalham \nD5\nBank \nE3\nBanstead \nD6\nBarbican \nE3\nBarking \nH2\nBarking Riverside \nH3\nBarkingside \nG1\nBarnehurst \nH5\nBarnes \nC4\nBarnes Bridge \nC4\nBarons Court \nC3\nBattersea Park \nC4\nBattersea Power Station D4\nBayford \nE1\nBayswater \nC3\nBeckenham Hill \nG5\nBeckenham Junction \nG5\nBeckenham Road \nF5\nBeckton \nH4\nBeckton Park \nH4\nBecontree \nH2\nBeddington Lane \nD6\nBelgrave Walk \nD5\nBellingham \nF5\nBelmont \nD6\nBelsize Park \nD2\nBelvedere \nH4\nBermondsey \nF4\nBerrylands \nC5\nBethnal Green (LU) \nF3\nBethnal Green \nF2\nBexley \nH5\nBexleyheath \nG5\nBickley \nG5\nBirkbeck \nF5\nBlackfriars \nE3\nBlackheath \nG5\nBlackhorse Lane \nF6\nBlackhorse Road \nF2\nBlackwall \nG3\nBond Street \nD3\nBorough \nE4\nBoston Manor \nB4\nBounds Green \nE1\nBow Church \nG3\nBowes Park \nE1\nBow Road \nG3\nBrent Cross \nD1\nBrent Cross West \nD1\nBrentford \nB4\nBrentwood \nH1\nBrimsdown \nF1\nBrixton \nD5",
+    "block_no": 1
+  },
+  {
+    "x0": 162.11129760742188,
+    "y0": 80.0163803100586,
+    "x1": 234.7795867919922,
+    "y1": 195.14678955078125,
+    "text": "B continued\nBrockley \nF5\nBromley-by-Bow \nG3\nBromley North \nG5\nBromley South \nG5\nBrondesbury \nC2\nBrondesbury Park \nC2\nBrookmans Park \nE1\nBroxbourne \nF1\nBruce Grove \nF1\nBuckhurst Hill \nG1\nBurnham                                 A3\nBurnt Oak \nC1\nBushey \nC1\nBush Hill Park \nF1\nC",
+    "block_no": 2
+  },
+  {
+    "x0": 254.0791015625,
+    "y0": 80.0163803100586,
+    "x1": 259.53509521484375,
+    "y1": 89.08038330078125,
+    "text": "C",
+    "block_no": 3
+  },
+  {
+    "x0": 162.11129760742188,
+    "y0": 195.716064453125,
+    "x1": 235.5419158935547,
+    "y1": 654.1295166015625,
+    "text": "Caledonian Road \nE2\nCaledonian Road\n   & Barnsbury \nE2\nCambridge Heath \nF2\nCamden Road \nE2\nCamden Town \n D2\nCanada Water \nF4\nCanary Wharf \nF3\nCanning Town \nG3\nCannon Street \nE3\nCanonbury \nF2\nCanons Park \nC1\nCarpenders Park \nC1\nCarshalton \nD6\nCarshalton Beeches \nD6\nCastle Bar Park \nA3\nCaterham \nE6\nCatford \nF5\nCatford Bridge \nG5\nCentrale \nE6\nChadwell Heath \nH2\nChafford Hundred \nH2\nChalfont & Latimer \nA1\nChalk Farm \nD2\nChancery Lane \nE3\nCharing Cross \nD3\nCharlton \nG4\nCheam \nC6\nChelsfield \nH6\nChesham \nA1\nCheshunt \nF1\nChessington North \nC6\nChessington South \nC6\nChigwell \nG1\nChingford \nG1\nChipstead \nD6\nChislehurst \nG5\nChiswick \nB4\nChiswick Park \nB4\nChorleywood \nA1\nChurch Street \nE6\nCity Thameslink \nE3\nClapham Common \nD5\nClapham High Street \nD5\nClapham Junction \nC4\nClapham North \nD5\nClapham South \nD5\nClapton \nF2\nClock House \nF6\nCockfosters \nE1\nColindale \nC1\nColliers Wood \nD5\nCoombe Lane \nF6\nCoulsdon South \nE6\nCoulsdon Town \nE6\nCovent Garden \nE3\nCrayford \nH5\nCrews Hill \nE1\nCricklewood \nD2\nCrofton Park \nF5\nCrossharbour \nF4\nCrouch Hill \nE2\nCroxley \nB1\nCrystal Palace \nE5\nCuffley \nE1",
+    "block_no": 4
+  },
+  {
+    "x0": 254.07958984375,
+    "y0": 89.73709869384766,
+    "x1": 327.5152282714844,
+    "y1": 514.9266357421875,
+    "text": "Custom House for ExCeL H3\nCutty Sark for\n   Maritime Greenwich \nF4\nCyprus \nH4\n \n \n D\nDagenham Dock \nH2\nDagenham East \nH2\nDagenham Heathway \nH2\nDalston Junction \nF2\nDalston Kingsland \nF2\nDartford \nH5\nDebden \nG1\nDenmark Hill \nE5\nDeptford \nF4\nDeptford Bridge \nF4\nDevons Road \nG3\nDollis Hill \nC2\nDrayton Green \nA3\nDrayton Park \nE2\nDundonald Road \nC5 \nE\nEaling Broadway \nB3\nEaling Common \nB3\nEarl\u2019s Court \nC4\nEarlsfield \nC5\nEarlswood \nE6\nEast Acton \nC3\nEastcote \nB1\nEast Croydon \nE6\nEast Dulwich \nE5\nEast Finchley \nE1\nEast Ham \nG3\nEast India \nG3\nEast Putney \nC5\nEden Park \nF6\nEdgware \nC1\nEdgware Road \nC3\nEdmonton Green \nF1\nElephant & Castle \nE4\nElmers End \nF6\nElm Park \nH2\nElmstead Woods \nG5\nElstree & Borehamwood \nD1\nEltham \nG5\nElverson Road \nF4\nEmbankment \nD4\nEmerson Park \nH2\nEnfield Chase \nE1\nEnfield Lock \nF1\nEnfield Town \nF1\nEpping \nG1\nEpsom \nC6\nEpsom Downs \nD6\nErith \nH4\nEssex Road \nE2\nEuston \nD2\nEuston Square \nD3\nEwell East \nC6\nEwell West \nC6\nF",
+    "block_no": 5
+  },
+  {
+    "x0": 254.07960510253906,
+    "y0": 612.4837036132812,
+    "x1": 259.8955993652344,
+    "y1": 621.5477294921875,
+    "text": "G",
+    "block_no": 6
+  },
+  {
+    "x0": 254.07958984375,
+    "y0": 515.4954223632812,
+    "x1": 325.9721374511719,
+    "y1": 610.787109375,
+    "text": "Fairlop \nG1\nFalconwood \nG5\nFarringdon \nE3\nFeltham \nA5\nFenchurch Street \nF3\nFieldway \nF6\nFinchley Central \nE1\nFinchley Road \nD2\nFinchley Road & Frognal \nD2\nFinsbury Park \nE2\nForest Gate \nG2\nForest Hill \nF5\nFulham Broadway \nC4\nFulwell \nA5",
+    "block_no": 7
+  },
+  {
+    "x0": 346.0487976074219,
+    "y0": 80.0158920288086,
+    "x1": 417.9413146972656,
+    "y1": 102.72404479980469,
+    "text": "G\nGatwick Airport \nE6\nGeorge Street \nE6",
+    "block_no": 8
+  },
+  {
+    "x0": 254.08648681640625,
+    "y0": 622.3983154296875,
+    "x1": 325.97894287109375,
+    "y1": 635.4736938476562,
+    "text": "Gallions Reach \nH4\nGants Hill \nG2",
+    "block_no": 9
+  },
+  {
+    "x0": 261.3564147949219,
+    "y0": 81.78237915039062,
+    "x1": 289.9584045410156,
+    "y1": 88.58038330078125,
+    "text": "continued",
+    "block_no": 10
+  },
+  {
+    "x0": 346.04791259765625,
+    "y0": 103.3483657836914,
+    "x1": 417.9404602050781,
+    "y1": 634.8457641601562,
+    "text": "Gidea Park \nH1\nGipsy Hill \nE5\nGloucester Road \nC3\nGolders Green \nD1\nGoldhawk Road \nC3\nGoodge Street \nD3\nGoodmayes \nH2\nGordon Hill \nE1\nGospel Oak \nD2\nGrange Hill \nG1\nGrange Park \nE1\nGravel Hill \nF6\nGrays \nH2\nGreat Portland Street \nD3\nGreenford \nA2\nGreen Park \nD3\nGreenwich \nF4\nGreenwich Peninsula \nG4\nGrove Park \nG5\nGunnersbury \nB4\nH\nHackbridge \nD6\nHackney Central \nF2\nHackney Downs \nF2\nHackney Wick \nG2\nHadley Wood \nE1\nHaggerston \nF2\nHainault \nG1\nHammersmith \nC3\nHampstead \nD2\nHampstead Heath \nD2\nHampton \nA5\nHampton Court \nB6\nHampton Wick \nB5\nHanger Lane \nB3\nHanwell \nB3\nHarlesden \nC2\nHarold Wood \nH1\nHarpenden \nD1\nHarringay \nE1\nHarringay Green Lanes \nE2\nHarrington Road \nF6\nHarrow & Wealdstone \nC1\nHarrow-on-the-Hill \nB1\nHatch End \nC1\nHatfield \nE1\nHatton Cross \nA4\nHaydons Road \nD5\nHayes \nF6\nHayes & Harlington \nA3\nHeadstone Lane \nC1\nHeathrow Terminals 2 & 3 A4\nHeathrow Terminal 4 \nA4\nHeathrow Terminal 5 \nA4\nHendon \nD1\nHendon Central \nD1\nHerne Hill \nE5\nHeron Quays \nF4\nHertford East \nF1\nHertford North \nE1\nHighams Park \nG1\nHigh Barnet \nE1\nHighbury & Islington \nE2\nHighgate \nE1\nHigh Street Kensington \nC3\nHillingdon \nA1\nHither Green \nG5\nHolborn \nE3\nHolland Park \nC3\nHolloway Road \nE2\nHomerton \nF2\nHonor Oak Park \nF5\nHorley \nE6\nHornchurch \nH2\nHornsey \nE1\nHounslow \nA4\nHounslow Central \nA4",
+    "block_no": 11
+  },
+  {
+    "x0": 438.0157165527344,
+    "y0": 89.72513580322266,
+    "x1": 510.30902099609375,
+    "y1": 636.568359375,
+    "text": "Hounslow East \nA4\nHounslow West \nA4\nHoxton \nF2\nHyde Park Corner \nD3\nI\nIckenham \nA1\nIlford \nG2\nImperial Wharf \nC4\nIsland Gardens \nF4\nIsleworth \nB4\nIver                                           A3\nK\nKenley \nE6\nKennington \nD4\nKensal Green \nC2\nKensal Rise \nC2\nKensington (Olympia) \nC3\nKent House \nF5\nKentish Town \nE2\nKentish Town West \nD2\nKenton \nC1\nKew Bridge \nB4\nKew Gardens \nB4\nKidbrooke \nG5\nKilburn \nC2\nKilburn High Road \nC2\nKilburn Park \nC2\nKing George V \nG4\nKing Henry\u2019s Drive \nF6\nKing\u2019s Cross \nE2\nKingsbury \nC1\nKingston \nB5\nKingswood \nD6\nKnightsbridge \nD3\nKnockholt \n H6\nL\nLadbroke Grove \nC3\nLadywell \nG5\nLambeth North \nD4\nLancaster Gate \nD3\nLangdon Park \nG3\nLangley                                   A3\nLatimer Road \nC3\nLea Bridge \nG2\nLebanon Road \nF6\nLee \nG5\nLeicester Square \nD3\nLewisham \nF5\nLeyton \nG2\nLeyton Midland Road \nG2\nLeytonstone \nG2\nLeytonstone High Road \nG2\nLimehouse \nF3\nLiverpool Street \nE3\nLloyd Park \nF6\nLondon Bridge \nE4\nLondon City Airport \nG4\nLondon Fields \nF2\nLoughborough Junction \nE4\nLoughton \nG1\nLower Sydenham \nF5\nLuton Airport \nD1\nLuton Airport Parkway \nD1\nM\nMaida Vale \nC2\nMaidenhead                           A2\nMalden Manor \nC6\nManor House \nE2\nManor Park \nG2\nMansion House \nE3\nMarble Arch \nD3\nMaryland \nG2\nMarylebone \nD2\nMaze Hill \nG4\nMeridian Water \nF1\nMerstham \nE6\nMerton Park \nC5\nMile End \nF3",
+    "block_no": 12
+  },
+  {
+    "x0": 529.9899291992188,
+    "y0": 89.95096588134766,
+    "x1": 601.8825073242188,
+    "y1": 144.13462829589844,
+    "text": "Mill Hill Broadway \nD1\nMill Hill East \nE1\nMitcham \nD6\nMitcham Eastfields \nD5\nMitcham Junction \nD6\nMonument \nE3\nMoorgate \nE3\nMoor Park \nB1",
+    "block_no": 13
+  },
+  {
+    "x0": 354.84759521484375,
+    "y0": 80.0163803100586,
+    "x1": 659.18115234375,
+    "y1": 89.08038330078125,
+    "text": "M continued\nP continued\nH continued\ncontinued",
+    "block_no": 14
+  },
+  {
+    "x0": 529.9853515625,
+    "y0": 144.67556762695312,
+    "x1": 601.8935546875,
+    "y1": 639.4173583984375,
+    "text": "Morden \nC5\nMorden Road \nD5\nMorden South \nC6\nMornington Crescent \nD2\nMortlake \nC5\nMotspur Park \nC5\nMottingham \nG5\nMudchute \nF4\nN\nNeasden \nC2\nNew Addington \nF6\nNew Barnet \nE1\nNew Beckenham \nF5\nNewbury Park \nG1\nNew Cross \nF4\nNew Cross Gate \nF4\nNew Eltham \nG5\nNew Malden \nC5\nNew Southgate \nE1\nNine Elms \nD4\nNorbiton \nB5\nNorbury \nE5\nNorth Acton \nB3\nNorth Dulwich \nE5\nNorth Ealing \nB3\nNorthfields \nB4\nNorth Greenwich \nG4\nNorth Harrow \nB1\nNortholt \nA2\nNortholt Park \nB2\nNorth Sheen \nC4\nNorthumberland Park \nF1\nNorth Wembley \nC2\nNorthwick Park \nC1\nNorthwood \nB1\nNorthwood Hills \nB1\nNorwood Junction \nE6\nNotting Hill Gate \nC3\nNunhead \nF5\nO\nOakleigh Park \nE1\nOakwood \nE1\nOckendon \nH2\nOld Street \nE3\nOrpington \nG5\nOsterley \nB4\nOval \nD4\nOxford Circus \nD3\nP\nPaddington \nC3\nPalmers Green \nE1\nPark Royal \nB3\nParsons Green \nC4\nPeckham Rye \nE5\nPenge East \nF5\nPenge West \nF5\nPerivale \nB3\nPetts Wood \nG5\nPhipps Bridge \nD5\nPiccadilly Circus \nD3\nPimlico \nD4\nPinner \nB1\nPlaistow \nG3\nPlumstead \nH4\nPonders End \nF1\nPontoon Dock \nG4\nPoplar \nG3\nPotters Bar \nE1\nPreston Road \nC1\nPrince Regent \nH3\nPudding Mill Lane \nG2",
+    "block_no": 15
+  },
+  {
+    "x0": 621.953125,
+    "y0": 89.6796646118164,
+    "x1": 693.9895629882812,
+    "y1": 636.0760498046875,
+    "text": "Purfleet \nH2\nPurley \nE6\nPurley Oaks \nE6\nPutney \nC5\nPutney Bridge \nC4\nQ\nQueensbury \nC1\nQueen\u2019s Park \nC2\nQueens Road Peckham \nE4\nQueenstown Road \n  (Battersea) \nD4\nQueensway \nC3\nR\nRadlett \nD1\nRainham \nH2\nRavensbourne \nG5\nRavenscourt Park \nC4\nRayners Lane \nB1\nRaynes Park \nC5\nReading                                   A2\nRectory Road \nF2\nRedbridge \nG2\nRedhill \nE6\nReedham \nE6\nReeves Corner \nD6\nRegent\u2019s Park \nD3\nRichmond \nB5\nRickmansworth \nA1\nRiddlesdown \nF6\nRoding Valley \nG1\nRomford \nH1\nRotherhithe \nF3\nRoyal Albert \nH4\nRoyal Docks \nG3\nRoyal Oak \nC3\nRoyal Victoria \nG3\nRuislip \nA1\nRuislip Gardens \nA1\nRuislip Manor \nA1\nRussell Square \nE3\nRye House \nF1\nS\nSt Albans City \nD1\nSt Helier \nC6\nSt James\u2019s Park \nD4\nSt James Street \nF2\nSt Johns \nF4\nSt John\u2019s Wood \nD2\nSt Margarets (Herts) \nF1\nSt Margarets (London) \nB5\nSt Mary Cray \nH5\nSt Pancras International \nE2\nSt Paul\u2019s \nE3\nSalfords \nE6\nSanderstead \nF6\nSandilands \nF6\nSelhurst \nE6\nSeven Kings \nG2\nSeven Sisters \nF2\nShadwell \nF3\nShenfield \nH1\nShepherd\u2019s Bush \nC3\nShepherd\u2019s Bush Market \nC3\nShoreditch High Street \nF3\nShortlands \nG5\nSidcup \nG5\nSilver Street \nF1\nSlade Green \nH5\nSloane Square \nD4\nSlough                                     A3\nSnaresbrook \nG1\nSouth Acton \nB3\nSouthall \nA3\nSouth Bermondsey \nE4\nSouthbury \nF1\nSouth Croydon \nE6\nSouth Ealing                           B3\nSouthfields                            C5",
+    "block_no": 16
+  },
+  {
+    "x0": 713.921875,
+    "y0": 89.6952896118164,
+    "x1": 785.8143920898438,
+    "y1": 157.5817108154297,
+    "text": "Southgate \nE1\nSouth Greenford \nA3\nSouth Hampstead \nD2\nSouth Harrow \nB2\nSouth Kensington \nC4\nSouth Kenton \nC2\nSouth Merton \nC6\nSouth Quay \nF4\nSouth Ruislip \nA2\nSouth Tottenham \nF2",
+    "block_no": 17
+  },
+  {
+    "x0": 713.921875,
+    "y0": 80.0163803100586,
+    "x1": 749.11767578125,
+    "y1": 89.08038330078125,
+    "text": "S continued",
+    "block_no": 18
+  },
+  {
+    "x0": 713.921875,
+    "y0": 158.17849731445312,
+    "x1": 786.03271484375,
+    "y1": 631.0101318359375,
+    "text": "Southwark \nE4\nSouth Wimbledon \nD5\nSouth Woodford \nG1\nStamford Brook \nB4\nStamford Hill \nF2\nStanmore \nC1\nStar Lane \nG3\nStepney Green \nF3\nStockwell \nD4\nStoke Newington \nF2\nStonebridge Park \nC2\nStoneleigh \nC6\nStratford \nG2\nStratford High Street \nG2\nStratford International \nG2\nStrawberry Hill \nB5\nStreatham \nE5\nStreatham Common \nD5\nStreatham Hill \nD5\nSudbury & Harrow Road \nB2\nSudbury Hill \nB2\nSudbury Hill Harrow \nB2\nSudbury Town \nB2\nSundridge Park \nG5\nSurbiton \nB5\nSurrey Quays \nF4\nSutton \nD6\nSutton Common \nC6\nSwanley \nH5\nSwiss Cottage \nD2\nSydenham \nF5\nSydenham Hill \nE5\nSyon Lane \nB4\nT\nTadworth \nD6\nTaplow                                    A2\nTattenham Corner \nD6\nTeddington \nB5\nTemple \nE3\nThames Ditton \nB6\nTheobalds Grove \nF1\nTherapia Lane \nD6\nTheydon Bois \nG1\nThornton Heath \nE5\nTolworth \nC6\nTooting \nD5\nTooting Bec \nD5\nTooting Broadway \nD5\nTottenham Court Road \nD3\nTottenham Hale \nF2\nTotteridge & Whetstone \nE1\nTower Gateway \nF3\nTower Hill \nF3\nTufnell Park \nE2\nTulse Hill \nE5\nTurkey Street \nF1\nTurnham Green \nB4\nTurnpike Lane \nF1\nTwickenham \nB5\nTwyford                                  A2\nU\nUpminster \nH2\nUpminster Bridge \nH2\nUpney \nH2\nUpper Holloway \nE2\nUpper Warlingham \nF6\nUpton Park                            G3\nUxbridge                                 A1",
+    "block_no": 19
+  },
+  {
+    "x0": 805.8895874023438,
+    "y0": 80.04329681396484,
+    "x1": 877.7821044921875,
+    "y1": 113.58038330078125,
+    "text": "V\nVauxhall \nD4\nVictoria \nD4\nW",
+    "block_no": 20
+  },
+  {
+    "x0": 805.890625,
+    "y0": 115.56620025634766,
+    "x1": 879.2122192382812,
+    "y1": 635.64208984375,
+    "text": "Waddon \nD6\nWaddon Marsh \nD6\nWallington \nD6\nWaltham Cross \nF1\nWalthamstow Central \nG2\nWalthamstow \n   Queen\u2019s Road \nG2\nWandle Park \nD6\nWandsworth Common \nD5\nWandsworth Road \nD4\nWandsworth Town \nC5\nWanstead \nG2\nWanstead Park \nG2\nWapping \nF3\nWare \nF1\nWarren Street \nD3\nWarwick Avenue \nC2\nWaterloo \nD4\nWaterloo East \nE4\nWatford \nB1\nWatford High Street \nC1\nWatford Junction \nC1\nWelham Green \nE1\nWellesley Road \nE6\nWelling \nG5\nWelwyn Garden City \nE1\nWembley Central \nC2\nWembley Park \nC2\nWembley Stadium \nC2\nWest Acton \nB3\nWestbourne Park \nC3\nWest Brompton \nC4\nWestcombe Park \nG4\nWest Croydon \nE6\nWest Drayton \nA3\nWest Dulwich \nE5\nWest Ealing \nB3\nWestferry \nF3\nWest Finchley \nE1\nWest Ham \nG3\nWest Hampstead \nD2\nWest Hampstead \n   Thameslink \nD2\nWest Harrow \nB1\nWest India Quay \nF3\nWest Kensington \nC4\nWestminster \nD4\nWest Norwood \nE5\nWest Ruislip \nA1\nWest Silvertown \nG4\nWest Sutton \nD6\nWest Wickham \nF6\nWhitechapel \nF3\nWhite City \nC3\nWhite Hart Lane \nF1\nWhitton \nB5\nWhyteleafe \nE6\nWhyteleafe South \nE6\nWillesden Green \nC2\nWillesden Junction \nC2\nWimbledon \nC5\nWimbledon Chase \nC5\nWimbledon Park \nC5\nWinchmore Hill \nE1\nWoodford \nG1\nWoodgrange Park \nG2\nWood Green \nF1\nWood Lane \nC3\nWoodmansterne \nE6\nWoodside \nF6\nWoodside Park \nE1\nWood Street \nG1\nWoolwich \nG4\nWoolwich Arsenal \nG4\nWoolwich Dockyard \nG4\nWorcester Park \nC6",
+    "block_no": 21
+  },
+  {
+    "x0": 71.14469909667969,
+    "y0": 85.56681060791016,
+    "x1": 145.94468688964844,
+    "y1": 96.2318115234375,
+    "text": "Grid\nStation Name\nSquare",
+    "block_no": 22
+  },
+  {
+    "x0": 72.86910247802734,
+    "y0": 68.7568130493164,
+    "x1": 880.705078125,
+    "y1": 82.4608154296875,
+    "text": "Grid\nStation Name\nSquare\n Grid\nStation Name\nSquare\n Grid\nStation Name\nSquare\n Grid\nStation Name\nSquare\n Grid\nStation Name\nSquare\n Grid\nStation Name\nSquare\n Grid\nStation Name\nSquare\n Grid\nStation Name\nSquare\nFind your station",
+    "block_no": 23
+  },
+  {
+    "x0": 232.29049682617188,
+    "y0": 640.367919921875,
+    "x1": 703.109619140625,
+    "y1": 649.4158935546875,
+    "text": "Online maps are strictly for personal use only. To license the Tube map for commercial use please visit t\ufb02.gov.uk/maplicensing",
+    "block_no": 24
+  }
+]

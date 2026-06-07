@@ -6,8 +6,9 @@
   } from '$lib/stores/stores';
   import { calculateFareTypeSavings } from '$lib/engine/savingsEngine';
   import { FARE_TYPES, type FareType } from '$lib/data/fareData';
+  import JourneyMap from './JourneyMap.svelte';
 
-  let activeTab = $state<'journeys' | 'savings' | 'caps'>('journeys');
+  let activeTab = $state<'journeys' | 'map' | 'savings' | 'caps'>('journeys');
   let sortKey = $state<string>('date');
   let sortAsc = $state(false);
   let filterMode = $state<string>('all');
@@ -131,6 +132,9 @@
     <button class="tab-btn" class:active={activeTab === 'journeys'} onclick={() => activeTab = 'journeys'}>
       🚆 Journeys
     </button>
+    <button class="tab-btn" class:active={activeTab === 'map'} onclick={() => activeTab = 'map'}>
+      🗺️ Network Map
+    </button>
     <button class="tab-btn" class:active={activeTab === 'savings'} onclick={() => activeTab = 'savings'}>
       💰 Fare Type Savings
     </button>
@@ -234,6 +238,9 @@
         </table>
       </div>
     </div>
+
+  {:else if activeTab === 'map'}
+    <JourneyMap />
 
   {:else if activeTab === 'savings'}
     <!-- Fare Type Savings Panel -->
