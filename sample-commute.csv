@@ -1,0 +1,11 @@
+Date,Start Time,End Time,Journey/Action,Charge,Credit,Balance,Note
+01-Jun-2026,08:30,09:10,Barnes to Waterloo,3.40,,16.60,
+01-Jun-2026,17:30,18:10,Waterloo to Barnes,3.40,,13.20,
+02-Jun-2026,08:15,08:50,Richmond to Wimbledon,2.80,,20.40,
+02-Jun-2026,18:00,18:35,Wimbledon to Richmond,2.80,,17.60,
+03-Jun-2026,08:45,09:20,Wimbledon to Waterloo,4.30,,13.30,
+03-Jun-2026,17:15,17:50,Waterloo to Wimbledon,4.30,,9.00,
+04-Jun-2026,09:10,09:50,Clapham Junction to Waterloo,3.00,,6.00,
+04-Jun-2026,18:15,18:55,Waterloo to Clapham Junction,3.00,,3.00,
+05-Jun-2026,08:00,08:40,Barnes to Clapham Junction,2.80,,10.20,
+05-Jun-2026,17:45,18:25,Clapham Junction to Barnes,2.80,,7.40,
