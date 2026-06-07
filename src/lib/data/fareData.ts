@@ -386,8 +386,8 @@ export const STUDENT_TRAVELCARD_ANNUAL: Record<string, number> = {
   'Z1-6': 2285,
 };
 
-// Railcard types and their discounts
-export type RailcardType =
+// Fare Type types and their discounts
+export type FareType =
   | 'none'
   | 'student'
   | 'zip_11_15'
@@ -396,7 +396,7 @@ export type RailcardType =
   | 'disabled'
   | 'railcard';
 
-export interface RailcardInfo {
+export interface FareTypeInfo {
   name: string;
   discount: number; // fraction (e.g., 1/3)
   appliesToPeak: boolean;
@@ -404,7 +404,7 @@ export interface RailcardInfo {
   cost3Year: number;
 }
 
-export const RAILCARDS: Record<RailcardType, RailcardInfo> = {
+export const FARE_TYPES: Record<FareType, FareTypeInfo> = {
   'none': {
     name: 'Adult / Contactless',
     discount: 0,
@@ -469,22 +469,22 @@ export function roundToNearest10p(amount: number): number {
 // - Jobcentre Plus Travel Discount gets a 50% discount (0.5 multiplier) and rounds down to the nearest 5p.
 export function calculateDiscountedFare(
   baseFare: number,
-  railcardType: RailcardType,
+  fareType: FareType,
   isPeak: boolean,
   isBus: boolean = false,
   originZone?: number,
   destinationZone?: number,
   mode?: string
 ): number {
-  if (railcardType === 'none' || railcardType === 'student') {
+  if (fareType === 'none' || fareType === 'student') {
     return baseFare;
   }
 
-  const railcard = RAILCARDS[railcardType];
-  if (!railcard) return baseFare;
+  const fareTypeInfo = FARE_TYPES[fareType];
+  if (!fareTypeInfo) return baseFare;
 
   // 11-15 Zip: Free bus/tram, flat child fares on TfL Rail in Zones 1-6
-  if (railcardType === 'zip_11_15') {
+  if (fareType === 'zip_11_15') {
     if (isBus) return 0.00;
     
     const isTfLOnly = mode !== undefined && mode !== 'national_rail' && mode !== 'nr_tube';
@@ -498,24 +498,24 @@ export function calculateDiscountedFare(
   }
 
   // 16+ Zip: Free bus/tram, 50% off rail single fares
-  if (railcardType === 'zip_16_17') {
+  if (fareType === 'zip_16_17') {
     if (isBus) return 0.00;
     return Math.floor(baseFare * 0.5 * 20) / 20;
   }
 
   if (isBus) {
-    if (railcardType === 'jobcentre') {
+    if (fareType === 'jobcentre') {
       return Math.floor(baseFare * 0.5 * 20) / 20;
     }
     return baseFare;
   }
 
   // Peak fares do not get discount unless appliesToPeak is true (Disabled Persons / Jobcentre)
-  if (isPeak && !railcard.appliesToPeak) {
+  if (isPeak && !fareTypeInfo.appliesToPeak) {
     return baseFare;
   }
 
-  const multiplier = railcardType === 'jobcentre' ? 0.5 : 0.666;
+  const multiplier = fareType === 'jobcentre' ? 0.5 : 0.666;
   return Math.floor(baseFare * multiplier * 20) / 20;
 }
 
@@ -561,21 +561,21 @@ export function lookupExactFare(originId: string, destId: string, isPeak: boolea
 }
 
 // Lookup daily cap for a given zone range
-export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, railcardType: RailcardType = 'none'): number {
+export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, fareType: FareType = 'none'): number {
   const adultCap = DAILY_CAPS[zoneRange] ?? 16.30;
   
-  if (railcardType === 'jobcentre' || railcardType === 'zip_11_15' || railcardType === 'zip_16_17') {
+  if (fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17') {
     return Math.floor(adultCap * 0.5 * 20) / 20;
   }
   
-  if (railcardType === 'none' || railcardType === 'student') {
+  if (fareType === 'none' || fareType === 'student') {
     // Standard adults pay the standard cap whether peak or off-peak
     return adultCap;
   }
   
   // Standard Railcards (National Railcard / Gold Card) get off-peak daily caps.
   // Disabled Persons Railcard gets 1/3 discount on both peak and off-peak daily caps.
-  const isEligibleForDiscount = !isPeak || railcardType === 'disabled';
+  const isEligibleForDiscount = !isPeak || fareType === 'disabled';
   if (isEligibleForDiscount) {
     return DAILY_CAPS_OFFPEAK[zoneRange] ?? Math.floor(adultCap * 0.666 * 20) / 20;
   }
@@ -584,9 +584,9 @@ export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, railca
 }
 
 // Lookup weekly cap for a given zone range
-export function lookupWeeklyCap(zoneRange: string, railcardType: RailcardType = 'none'): number {
+export function lookupWeeklyCap(zoneRange: string, fareType: FareType = 'none'): number {
   const baseCap = WEEKLY_CAPS[zoneRange] ?? 81.60;
-  if (railcardType === 'jobcentre' || railcardType === 'zip_11_15' || railcardType === 'zip_16_17') {
+  if (fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17') {
     return Math.round(baseCap * 0.5 * 10) / 10; // Round to nearest 10p
   }
   return baseCap;

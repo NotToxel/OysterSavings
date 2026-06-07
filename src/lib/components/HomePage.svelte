@@ -27,7 +27,7 @@
       </h1>
       <p class="hero-subtitle">
         Upload your TfL travel history CSV and discover exactly how much you could save
-        with Railcards, Travelcards, and smarter travel planning.
+        with Fare Types, Travelcards, and smarter travel planning.
       </p>
 
       <div class="hero-features">
@@ -37,7 +37,7 @@
         </div>
         <div class="feature-pill">
           <span class="feature-icon">💳</span>
-          <span>Railcard Savings</span>
+          <span>Fare Type Savings</span>
         </div>
         <div class="feature-pill">
           <span class="feature-icon">📅</span>
@@ -72,7 +72,7 @@
         <div class="step-card">
           <div class="step-number">3</div>
           <h3>Discover Savings</h3>
-          <p>See exactly how much Railcards and Travelcards could save you</p>
+          <p>See exactly how much Fare Types and Travelcards could save you</p>
         </div>
         <div class="step-card">
           <div class="step-number">4</div>
@@ -124,7 +124,7 @@
           <div class="action-icon">📊</div>
           <div class="action-content">
             <h3>Journey Analysis</h3>
-            <p>View detailed journey breakdown, fare analysis, and railcard savings</p>
+            <p>View detailed journey breakdown, fare analysis, and fare type savings</p>
           </div>
           <span class="action-arrow">→</span>
         </button>
@@ -140,7 +140,7 @@
           <div class="action-icon">⚖️</div>
           <div class="action-content">
             <h3>Product Comparison</h3>
-            <p>Compare PAYG, Railcards, and Travelcards across time periods</p>
+            <p>Compare PAYG, Fare Types, and Travelcards across time periods</p>
           </div>
           <span class="action-arrow">→</span>
         </button>

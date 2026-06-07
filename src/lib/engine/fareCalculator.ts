@@ -1,12 +1,12 @@
-// Fare Calculator — computes expected fares, railcard discounts, hopper logic
+// Fare Calculator — computes expected fares, fare type discounts, hopper logic
 import type { ClassifiedJourney } from './journeyClassifier';
 import {
   lookupFare,
   BUS_SINGLE_FARE,
   HOPPER_WINDOW_MINUTES,
   calculateDiscountedFare,
-  type RailcardType,
-  RAILCARDS,
+  type FareType,
+  FARE_TYPES,
 } from '../data/fareData';
 
 export interface FareResult {
@@ -14,8 +14,8 @@ export interface FareResult {
   expectedFare: number;
   actualCharge: number;
   difference: number; // positive = overpaid, negative = underpaid
-  railcardFare: number | null; // fare with railcard discount
-  railcardSaving: number; // saving from railcard for this journey
+  fareTypeFare: number | null; // fare with fare type discount
+  fareTypeSaving: number; // saving from fare type for this journey
   isHopperFree: boolean;
 }
 
@@ -36,16 +36,16 @@ export function calculateExpectedFare(journey: ClassifiedJourney): number {
   return journey.raw.charge;
 }
 
-// Calculate fare with railcard discount
-export function calculateRailcardFare(
+// Calculate fare with fare type discount
+export function calculateFareTypeFare(
   journey: ClassifiedJourney,
-  railcardType: RailcardType
+  fareType: FareType
 ): number {
   if (journey.isBus && journey.isHopperFree) return 0;
   const baseFare = calculateExpectedFare(journey);
   return calculateDiscountedFare(
     baseFare,
-    railcardType,
+    fareType,
     journey.isPeak,
     journey.isBus,
     journey.originZone ?? undefined,
@@ -103,18 +103,18 @@ function timeToMinutes(time: string): number {
 // Calculate fares for all journeys
 export function calculateAllFares(
   journeys: ClassifiedJourney[],
-  railcardType?: RailcardType
+  fareType?: FareType
 ): FareResult[] {
   return journeys.map((journey) => {
     const expectedFare = calculateExpectedFare(journey);
     const actualCharge = journey.raw.charge;
 
-    let railcardFare: number | null = null;
-    let railcardSaving = 0;
+    let fareTypeFare: number | null = null;
+    let fareTypeSaving = 0;
 
-    if (railcardType) {
-      railcardFare = calculateRailcardFare(journey, railcardType);
-      railcardSaving = Math.max(0, expectedFare - railcardFare);
+    if (fareType) {
+      fareTypeFare = calculateFareTypeFare(journey, fareType);
+      fareTypeSaving = Math.max(0, expectedFare - fareTypeFare);
     }
 
     return {
@@ -122,8 +122,8 @@ export function calculateAllFares(
       expectedFare,
       actualCharge,
       difference: actualCharge - expectedFare,
-      railcardFare,
-      railcardSaving,
+      fareTypeFare,
+      fareTypeSaving,
       isHopperFree: journey.isHopperFree,
     };
   });

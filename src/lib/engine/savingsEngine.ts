@@ -1,10 +1,10 @@
-// Savings Engine — railcard comparison, break-even analysis
+// Savings Engine — fare type comparison, break-even analysis
 import type { ClassifiedJourney } from './journeyClassifier';
-import { calculateExpectedFare, calculateRailcardFare, calculateAllFares } from './fareCalculator';
+import { calculateExpectedFare, calculateFareTypeFare, calculateAllFares } from './fareCalculator';
 import { calculateDailyCaps, calculateWeeklyCaps, type DayCapResult } from './capEngine';
 import {
-  type RailcardType,
-  RAILCARDS,
+  type FareType,
+  FARE_TYPES,
   OYSTER_CARD_COST,
   TRAVELCARD_WEEKLY,
   TRAVELCARD_MONTHLY,
@@ -14,20 +14,20 @@ import {
   STUDENT_PHOTOCARD_FEE,
 } from '../data/fareData';
 
-export interface RailcardSavingsResult {
-  railcardType: RailcardType;
-  railcardName: string;
+export interface FareTypeSavingsResult {
+  fareType: FareType;
+  fareTypeName: string;
   totalActualSpend: number;
-  totalExpectedSpend: number; // without railcard
-  totalRailcardSpend: number; // with railcard
+  totalExpectedSpend: number; // without fare type
+  totalFareTypeSpend: number; // with fare type
   totalSaving: number;
-  railcardCost: number;
+  fareTypeCost: number;
   oysterCost: number;
-  netSaving: number; // saving minus railcard + oyster cost
+  netSaving: number; // saving minus fare type + oyster cost
   breakEvenJourneys: number; // how many journeys to break even
   breakEvenDate: Date | null; // estimated date
   perJourneySaving: number; // average saving per eligible journey
-  eligibleJourneys: number; // journeys where railcard applies
+  eligibleJourneys: number; // journeys where discount applies
   totalJourneys: number;
   dailyBreakdown: DaySavingBreakdown[];
   hasExistingDiscount: boolean;
@@ -37,7 +37,7 @@ export interface DaySavingBreakdown {
   date: string;
   dateObj: Date;
   standardSpend: number;
-  railcardSpend: number;
+  fareTypeSpend: number;
   saving: number;
   journeyCount: number;
 }
@@ -45,13 +45,13 @@ export interface DaySavingBreakdown {
 export interface ProductComparisonResult {
   zoneRange: string;
   weeklyPayg: number;
-  weeklyPaygRailcard: number;
+  weeklyPaygFareType: number;
   weeklyTravelcard: number;
   monthlyPayg: number;
-  monthlyPaygRailcard: number;
+  monthlyPaygFareType: number;
   monthlyTravelcard: number;
   annualPayg: number;
-  annualPaygRailcard: number;
+  annualPaygFareType: number;
   annualTravelcard: number;
   monthlyStudentTravelcard: number;
   annualStudentTravelcard: number;
@@ -60,31 +60,31 @@ export interface ProductComparisonResult {
   bestAnnual: string;
 }
 
-// Calculate total railcard savings across all journeys using Daily Caps simulation
-export function calculateRailcardSavings(
+// Calculate total fare type savings across all journeys using Daily Caps simulation
+export function calculateFareTypeSavings(
   journeys: ClassifiedJourney[],
-  railcardType: RailcardType,
-  railcardCost: number,
+  fareType: FareType,
+  fareTypeCost: number,
   includeOysterCost: boolean
-): RailcardSavingsResult {
-  const railcard = RAILCARDS[railcardType];
+): FareTypeSavingsResult {
+  const fareTypeInfo = FARE_TYPES[fareType];
   const ZIP_11_15_FEE = 16.5;
   const ZIP_16_17_FEE = 22.0;
   let oysterCost = includeOysterCost ? OYSTER_CARD_COST : 0;
-  if (railcardType === 'student' && includeOysterCost) {
+  if (fareType === 'student' && includeOysterCost) {
     oysterCost = STUDENT_PHOTOCARD_FEE;
-  } else if (railcardType === 'zip_11_15' && includeOysterCost) {
+  } else if (fareType === 'zip_11_15' && includeOysterCost) {
     oysterCost = ZIP_11_15_FEE;
-  } else if (railcardType === 'zip_16_17' && includeOysterCost) {
+  } else if (fareType === 'zip_16_17' && includeOysterCost) {
     oysterCost = ZIP_16_17_FEE;
-  } else if (railcardType === 'jobcentre' || railcardType === 'none') {
+  } else if (fareType === 'jobcentre' || fareType === 'none') {
     oysterCost = 0; // Jobcentre Plus and Adult / Contactless have no Oyster card fee / cost
   }
 
-  const effectiveRailcardCost = railcardType === 'none' ? 0 : railcardCost;
+  const effectiveFareTypeCost = fareType === 'none' ? 0 : fareTypeCost;
 
   // Generate base FareResults
-  const baseFares = calculateAllFares(journeys, railcardType);
+  const baseFares = calculateAllFares(journeys, fareType);
 
   // 1. Actual Scenario (what the CSV says)
   const actualCaps = calculateDailyCaps(baseFares);
@@ -98,21 +98,21 @@ export function calculateRailcardSavings(
   let totalExpected = 0;
   for (const week of standardWeekly) totalExpected += week.totalSpend;
 
-  // 3. Railcard Scenario
-  const railcardFares = baseFares.map(f => ({ ...f, actualCharge: f.railcardFare ?? f.expectedFare }));
-  const railcardCaps = calculateDailyCaps(railcardFares, railcardType);
-  const railcardWeekly = calculateWeeklyCaps(railcardCaps, railcardType);
-  let totalRailcard = 0;
-  for (const week of railcardWeekly) totalRailcard += week.totalSpend;
+  // 3. FareType Scenario
+  const fareTypeFares = baseFares.map(f => ({ ...f, actualCharge: f.fareTypeFare ?? f.expectedFare }));
+  const fareTypeCaps = calculateDailyCaps(fareTypeFares, fareType);
+  const fareTypeWeekly = calculateWeeklyCaps(fareTypeCaps, fareType);
+  let totalFareType = 0;
+  for (const week of fareTypeWeekly) totalFareType += week.totalSpend;
 
   let eligibleCount = 0;
   const dailyMap = new Map<string, DaySavingBreakdown>();
 
   for (let i = 0; i < standardCaps.length; i++) {
     const stdDay = standardCaps[i];
-    const rcDay = railcardCaps[i];
+    const rcDay = fareTypeCaps[i];
     
-    // An eligible day is one where the railcard simulation produced a lower spend than standard
+    // An eligible day is one where the fareType simulation produced a lower spend than standard
     if (stdDay.totalSpend > rcDay.totalSpend) {
       eligibleCount++;
     }
@@ -121,19 +121,19 @@ export function calculateRailcardSavings(
       date: stdDay.date,
       dateObj: stdDay.dateObj,
       standardSpend: stdDay.totalSpend,
-      railcardSpend: rcDay.totalSpend,
+      fareTypeSpend: rcDay.totalSpend,
       saving: Math.max(0, stdDay.totalSpend - rcDay.totalSpend),
       journeyCount: stdDay.journeys.length,
     });
   }
 
-  const totalSaving = Math.max(0, totalExpected - totalRailcard);
-  const netSaving = totalSaving - effectiveRailcardCost - oysterCost;
+  const totalSaving = Math.max(0, totalExpected - totalFareType);
+  const netSaving = totalSaving - effectiveFareTypeCost - oysterCost;
 
   // Break-even calculation
   const avgSavingPerJourney = eligibleCount > 0 ? totalSaving / eligibleCount : 0;
   const breakEvenJourneys =
-    avgSavingPerJourney > 0 ? Math.ceil((effectiveRailcardCost + oysterCost) / avgSavingPerJourney) : Infinity;
+    avgSavingPerJourney > 0 ? Math.ceil((effectiveFareTypeCost + oysterCost) / avgSavingPerJourney) : Infinity;
 
   // Estimate break-even date based on travel frequency (using days instead of journeys)
   const dateRange = journeys.length > 0
@@ -152,24 +152,24 @@ export function calculateRailcardSavings(
     (a, b) => a.dateObj.getTime() - b.dateObj.getTime()
   );
 
-  // Heuristic to detect if CSV fares already have the selected railcard discount
-  // If actual spend is significantly lower than expected PAYG, and very close to or less than the simulated railcard spend,
-  // it's likely they already have the railcard applied to their history.
+  // Heuristic to detect if CSV fares already have the selected fareType discount
+  // If actual spend is significantly lower than expected PAYG, and very close to or less than the simulated fareType spend,
+  // it's likely they already have the fareType applied to their history.
   let hasExistingDiscount = false;
-  if (totalActual < totalExpected * 0.85 && totalActual <= totalRailcard * 1.05) {
+  if (totalActual < totalExpected * 0.85 && totalActual <= totalFareType * 1.05) {
     hasExistingDiscount = true;
   }
 
   // Round everything
   return {
-    railcardType,
-    railcardName: railcard.name,
+    fareType,
+    fareTypeName: fareTypeInfo.name,
     totalActualSpend: round2(totalActual),
     totalExpectedSpend: round2(totalExpected),
-    totalRailcardSpend: round2(totalRailcard),
+    totalFareTypeSpend: round2(totalFareType),
     totalSaving: round2(totalSaving),
     netSaving: round2(netSaving),
-    railcardCost: effectiveRailcardCost,
+    fareTypeCost: effectiveFareTypeCost,
     oysterCost,
     breakEvenJourneys: isFinite(breakEvenJourneys) ? breakEvenJourneys : -1,
     breakEvenDate,
@@ -184,21 +184,21 @@ export function calculateRailcardSavings(
 // Calculate product comparison for planning mode
 export function calculateProductComparison(
   journeys: ClassifiedJourney[],
-  railcardType: RailcardType,
-  railcardCost: number,
+  fareType: FareType,
+  fareTypeCost: number,
   includeStudentPhotocardFee: boolean
 ): ProductComparisonResult[] {
-  const effectiveRailcardCost = (railcardType === 'none' || railcardType === 'jobcentre' || railcardType === 'zip_11_15' || railcardType === 'zip_16_17') ? 0 : railcardCost;
+  const effectiveFareTypeCost = (fareType === 'none' || fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17') ? 0 : fareTypeCost;
   
   let cardCost = 0;
   if (includeStudentPhotocardFee) {
-    if (railcardType === 'student') {
+    if (fareType === 'student') {
       cardCost = 12;
-    } else if (railcardType === 'zip_11_15') {
+    } else if (fareType === 'zip_11_15') {
       cardCost = 16.5;
-    } else if (railcardType === 'zip_16_17') {
+    } else if (fareType === 'zip_16_17') {
       cardCost = 22;
-    } else if (railcardType === 'none' || railcardType === 'jobcentre') {
+    } else if (fareType === 'none' || fareType === 'jobcentre') {
       cardCost = 0;
     } else {
       cardCost = 7;
@@ -209,7 +209,7 @@ export function calculateProductComparison(
   const results: ProductComparisonResult[] = [];
 
   // Generate base FareResults
-  const baseFares = calculateAllFares(journeys, railcardType);
+  const baseFares = calculateAllFares(journeys, fareType);
 
   // 1. Simulate Standard PAYG (Adult) with daily and weekly caps
   const standardFares = baseFares.map(f => ({ ...f, actualCharge: f.expectedFare }));
@@ -219,33 +219,33 @@ export function calculateProductComparison(
   const totalStandardSpend = standardWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
   const weeklyPayg = round2(totalStandardSpend / totalStandardWeeks);
 
-  // 2. Simulate Railcard PAYG with daily and weekly caps
-  const railcardFares = baseFares.map(f => ({ ...f, actualCharge: f.railcardFare ?? f.expectedFare }));
-  const railcardDaily = calculateDailyCaps(railcardFares, railcardType);
-  const railcardWeekly = calculateWeeklyCaps(railcardDaily, railcardType);
-  const totalRailcardWeeks = railcardWeekly.length || 1;
-  const totalRailcardSpend = railcardWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
-  let weeklyPaygRailcard = round2(totalRailcardSpend / totalRailcardWeeks);
+  // 2. Simulate FareType PAYG with daily and weekly caps
+  const fareTypeFares = baseFares.map(f => ({ ...f, actualCharge: f.fareTypeFare ?? f.expectedFare }));
+  const fareTypeDaily = calculateDailyCaps(fareTypeFares, fareType);
+  const fareTypeWeekly = calculateWeeklyCaps(fareTypeDaily, fareType);
+  const totalFareTypeWeeks = fareTypeWeekly.length || 1;
+  const totalFareTypeSpend = fareTypeWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
+  let weeklyPaygFareType = round2(totalFareTypeSpend / totalFareTypeWeeks);
 
-  if (railcardType === 'none') {
-    weeklyPaygRailcard = weeklyPayg;
+  if (fareType === 'none') {
+    weeklyPaygFareType = weeklyPayg;
   }
 
   for (const zoneRange of zoneRanges) {
-    const isZip = railcardType === 'zip_11_15' || railcardType === 'zip_16_17';
+    const isZip = fareType === 'zip_11_15' || fareType === 'zip_16_17';
     const weeklyTc = isZip ? (TRAVELCARD_WEEKLY[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_WEEKLY[zoneRange] ?? 0);
     const monthlyTc = isZip ? (TRAVELCARD_MONTHLY[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_MONTHLY[zoneRange] ?? 0);
     const annualTc = isZip ? (TRAVELCARD_ANNUAL[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_ANNUAL[zoneRange] ?? 0);
     const studentMonthlyTc = isZip ? 0 : (STUDENT_TRAVELCARD_MONTHLY[zoneRange] ?? 0);
     const studentAnnualTc = isZip ? 0 : (STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0);
 
-    const paygRailcardCostWeekly = weeklyPaygRailcard + round2((effectiveRailcardCost + cardCost) / 52);
-    const paygRailcardCostMonthly = round2(weeklyPaygRailcard * 4.33 + (effectiveRailcardCost + cardCost) / 12);
-    const paygRailcardCostAnnual = round2(weeklyPaygRailcard * 52 + effectiveRailcardCost + cardCost);
+    const paygFareTypeCostWeekly = weeklyPaygFareType + round2((effectiveFareTypeCost + cardCost) / 52);
+    const paygFareTypeCostMonthly = round2(weeklyPaygFareType * 4.33 + (effectiveFareTypeCost + cardCost) / 12);
+    const paygFareTypeCostAnnual = round2(weeklyPaygFareType * 52 + effectiveFareTypeCost + cardCost);
 
-    const weeklyTcWithCard = weeklyTc + (railcardType !== 'student' ? round2(cardCost / 52) : 0);
-    const monthlyTcWithCard = monthlyTc + (railcardType !== 'student' ? round2(cardCost / 12) : 0);
-    const annualTcWithCard = annualTc + (railcardType !== 'student' ? cardCost : 0);
+    const weeklyTcWithCard = weeklyTc + (fareType !== 'student' ? round2(cardCost / 52) : 0);
+    const monthlyTcWithCard = monthlyTc + (fareType !== 'student' ? round2(cardCost / 12) : 0);
+    const annualTcWithCard = annualTc + (fareType !== 'student' ? cardCost : 0);
 
     const studentMonthlyTcWithCard = studentMonthlyTc > 0 ? studentMonthlyTc + (cardCost / 12) : 0;
     const studentAnnualTcWithCard = studentAnnualTc > 0 ? studentAnnualTc + cardCost : 0;
@@ -253,30 +253,30 @@ export function calculateProductComparison(
     results.push({
       zoneRange,
       weeklyPayg,
-      weeklyPaygRailcard: paygRailcardCostWeekly,
+      weeklyPaygFareType: paygFareTypeCostWeekly,
       weeklyTravelcard: weeklyTcWithCard,
       monthlyPayg: round2(weeklyPayg * 4.33),
-      monthlyPaygRailcard: paygRailcardCostMonthly,
+      monthlyPaygFareType: paygFareTypeCostMonthly,
       monthlyTravelcard: monthlyTcWithCard,
       monthlyStudentTravelcard: studentMonthlyTcWithCard,
       annualPayg: round2(weeklyPayg * 52),
-      annualPaygRailcard: paygRailcardCostAnnual,
+      annualPaygFareType: paygFareTypeCostAnnual,
       annualTravelcard: annualTcWithCard,
       annualStudentTravelcard: studentAnnualTcWithCard,
       bestWeekly: getBest([
         ['PAYG', weeklyPayg],
-        ['PAYG + Railcard', paygRailcardCostWeekly],
+        ['PAYG + Fare Type', paygFareTypeCostWeekly],
         ['Travelcard', weeklyTcWithCard],
       ]),
       bestMonthly: getBest([
         ['PAYG', round2(weeklyPayg * 4.33)],
-        ['PAYG + Railcard', paygRailcardCostMonthly],
+        ['PAYG + Fare Type', paygFareTypeCostMonthly],
         ['Travelcard', monthlyTcWithCard],
         ['Student Travelcard', studentMonthlyTcWithCard],
       ]),
       bestAnnual: getBest([
         ['PAYG', round2(weeklyPayg * 52)],
-        ['PAYG + Railcard', paygRailcardCostAnnual],
+        ['PAYG + Fare Type', paygFareTypeCostAnnual],
         ['Travelcard', annualTcWithCard],
         ['Student Travelcard', studentAnnualTcWithCard],
       ]),

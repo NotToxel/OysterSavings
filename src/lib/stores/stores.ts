@@ -6,8 +6,8 @@ import type { ForecastResult } from '../engine/forecastEngine';
 import type { ClassifiedJourney } from '../engine/journeyClassifier';
 import type { ExcludedJourney } from '../engine/journeyFilter';
 import type { DetectedPattern, PlannedJourney, RecurrenceRule } from '../engine/recurrenceEngine';
-import { calculateProductComparison, calculateRailcardSavings, type ProductComparisonResult, type RailcardSavingsResult } from '../engine/savingsEngine';
-import type { RailcardType } from '../data/fareData';
+import { calculateProductComparison, calculateFareTypeSavings, type ProductComparisonResult, type FareTypeSavingsResult } from '../engine/savingsEngine';
+import type { FareType } from '../data/fareData';
 
 // Journey data store
 export const rawJourneys = writable<ParsedJourney[]>([]);
@@ -27,25 +27,25 @@ export const weeklyCapResults = writable<WeekCapResult[]>([]);
 export const capSummary = writable<CapSummary | null>(null);
 
 // Settings
-export const selectedRailcard = writable<RailcardType>('none');
-export const railcardCost = writable<number>(0);
+export const selectedFareType = writable<FareType>('none');
+export const fareTypeCost = writable<number>(0);
 export const includeOysterCost = writable<boolean>(true);
 export const includeStudentPhotocardFee = writable<boolean>(true);
 
 // Savings results
 export const savingsResult = derived(
-  [classifiedJourneys, selectedRailcard, railcardCost, includeOysterCost],
-  ([$classifiedJourneys, $selectedRailcard, $railcardCost, $includeOysterCost]) => {
+  [classifiedJourneys, selectedFareType, fareTypeCost, includeOysterCost],
+  ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost]) => {
     if ($classifiedJourneys.length === 0) return null;
-    return calculateRailcardSavings($classifiedJourneys, $selectedRailcard, $railcardCost, $includeOysterCost);
+    return calculateFareTypeSavings($classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost);
   }
 );
 
 export const productComparison = derived(
-  [classifiedJourneys, selectedRailcard, railcardCost, includeStudentPhotocardFee],
-  ([$classifiedJourneys, $selectedRailcard, $railcardCost, $includeStudentPhotocardFee]) => {
+  [classifiedJourneys, selectedFareType, fareTypeCost, includeStudentPhotocardFee],
+  ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeStudentPhotocardFee]) => {
     if ($classifiedJourneys.length === 0) return [];
-    return calculateProductComparison($classifiedJourneys, $selectedRailcard, $railcardCost, $includeStudentPhotocardFee);
+    return calculateProductComparison($classifiedJourneys, $selectedFareType, $fareTypeCost, $includeStudentPhotocardFee);
   }
 );
 

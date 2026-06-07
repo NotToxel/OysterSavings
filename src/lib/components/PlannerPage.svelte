@@ -1,14 +1,14 @@
 <script lang="ts">
   import {
     classifiedJourneys, detectedPatterns, recurrenceRules,
-    plannedJourneys, forecastResult, selectedRailcard, railcardCost
+    plannedJourneys, forecastResult, selectedFareType, fareTypeCost
   } from '$lib/stores/stores';
   import {
     type RecurrenceRule, generatePlannedJourneys,
     patternToRule
   } from '$lib/engine/recurrenceEngine';
   import { runForecast } from '$lib/engine/forecastEngine';
-  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, RAILCARDS, calculateDiscountedFare, type RailcardType, isPeakJourney, getRepresentativeTime, formatLocalDate, parseLocalDate } from '$lib/data/fareData';
+  import { getZoneRange, lookupFare, BUS_SINGLE_FARE, FARE_TYPES, calculateDiscountedFare, type FareType, isPeakJourney, getRepresentativeTime, formatLocalDate, parseLocalDate } from '$lib/data/fareData';
 
   // Calendar state
   let calendarDate = $state(new Date());
@@ -45,7 +45,7 @@
     const isPeakFare = isPeakJourney(dateObj, repTime, origin, dest);
     const zoneRange = getZoneRange(origin, dest);
     const rawFare = mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, mode);
-    return calculateDiscountedFare(rawFare, discount as RailcardType, isPeakFare, mode === 'bus', origin, dest, mode);
+    return calculateDiscountedFare(rawFare, discount as FareType, isPeakFare, mode === 'bus', origin, dest, mode);
   }
 
   const TIME_PERIODS = [
@@ -68,18 +68,18 @@
   });
 
   $effect(() => {
-    // Automatically regenerate planned journeys and forecast when dates, rules, or selected railcard change
+    // Automatically regenerate planned journeys and forecast when dates, rules, or selected fare type change
     planStart;
     planEnd;
     $recurrenceRules;
-    $selectedRailcard;
+    $selectedFareType;
     regenerate();
   });
 
   let estimatedTotalFare = $derived.by(() => {
-    const outbound = getEstimatedFare(newOriginZone, newDestZone, newTimePeriod, newMode, $selectedRailcard);
+    const outbound = getEstimatedFare(newOriginZone, newDestZone, newTimePeriod, newMode, $selectedFareType);
     if (newIsReturn) {
-      const ret = getEstimatedFare(newDestZone, newOriginZone, newReturnTimePeriod, newMode, $selectedRailcard);
+      const ret = getEstimatedFare(newDestZone, newOriginZone, newReturnTimePeriod, newMode, $selectedFareType);
       return outbound + ret;
     }
     return outbound;
@@ -272,7 +272,7 @@
     const journeys = generatePlannedJourneys($recurrenceRules);
     $plannedJourneys = journeys;
     if (journeys.length > 0) {
-      $forecastResult = runForecast(journeys, $selectedRailcard, $railcardCost);
+      $forecastResult = runForecast(journeys, $selectedFareType, $fareTypeCost);
     } else {
       $forecastResult = null;
     }
@@ -299,6 +299,18 @@
     if (progress >= 0.7) return '#f59e0b';
     return '#009FE3';
   }
+
+  let fareTypeShortName = $derived.by(() => {
+    const rc = FARE_TYPES[$selectedFareType];
+    if ($selectedFareType === 'none') return '';
+    if ($selectedFareType === 'railcard') return 'National Railcard';
+    if ($selectedFareType === 'disabled') return 'Disabled Persons';
+    if ($selectedFareType === 'jobcentre') return 'Jobcentre Plus';
+    if ($selectedFareType === 'zip_11_15') return '11-15 Zip';
+    if ($selectedFareType === 'zip_16_17') return '16+ Zip';
+    if ($selectedFareType === 'student') return '18+ Student';
+    return rc.name;
+  });
 
   const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayValues = [1, 2, 3, 4, 5, 6, 0]; // JS day values for Mon-Sun
@@ -439,19 +451,19 @@
     <div class="calendar-area">
       <!-- Forecast summary -->
       {#if $forecastResult}
-        <div class="glass-card forecast-summary" style="margin-bottom: 1.25rem; display: flex; justify-content: space-around; padding: 1.25rem;">
-          <div class="forecast-stat" style="display: flex; flex-direction: column; align-items: center; border: none; padding: 0; margin: 0;">
-            <span style="font-size: 0.85rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Standard PAYG</span>
-            <span class="forecast-value" style="font-size: 2rem;">£{$forecastResult.totalPaygCapped.toFixed(2)}</span>
+        <div class="glass-card forecast-summary">
+          <div class="forecast-stat">
+            <span class="forecast-label">Standard PAYG</span>
+            <span class="forecast-value">£{$forecastResult.totalPaygCapped.toFixed(2)}</span>
           </div>
-          <div class="forecast-stat" style="display: flex; flex-direction: column; align-items: center; border: none; padding: 0; margin: 0;">
-            <span style="font-size: 0.85rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">With Railcard Discount</span>
-            <span class="forecast-value green" style="font-size: 2rem; color: #34d399;">£{$forecastResult.totalPaygRailcardCapped.toFixed(2)}</span>
+          <div class="forecast-stat">
+            <span class="forecast-label">{#if $selectedFareType === 'none'}Adult / Contactless{:else}With {fareTypeShortName} Discount{/if}</span>
+            <span class="forecast-value green">£{$forecastResult.totalPaygFareTypeCapped.toFixed(2)}</span>
           </div>
-          <div class="forecast-stat highlight" style="display: flex; flex-direction: column; align-items: center; border: none; padding: 0; margin: 0; background: transparent;">
-            <span style="font-size: 0.85rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Potential Saving</span>
-            <span class="forecast-value green" style="font-size: 2.5rem; font-weight: 900; color: #34d399;">
-              £{($forecastResult.totalPaygCapped - $forecastResult.totalPaygRailcardCapped).toFixed(2)}
+          <div class="forecast-stat highlight">
+            <span class="forecast-label">Potential Saving</span>
+            <span class="forecast-value green large">
+              £{($forecastResult.totalPaygCapped - $forecastResult.totalPaygFareTypeCapped).toFixed(2)}
             </span>
           </div>
         </div>
@@ -480,7 +492,7 @@
             <div
               class="calendar-cell"
               class:other-month={!day.isCurrentMonth}
-              class:cap-hit={forecast?.capHitRailcard}
+              class:cap-hit={forecast?.capHitFareType}
               class:has-journeys={dayJourneys.length > 0}
               class:in-planning-period={dateKey >= planStart && dateKey <= planEnd}
               role="button"
@@ -500,14 +512,14 @@
                 </button>
                 <div class="day-journey-count">{dayJourneys.length} trip{dayJourneys.length > 1 ? 's' : ''}</div>
                 {#if forecast}
-                  <div class="day-spend">£{forecast.cappedFareRailcard.toFixed(2)}</div>
+                  <div class="day-spend">£{forecast.cappedFareFareType.toFixed(2)}</div>
                   <div class="mini-cap-bar">
                     <div
                       class="mini-cap-fill"
-                      style="width: {forecast.capProgressRailcard * 100}%; background: {getCapColor(forecast.capProgressRailcard)};"
+                      style="width: {forecast.capProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)};"
                     ></div>
                   </div>
-                  {#if forecast.capHitRailcard}
+                  {#if forecast.capHitFareType}
                     <div class="cap-hit-label">Cap Hit ✓</div>
                   {/if}
                 {/if}
@@ -563,12 +575,12 @@
         </div>
       </div>
 
-      <!-- Railcard Discount -->
+      <!-- Fare Type Discount -->
       <div class="glass-card sidebar-section">
-        <h3 class="sidebar-title">🏷️ Railcard Discount</h3>
+        <h3 class="sidebar-title">🏷️ Fare Type</h3>
         <div class="date-inputs">
-          <label class="setting-label">Railcard Applied to Planner</label>
-          <select class="input-field" bind:value={$selectedRailcard} onchange={regenerate}>
+          <label class="setting-label">Fare Type Applied to Planner</label>
+          <select class="input-field" bind:value={$selectedFareType} onchange={regenerate}>
             <option value="none">Adult / Contactless</option>
             <option value="student">Apprentice / 18+ Student Oyster</option>
             <option value="zip_11_15">11-15 Zip Oyster Card</option>
@@ -808,22 +820,45 @@
   .pattern-route { font-size: 0.75rem; font-weight: 600; }
   .pattern-detail { font-size: 0.65rem; color: var(--color-text-muted); margin-top: 0.125rem; }
 
-  .forecast-summary { border-color: rgba(16, 185, 129, 0.2); }
+  .forecast-summary {
+    border-color: rgba(16, 185, 129, 0.2);
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-around;
+    padding: 1.25rem;
+    gap: 1rem;
+  }
   .forecast-stat {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    padding: 0.375rem 0;
-    font-size: 0.8rem;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
   }
   .forecast-stat.highlight {
-    font-weight: 700;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding-top: 0.5rem;
-    margin-top: 0.25rem;
+    background: transparent;
   }
-  .forecast-value { font-weight: 600; font-family: monospace; }
-  .forecast-value.green { color: #34d399; }
+  .forecast-label {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .forecast-value {
+    font-weight: 600;
+    font-family: monospace;
+    font-size: 2rem;
+  }
+  .forecast-value.green {
+    color: #34d399;
+  }
+  .forecast-value.large {
+    font-size: 2.5rem;
+    font-weight: 900;
+  }
 
   /* Calendar area */
   .calendar-nav {
@@ -1092,5 +1127,47 @@
 
   @media (max-width: 768px) {
     .planner-layout { grid-template-columns: 1fr; }
+    .forecast-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      padding: 1rem;
+    }
+    .forecast-stat.highlight {
+      grid-column: span 2;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 0.75rem;
+    }
+    .forecast-label {
+      white-space: normal;
+      font-size: 0.75rem;
+    }
+    .forecast-value {
+      font-size: 1.75rem;
+    }
+    .forecast-value.large {
+      font-size: 2.25rem;
+    }
+    .clear-day-btn {
+      opacity: 1 !important;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      font-size: 0.5rem;
+    }
+    .calendar-cell {
+      min-height: 65px;
+      padding: 0.25rem;
+    }
+    .day-journey-count {
+      font-size: 0.6rem;
+    }
+    .day-spend {
+      font-size: 0.65rem;
+    }
+    .cap-hit-label {
+      font-size: 0.5rem;
+    }
   }
 </style>

@@ -9,8 +9,8 @@ import {
   lookupWeeklyCap,
   calculateDiscountedFare,
   roundToNearest10p,
-  type RailcardType,
-  RAILCARDS,
+  type FareType,
+  FARE_TYPES,
   TRAVELCARD_WEEKLY,
   TRAVELCARD_MONTHLY,
   TRAVELCARD_ANNUAL,
@@ -27,23 +27,23 @@ export interface ForecastDay {
   dateStr: string;
   journeys: PlannedJourney[];
   totalFare: number;
-  totalFareRailcard: number;
+  totalFareFareType: number;
   dailyCap: number;
   cappedFare: number;
-  cappedFareRailcard: number;
+  cappedFareFareType: number;
   capHit: boolean;
   capProgress: number;
-  capHitRailcard: boolean;
-  capProgressRailcard: number;
+  capHitFareType: boolean;
+  capProgressFareType: number;
 }
 
 export interface ForecastResult {
   days: ForecastDay[];
   weeklyBreakdown: ForecastWeek[];
   totalPayg: number;
-  totalPaygRailcard: number;
+  totalPaygFareType: number;
   totalPaygCapped: number;
-  totalPaygRailcardCapped: number;
+  totalPaygFareTypeCapped: number;
   projections: CostProjection;
 }
 
@@ -52,7 +52,7 @@ export interface ForecastWeek {
   weekEnd: Date;
   days: ForecastDay[];
   totalFare: number;
-  totalFareRailcard: number;
+  totalFareFareType: number;
   weeklyCap: number;
   capHit: boolean;
   capProgress: number;
@@ -66,7 +66,7 @@ export interface CostProjection {
 
 export interface ProductCosts {
   payg: number;
-  paygRailcard: number;
+  paygFareType: number;
   travelcard: Record<string, number>;
   studentTravelcard: Record<string, number>;
   bestOption: string;
@@ -76,10 +76,10 @@ export interface ProductCosts {
 // Run forecast on planned journeys
 export function runForecast(
   plannedJourneys: PlannedJourney[],
-  railcardType: RailcardType,
-  railcardCost: number
+  fareType: FareType,
+  fareTypeCost: number
 ): ForecastResult {
-  const railcard = RAILCARDS[railcardType];
+  const fareTypeInfo = FARE_TYPES[fareType];
 
   // Group by day
   const dayMap = new Map<string, PlannedJourney[]>();
@@ -93,7 +93,7 @@ export function runForecast(
 
   for (const [dateStr, journeys] of dayMap) {
     let totalFare = 0;
-    let totalFareRailcard = 0;
+    let totalFareFareType = 0;
     let maxZoneSpread = 0;
     let maxZoneRange = 'Z1';
 
@@ -105,10 +105,10 @@ export function runForecast(
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       const fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
       
-      let railcardFare = calculateDiscountedFare(fare, railcardType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
+      let fareTypeFare = calculateDiscountedFare(fare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
       totalFare += fare;
-      totalFareRailcard += railcardFare;
+      totalFareFareType += fareTypeFare;
 
       // Track max zone range for cap
       const parts = zoneRange.replace('Z', '').split('-');
@@ -129,26 +129,26 @@ export function runForecast(
     }
     
     const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay, 'none');
-    const railcardDailyCap = lookupDailyCap(maxZoneRange, isPeakDay, railcardType);
+    const fareTypeDailyCap = lookupDailyCap(maxZoneRange, isPeakDay, fareType);
     const cappedFare = Math.min(totalFare, dailyCap);
-    const cappedFareRailcard = Math.min(totalFareRailcard, railcardDailyCap);
+    const cappedFareFareType = Math.min(totalFareFareType, fareTypeDailyCap);
     const capHit = totalFare >= dailyCap;
-    const capHitRailcard = totalFareRailcard >= railcardDailyCap;
-    const capProgressRailcard = railcardDailyCap > 0 ? Math.min(1, totalFareRailcard / railcardDailyCap) : 0;
+    const capHitFareType = totalFareFareType >= fareTypeDailyCap;
+    const capProgressFareType = fareTypeDailyCap > 0 ? Math.min(1, totalFareFareType / fareTypeDailyCap) : 0;
 
     days.push({
       date: journeys[0].date,
       dateStr,
       journeys,
       totalFare: round2(totalFare),
-      totalFareRailcard: round2(totalFareRailcard),
+      totalFareFareType: round2(totalFareFareType),
       dailyCap,
       cappedFare: round2(cappedFare),
-      cappedFareRailcard: round2(cappedFareRailcard),
+      cappedFareFareType: round2(cappedFareFareType),
       capHit,
       capProgress: Math.min(1, totalFare / dailyCap),
-      capHitRailcard,
-      capProgressRailcard,
+      capHitFareType,
+      capProgressFareType,
     });
   }
 
@@ -170,7 +170,7 @@ export function runForecast(
     weekEnd.setDate(weekEnd.getDate() + 6);
 
     const totalFare = weekDays.reduce((s, d) => s + d.cappedFare, 0);
-    const totalFareRailcard = weekDays.reduce((s, d) => s + d.cappedFareRailcard, 0);
+    const totalFareFareType = weekDays.reduce((s, d) => s + d.cappedFareFareType, 0);
 
     // Determine weekly cap zone range
     const allJourneys = weekDays.flatMap((d) => d.journeys);
@@ -184,33 +184,33 @@ export function runForecast(
     }
 
     const weeklyCap = lookupWeeklyCap(maxRange, 'none');
-    const railcardWeeklyCap = lookupWeeklyCap(maxRange, railcardType);
+    const fareTypeWeeklyCap = lookupWeeklyCap(maxRange, fareType);
 
     // Apply weekly cap to total if needed
     const cappedTotalFare = Math.min(totalFare, weeklyCap);
-    const cappedTotalFareRailcard = Math.min(totalFareRailcard, railcardWeeklyCap);
+    const cappedTotalFareFareType = Math.min(totalFareFareType, fareTypeWeeklyCap);
 
     // Distribute the weekly caps chronologically across daily spend boxes
     weekDays.sort((a, b) => a.date.getTime() - b.date.getTime());
     let runningWeekTotal = 0;
-    let runningWeekTotalRailcard = 0;
+    let runningWeekTotalFareType = 0;
     for (const d of weekDays) {
       const remainingWeeklyCap = Math.max(0, weeklyCap - runningWeekTotal);
-      const remainingWeeklyCapRailcard = Math.max(0, railcardWeeklyCap - runningWeekTotalRailcard);
+      const remainingWeeklyCapFareType = Math.max(0, fareTypeWeeklyCap - runningWeekTotalFareType);
 
       const oldCappedFare = d.cappedFare;
-      const oldCappedFareRailcard = d.cappedFareRailcard;
+      const oldCappedFareFareType = d.cappedFareFareType;
 
       d.cappedFare = round2(Math.min(oldCappedFare, remainingWeeklyCap));
-      d.cappedFareRailcard = round2(Math.min(oldCappedFareRailcard, remainingWeeklyCapRailcard));
+      d.cappedFareFareType = round2(Math.min(oldCappedFareFareType, remainingWeeklyCapFareType));
 
       runningWeekTotal += d.cappedFare;
-      runningWeekTotalRailcard += d.cappedFareRailcard;
+      runningWeekTotalFareType += d.cappedFareFareType;
 
       // Mark cap hit and progress as complete if daily cap OR weekly cap is hit
-      if (oldCappedFareRailcard > d.cappedFareRailcard || runningWeekTotalRailcard >= railcardWeeklyCap) {
-        d.capHitRailcard = true;
-        d.capProgressRailcard = 1.0;
+      if (oldCappedFareFareType > d.cappedFareFareType || runningWeekTotalFareType >= fareTypeWeeklyCap) {
+        d.capHitFareType = true;
+        d.capProgressFareType = 1.0;
       }
       if (oldCappedFare > d.cappedFare || runningWeekTotal >= weeklyCap) {
         d.capHit = true;
@@ -223,7 +223,7 @@ export function runForecast(
       weekEnd,
       days: weekDays,
       totalFare: round2(cappedTotalFare),
-      totalFareRailcard: round2(cappedTotalFareRailcard),
+      totalFareFareType: round2(cappedTotalFareFareType),
       weeklyCap,
       capHit: totalFare >= weeklyCap,
       capProgress: Math.min(1, totalFare / weeklyCap),
@@ -233,33 +233,33 @@ export function runForecast(
   weeklyBreakdown.sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
 
   const totalPayg = round2(days.reduce((s, d) => s + d.totalFare, 0));
-  const totalPaygRailcard = round2(days.reduce((s, d) => s + d.totalFareRailcard, 0));
+  const totalPaygFareType = round2(days.reduce((s, d) => s + d.totalFareFareType, 0));
   const totalPaygCapped = round2(days.reduce((s, d) => s + d.cappedFare, 0));
-  const totalPaygRailcardCapped = round2(days.reduce((s, d) => s + d.cappedFareRailcard, 0));
+  const totalPaygFareTypeCapped = round2(days.reduce((s, d) => s + d.cappedFareFareType, 0));
 
   const totalWeeks = weeklyBreakdown.length || 1;
   const avgWeekly = totalPaygCapped / totalWeeks;
-  const avgWeeklyRailcard = totalPaygRailcardCapped / totalWeeks;
+  const avgWeeklyFareType = totalPaygFareTypeCapped / totalWeeks;
 
   // Build projections
   const projections: CostProjection = {
-    weekly: buildProductCosts(avgWeekly, avgWeeklyRailcard + railcardCost / 52),
-    monthly: buildProductCosts(avgWeekly * 4.33, avgWeeklyRailcard * 4.33 + railcardCost / 12),
-    annual: buildProductCosts(avgWeekly * 52, avgWeeklyRailcard * 52 + railcardCost),
+    weekly: buildProductCosts(avgWeekly, avgWeeklyFareType + fareTypeCost / 52),
+    monthly: buildProductCosts(avgWeekly * 4.33, avgWeeklyFareType * 4.33 + fareTypeCost / 12),
+    annual: buildProductCosts(avgWeekly * 52, avgWeeklyFareType * 52 + fareTypeCost),
   };
 
   return {
     days,
     weeklyBreakdown,
     totalPayg,
-    totalPaygRailcard,
+    totalPaygFareType,
     totalPaygCapped,
-    totalPaygRailcardCapped,
+    totalPaygFareTypeCapped,
     projections,
   };
 }
 
-function buildProductCosts(payg: number, paygRailcard: number): ProductCosts {
+function buildProductCosts(payg: number, paygFareType: number): ProductCosts {
   const travelcard: Record<string, number> = {};
   const studentTravelcard: Record<string, number> = {};
 
@@ -273,14 +273,14 @@ function buildProductCosts(payg: number, paygRailcard: number): ProductCosts {
   let bestOption = 'PAYG';
   let bestCost = payg;
 
-  if (paygRailcard < bestCost) {
-    bestOption = 'PAYG + Railcard';
-    bestCost = paygRailcard;
+  if (paygFareType < bestCost) {
+    bestOption = 'PAYG + Fare Type';
+    bestCost = paygFareType;
   }
 
   return {
     payg: round2(payg),
-    paygRailcard: round2(paygRailcard),
+    paygFareType: round2(paygFareType),
     travelcard,
     studentTravelcard,
     bestOption,

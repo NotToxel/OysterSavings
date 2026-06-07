@@ -1,11 +1,11 @@
 <script lang="ts">
   import {
     classifiedJourneys, fareResults, dailyCapResults,
-    weeklyCapResults, capSummary, selectedRailcard,
-    railcardCost, includeOysterCost, savingsResult
+    weeklyCapResults, capSummary, selectedFareType,
+    fareTypeCost, includeOysterCost, savingsResult
   } from '$lib/stores/stores';
-  import { calculateRailcardSavings } from '$lib/engine/savingsEngine';
-  import { RAILCARDS, type RailcardType } from '$lib/data/fareData';
+  import { calculateFareTypeSavings } from '$lib/engine/savingsEngine';
+  import { FARE_TYPES, type FareType } from '$lib/data/fareData';
 
   let activeTab = $state<'journeys' | 'savings' | 'caps'>('journeys');
   let sortKey = $state<string>('date');
@@ -13,27 +13,27 @@
   let filterMode = $state<string>('all');
   let overrideCost = $state(false);
 
-  // Auto-sync railcard cost when selection changes
+  // Auto-sync fare type cost when selection changes
   $effect(() => {
-    const rc = RAILCARDS[$selectedRailcard];
+    const rc = FARE_TYPES[$selectedFareType];
     if (rc.cost1Year === 0) {
-      $railcardCost = 0;
+      $fareTypeCost = 0;
     } else if (!overrideCost) {
-      $railcardCost = rc.cost1Year;
+      $fareTypeCost = rc.cost1Year;
     }
   });
 
   // Auto-sync includeOysterCost when selection changes
   $effect(() => {
-    if ($selectedRailcard === 'none' || $selectedRailcard === 'jobcentre') {
+    if ($selectedFareType === 'none' || $selectedFareType === 'jobcentre') {
       $includeOysterCost = false;
     } else {
       $includeOysterCost = true;
     }
   });
 
-  // Detect railcards with no PAYG discount
-  let isNoDiscount = $derived($selectedRailcard === 'none' || $selectedRailcard === 'student');
+  // Detect fare types with no PAYG discount
+  let isNoDiscount = $derived($selectedFareType === 'none' || $selectedFareType === 'student');
 
 
 
@@ -107,8 +107,8 @@
     return '#009FE3';
   }
 
-  const railcardOptions = Object.entries(RAILCARDS).map(([key, info]) => ({
-    value: key as RailcardType,
+  const fareTypeOptions = Object.entries(FARE_TYPES).map(([key, info]) => ({
+    value: key as FareType,
     label: info.name,
   }));
 
@@ -132,7 +132,7 @@
       🚆 Journeys
     </button>
     <button class="tab-btn" class:active={activeTab === 'savings'} onclick={() => activeTab = 'savings'}>
-      💰 Railcard Savings
+      💰 Fare Type Savings
     </button>
     <button class="tab-btn" class:active={activeTab === 'caps'} onclick={() => activeTab = 'caps'}>
       📊 Cap Analysis
@@ -236,38 +236,38 @@
     </div>
 
   {:else if activeTab === 'savings'}
-    <!-- Railcard Savings Panel -->
+    <!-- Fare Type Savings Panel -->
     <div class="savings-layout">
       <!-- Settings -->
       <div class="glass-card savings-settings">
         <h3 class="settings-title">⚙️ Savings Settings</h3>
 
         <div class="setting-group">
-          <label class="setting-label" for="railcard-select">Railcard Type</label>
-          <select class="input-field" id="railcard-select" bind:value={$selectedRailcard}>
-            {#each railcardOptions as opt}
+          <label class="setting-label" for="fare-type-select">Fare Type</label>
+          <select class="input-field" id="fare-type-select" bind:value={$selectedFareType}>
+            {#each fareTypeOptions as opt}
               <option value={opt.value}>{opt.label}</option>
             {/each}
           </select>
         </div>
 
-        {#if $selectedRailcard === 'railcard' || $selectedRailcard === 'disabled'}
+        {#if $selectedFareType === 'railcard' || $selectedFareType === 'disabled'}
         <div class="setting-group">
-          <label class="setting-label" for="railcard-cost">Railcard Cost (£)</label>
+          <label class="setting-label" for="fare-type-cost">Fare Type Cost (£)</label>
           <div class="toggle-row" style="margin-bottom: 0.75rem;">
             <input type="checkbox" id="override-cost" bind:checked={overrideCost} style="accent-color: var(--color-oyster-blue);" />
             <label for="override-cost" style="font-size: 0.8rem; color: var(--color-text-secondary); cursor: pointer;">Override standard cost</label>
           </div>
           {#if overrideCost}
-            <input type="number" class="input-field" id="railcard-cost" bind:value={$railcardCost} min="0" step="1" />
+            <input type="number" class="input-field" id="fare-type-cost" bind:value={$fareTypeCost} min="0" step="1" />
           {:else}
             <div class="cost-buttons">
-              <button class="cost-btn" class:active={$railcardCost === RAILCARDS[$selectedRailcard].cost1Year} onclick={() => $railcardCost = RAILCARDS[$selectedRailcard].cost1Year}>
-                £{RAILCARDS[$selectedRailcard].cost1Year} (1yr)
+              <button class="cost-btn" class:active={$fareTypeCost === FARE_TYPES[$selectedFareType].cost1Year} onclick={() => $fareTypeCost = FARE_TYPES[$selectedFareType].cost1Year}>
+                £{FARE_TYPES[$selectedFareType].cost1Year} (1yr)
               </button>
-              {#if RAILCARDS[$selectedRailcard].cost3Year > 0}
-              <button class="cost-btn" class:active={$railcardCost === RAILCARDS[$selectedRailcard].cost3Year} onclick={() => $railcardCost = RAILCARDS[$selectedRailcard].cost3Year}>
-                £{RAILCARDS[$selectedRailcard].cost3Year} (3yr)
+              {#if FARE_TYPES[$selectedFareType].cost3Year > 0}
+              <button class="cost-btn" class:active={$fareTypeCost === FARE_TYPES[$selectedFareType].cost3Year} onclick={() => $fareTypeCost = FARE_TYPES[$selectedFareType].cost3Year}>
+                £{FARE_TYPES[$selectedFareType].cost3Year} (3yr)
               </button>
               {/if}
             </div>
@@ -277,13 +277,13 @@
 
         <div class="setting-group">
           <span class="setting-label">
-            {#if $selectedRailcard === 'student'}
+            {#if $selectedFareType === 'student'}
               Include Apprentice / 18+ Student Photocard Fee
-            {:else if $selectedRailcard === 'zip_11_15' || $selectedRailcard === 'zip_16_17'}
+            {:else if $selectedFareType === 'zip_11_15' || $selectedFareType === 'zip_16_17'}
               Include Zip Photocard Fee
-            {:else if $selectedRailcard === 'jobcentre'}
+            {:else if $selectedFareType === 'jobcentre'}
               Include Card Cost
-            {:else if $selectedRailcard === 'none'}
+            {:else if $selectedFareType === 'none'}
               Oyster / Contactless Card Fee
             {:else}
               Include Oyster Card Cost
@@ -292,21 +292,21 @@
           <div class="toggle-row">
             <button
               class="toggle"
-              class:active={$includeOysterCost && $selectedRailcard !== 'jobcentre' && $selectedRailcard !== 'none'}
+              class:active={$includeOysterCost && $selectedFareType !== 'jobcentre' && $selectedFareType !== 'none'}
               onclick={() => $includeOysterCost = !$includeOysterCost}
               aria-label="Toggle Oyster card cost"
-              disabled={$selectedRailcard === 'jobcentre' || $selectedRailcard === 'none'}
+              disabled={$selectedFareType === 'jobcentre' || $selectedFareType === 'none'}
             >
               <span class="toggle-dot"></span>
             </button>
             <span class="toggle-label">
-              {#if !$includeOysterCost || $selectedRailcard === 'jobcentre' || $selectedRailcard === 'none'}
+              {#if !$includeOysterCost || $selectedFareType === 'jobcentre' || $selectedFareType === 'none'}
                 Not included / Free
-              {:else if $selectedRailcard === 'student'}
+              {:else if $selectedFareType === 'student'}
                 +£12.00
-              {:else if $selectedRailcard === 'zip_11_15'}
+              {:else if $selectedFareType === 'zip_11_15'}
                 +£16.50
-              {:else if $selectedRailcard === 'zip_16_17'}
+              {:else if $selectedFareType === 'zip_16_17'}
                 +£22.00
               {:else}
                 +£7.00
@@ -323,7 +323,7 @@
             <!-- No discount info panel -->
             <div class="glass-card savings-hero" style="border-color: rgba(59, 130, 246, 0.3);">
               <div class="savings-hero-label">
-                ℹ️ {$savingsResult.railcardName} — No PAYG Fare Discount
+                ℹ️ {$savingsResult.fareTypeName} — No PAYG Fare Discount
               </div>
               <div class="savings-hero-value" style="color: #60a5fa; font-size: 2rem;">
                 £{$savingsResult.totalExpectedSpend.toFixed(2)}
@@ -337,18 +337,18 @@
 
             <!-- Potential savings teaser -->
             <div class="glass-card" style="padding: 1.5rem; border-color: rgba(52, 211, 153, 0.2);">
-              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">💡 Potential Savings with a Railcard</h3>
+              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">💡 Potential Savings with a Fare Type</h3>
               <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 1rem;">
-                {$selectedRailcard === 'student' ? 'The Apprentice / 18+ Student Oyster gives 30% off Travelcards but has no standard PAYG single fare discount. To get 1/3 off PAYG fares, add a National Railcard to your Oyster.' : 'Adult / Contactless has standard fares with no discount. Select a railcard above to see how much you could save.'}
+                {$selectedFareType === 'student' ? 'The Apprentice / 18+ Student Oyster gives 30% off Travelcards but has no standard PAYG single fare discount. To get 1/3 off PAYG fares, add a National Railcard to your Oyster.' : 'Adult / Contactless has standard fares with no discount. Select a fare type above to see how much you could save.'}
               </p>
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedRailcard = 'railcard'}>
+                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedFareType = 'railcard'}>
                   Try National Railcard
                 </button>
-                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedRailcard = 'jobcentre'}>
+                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedFareType = 'jobcentre'}>
                   Try Jobcentre Plus
                 </button>
-                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedRailcard = 'disabled'}>
+                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedFareType = 'disabled'}>
                   Try Disabled Persons
                 </button>
               </div>
@@ -365,17 +365,17 @@
               <div class="savings-hero-sub">
                 Compared to standard Adult PAYG fares over {$savingsResult.totalJourneys} journeys.
                 <br>
-                <span style="font-size: 0.75rem; opacity: 0.8;">(We detected that your actual spend of £{$savingsResult.totalActualSpend.toFixed(2)} closely matches the {$savingsResult.railcardName} rate)</span>
+                <span style="font-size: 0.75rem; opacity: 0.8;">(We detected that your actual spend of £{$savingsResult.totalActualSpend.toFixed(2)} closely matches the {$savingsResult.fareTypeName} rate)</span>
               </div>
             </div>
           {:else}
             <!-- Main savings stat -->
             <div class="glass-card savings-hero" class:positive={netSaving > 0} class:negative={netSaving <= 0}>
               <div class="savings-hero-label">
-                {#if $savingsResult.totalActualSpend > $savingsResult.totalRailcardSpend + 5}
-                  {netSaving > 0 ? '❌ Missed Net Saving with' : '⚠️ Net Result with'} {$savingsResult.railcardName}
+                {#if $savingsResult.totalActualSpend > $savingsResult.totalFareTypeSpend + 5}
+                  {netSaving > 0 ? '❌ Missed Net Saving with' : '⚠️ Net Result with'} {$savingsResult.fareTypeName}
                 {:else}
-                  {netSaving > 0 ? '✅ Achieved Net Saving with' : '⚠️ Net Result with'} {$savingsResult.railcardName}
+                  {netSaving > 0 ? '✅ Achieved Net Saving with' : '⚠️ Net Result with'} {$savingsResult.fareTypeName}
                 {/if}
               </div>
               <div class="savings-hero-value" class:green={netSaving > 0} class:red={netSaving <= 0}>
@@ -397,9 +397,9 @@
               </div>
               <div class="stat-card">
                 <div class="stat-value" style="color: #34d399;">
-                  £{($savingsResult.totalRailcardSpend + $savingsResult.railcardCost + $savingsResult.oysterCost).toFixed(2)}
+                  £{($savingsResult.totalFareTypeSpend + $savingsResult.fareTypeCost + $savingsResult.oysterCost).toFixed(2)}
                 </div>
-                <div class="stat-label">Simulated Railcard (Total Cost)</div>
+                <div class="stat-label">Simulated Fare Type (Total Cost)</div>
               </div>
               <div class="stat-card">
                 <div class="stat-value" style="color: #60a5fa;">£{$savingsResult.totalActualSpend.toFixed(2)}</div>
@@ -416,18 +416,18 @@
               <h3>📈 Break-Even Analysis</h3>
               <div class="break-even-detail">
                 <div class="be-row">
-                  <span>Railcard cost</span>
-                  <span>£{$savingsResult.railcardCost.toFixed(2)}</span>
+                  <span>Fare Type cost</span>
+                  <span>£{$savingsResult.fareTypeCost.toFixed(2)}</span>
                 </div>
                 {#if $savingsResult.oysterCost > 0}
                   <div class="be-row">
-                    <span>{$selectedRailcard === 'student' ? '18+ Student Photocard fee' : 'Oyster card cost'}</span>
+                    <span>{$selectedFareType === 'student' ? '18+ Student Photocard fee' : 'Oyster card cost'}</span>
                     <span>£{$savingsResult.oysterCost.toFixed(2)}</span>
                   </div>
                 {/if}
                 <div class="be-row">
                   <span>Total upfront cost</span>
-                  <span>£{($savingsResult.railcardCost + $savingsResult.oysterCost).toFixed(2)}</span>
+                  <span>£{($savingsResult.fareTypeCost + $savingsResult.oysterCost).toFixed(2)}</span>
                 </div>
                 <div class="be-row highlight">
                   <span>Break-even point</span>
@@ -814,6 +814,50 @@
     .savings-layout { grid-template-columns: 1fr; }
     .savings-cards { grid-template-columns: repeat(2, 1fr); }
     .cap-summary-grid { grid-template-columns: repeat(2, 1fr); }
-    .cap-day-row { flex-wrap: wrap; }
+    .cap-day-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.25rem 0.5rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+    }
+    .cap-day-date {
+      grid-row: 1;
+      grid-column: 1;
+      font-size: 0.85rem;
+      min-width: 0 !important;
+    }
+    .cap-day-zones {
+      grid-row: 2;
+      grid-column: 1;
+      font-size: 0.75rem;
+      min-width: 0 !important;
+    }
+    .cap-day-values {
+      grid-row: 1;
+      grid-column: 2;
+      justify-content: flex-end;
+      min-width: 0 !important;
+      font-size: 0.85rem;
+    }
+    .cap-day-journeys {
+      grid-row: 2;
+      grid-column: 2;
+      min-width: 0 !important;
+      font-size: 0.75rem;
+      text-align: right;
+    }
+    .cap-day-bar-container {
+      grid-row: 3;
+      grid-column: 1 / 3;
+      width: 100%;
+      margin: 0.25rem 0;
+    }
+    .cap-day-row .badge-cap {
+      grid-row: 4;
+      grid-column: 1 / 3;
+      justify-self: start;
+      margin-top: 0.25rem;
+    }
   }
 </style>

@@ -1,13 +1,13 @@
 <script lang="ts">
   import {
     productComparison, classifiedJourneys,
-    includeStudentPhotocardFee, selectedRailcard,
-    railcardCost, capSummary, weeklyCapResults
+    includeStudentPhotocardFee, selectedFareType,
+    fareTypeCost, capSummary, weeklyCapResults
   } from '$lib/stores/stores';
   import {
-    RAILCARDS, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
+    FARE_TYPES, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
     TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_MONTHLY, STUDENT_TRAVELCARD_ANNUAL,
-    type RailcardType
+    type FareType
   } from '$lib/data/fareData';
   import { Chart, registerables } from 'chart.js';
 
@@ -17,33 +17,33 @@
   let chartCanvas: HTMLCanvasElement;
   let chart: Chart | null = null;
 
-  // Build railcard options list
-  const railcardOptions = Object.entries(RAILCARDS).map(([key, info]) => ({
-    value: key as RailcardType,
+  // Build fare type options list
+  const fareTypeOptions = Object.entries(FARE_TYPES).map(([key, info]) => ({
+    value: key as FareType,
     label: info.name,
   }));
 
   // Human-readable short name for chart labels
-  let railcardShortName = $derived.by(() => {
-    const rc = RAILCARDS[$selectedRailcard];
-    if ($selectedRailcard === 'none') return '';
-    if ($selectedRailcard === 'railcard') return 'National Railcard';
-    if ($selectedRailcard === 'disabled') return 'Disabled Persons';
-    if ($selectedRailcard === 'jobcentre') return 'Jobcentre Plus';
-    if ($selectedRailcard === 'zip_11_15') return '11-15 Zip';
-    if ($selectedRailcard === 'zip_16_17') return '16+ Zip';
-    if ($selectedRailcard === 'student') return '18+ Student';
+  let fareTypeShortName = $derived.by(() => {
+    const rc = FARE_TYPES[$selectedFareType];
+    if ($selectedFareType === 'none') return '';
+    if ($selectedFareType === 'railcard') return 'National Railcard';
+    if ($selectedFareType === 'disabled') return 'Disabled Persons';
+    if ($selectedFareType === 'jobcentre') return 'Jobcentre Plus';
+    if ($selectedFareType === 'zip_11_15') return '11-15 Zip';
+    if ($selectedFareType === 'zip_16_17') return '16+ Zip';
+    if ($selectedFareType === 'student') return '18+ Student';
     return rc.name;
   });
 
-  let isNoDiscount = $derived($selectedRailcard === 'none' || $selectedRailcard === 'student');
-  let hasCardCosts = $derived($selectedRailcard !== 'none' && $selectedRailcard !== 'jobcentre');
+  let isNoDiscount = $derived($selectedFareType === 'none' || $selectedFareType === 'student');
+  let hasCardCosts = $derived($selectedFareType !== 'none' && $selectedFareType !== 'jobcentre');
 
   // Derive discount description badge
   let discountBadge = $derived.by(() => {
-    const rc = RAILCARDS[$selectedRailcard];
-    if ($selectedRailcard === 'none') return 'Standard adult fares — no discount applied';
-    if ($selectedRailcard === 'student') return '30% off Travelcards only — no PAYG discount';
+    const rc = FARE_TYPES[$selectedFareType];
+    if ($selectedFareType === 'none') return 'Standard adult fares — no discount applied';
+    if ($selectedFareType === 'student') return '30% off Travelcards only — no PAYG discount';
     if (rc.discount === 0.5) return '50% off all fares (peak & off-peak)';
     if (rc.discount === 1/3 && rc.appliesToPeak) return '⅓ off all fares (peak & off-peak)';
     if (rc.discount === 1/3) return '⅓ off off-peak fares only';
@@ -52,11 +52,11 @@
 
   // Derive card cost label
   let cardCostLabel = $derived.by(() => {
-    if ($selectedRailcard === 'zip_11_15') return '£16.50 Zip Photocard fee';
-    if ($selectedRailcard === 'zip_16_17') return '£22.00 Zip Photocard fee';
-    if ($selectedRailcard === 'student') return '£12.00 Student Photocard fee';
-    if ($selectedRailcard === 'disabled') return '£7.00 Oyster card cost';
-    if ($selectedRailcard === 'railcard') return '£7.00 Oyster card cost';
+    if ($selectedFareType === 'zip_11_15') return '£16.50 Zip Photocard fee';
+    if ($selectedFareType === 'zip_16_17') return '£22.00 Zip Photocard fee';
+    if ($selectedFareType === 'student') return '£12.00 Student Photocard fee';
+    if ($selectedFareType === 'disabled') return '£7.00 Oyster card cost';
+    if ($selectedFareType === 'railcard') return '£7.00 Oyster card cost';
     return '';
   });
 
@@ -108,9 +108,9 @@
       : span === 'monthly' ? comp.monthlyPayg
       : comp.annualPayg;
 
-    const rcCost = span === 'weekly' ? comp.weeklyPaygRailcard
-      : span === 'monthly' ? comp.monthlyPaygRailcard
-      : comp.annualPaygRailcard;
+    const rcCost = span === 'weekly' ? comp.weeklyPaygFareType
+      : span === 'monthly' ? comp.monthlyPaygFareType
+      : comp.annualPaygFareType;
 
     const tcCost = span === 'weekly' ? comp.weeklyTravelcard
       : span === 'monthly' ? comp.monthlyTravelcard
@@ -120,7 +120,7 @@
       best,
       zoneRange: comp.zoneRange,
       payg: paygCost,
-      railcard: rcCost,
+      fareType: rcCost,
       travelcard: tcCost,
     };
   });
@@ -134,8 +134,8 @@
 
     const paygLabel = 'PAYG (Adult)';
     const rcLabel = isNoDiscount
-      ? `PAYG + ${railcardShortName || 'No Discount'}`
-      : `PAYG + ${railcardShortName}`;
+      ? `PAYG + ${fareTypeShortName || 'No Discount'}`
+      : `PAYG + ${fareTypeShortName}`;
 
     // Build datasets — skip railcard bar when it's identical to PAYG
     const buildDatasets = (paygKey: string, rcKey: string, tcKey: string, tcLabel: string, studentKey?: string, studentLabel?: string) => {
@@ -171,17 +171,17 @@
     if (activeSpan === 'weekly') {
       return {
         labels: zoneLabels,
-        datasets: buildDatasets('weeklyPayg', 'weeklyPaygRailcard', 'weeklyTravelcard', 'Weekly Travelcard'),
+        datasets: buildDatasets('weeklyPayg', 'weeklyPaygFareType', 'weeklyTravelcard', 'Weekly Travelcard'),
       };
     } else if (activeSpan === 'monthly') {
       return {
         labels: zoneLabels,
-        datasets: buildDatasets('monthlyPayg', 'monthlyPaygRailcard', 'monthlyTravelcard', 'Monthly Travelcard', 'monthlyStudentTravelcard', 'Student Monthly TC'),
+        datasets: buildDatasets('monthlyPayg', 'monthlyPaygFareType', 'monthlyTravelcard', 'Monthly Travelcard', 'monthlyStudentTravelcard', 'Student Monthly TC'),
       };
     } else {
       return {
         labels: zoneLabels,
-        datasets: buildDatasets('annualPayg', 'annualPaygRailcard', 'annualTravelcard', 'Annual Travelcard', 'annualStudentTravelcard', 'Student Annual TC'),
+        datasets: buildDatasets('annualPayg', 'annualPaygFareType', 'annualTravelcard', 'Annual Travelcard', 'annualStudentTravelcard', 'Student Annual TC'),
       };
     }
   });
@@ -281,9 +281,9 @@
   <div class="glass-card settings-bar">
     <div class="settings-row">
       <div class="setting-inline">
-        <label class="setting-label-inline" for="compare-railcard">Simulate with</label>
-        <select class="input-field compact-select" id="compare-railcard" bind:value={$selectedRailcard}>
-          {#each railcardOptions as opt}
+        <label class="setting-label-inline" for="compare-fare-type">Simulate with</label>
+        <select class="input-field compact-select" id="compare-fare-type" bind:value={$selectedFareType}>
+          {#each fareTypeOptions as opt}
             <option value={opt.value}>{opt.label}</option>
           {/each}
         </select>
@@ -352,9 +352,9 @@
           </tr>
           {#if !isNoDiscount}
             <tr>
-              <td class="product-name"><span class="product-dot" style="background: #6950A1;"></span> PAYG + {railcardShortName}</td>
+              <td class="product-name"><span class="product-dot" style="background: #6950A1;"></span> PAYG + {fareTypeShortName}</td>
               {#each matrixZones as zone}
-                <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyPaygRailcard' : activeSpan === 'monthly' ? 'monthlyPaygRailcard' : 'annualPaygRailcard')}</td>
+                <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyPaygFareType' : activeSpan === 'monthly' ? 'monthlyPaygFareType' : 'annualPaygFareType')}</td>
               {/each}
             </tr>
           {/if}
@@ -407,12 +407,12 @@
           {#if bestOption.best === 'PAYG'}
             <strong style="color: #009FE3;">PAYG</strong> at <strong>£{bestOption.payg.toFixed(2)}</strong> is your cheapest option.
             {#if !isNoDiscount}
-              PAYG + {railcardShortName} would cost £{bestOption.railcard.toFixed(2)} and a Travelcard £{bestOption.travelcard.toFixed(2)}.
+              PAYG + {fareTypeShortName} would cost £{bestOption.fareType.toFixed(2)} and a Travelcard £{bestOption.travelcard.toFixed(2)}.
             {:else}
               A Travelcard would cost £{bestOption.travelcard.toFixed(2)} — only worth it if you travel much more frequently.
             {/if}
-          {:else if bestOption.best === 'PAYG + Railcard'}
-            <strong style="color: #6950A1;">PAYG + {railcardShortName}</strong> at <strong>£{bestOption.railcard.toFixed(2)}</strong> beats
+          {:else if bestOption.best === 'PAYG + Fare Type'}
+            <strong style="color: #6950A1;">PAYG + {fareTypeShortName}</strong> at <strong>£{bestOption.fareType.toFixed(2)}</strong> beats
             standard PAYG (£{bestOption.payg.toFixed(2)}) and Travelcard (£{bestOption.travelcard.toFixed(2)}).
           {:else if bestOption.best === 'Travelcard'}
             a <strong style="color: #EF7B10;">Travelcard</strong> at <strong>£{bestOption.travelcard.toFixed(2)}</strong> is cheapest.

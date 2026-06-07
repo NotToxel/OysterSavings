@@ -17,8 +17,8 @@
 </script>
 
 <svelte:head>
-  <title>OysterSavings — TfL Fare & Railcard Optimizer</title>
-  <meta name="description" content="Analyze your TfL Oyster travel history, discover missed railcard savings, and forecast the most cost-effective ticket combinations." />
+  <title>OysterSavings — TfL Fare & Discount Optimizer</title>
+  <meta name="description" content="Analyze your TfL Oyster travel history, discover missed discount savings, and forecast the most cost-effective ticket combinations." />
 </svelte:head>
 
 <div class="app-container">
