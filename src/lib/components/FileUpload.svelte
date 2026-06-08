@@ -165,6 +165,9 @@
 
 <style>
   .upload-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     color: var(--color-text-muted);
     margin-bottom: 1rem;
     transition: color 0.3s ease;
