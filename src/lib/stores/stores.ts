@@ -20,6 +20,7 @@ export const fareResults = writable<FareResult[]>([]);
 export const fileName = writable<string>('');
 export const fileLoaded = writable<boolean>(false);
 export const parseErrors = writable<string[]>([]);
+export const reportGeneratedAt = writable<string>('');
 
 // Cap analysis
 export const dailyCapResults = writable<DayCapResult[]>([]);
@@ -28,6 +29,16 @@ export const capSummary = writable<CapSummary | null>(null);
 
 // Settings
 const isBrowser = typeof window !== 'undefined';
+
+if (isBrowser) {
+  fileLoaded.subscribe(loaded => {
+    if (loaded) {
+      reportGeneratedAt.set(new Date().toISOString());
+    } else {
+      reportGeneratedAt.set('');
+    }
+  });
+}
 
 const initialFareType = isBrowser && localStorage.getItem('oystersavings_selected_fare_type')
   ? localStorage.getItem('oystersavings_selected_fare_type') as FareType
@@ -126,5 +137,6 @@ export function resetData() {
   detectedPatterns.set([]);
   forecastResult.set(null);
   isDemoMode.set(false);
+  reportGeneratedAt.set('');
   currentPage.set('home');
 }
