@@ -73,7 +73,7 @@
     <div class="top-bar-inner">
       <button class="logo" onclick={() => navigateTo('home')}>
         <span class="logo-icon">🦪</span>
-        <span class="logo-text">Oyster<span class="logo-accent">Savings</span> <span class="logo-version">v{__BUILD_VERSION__}</span></span>
+        <span class="logo-text">Oyster<span class="logo-accent">Savings</span></span>
       </button>
 
       <nav class="nav-pills">
@@ -105,7 +105,10 @@
   <!-- Footer -->
   <footer class="app-footer">
     <p>Your data never leaves your browser. All calculations run locally.</p>
-    <p class="fare-data-version">Using TfL fare rates from {TFL_FARES_LAST_ROSE} (caps frozen until 2027).</p>
+    <p class="fare-data-version">
+      Using TfL fare rates from {TFL_FARES_LAST_ROSE} (caps frozen until 2027)
+      <span class="footer-version-tag">v{__BUILD_VERSION__}</span>
+    </p>
     {#if $hasData}
       <div class="report-meta-footer">
         <span>Generated with <a href="/" onclick={(e) => { e.preventDefault(); navigateTo('home'); }} class="footer-link">OysterSavings</a></span>
@@ -443,18 +446,19 @@
     font-size: 0.7rem;
   }
 
-  .logo-version {
-    font-size: 0.7rem;
+  .footer-version-tag {
+    font-size: 0.65rem;
     font-weight: 500;
     color: var(--color-text-muted);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.1rem 0.4rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.08rem 0.35rem;
     border-radius: 4px;
     margin-left: 0.4rem;
     font-family: monospace;
     letter-spacing: normal;
     display: inline-block;
+    vertical-align: middle;
   }
 
   .fare-data-version {
