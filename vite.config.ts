@@ -14,7 +14,7 @@ export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   define: {
     __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
-    __BUILD_VERSION__: JSON.stringify('1.2.0'),
+    __BUILD_VERSION__: JSON.stringify('1.3.1'),
     __COMMIT_HASH__: JSON.stringify(commitHash)
   }
 });

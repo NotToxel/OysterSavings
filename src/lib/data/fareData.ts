@@ -4,6 +4,9 @@
 import sampledZoneFaresData from './sampledZoneFares.json';
 const exactFares: Record<string, { peak: number, offPeak: number }> = sampledZoneFaresData as any;
 
+// Date when TfL fares last rose (for display in the UI footer)
+export const TFL_FARES_LAST_ROSE = 'March 1, 2026';
+
 // All fares in GBP
 
 export type ZoneRange =

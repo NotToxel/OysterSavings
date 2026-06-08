@@ -40,8 +40,11 @@ To maintain a consistent and visible build release sequence, you must adhere to 
    - `__BUILD_DATE__`: ISO timestamp of build generation.
    - `__BUILD_VERSION__`: Matches package.json's version.
    - `__COMMIT_HASH__`: Retrieved dynamically from `git rev-parse --short HEAD`.
-3. **When to Increment**: Every time you implement a new major change or add new library tools, **you must increment the version number in package.json** (following semantic versioning) and update the references in the `define` section in `vite.config.ts` if modified.
+3. **When to Increment**: Follow the project's custom versioning policy:
+   - For minor changes, tweaks, and bug fixes, only increment the minor version number (the third digit, e.g., from `1.3.0` to `1.3.1`).
+   - For major features or changes, increment the larger patch number (the second digit, e.g., from `1.3.0` to `1.4.0`).
 4. **Typings**: Any global variable added must be registered in [src/app.d.ts](file:///c:/Development/OysterSavings/src/app.d.ts) to prevent TypeScript check errors.
+5. **TfL Fare Rates Date**: The date when TfL fares last rose is maintained as a constant `TFL_FARES_LAST_ROSE` inside [src/lib/data/fareData.ts](file:///c:/Development/OysterSavings/src/lib/data/fareData.ts). If you ever update the fare tables with new data, you MUST update this date constant to match the release date of the new rates.
 
 ---
 
