@@ -109,6 +109,9 @@
       Using TfL fare rates from {TFL_FARES_LAST_ROSE} (caps frozen until 2027)
       <span class="footer-version-tag">v{__BUILD_VERSION__}</span>
     </p>
+    <p class="footer-copyright">
+      &copy; 2026 OysterSavings. Licensed under AGPL-3.0.
+    </p>
     {#if $hasData}
       <div class="report-meta-footer">
         <span>Generated with <a href="/" onclick={(e) => { e.preventDefault(); navigateTo('home'); }} class="footer-link">OysterSavings</a></span>
@@ -466,6 +469,13 @@
     color: var(--color-text-muted);
     font-size: 0.75rem;
     opacity: 0.85;
+  }
+
+  .footer-copyright {
+    margin-top: 0.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    opacity: 0.7;
   }
 
   /* Override tooltip properties specifically for build metadata */
