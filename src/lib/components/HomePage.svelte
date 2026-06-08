@@ -29,7 +29,7 @@
   }
 
   function nextStep() {
-    if (walkthroughStep < 4) {
+    if (walkthroughStep < 6) {
       walkthroughStep += 1;
     }
   }
@@ -204,14 +204,14 @@
               ← Back to Start
             </button>
             <div class="step-indicator-wrapper">
-              {#if walkthroughStep < 4}
-                <button class="btn-skip" onclick={() => walkthroughStep = 4}>
+              {#if walkthroughStep < 6}
+                <button class="btn-skip" onclick={() => walkthroughStep = 6}>
                   Skip to Upload ➔
                 </button>
                 <span class="step-indicator-divider">|</span>
               {/if}
               <div class="step-indicator">
-                Step <span class="current-step">{walkthroughStep}</span> of 4
+                Step <span class="current-step">{walkthroughStep}</span> of 6
               </div>
             </div>
           </div>
@@ -230,11 +230,21 @@
             <div class="step-nav-line" class:completed={walkthroughStep > 2}></div>
             <button class="step-nav-item" class:active={walkthroughStep === 3} class:completed={walkthroughStep > 3} onclick={() => walkthroughStep = 3}>
               <span class="step-nav-num">3</span>
-              <span class="step-nav-text">Export CSV</span>
+              <span class="step-nav-text">View History</span>
             </button>
             <div class="step-nav-line" class:completed={walkthroughStep > 3}></div>
-            <button class="step-nav-item" class:active={walkthroughStep === 4} onclick={() => walkthroughStep = 4}>
+            <button class="step-nav-item" class:active={walkthroughStep === 4} class:completed={walkthroughStep > 4} onclick={() => walkthroughStep = 4}>
               <span class="step-nav-num">4</span>
+              <span class="step-nav-text">Select Dates</span>
+            </button>
+            <div class="step-nav-line" class:completed={walkthroughStep > 4}></div>
+            <button class="step-nav-item" class:active={walkthroughStep === 5} class:completed={walkthroughStep > 5} onclick={() => walkthroughStep = 5}>
+              <span class="step-nav-num">5</span>
+              <span class="step-nav-text">Export CSV</span>
+            </button>
+            <div class="step-nav-line" class:completed={walkthroughStep > 5}></div>
+            <button class="step-nav-item" class:active={walkthroughStep === 6} onclick={() => walkthroughStep = 6}>
+              <span class="step-nav-num">6</span>
               <span class="step-nav-text">Upload</span>
             </button>
           </div>
@@ -245,42 +255,64 @@
               <div class="step-pane animate-fade-in">
                 <div class="step-desc">
                   <h2>1. Sign in to your TfL Account</h2>
-                  <p>Visit the official Transport for London (TfL) account portal. If you do not have an account, you can link the contactless payment card or Oyster card you use for travel.</p>
+                  <p>Visit the official Transport for London (TfL) account portal and sign in with your registered email address and password.</p>
                   <a href="https://tfl.gov.uk/fares/contactless-and-oyster-account" target="_blank" rel="noopener noreferrer" class="btn-primary walkthrough-external-btn">
                     🌐 Open TfL Portal <span class="external-icon">↗</span>
                   </a>
                 </div>
                 <div class="step-screenshot-wrapper">
-                  <img src="/images/tfl-walkthrough/tfl_login_step.png" alt="TfL Login Screen Mockup" class="step-screenshot" />
-                  <div class="screenshot-caption">The TfL Contactless and Oyster login page.</div>
+                  <img src="/images/tfl-walkthrough/tfl_login_step.png" alt="TfL Sign In Screen" class="step-screenshot" />
+                  <div class="screenshot-caption">The TfL account sign-in page.</div>
                 </div>
               </div>
             {:else if walkthroughStep === 2}
               <div class="step-pane animate-fade-in">
                 <div class="step-desc">
                   <h2>2. Select Your Travel Card</h2>
-                  <p>Choose the contactless debit/credit card or Oyster card registered to your TfL account. The system will display the card's history and balance details.</p>
+                  <p>From the Dashboard main screen, click <strong>Go to Oyster</strong> or <strong>Go to contactless</strong> depending on which payment card you use for travel.</p>
                 </div>
                 <div class="step-screenshot-wrapper">
-                  <img src="/images/tfl-walkthrough/tfl_card_select.png" alt="TfL Registered Cards Mockup" class="step-screenshot" />
-                  <div class="screenshot-caption">Select the card you want to download history for.</div>
+                  <img src="/images/tfl-walkthrough/tfl_card_select.png" alt="TfL Dashboard Select Card" class="step-screenshot" />
+                  <div class="screenshot-caption">Select the Oyster or Contactless card you want to view.</div>
                 </div>
               </div>
             {:else if walkthroughStep === 3}
               <div class="step-pane animate-fade-in">
                 <div class="step-desc">
-                  <h2>3. Download Journey History (CSV)</h2>
-                  <p>Go to the <strong>Journey history</strong> section, pick your start and end dates (up to 12 months for contactless cards), and scroll down to click the <strong>Download journey history (CSV)</strong> button to download the file.</p>
+                  <h2>3. Go to Journey History</h2>
+                  <p>On your travel card overview page, locate the <strong>Journeys</strong> card or sidebar menu and select <strong>View journey history</strong>.</p>
                 </div>
                 <div class="step-screenshot-wrapper">
-                  <img src="/images/tfl-walkthrough/tfl_export_step.png" alt="TfL Download CSV Mockup" class="step-screenshot" />
-                  <div class="screenshot-caption">Specify your dates and select the CSV download link.</div>
+                  <img src="/images/tfl-walkthrough/tfl_view_history.png" alt="TfL Oyster Card Overview" class="step-screenshot" />
+                  <div class="screenshot-caption">Click the "View journey history" link to access your travel log.</div>
                 </div>
               </div>
             {:else if walkthroughStep === 4}
+              <div class="step-pane animate-fade-in">
+                <div class="step-desc">
+                  <h2>4. Choose Date Range</h2>
+                  <p>Select your desired date range from the dropdown menu (or specify a custom range using the date picker) and click <strong>Submit</strong> to load the journey records.</p>
+                </div>
+                <div class="step-screenshot-wrapper">
+                  <img src="/images/tfl-walkthrough/tfl_date_select.png" alt="TfL Journey History Date Selector" class="step-screenshot" />
+                  <div class="screenshot-caption">Select a date range and click submit.</div>
+                </div>
+              </div>
+            {:else if walkthroughStep === 5}
+              <div class="step-pane animate-fade-in">
+                <div class="step-desc">
+                  <h2>5. Download CSV Statement</h2>
+                  <p>Scroll down to the bottom of the journey records table and click the <strong>Download CSV format</strong> button to download your travel history file.</p>
+                </div>
+                <div class="step-screenshot-wrapper">
+                  <img src="/images/tfl-walkthrough/tfl_export_step.png" alt="TfL CSV Statement Download Link" class="step-screenshot" />
+                  <div class="screenshot-caption">Click the "Download CSV format" button at the bottom of the table.</div>
+                </div>
+              </div>
+            {:else if walkthroughStep === 6}
               <div class="step-pane upload-pane animate-fade-in">
                 <div class="step-desc-centered">
-                  <h2>4. Upload and Optimize!</h2>
+                  <h2>6. Upload and Optimize!</h2>
                   <p>Drag your downloaded CSV file here or click to browse. OysterSavings calculates your savings 100% locally in your browser.</p>
                 </div>
                 
@@ -330,12 +362,12 @@
             {/if}
 
             <div class="walkthrough-dots">
-              {#each [1, 2, 3, 4] as step}
+              {#each [1, 2, 3, 4, 5, 6] as step}
                 <button class="walkthrough-dot" class:active={walkthroughStep === step} onclick={() => walkthroughStep = step} aria-label="Go to step {step}"></button>
               {/each}
             </div>
 
-            {#if walkthroughStep < 4}
+            {#if walkthroughStep < 6}
               <button class="btn-primary" onclick={nextStep}>
                 Next Step →
               </button>
