@@ -1118,6 +1118,28 @@
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group">
+              <label class="setting-label" for="modal-journey-type">Journey Type</label>
+              <select
+                class="input-field"
+                id="modal-journey-type"
+                value={newIntervalType === "none" ? "none" : "recurring"}
+                onchange={(e) => {
+                  const val = e.currentTarget.value;
+                  if (val === "none") {
+                    newIntervalType = "none";
+                  } else {
+                    newIntervalType = "weeks";
+                  }
+                }}
+              >
+                <option value="recurring">🔄 Recurring Schedule</option>
+                <option value="none">📌 One-off Journey</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
               <label class="setting-label" for="modal-rule-name"
                 >{newIntervalType === "none"
                   ? "Journey Name"
@@ -1628,6 +1650,8 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
   .calendar-month-label {
@@ -1941,6 +1965,16 @@
       background: var(--color-oyster-blue);
       color: #ffffff;
       box-shadow: 0 4px 12px rgba(0, 159, 227, 0.3);
+    }
+
+    .calendar-nav {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .calendar-nav .btn-primary {
+      width: 100%;
+      text-align: center;
     }
 
     .planner-layout {
