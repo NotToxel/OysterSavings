@@ -45,6 +45,7 @@ To maintain a consistent and visible build release sequence, you must adhere to 
    - For major features or changes, increment the larger patch number (the second digit, e.g., from `1.3.0` to `1.4.0`).
 4. **Typings**: Any global variable added must be registered in [src/app.d.ts](file:///c:/Development/OysterSavings/src/app.d.ts) to prevent TypeScript check errors.
 5. **TfL Fare Rates Date**: The date when TfL fares last rose is maintained as a constant `TFL_FARES_LAST_ROSE` inside [src/lib/data/fareData.ts](file:///c:/Development/OysterSavings/src/lib/data/fareData.ts). If you ever update the fare tables with new data, you MUST update this date constant to match the release date of the new rates as long as the user confirms that it was the latest official fare rise and not just fixing wrong existing data.
+6. **Avoid Hardcoding**: Always try to avoid hardcoding values which will need to be changed (such as version strings, release dates, or structural constants). Resolve them dynamically or import them from a single source of truth configurations where possible.
 
 ---
 

@@ -1,6 +1,6 @@
 // Savings Engine — fare type comparison, break-even analysis
 import type { ClassifiedJourney } from './journeyClassifier';
-import { calculateExpectedFare, calculateFareTypeFare, calculateAllFares } from './fareCalculator';
+import { calculateExpectedFare, calculateFareTypeFare, calculateAllFares, type FareResult } from './fareCalculator';
 import { calculateDailyCaps, calculateWeeklyCaps, type DayCapResult } from './capEngine';
 import {
   type FareType,
@@ -12,6 +12,8 @@ import {
   STUDENT_TRAVELCARD_MONTHLY,
   STUDENT_TRAVELCARD_ANNUAL,
   STUDENT_PHOTOCARD_FEE,
+  getTravelcardJourneyFare,
+  getBusPassJourneyFare,
 } from '../data/fareData';
 
 export interface FareTypeSavingsResult {
@@ -239,16 +241,20 @@ export function calculateProductComparison(
     const studentMonthlyTc = isZip ? 0 : (STUDENT_TRAVELCARD_MONTHLY[zoneRange] ?? 0);
     const studentAnnualTc = isZip ? 0 : (STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0);
 
+    const totalWeeks = fareTypeWeekly.length || 1;
+    const uncoveredSpend = simulateProductSpend(baseFares, fareType, 'travelcard', zoneRange);
+    const weeklyUncoveredSpend = uncoveredSpend / totalWeeks;
+
     const paygFareTypeCostWeekly = weeklyPaygFareType + round2((effectiveFareTypeCost + cardCost) / 52);
     const paygFareTypeCostMonthly = round2(weeklyPaygFareType * 4.33 + (effectiveFareTypeCost + cardCost) / 12);
     const paygFareTypeCostAnnual = round2(weeklyPaygFareType * 52 + effectiveFareTypeCost + cardCost);
 
-    const weeklyTcWithCard = weeklyTc + (fareType !== 'student' ? round2(cardCost / 52) : 0);
-    const monthlyTcWithCard = monthlyTc + (fareType !== 'student' ? round2(cardCost / 12) : 0);
-    const annualTcWithCard = annualTc + (fareType !== 'student' ? cardCost : 0);
+    const weeklyTcWithCard = weeklyTc + weeklyUncoveredSpend + (fareType !== 'student' ? round2(cardCost / 52) : 0);
+    const monthlyTcWithCard = monthlyTc + weeklyUncoveredSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
+    const annualTcWithCard = annualTc + weeklyUncoveredSpend * 52 + (fareType !== 'student' ? cardCost : 0);
 
-    const studentMonthlyTcWithCard = studentMonthlyTc > 0 ? studentMonthlyTc + (cardCost / 12) : 0;
-    const studentAnnualTcWithCard = studentAnnualTc > 0 ? studentAnnualTc + cardCost : 0;
+    const studentMonthlyTcWithCard = studentMonthlyTc > 0 ? studentMonthlyTc + weeklyUncoveredSpend * 4.33 + (cardCost / 12) : 0;
+    const studentAnnualTcWithCard = studentAnnualTc > 0 ? studentAnnualTc + weeklyUncoveredSpend * 52 + cardCost : 0;
 
     results.push({
       zoneRange,
@@ -295,4 +301,36 @@ function getBest(options: [string, number][]): string {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+function simulateProductSpend(
+  baseFares: FareResult[],
+  fareType: FareType,
+  productType: 'bus_pass' | 'travelcard',
+  tcZoneRange: string = 'Z1-2'
+): number {
+  const mockFares = baseFares.map(f => {
+    const baseFare = f.fareTypeFare ?? f.expectedFare;
+    let passFare = baseFare;
+    if (productType === 'bus_pass') {
+      passFare = getBusPassJourneyFare(f.journey, baseFare);
+    } else {
+      passFare = getTravelcardJourneyFare(f.journey, tcZoneRange, baseFare, fareType);
+    }
+
+    return {
+      ...f,
+      actualCharge: passFare,
+      expectedFare: passFare,
+      fareTypeFare: passFare,
+      journey: {
+        ...f.journey,
+        isCapHit: false
+      }
+    };
+  });
+
+  const dailyCaps = calculateDailyCaps(mockFares, fareType);
+  const weeklyCaps = calculateWeeklyCaps(dailyCaps, fareType);
+  return weeklyCaps.reduce((sum, w) => sum + w.totalSpend, 0);
 }

@@ -13,7 +13,7 @@
     generatePlannedJourneys,
     patternToRule,
   } from "$lib/engine/recurrenceEngine";
-  import { runForecast } from "$lib/engine/forecastEngine";
+  import { runForecast, simulatePlannedJourneysSpend } from "$lib/engine/forecastEngine";
   import {
     getZoneRange,
     lookupFare,
@@ -25,6 +25,10 @@
     getRepresentativeTime,
     formatLocalDate,
     parseLocalDate,
+    TRAVELCARD_MONTHLY,
+    STUDENT_TRAVELCARD_MONTHLY,
+    BUS_PASS_MONTHLY,
+    STUDENT_BUS_PASS_MONTHLY,
   } from "$lib/data/fareData";
 
   // Calendar state
@@ -37,7 +41,7 @@
   let defOriginZone = $state(3);
   let defDestZone = $state(1);
   let defMode = $state<"underground" | "national_rail" | "nr_tube" | "bus">(
-    "national_rail",
+    "underground",
   );
   let defTimePeriod = $state("06:30-09:30");
 
@@ -199,6 +203,61 @@
       }
     }
     return map;
+  });
+
+  // Derived student comparison stats
+  let studentComparison = $derived.by(() => {
+    if (!$forecastResult) return null;
+
+    const startDate = parseLocalDate(planStart);
+    const endDate = parseLocalDate(planEnd);
+    const durationMs = Math.abs(endDate.getTime() - startDate.getTime());
+    const durationDays = Math.max(
+      1,
+      Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1,
+    );
+
+    // Monthly conversion factor based on 30.31 days per month (avg matching weekly * 4.33)
+    const monthsInPeriod = durationDays / 30.31;
+
+    const totalPayg = $forecastResult.totalPaygCapped;
+
+    // Scale monthly PAYG for the table display
+    const monthlyPayg = totalPayg / (monthsInPeriod || 1);
+
+    const zoneRanges = ["Z1-2", "Z1-3", "Z1-4", "Z1-5", "Z1-6"];
+
+    const studentUncoveredBusPassSpend = simulatePlannedJourneysSpend(
+      $plannedJourneys,
+      'student',
+      'bus_pass'
+    );
+
+    const studentBusPeriodCost = STUDENT_BUS_PASS_MONTHLY * monthsInPeriod + studentUncoveredBusPassSpend;
+    const stdBusPeriodCost = BUS_PASS_MONTHLY * monthsInPeriod + studentUncoveredBusPassSpend;
+
+    const studentTravelcardPeriodCosts: Record<string, number> = {};
+    for (const zone of zoneRanges) {
+      const studMonthly = STUDENT_TRAVELCARD_MONTHLY[zone] || 0;
+      const studentUncoveredTcSpend = simulatePlannedJourneysSpend(
+        $plannedJourneys,
+        'student',
+        'travelcard',
+        zone
+      );
+      studentTravelcardPeriodCosts[zone] = studMonthly * monthsInPeriod + studentUncoveredTcSpend;
+    }
+
+    return {
+      durationDays,
+      monthsInPeriod,
+      totalPayg,
+      monthlyPayg,
+      studentBusPeriodCost,
+      stdBusPeriodCost,
+      zoneRanges,
+      studentTravelcardPeriodCosts,
+    };
   });
 
   function prevMonth() {
@@ -618,6 +677,87 @@
             </span>
           </div>
         </div>
+
+        {#if $selectedFareType === 'student' && studentComparison}
+          <div class="glass-card student-comparison-card animate-slide-up" style="margin-top: 1rem; padding: 1.25rem; margin-bottom: 1rem;">
+            <h3 class="comparison-card-title">
+              🎓 18+ Student Oyster Cost Comparison
+            </h3>
+            <p class="comparison-card-subtitle">
+              The 18+ Student Oyster card offers <strong>30% off monthly & annual Travelcards/Bus Passes</strong>, but does <strong>not</strong> discount single PAYG fares. Here is how your simulated PAYG cost of <strong>£{studentComparison.totalPayg.toFixed(2)}</strong> compares to standard/discounted passes for your <strong>{studentComparison.durationDays}-day</strong> period ({studentComparison.monthsInPeriod.toFixed(2)} months):
+            </p>
+            
+            <div class="comparison-table-wrapper">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th>Product Option</th>
+                    <th class="text-right">Monthly Rate</th>
+                    <th class="text-right font-semibold">Cost for Period</th>
+                    <th>Comparison vs PAYG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- PAYG -->
+                  <tr>
+                    <td class="font-medium">
+                      <span class="dot-indicator" style="background: #009FE3;"></span>
+                      PAYG (Student / Adult)
+                    </td>
+                    <td class="text-right font-mono">£{studentComparison.monthlyPayg.toFixed(2)}</td>
+                    <td class="text-right font-mono font-semibold">£{studentComparison.totalPayg.toFixed(2)}</td>
+                    <td class="text-muted">— (Baseline)</td>
+                  </tr>
+                  
+                  <!-- Bus & Tram Pass -->
+                  <tr>
+                    <td class="font-medium">
+                      <span class="dot-indicator" style="background: #10b981;"></span>
+                      Student Bus & Tram Pass
+                    </td>
+                    <td class="text-right font-mono">
+                      £{STUDENT_BUS_PASS_MONTHLY.toFixed(2)}
+                      <span class="strike-through">£{BUS_PASS_MONTHLY.toFixed(2)}</span>
+                    </td>
+                    <td class="text-right font-mono font-semibold">£{studentComparison.studentBusPeriodCost.toFixed(2)}</td>
+                    <td>
+                      {#if studentComparison.studentBusPeriodCost < studentComparison.totalPayg}
+                        <span class="save-tag">Saves £{(studentComparison.totalPayg - studentComparison.studentBusPeriodCost).toFixed(2)}</span>
+                      {:else}
+                        <span class="extra-tag">+£{(studentComparison.studentBusPeriodCost - studentComparison.totalPayg).toFixed(2)}</span>
+                      {/if}
+                    </td>
+                  </tr>
+                  
+                  <!-- Travelcards -->
+                  {#each studentComparison.zoneRanges as zone}
+                    {@const stdMonthly = TRAVELCARD_MONTHLY[zone] || 0}
+                    {@const studMonthly = STUDENT_TRAVELCARD_MONTHLY[zone] || 0}
+                    {@const studPeriod = studentComparison.studentTravelcardPeriodCosts[zone]}
+                    <tr>
+                      <td class="font-medium">
+                        <span class="dot-indicator" style="background: #EF7B10;"></span>
+                        Student Monthly Travelcard ({zone})
+                      </td>
+                      <td class="text-right font-mono">
+                        £{studMonthly.toFixed(2)}
+                        <span class="strike-through">£{stdMonthly.toFixed(2)}</span>
+                      </td>
+                      <td class="text-right font-mono font-semibold">£{studPeriod.toFixed(2)}</td>
+                      <td>
+                        {#if studPeriod < studentComparison.totalPayg}
+                          <span class="save-tag">Saves £{(studentComparison.totalPayg - studPeriod).toFixed(2)}</span>
+                        {:else}
+                          <span class="extra-tag">+£{(studPeriod - studentComparison.totalPayg).toFixed(2)}</span>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {/if}
       {/if}
 
       <div class="glass-card" style="padding: 1.25rem;">
@@ -1083,6 +1223,110 @@
 </div>
 
 <style>
+  /* Student Oyster Comparison Styles */
+  .student-comparison-card {
+    border: 1px dashed rgba(0, 159, 227, 0.3);
+  }
+
+  .comparison-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+  }
+
+  .comparison-card-subtitle {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .comparison-table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 0.625rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .comparison-table th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .comparison-table tr:hover td {
+    background: rgba(255, 255, 255, 0.01);
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .font-mono {
+    font-family: monospace;
+  }
+
+  .font-semibold {
+    font-weight: 600;
+  }
+
+  .font-medium {
+    font-weight: 500;
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  .strike-through {
+    text-decoration: line-through;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-left: 0.25rem;
+  }
+
+  .save-tag {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .extra-tag {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-secondary);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+  }
+
+  .dot-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.375rem;
+  }
+
   .planner-page {
     max-width: 1200px;
     margin: 0 auto;

@@ -20,6 +20,8 @@ import {
   getRepresentativeTime,
   formatLocalDate,
   parseLocalDate,
+  getTravelcardJourneyFare,
+  getBusPassJourneyFare,
 } from '../data/fareData';
 
 export interface ForecastDay {
@@ -299,4 +301,116 @@ function getMonday(date: Date): Date {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+export function simulatePlannedJourneysSpend(
+  plannedJourneys: PlannedJourney[],
+  fareType: FareType,
+  productType: 'bus_pass' | 'travelcard',
+  tcZoneRange: string = 'Z1-2'
+): number {
+  const dayMap = new Map<string, PlannedJourney[]>();
+  for (const j of plannedJourneys) {
+    const key = j.dateStr;
+    if (!dayMap.has(key)) dayMap.set(key, []);
+    dayMap.get(key)!.push(j);
+  }
+
+  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean }[] = [];
+
+  for (const [dateStr, journeys] of dayMap) {
+    let totalFare = 0;
+    let maxZoneSpread = 0;
+    let maxZoneRange = 'Z1';
+
+    for (const j of journeys) {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const zoneRange = getZoneRange(j.originZone, j.destinationZone);
+      
+      const rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      const baseFare = calculateDiscountedFare(rawFare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
+
+      let passFare = baseFare;
+      const mockJourneyForPass = {
+        mode: j.mode,
+        originZone: j.originZone,
+        destinationZone: j.destinationZone,
+        isPeak: isPeakFare
+      };
+
+      if (productType === 'bus_pass') {
+        passFare = getBusPassJourneyFare(mockJourneyForPass, baseFare);
+      } else {
+        passFare = getTravelcardJourneyFare(mockJourneyForPass, tcZoneRange, baseFare, fareType);
+      }
+
+      totalFare += passFare;
+
+      const parts = zoneRange.replace('Z', '').split('-');
+      const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
+      if (spread > maxZoneSpread) {
+        maxZoneSpread = spread;
+        maxZoneRange = zoneRange;
+      }
+    }
+
+    const isPeakDay = journeys.some(j => {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+    });
+
+    if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
+      maxZoneRange = 'Z1-2';
+    }
+
+    days.push({
+      date: journeys[0].date,
+      dateStr,
+      totalFare,
+      maxZoneRange,
+      isPeakDay
+    });
+  }
+
+  days.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const weekMap = new Map<string, typeof days>();
+  for (const day of days) {
+    const monday = getMonday(day.date);
+    const key = formatLocalDate(monday);
+    if (!weekMap.has(key)) weekMap.set(key, []);
+    weekMap.get(key)!.push(day);
+  }
+
+  let totalCappedSpend = 0;
+
+  for (const [weekKey, weekDays] of weekMap) {
+    for (const d of weekDays) {
+      const dailyCap = lookupDailyCap(d.maxZoneRange, d.isPeakDay, fareType);
+      d.totalFare = Math.min(d.totalFare, dailyCap);
+    }
+
+    const weekStart = parseLocalDate(weekKey);
+    const totalWeekFare = weekDays.reduce((s, d) => s + d.totalFare, 0);
+
+    const weekJourneys = weekDays.flatMap(d => dayMap.get(d.dateStr) || []);
+    let maxSpread = 0;
+    let maxRange = 'Z1';
+    for (const j of weekJourneys) {
+      const zr = getZoneRange(j.originZone, j.destinationZone);
+      const parts = zr.replace('Z', '').split('-');
+      const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
+      if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
+    }
+
+    if (maxRange === 'Z1' || maxRange === 'Z2') {
+      maxRange = 'Z1-2';
+    }
+
+    const weeklyCap = lookupWeeklyCap(maxRange, fareType);
+    totalCappedSpend += Math.min(totalWeekFare, weeklyCap);
+  }
+
+  return totalCappedSpend;
 }
