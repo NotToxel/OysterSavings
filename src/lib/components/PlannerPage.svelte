@@ -39,20 +39,30 @@
   let showStudentComparisonTable = $state(false);
   let activeMobileTab = $state("calendar");
 
+  // Default fallback values to avoid state_referenced_locally warning and maintain single reference
+  const DEFAULT_SETTINGS = {
+    originZone: 3,
+    destZone: 1,
+    mode: "underground" as const,
+    timePeriod: "06:30-09:30",
+  };
+
   // Default Settings for Quick Add
-  let defOriginZone = $state(3);
-  let defDestZone = $state(1);
+  let defOriginZone = $state(DEFAULT_SETTINGS.originZone);
+  let defDestZone = $state(DEFAULT_SETTINGS.destZone);
   let defMode = $state<"underground" | "national_rail" | "nr_tube" | "bus">(
-    "underground",
+    DEFAULT_SETTINGS.mode,
   );
-  let defTimePeriod = $state("06:30-09:30");
+  let defTimePeriod = $state(DEFAULT_SETTINGS.timePeriod);
 
   // New rule form
   let newRuleName = $state("");
-  let newOriginZone = $state(defOriginZone);
-  let newDestZone = $state(defDestZone);
-  let newMode = $state(defMode);
-  let newTimePeriod = $state(defTimePeriod);
+  let newOriginZone = $state(DEFAULT_SETTINGS.originZone);
+  let newDestZone = $state(DEFAULT_SETTINGS.destZone);
+  let newMode = $state<"underground" | "national_rail" | "nr_tube" | "bus">(
+    DEFAULT_SETTINGS.mode,
+  );
+  let newTimePeriod = $state(DEFAULT_SETTINGS.timePeriod);
   let newIsReturn = $state(false);
   let newReturnTimePeriod = $state("16:00-19:00");
   let newDays = $state<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
@@ -70,8 +80,9 @@
     timePeriod: string,
     mode: string,
     discount: string,
+    referenceDate?: Date,
   ): number {
-    const dateObj = parseLocalDate(planStart);
+    const dateObj = referenceDate || parseLocalDate(planStart);
     const repTime = getRepresentativeTime(timePeriod);
     const isPeakFare = isPeakJourney(dateObj, repTime, origin, dest);
     const zoneRange = getZoneRange(origin, dest);
@@ -118,6 +129,19 @@
     regenerate();
   });
 
+  let modalReferenceDate = $derived.by(() => {
+    let refDate = parseLocalDate(newRuleDate || planStart);
+    if (newIntervalType !== "none" && newDays.length > 0) {
+      // Find the first date on or after refDate that is in newDays
+      let safetyCounter = 0;
+      while (!newDays.includes(refDate.getDay()) && safetyCounter < 7) {
+        refDate.setDate(refDate.getDate() + 1);
+        safetyCounter++;
+      }
+    }
+    return refDate;
+  });
+
   let estimatedTotalFare = $derived.by(() => {
     const outbound = getEstimatedFare(
       newOriginZone,
@@ -125,6 +149,7 @@
       newTimePeriod,
       newMode,
       $selectedFareType,
+      modalReferenceDate,
     );
     if (newIsReturn) {
       const ret = getEstimatedFare(
@@ -133,6 +158,7 @@
         newReturnTimePeriod,
         newMode,
         $selectedFareType,
+        modalReferenceDate,
       );
       return outbound + ret;
     }
@@ -1105,9 +1131,11 @@
       <div class="modal-content glass-card">
         <div class="modal-header">
           <h2>
-            {newIntervalType === "none"
-              ? "Add One-off Journey"
-              : "Add Recurring Schedule"}
+            {#if editRuleId}
+              {newIntervalType === "none" ? "Edit One-off Journey" : "Edit Recurring Schedule"}
+            {:else}
+              {newIntervalType === "none" ? "Add One-off Journey" : "Add Recurring Schedule"}
+            {/if}
           </h2>
           <button
             class="modal-close"
@@ -1713,7 +1741,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 100;
+    z-index: 200;
     padding: 1rem;
   }
 
@@ -1973,7 +2001,8 @@
       gap: 0.75rem;
     }
     .calendar-nav .btn-primary {
-      width: 100%;
+      width: auto;
+      max-width: max-content;
       text-align: center;
     }
 

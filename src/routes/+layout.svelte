@@ -293,7 +293,6 @@
   .main-content {
     flex: 1;
     position: relative;
-    z-index: 1;
     max-width: 1400px;
     margin: 0 auto;
     padding: 2rem 1.5rem;
@@ -303,7 +302,6 @@
   /* Footer */
   .app-footer {
     position: relative;
-    z-index: 1;
     text-align: center;
     padding: 1.5rem;
     color: var(--color-text-muted);
