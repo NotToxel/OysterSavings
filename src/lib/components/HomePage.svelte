@@ -21,10 +21,12 @@
   let totalCapSaved = $derived($capSummary?.totalSavedByDailyCap ?? 0);
 
   let showWalkthrough = $state(false);
+  let showDemoProfiles = $state(false);
   let walkthroughStep = $state(1);
 
   function startAnalysis() {
     showWalkthrough = true;
+    showDemoProfiles = false;
     walkthroughStep = 1;
   }
 
@@ -42,6 +44,7 @@
 
   function resetWalkthrough() {
     showWalkthrough = false;
+    showDemoProfiles = false;
     walkthroughStep = 1;
   }
 
@@ -101,7 +104,55 @@
 
 <div class="home-page">
   {#if !$fileLoaded}
-    {#if !showWalkthrough}
+    {#if showDemoProfiles}
+      <!-- Dedicated Demo Profiles Section -->
+      <section class="demo-profiles-section animate-slide-up">
+        <div class="walkthrough-card glass-card">
+          <!-- Back & Progress Header -->
+          <div class="walkthrough-header">
+            <button class="btn-back" onclick={resetWalkthrough}>
+              ← Back to Start
+            </button>
+            <div class="step-indicator-wrapper">
+              <span class="step-indicator" style="font-weight: 600; color: var(--color-oyster-blue)">
+                ✨ Demo Profiles
+              </span>
+            </div>
+          </div>
+
+          <!-- Step Content -->
+          <div class="step-content-container">
+            <div class="demo-profiles-container" style="padding: 1.5rem 0;">
+              <h2 class="demo-section-title">✨ Try OysterSavings Demo Profiles</h2>
+              <p class="demo-section-subtitle">
+                Don't have a TfL CSV export handy? Select a realistic London commuter profile below to explore the dashboard and optimization engine.
+              </p>
+
+              <div class="demo-grid">
+                {#each demoProfiles as profile}
+                  <div class="demo-card glass-card" style="--profile-accent: {profile.color}">
+                    <div class="demo-card-header">
+                      <span class="demo-avatar">{profile.avatar}</span>
+                      <div>
+                        <h3 class="demo-name">{profile.name}</h3>
+                        <div class="demo-badges">
+                          <span class="demo-badge">{profile.badge}</span>
+                          <span class="demo-zone-badge">{profile.zones}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p class="demo-description">{profile.description}</p>
+                    <button class="btn-primary btn-demo-load" onclick={() => loadDemoData(profile.id)}>
+                      ⚡ Load {profile.name}'s Log
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    {:else if !showWalkthrough}
       <!-- Hero Section -->
       <section class="hero animate-fade-in">
         <div class="hero-badge">
@@ -162,7 +213,7 @@
               <p>Explore OysterSavings with pre-configured London commuter profiles.</p>
             </div>
           </div>
-          <button class="btn-secondary btn-demo-quick" onclick={() => { showWalkthrough = true; walkthroughStep = 4; }}>
+          <button class="btn-secondary btn-demo-quick" onclick={() => { showDemoProfiles = true; showWalkthrough = false; }}>
             ⚡ Browse Demo Profiles
           </button>
         </div>
