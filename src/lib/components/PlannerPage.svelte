@@ -338,6 +338,10 @@
       planEnd = ruleEndStr;
     }
 
+    const isOneOff = newIntervalType === "none";
+    const journeyDate = parseLocalDate(newRuleDate);
+    const isWeekend = isOneOff && (journeyDate.getDay() === 0 || journeyDate.getDay() === 6);
+
     let defaultName = "";
     let modeLabel = "";
     if (newMode === "underground") modeLabel = "Tube";
@@ -346,27 +350,30 @@
     else modeLabel = "Bus/Tram";
 
     let timeLabel = "";
-    if (newTimePeriod === "06:30-09:30") {
-      timeLabel = "Morning Peak";
-    } else if (newTimePeriod === "16:00-19:00") {
-      timeLabel = "Evening Peak";
-    } else if (newTimePeriod === "04:30-06:29") {
-      timeLabel = "Early Off-Peak";
-    } else if (newTimePeriod === "09:31-15:59") {
-      timeLabel = "Day Off-Peak";
+    if (isWeekend) {
+      timeLabel = newIsReturn ? "Weekend Off-Peak Return" : "Weekend Off-Peak";
     } else {
-      timeLabel = "Night Off-Peak";
-    }
-
-    if (newIsReturn) {
-      if (newTimePeriod === "06:30-09:30" && newReturnTimePeriod === "16:00-19:00") {
-        timeLabel = "Peak Return";
+      if (newTimePeriod === "06:30-09:30") {
+        timeLabel = "Morning Peak";
+      } else if (newTimePeriod === "16:00-19:00") {
+        timeLabel = "Evening Peak";
+      } else if (newTimePeriod === "04:30-06:29") {
+        timeLabel = "Early Off-Peak";
+      } else if (newTimePeriod === "09:31-15:59") {
+        timeLabel = "Day Off-Peak";
       } else {
-        timeLabel = `${timeLabel} Return`;
+        timeLabel = "Night Off-Peak";
+      }
+
+      if (newIsReturn) {
+        if (newTimePeriod === "06:30-09:30" && newReturnTimePeriod === "16:00-19:00") {
+          timeLabel = "Peak Return";
+        } else {
+          timeLabel = `${timeLabel} Return`;
+        }
       }
     }
 
-    const isOneOff = newIntervalType === "none";
     const journeyType = isOneOff ? "Journey" : "Commute";
 
     if (newMode === "bus") {
@@ -711,6 +718,7 @@
                   <div class="rule-name">{rule.name}</div>
                   <div class="rule-detail">
                     {rule.startDate.toLocaleDateString("en-GB", {
+                      weekday: "short",
                       day: "numeric",
                       month: "short",
                     })} •
