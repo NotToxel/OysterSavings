@@ -205,6 +205,20 @@
     return map;
   });
 
+  // Filter detected patterns to show only those not yet imported
+  let visiblePatterns = $derived.by(() => {
+    return $detectedPatterns.filter((pattern) => {
+      return !$recurrenceRules.some((rule) => {
+        return (
+          rule.originZone === pattern.originZone &&
+          rule.destinationZone === pattern.destinationZone &&
+          rule.mode === pattern.mode &&
+          rule.timePeriod === pattern.timePeriod
+        );
+      });
+    });
+  });
+
   // Derived student comparison stats
   let studentComparison = $derived.by(() => {
     if (!$forecastResult) return null;
@@ -296,17 +310,22 @@
       planEnd = ruleEndStr;
     }
 
+    let defaultName = "";
+    if (newMode === "bus") {
+      if (newIntervalType === "none") {
+        defaultName = newIsReturn ? "Bus Journey (Return)" : "Bus Journey";
+      } else {
+        defaultName = newIsReturn ? "Bus Commute (Return)" : "Bus Commute";
+      }
+    } else {
+      defaultName = newIsReturn
+        ? `Zone ${newOriginZone} ↔ Zone ${newDestZone}`
+        : `Zone ${newOriginZone} → Zone ${newDestZone}`;
+    }
+
     const rule: RecurrenceRule = {
       id: editRuleId || crypto.randomUUID(),
-      name:
-        newRuleName ||
-        (newIntervalType === "none"
-          ? ""
-          : newMode === "bus"
-            ? newIsReturn
-              ? "Bus Commute (Return)"
-              : "Bus Commute"
-            : `Zone ${newOriginZone} ${newIsReturn ? "↔" : "→"} Zone ${newDestZone}`),
+      name: newRuleName || defaultName,
       originZone: newOriginZone,
       destinationZone: newDestZone,
       mode: newMode,
@@ -397,7 +416,7 @@
   }
 
   function importPattern(patternIndex: number) {
-    const pattern = $detectedPatterns[patternIndex];
+    const pattern = visiblePatterns[patternIndex];
     const rule = patternToRule(
       pattern,
       parseLocalDate(planStart),
@@ -626,10 +645,10 @@
       </div>
 
       <!-- Detected patterns -->
-      {#if $detectedPatterns.length > 0}
+      {#if visiblePatterns.length > 0}
         <div class="glass-card sidebar-section">
           <h3 class="sidebar-title">🔍 Detected from CSV</h3>
-          {#each $detectedPatterns.slice(0, 5) as pattern, i}
+          {#each visiblePatterns.slice(0, 5) as pattern, i}
             <div class="pattern-card">
               <div class="pattern-info">
                 <div class="pattern-route">

@@ -138,7 +138,18 @@
       : `PAYG + ${fareTypeShortName}`;
 
     // Build datasets — skip railcard bar when it's identical to PAYG
-    const buildDatasets = (paygKey: string, rcKey: string, tcKey: string, tcLabel: string, studentKey?: string, studentLabel?: string) => {
+    const buildDatasets = (
+      paygKey: string,
+      rcKey: string,
+      tcKey: string,
+      tcLabel: string,
+      studentKey?: string,
+      studentLabel?: string,
+      busKey?: string,
+      busLabel?: string,
+      busStudentKey?: string,
+      busStudentLabel?: string
+    ) => {
       const ds: any[] = [
         { label: paygLabel, data: getValues(paygKey), backgroundColor: 'rgba(0, 159, 227, 0.7)', borderColor: '#009FE3', borderWidth: 1 },
       ];
@@ -165,23 +176,57 @@
         }
       }
 
+      if (busKey && busLabel) {
+        const vals = getValues(busKey);
+        if (vals.some((v: number) => v > 0)) {
+          ds.push({
+            label: busLabel, data: vals,
+            backgroundColor: 'rgba(220, 36, 31, 0.7)', borderColor: '#DC241F', borderWidth: 1,
+          });
+        }
+      }
+
+      if (busStudentKey && busStudentLabel) {
+        const vals = getValues(busStudentKey);
+        if (vals.some((v: number) => v > 0)) {
+          ds.push({
+            label: busStudentLabel, data: vals,
+            backgroundColor: 'rgba(220, 36, 31, 0.35)', borderColor: '#DC241F', borderWidth: 1,
+          });
+        }
+      }
+
       return ds;
     };
 
     if (activeSpan === 'weekly') {
       return {
         labels: zoneLabels,
-        datasets: buildDatasets('weeklyPayg', 'weeklyPaygFareType', 'weeklyTravelcard', 'Weekly Travelcard'),
+        datasets: buildDatasets(
+          'weeklyPayg', 'weeklyPaygFareType', 'weeklyTravelcard', 'Weekly Travelcard',
+          undefined, undefined,
+          'weeklyBusPass', 'Weekly Bus & Tram Pass'
+        ),
       };
     } else if (activeSpan === 'monthly') {
       return {
         labels: zoneLabels,
-        datasets: buildDatasets('monthlyPayg', 'monthlyPaygFareType', 'monthlyTravelcard', 'Monthly Travelcard', 'monthlyStudentTravelcard', 'Student Monthly TC'),
+        datasets: buildDatasets(
+          'monthlyPayg', 'monthlyPaygFareType', 'monthlyTravelcard', 'Monthly Travelcard',
+          'monthlyStudentTravelcard', 'Student Monthly TC',
+          'monthlyBusPass', 'Monthly Bus & Tram Pass',
+          'monthlyStudentBusPass', 'Student Monthly Bus Pass'
+        ),
       };
     } else {
       return {
         labels: zoneLabels,
-        datasets: buildDatasets('annualPayg', 'annualPaygFareType', 'annualTravelcard', 'Annual Travelcard', 'annualStudentTravelcard', 'Student Annual TC'),
+        datasets: buildDatasets(
+          'annualPayg', 'annualPaygFareType', 'annualTravelcard', 'Annual Travelcard',
+          'annualStudentTravelcard', 'Student Annual TC',
+          'annualBusPass', 'Annual Bus & Tram Pass',
+          'annualStudentBusPass', 'Student Annual Bus Pass'
+        ),
       };
     }
   });
@@ -243,6 +288,12 @@
   let matrixZones = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
 
   function getProductPrice(zone: string, product: string): string {
+    if (product === 'Weekly Bus Pass') return '£24.70';
+    if (product === 'Monthly Bus Pass') return '£94.90';
+    if (product === 'Annual Bus Pass') return '£988.00';
+    if (product === 'Student Monthly Bus Pass') return '£66.40';
+    if (product === 'Student Annual Bus Pass') return '£692.00';
+
     const map: Record<string, Record<string, number>> = {
       'Weekly TC': TRAVELCARD_WEEKLY,
       'Monthly TC': TRAVELCARD_MONTHLY,
@@ -372,6 +423,20 @@
               {/each}
             </tr>
           {/if}
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #DC241F;"></span> Bus & Tram Pass</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyBusPass' : activeSpan === 'monthly' ? 'monthlyBusPass' : 'annualBusPass')}</td>
+            {/each}
+          </tr>
+          {#if activeSpan !== 'weekly'}
+            <tr>
+              <td class="product-name"><span class="product-dot" style="background: #DC241F; opacity: 0.5;"></span> Student Bus Pass</td>
+              {#each matrixZones as zone}
+                <td class="price-cell">{getCostForZone(zone, activeSpan === 'monthly' ? 'monthlyStudentBusPass' : 'annualStudentBusPass')}</td>
+              {/each}
+            </tr>
+          {/if}
           <tr class="best-row">
             <td class="product-name"><strong>🏆 Best Option</strong></td>
             {#each matrixZones as zone}
@@ -471,6 +536,36 @@
             <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Annual TC</td>
             {#each matrixZones as zone}
               <td class="price-cell">{getProductPrice(zone, 'Student TC')}</td>
+            {/each}
+          </tr>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #DC241F;"></span> Weekly Bus Pass</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getProductPrice(zone, 'Weekly Bus Pass')}</td>
+            {/each}
+          </tr>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #DC241F;"></span> Monthly Bus Pass</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getProductPrice(zone, 'Monthly Bus Pass')}</td>
+            {/each}
+          </tr>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #DC241F;"></span> Annual Bus Pass</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getProductPrice(zone, 'Annual Bus Pass')}</td>
+            {/each}
+          </tr>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Monthly Bus Pass</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getProductPrice(zone, 'Student Monthly Bus Pass')}</td>
+            {/each}
+          </tr>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Annual Bus Pass</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getProductPrice(zone, 'Student Annual Bus Pass')}</td>
             {/each}
           </tr>
         </tbody>

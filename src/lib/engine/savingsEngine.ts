@@ -14,6 +14,12 @@ import {
   STUDENT_PHOTOCARD_FEE,
   getTravelcardJourneyFare,
   getBusPassJourneyFare,
+  BUS_PASS_WEEKLY,
+  BUS_PASS_MONTHLY,
+  BUS_PASS_ANNUAL,
+  STUDENT_BUS_PASS_WEEKLY,
+  STUDENT_BUS_PASS_MONTHLY,
+  STUDENT_BUS_PASS_ANNUAL,
 } from '../data/fareData';
 
 export interface FareTypeSavingsResult {
@@ -49,14 +55,19 @@ export interface ProductComparisonResult {
   weeklyPayg: number;
   weeklyPaygFareType: number;
   weeklyTravelcard: number;
+  weeklyBusPass: number;
   monthlyPayg: number;
   monthlyPaygFareType: number;
   monthlyTravelcard: number;
+  monthlyStudentTravelcard: number;
+  monthlyBusPass: number;
+  monthlyStudentBusPass: number;
   annualPayg: number;
   annualPaygFareType: number;
   annualTravelcard: number;
-  monthlyStudentTravelcard: number;
   annualStudentTravelcard: number;
+  annualBusPass: number;
+  annualStudentBusPass: number;
   bestWeekly: string;
   bestMonthly: string;
   bestAnnual: string;
@@ -233,6 +244,18 @@ export function calculateProductComparison(
     weeklyPaygFareType = weeklyPayg;
   }
 
+  const totalWeeks = fareTypeWeekly.length || 1;
+  const uncoveredBusPassSpend = simulateProductSpend(baseFares, fareType, 'bus_pass');
+  const weeklyUncoveredBusPassSpend = uncoveredBusPassSpend / totalWeeks;
+
+  const weeklyBusPassCost = BUS_PASS_WEEKLY + weeklyUncoveredBusPassSpend + (fareType !== 'student' ? round2(cardCost / 52) : 0);
+  const monthlyBusPassCost = BUS_PASS_MONTHLY + weeklyUncoveredBusPassSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
+  const annualBusPassCost = BUS_PASS_ANNUAL + weeklyUncoveredBusPassSpend * 52 + (fareType !== 'student' ? cardCost : 0);
+
+  const weeklyStudentBusPassCost = (fareType === 'student') ? STUDENT_BUS_PASS_WEEKLY + weeklyUncoveredBusPassSpend + round2(cardCost / 52) : 0;
+  const monthlyStudentBusPassCost = (fareType === 'student') ? STUDENT_BUS_PASS_MONTHLY + weeklyUncoveredBusPassSpend * 4.33 + round2(cardCost / 12) : 0;
+  const annualStudentBusPassCost = (fareType === 'student') ? STUDENT_BUS_PASS_ANNUAL + weeklyUncoveredBusPassSpend * 52 + cardCost : 0;
+
   for (const zoneRange of zoneRanges) {
     const isZip = fareType === 'zip_11_15' || fareType === 'zip_16_17';
     const weeklyTc = isZip ? (TRAVELCARD_WEEKLY[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_WEEKLY[zoneRange] ?? 0);
@@ -241,7 +264,6 @@ export function calculateProductComparison(
     const studentMonthlyTc = isZip ? 0 : (STUDENT_TRAVELCARD_MONTHLY[zoneRange] ?? 0);
     const studentAnnualTc = isZip ? 0 : (STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0);
 
-    const totalWeeks = fareTypeWeekly.length || 1;
     const uncoveredSpend = simulateProductSpend(baseFares, fareType, 'travelcard', zoneRange);
     const weeklyUncoveredSpend = uncoveredSpend / totalWeeks;
 
@@ -261,30 +283,40 @@ export function calculateProductComparison(
       weeklyPayg,
       weeklyPaygFareType: paygFareTypeCostWeekly,
       weeklyTravelcard: weeklyTcWithCard,
+      weeklyBusPass: round2(weeklyBusPassCost),
       monthlyPayg: round2(weeklyPayg * 4.33),
       monthlyPaygFareType: paygFareTypeCostMonthly,
       monthlyTravelcard: monthlyTcWithCard,
       monthlyStudentTravelcard: studentMonthlyTcWithCard,
+      monthlyBusPass: round2(monthlyBusPassCost),
+      monthlyStudentBusPass: round2(monthlyStudentBusPassCost),
       annualPayg: round2(weeklyPayg * 52),
       annualPaygFareType: paygFareTypeCostAnnual,
       annualTravelcard: annualTcWithCard,
       annualStudentTravelcard: studentAnnualTcWithCard,
+      annualBusPass: round2(annualBusPassCost),
+      annualStudentBusPass: round2(annualStudentBusPassCost),
       bestWeekly: getBest([
         ['PAYG', weeklyPayg],
         ['PAYG + Fare Type', paygFareTypeCostWeekly],
         ['Travelcard', weeklyTcWithCard],
+        ['Bus & Tram Pass', round2(weeklyBusPassCost)],
       ]),
       bestMonthly: getBest([
         ['PAYG', round2(weeklyPayg * 4.33)],
         ['PAYG + Fare Type', paygFareTypeCostMonthly],
         ['Travelcard', monthlyTcWithCard],
         ['Student Travelcard', studentMonthlyTcWithCard],
+        ['Bus & Tram Pass', round2(monthlyBusPassCost)],
+        ['Student Bus Pass', round2(monthlyStudentBusPassCost)],
       ]),
       bestAnnual: getBest([
         ['PAYG', round2(weeklyPayg * 52)],
         ['PAYG + Fare Type', paygFareTypeCostAnnual],
         ['Travelcard', annualTcWithCard],
         ['Student Travelcard', studentAnnualTcWithCard],
+        ['Bus & Tram Pass', round2(annualBusPassCost)],
+        ['Student Bus Pass', round2(annualStudentBusPassCost)],
       ]),
     });
   }
