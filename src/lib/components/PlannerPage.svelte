@@ -248,6 +248,10 @@
       studentTravelcardPeriodCosts[zone] = studMonthly * monthsInPeriod + studentUncoveredTcSpend;
     }
 
+    const railcardForecast = runForecast($plannedJourneys, 'railcard', 0);
+    const railcardPeriodCost = railcardForecast ? railcardForecast.totalPaygFareTypeCapped : totalPayg;
+    const railcardMonthlyCost = railcardPeriodCost / (monthsInPeriod || 1);
+
     return {
       durationDays,
       monthsInPeriod,
@@ -257,6 +261,8 @@
       stdBusPeriodCost,
       zoneRanges,
       studentTravelcardPeriodCosts,
+      railcardPeriodCost,
+      railcardMonthlyCost,
     };
   });
 
@@ -281,14 +287,21 @@
       newDays = [parseLocalDate(newRuleDate).getDay()];
     }
 
+    const ruleStartStr = newRuleDate;
+    const ruleEndStr = newIntervalType === "none" ? newRuleDate : newRuleEndDate;
+    if (ruleStartStr < planStart) {
+      planStart = ruleStartStr;
+    }
+    if (ruleEndStr > planEnd) {
+      planEnd = ruleEndStr;
+    }
+
     const rule: RecurrenceRule = {
       id: editRuleId || crypto.randomUUID(),
       name:
         newRuleName ||
         (newIntervalType === "none"
-          ? newIsReturn
-            ? "One-off Return Journey"
-            : "One-off Journey"
+          ? ""
           : newMode === "bus"
             ? newIsReturn
               ? "Bus Commute (Return)"
@@ -707,6 +720,23 @@
                     <td class="text-right font-mono">£{studentComparison.monthlyPayg.toFixed(2)}</td>
                     <td class="text-right font-mono font-semibold">£{studentComparison.totalPayg.toFixed(2)}</td>
                     <td class="text-muted">— (Baseline)</td>
+                  </tr>
+                  
+                  <!-- National Railcard PAYG -->
+                  <tr>
+                    <td class="font-medium">
+                      <span class="dot-indicator" style="background: #6950A1;"></span>
+                      National Railcard PAYG
+                    </td>
+                    <td class="text-right font-mono">£{studentComparison.railcardMonthlyCost.toFixed(2)}</td>
+                    <td class="text-right font-mono font-semibold">£{studentComparison.railcardPeriodCost.toFixed(2)}</td>
+                    <td>
+                      {#if studentComparison.railcardPeriodCost < studentComparison.totalPayg}
+                        <span class="save-tag">Saves £{(studentComparison.totalPayg - studentComparison.railcardPeriodCost).toFixed(2)}</span>
+                      {:else}
+                        <span class="extra-tag">+£{(studentComparison.railcardPeriodCost - studentComparison.totalPayg).toFixed(2)}</span>
+                      {/if}
+                    </td>
                   </tr>
                   
                   <!-- Bus & Tram Pass -->
