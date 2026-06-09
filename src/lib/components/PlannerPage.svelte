@@ -519,17 +519,6 @@
 <div class="planner-page">
   <div class="planner-header">
     <h1 class="page-title">Journey Planner</h1>
-    <div class="planner-actions" style="display: flex; gap: 0.5rem;">
-      <button
-        class="btn-primary"
-        onclick={() => {
-          resetForm();
-          showRecurrenceModal = true;
-        }}
-      >
-        + Add Schedule
-      </button>
-    </div>
   </div>
 
   <!-- Mobile Tab Switcher -->
@@ -591,16 +580,29 @@
       </div>
 
       <div class="glass-card sidebar-section">
-        <button
-          type="button"
-          style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; background: none; border: none; padding: 0; text-align: left; font-family: inherit; color: inherit;"
-          onclick={() => (showActiveSchedules = !showActiveSchedules)}
-        >
-          <h3 class="sidebar-title" style="margin: 0;">🔄 Active Schedules</h3>
-          <span style="font-size: 0.8rem; color: var(--color-text-muted);"
-            >{showActiveSchedules ? "▼" : "▶"}</span
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button
+            type="button"
+            style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; background: none; border: none; padding: 0; text-align: left; font-family: inherit; color: inherit;"
+            onclick={() => (showActiveSchedules = !showActiveSchedules)}
           >
-        </button>
+            <h3 class="sidebar-title" style="margin: 0;">🔄 Active Schedules</h3>
+            <span style="font-size: 0.8rem; color: var(--color-text-muted);"
+              >{showActiveSchedules ? "▼" : "▶"}</span
+            >
+          </button>
+          <button
+            type="button"
+            class="btn-primary"
+            style="padding: 0.25rem 0.5rem; font-size: 0.7rem; border-radius: 6px;"
+            onclick={() => {
+              resetForm();
+              showRecurrenceModal = true;
+            }}
+          >
+            + Add
+          </button>
+        </div>
         {#if showActiveSchedules}
           <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
             {#if $recurrenceRules.filter((r) => r.intervalType !== "none").length === 0}
@@ -651,16 +653,30 @@
 
       <!-- One-off rules -->
       <div class="glass-card sidebar-section">
-        <button
-          type="button"
-          style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; background: none; border: none; padding: 0; text-align: left; font-family: inherit; color: inherit;"
-          onclick={() => (showOneOffJourneys = !showOneOffJourneys)}
-        >
-          <h3 class="sidebar-title" style="margin: 0;">📌 One-off Journeys</h3>
-          <span style="font-size: 0.8rem; color: var(--color-text-muted);"
-            >{showOneOffJourneys ? "▼" : "▶"}</span
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button
+            type="button"
+            style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; background: none; border: none; padding: 0; text-align: left; font-family: inherit; color: inherit;"
+            onclick={() => (showOneOffJourneys = !showOneOffJourneys)}
           >
-        </button>
+            <h3 class="sidebar-title" style="margin: 0;">📌 One-off Journeys</h3>
+            <span style="font-size: 0.8rem; color: var(--color-text-muted);"
+              >{showOneOffJourneys ? "▼" : "▶"}</span
+            >
+          </button>
+          <button
+            type="button"
+            class="btn-primary"
+            style="padding: 0.25rem 0.5rem; font-size: 0.7rem; border-radius: 6px;"
+            onclick={() => {
+              resetForm();
+              newIntervalType = "none";
+              showRecurrenceModal = true;
+            }}
+          >
+            + Add
+          </button>
+        </div>
         {#if showOneOffJourneys}
           <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
             {#each $recurrenceRules.filter((r) => r.intervalType === "none") as rule}
@@ -881,23 +897,39 @@
 
       <div class="glass-card" style="padding: 1.25rem;">
         <!-- Calendar header -->
-        <div class="calendar-nav">
+        <div class="calendar-nav" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button
+              type="button"
+              class="btn-secondary"
+              style="padding: 0.375rem 0.75rem;"
+              onclick={prevMonth}>←</button
+            >
+            <h2 class="calendar-month-label" style="margin: 0; min-width: 120px; text-align: center;">
+              {calendarDate.toLocaleDateString("en-GB", {
+                month: "long",
+                year: "numeric",
+              })}
+            </h2>
+            <button
+              type="button"
+              class="btn-secondary"
+              style="padding: 0.375rem 0.75rem;"
+              onclick={nextMonth}>→</button
+            >
+          </div>
+
           <button
-            class="btn-secondary"
-            style="padding: 0.375rem 0.75rem;"
-            onclick={prevMonth}>←</button
+            type="button"
+            class="btn-primary"
+            style="font-size: 0.8rem; padding: 0.45rem 0.9rem;"
+            onclick={() => {
+              resetForm();
+              showRecurrenceModal = true;
+            }}
           >
-          <h2 class="calendar-month-label">
-            {calendarDate.toLocaleDateString("en-GB", {
-              month: "long",
-              year: "numeric",
-            })}
-          </h2>
-          <button
-            class="btn-secondary"
-            style="padding: 0.375rem 0.75rem;"
-            onclick={nextMonth}>→</button
-          >
+            + Add Schedule / Journey
+          </button>
         </div>
 
         <!-- Calendar grid -->
