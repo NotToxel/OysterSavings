@@ -2,7 +2,7 @@
 
 OysterSavings is a privacy-first, TfL-inspired dark glassmorphism web application designed to help London commuters analyze their historical travel data, simulate future commutes, and identify the most cost-effective ticket types (PAYG, weekly/monthly/annual Travelcards, and Railcards).
 
-![OysterSavings Application Dashboard](static/images/dashboard_mockup.png)
+![OysterSavings Application Landing Page](static/images/readme/oystersavings_landing.png)
 
 ---
 
@@ -14,21 +14,25 @@ Instead of exposing immediate upload boxes, the landing page uses a **Generate A
 - Supports standard TfL Oyster and contactless account CSV history exports.
 - Offers a quick **Browse Demo Profiles** card to instantly explore the dashboard using pre-configured commuters (Sarah, James, Chloe, Marcus, Amir).
 
-| Step 1: Sign In | Step 2: Select Card | Step 3: Export CSV |
-| :---: | :---: | :---: |
-| ![Sign In](static/images/tfl-walkthrough/tfl_login_step.png) | ![Select Card](static/images/tfl-walkthrough/tfl_card_select.png) | ![Export CSV](static/images/tfl-walkthrough/tfl_export_step.png) |
+![OysterSavings Walkthrough Flow](static/images/readme/walkthrough_active.png)
 
 ### 2. Deep Fare & Savings Analysis
 - **Daily Cap Analytics**: Track how many days you hit the TfL daily cap and how much you saved.
 - **Filter and Classifier**: Auto-excludes failed taps, duplicates, or system refunds, and classifies trips by transport mode (Underground, Overground, Rail, Bus).
 - **Missed Discount Finder**: Estimates prospective savings from Railcards (16-25, 26-30, Senior, etc.) or Oyster photocards.
 
+![OysterSavings Deep Fare Analysis](static/images/readme/analysis_tab.png)
+
 ### 3. Future Commuter Routine Planner
 - Allows users to model their weekly commutes (origin/destination zones, specific time periods, and transport modes).
 - Generates a future travel forecast, recommending whether a weekly or monthly card fits their budget.
 
+![OysterSavings Commuter Routine Planner](static/images/readme/planner_tab.png)
+
 ### 4. Product Comparison Engine
 - Cross-compares Pay-As-You-Go (PAYG) costs, weekly Caps, and weekly/monthly/annual Travelcards across specific zone ranges to identify exactly where your money goes.
+
+![OysterSavings Product Comparison Engine](static/images/readme/compare_tab.png)
 
 ---
 
