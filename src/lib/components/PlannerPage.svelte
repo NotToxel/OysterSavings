@@ -34,7 +34,7 @@
   // Calendar state
   let calendarDate = $state(new Date());
   let showRecurrenceModal = $state(false);
-  let showActiveSchedules = $state(true);
+  let showActiveRoutines = $state(true);
   let showOneOffJourneys = $state(true);
   let showStudentComparisonTable = $state(false);
   let activeMobileTab = $state("calendar");
@@ -570,7 +570,7 @@
       class:active={activeMobileTab === "schedules"} 
       onclick={() => (activeMobileTab = "schedules")}
     >
-      🔄 Schedules
+      🔄 Routines
     </button>
     <button 
       type="button"
@@ -617,11 +617,11 @@
           <button
             type="button"
             style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; background: none; border: none; padding: 0; text-align: left; font-family: inherit; color: inherit;"
-            onclick={() => (showActiveSchedules = !showActiveSchedules)}
+            onclick={() => (showActiveRoutines = !showActiveRoutines)}
           >
-            <h3 class="sidebar-title" style="margin: 0;">🔄 Active Schedules</h3>
+            <h3 class="sidebar-title" style="margin: 0;">🔄 Travel Routines</h3>
             <span style="font-size: 0.8rem; color: var(--color-text-muted);"
-              >{showActiveSchedules ? "▼" : "▶"}</span
+              >{showActiveRoutines ? "▼" : "▶"}</span
             >
           </button>
           <button
@@ -636,10 +636,10 @@
             + Add
           </button>
         </div>
-        {#if showActiveSchedules}
+        {#if showActiveRoutines}
           <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
             {#if $recurrenceRules.filter((r) => r.intervalType !== "none").length === 0}
-              <p class="empty-text">No recurring schedules yet.</p>
+              <p class="empty-text">No travel routines configured yet.</p>
             {:else}
               {#each $recurrenceRules.filter((r) => r.intervalType !== "none") as rule}
                 <div class="rule-card">
@@ -962,7 +962,7 @@
               showRecurrenceModal = true;
             }}
           >
-            + Add Schedule / Journey
+            + Add Routine / Journey
           </button>
         </div>
 
@@ -1043,7 +1043,7 @@
         <div class="date-inputs">
           <label class="setting-label" for="def-mode">Default Mode</label>
           <select class="input-field" id="def-mode" bind:value={defMode}>
-            <option value="underground">Underground / Tube</option>
+            <option value="underground">Tube</option>
             <option value="national_rail">National Rail</option>
             <option value="nr_tube">NR + Tube / Mixed</option>
             <option value="bus">Bus / Tram</option>
@@ -1134,15 +1134,15 @@
       }}
       role="dialog"
       tabindex="-1"
-      aria-label="Add recurring schedule"
+      aria-label="Add recurring routine"
     >
       <div class="modal-content glass-card">
         <div class="modal-header">
           <h2>
             {#if editRuleId}
-              {newIntervalType === "none" ? "Edit One-off Journey" : "Edit Recurring Schedule"}
+              {newIntervalType === "none" ? "Edit One-off Journey" : "Edit Travel Routine"}
             {:else}
-              {newIntervalType === "none" ? "Add One-off Journey" : "Add Recurring Schedule"}
+              {newIntervalType === "none" ? "Add One-off Journey" : "Add Travel Routine"}
             {/if}
           </h2>
           <button
@@ -1168,7 +1168,7 @@
                   }
                 }}
               >
-                <option value="recurring">🔄 Recurring Schedule</option>
+                <option value="recurring">🔄 Recurring Routine</option>
                 <option value="none">📌 One-off Journey</option>
               </select>
             </div>
@@ -1179,7 +1179,7 @@
               <label class="setting-label" for="modal-rule-name"
                 >{newIntervalType === "none"
                   ? "Journey Name"
-                  : "Schedule Name"}</label
+                  : "Routine Name"}</label
               >
               <input
                 type="text"
@@ -1241,7 +1241,7 @@
                 id="modal-transport-mode"
                 bind:value={newMode}
               >
-                <option value="underground">Underground / Tube</option>
+                <option value="underground">Tube</option>
                 <option value="national_rail">National Rail</option>
                 <option value="nr_tube">National Rail & Tube</option>
                 <option value="bus">Bus / Tram</option>
@@ -1423,7 +1423,7 @@
             class="btn-primary"
             onclick={saveRule}
             disabled={newIntervalType !== "none" && newDays.length === 0}
-            >{editRuleId ? "Save Schedule" : "Add Schedule"}</button
+            >{editRuleId ? "Save Routine" : "Add Routine"}</button
           >
         </div>
       </div>
@@ -2077,6 +2077,10 @@
     }
     .cap-hit-label {
       font-size: 0.5rem;
+    }
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
     }
   }
 </style>

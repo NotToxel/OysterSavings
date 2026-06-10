@@ -190,7 +190,7 @@
           </div>
           <div class="feature-pill">
             <span class="feature-icon">💳</span>
-            <span>Fare Type Savings</span>
+            <span>Unlock Potential Savings</span>
           </div>
           <div class="feature-pill">
             <span class="feature-icon">📅</span>
@@ -581,11 +581,7 @@
     font-size: 0.8rem;
     color: var(--color-text-secondary);
     transition: all 0.2s ease;
-  }
-
-  .feature-pill:hover {
-    border-color: var(--color-border-accent);
-    background: rgba(0, 159, 227, 0.05);
+    cursor: default;
   }
 
 

@@ -4,6 +4,7 @@
   import AnalysisPage from '$lib/components/AnalysisPage.svelte';
   import PlannerPage from '$lib/components/PlannerPage.svelte';
   import ComparePage from '$lib/components/ComparePage.svelte';
+  import FAQPage from '$lib/components/FAQPage.svelte';
 </script>
 
 {#if $currentPage === 'home'}
@@ -14,4 +15,6 @@
   <PlannerPage />
 {:else if $currentPage === 'compare'}
   <ComparePage />
+{:else if $currentPage === 'faq'}
+  <FAQPage />
 {/if}

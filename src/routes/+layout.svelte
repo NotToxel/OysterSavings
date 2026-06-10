@@ -10,6 +10,7 @@
     { id: 'analysis' as const, label: 'Analysis', icon: '📊' },
     { id: 'compare' as const, label: 'Compare', icon: '⚖️' },
     { id: 'planner' as const, label: 'Planner', icon: '📅' },
+    { id: 'faq' as const, label: 'FAQ', icon: '❓' },
   ];
 
   function navigateTo(page: typeof $currentPage) {
@@ -78,7 +79,7 @@
 
       <nav class="nav-pills">
         {#each navItems as item}
-          {#if item.id === 'home' || item.id === 'planner' || $hasData}
+          {#if item.id === 'home' || item.id === 'planner' || item.id === 'faq' || $hasData}
             <button
               class="nav-pill"
               class:active={$currentPage === item.id}

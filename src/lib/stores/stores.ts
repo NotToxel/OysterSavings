@@ -106,7 +106,7 @@ export const detectedPatterns = writable<DetectedPattern[]>([]);
 export const forecastResult = writable<ForecastResult | null>(null);
 
 // Navigation
-export const currentPage = writable<'home' | 'analysis' | 'planner' | 'compare'>('home');
+export const currentPage = writable<'home' | 'analysis' | 'planner' | 'compare' | 'faq'>('home');
 
 // Derived: has data loaded
 export const hasData = derived(fileLoaded, ($fileLoaded) => $fileLoaded);
