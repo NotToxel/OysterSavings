@@ -167,6 +167,44 @@
         </ul>
       `,
     },
+    {
+      id: "dlr-overground-elizabeth",
+      category: "capping",
+      question: "Do the DLR, London Overground, and Elizabeth line count as Tube fares?",
+      answerHtml: `
+        <p><strong>Yes, absolutely.</strong> Journeys on the DLR, London Overground, and Elizabeth line are fully integrated into London's transit fare system:</p>
+        <ul>
+          <li><strong>Seamless Transfers:</strong> When you transfer between the Tube, DLR, London Overground, or Elizabeth line, it is treated as a single continuous journey, and your zones are calculated across the entire trip. You do not pay a new starting fare as long as you tap out and in at interchange stations within standard transfer times.</li>
+          <li><strong>Shared Daily & Weekly Caps:</strong> All daily and weekly caps apply collectively across these modes. For instance, you can take a Tube train, switch to the Overground, and then take the DLR, and your total fare will still be capped at the daily/weekly cap limit for the zones you traveled through.</li>
+        </ul>
+      `,
+    },
+    {
+      id: "cable-car",
+      category: "capping",
+      question: "How do fares and capping rules work for the IFS Cloud Cable Car?",
+      answerHtml: `
+        <p>The IFS Cloud Cable Car (running between Greenwich Peninsula and Royal Docks) is operated by TfL but uses a <strong>separate fare structure</strong>:</p>
+        <ul>
+          <li><strong>No Capping Integration:</strong> Cable car fares <strong>do not contribute to, nor are they capped by,</strong> the daily or weekly TfL capping system on Oyster or Contactless. Every ride is charged separately.</li>
+          <li><strong>Pay-As-You-Go Rates:</strong> You can pay using Oyster or Contactless pay-as-you-go. A single crossing costs <strong>£6.00</strong> for adults, which is a discount compared to buying a paper boarding pass at the terminal.</li>
+          <li><strong>Travelcard Discounts:</strong> If you hold a valid weekly, monthly, or annual Travelcard, you are eligible for a discount and pay a reduced rate of <strong>£3.60</strong> per crossing (though you must pay this as an extra fare).</li>
+        </ul>
+      `,
+    },
+    {
+      id: "uber-boat",
+      category: "capping",
+      question: "How do pay-as-you-go and capping rules work for Uber Boat (Thames Clippers)?",
+      answerHtml: `
+        <p>Uber Boat by Thames Clippers operates river bus services along the Thames. While they accept Oyster and Contactless, their fares are <strong>not part of the standard TfL capping system</strong>:</p>
+        <ul>
+          <li><strong>Separate Fares:</strong> Journeys on Uber Boat do <strong>not</strong> contribute to daily or weekly caps for Tube, Rail, or Bus. Each journey is charged as a separate standalone fare.</li>
+          <li><strong>Zone-Based Pricing:</strong> Fares depend on which of the three river zones (West, Central, East) you travel through. Tapping in and out with Oyster or Contactless is cheaper than buying a paper ticket at the pier.</li>
+          <li><strong>Travelcard Discounts:</strong> If you have a weekly, monthly, or annual Travelcard loaded on your Oyster card, you get a <strong>1/3 discount</strong> on Thames Clippers single fares.</li>
+        </ul>
+      `,
+    },
   ];
 
   // Svelte 5 States

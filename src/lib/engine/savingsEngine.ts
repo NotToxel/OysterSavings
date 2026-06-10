@@ -218,7 +218,24 @@ export function calculateProductComparison(
     }
   }
 
-  const zoneRanges = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
+  // Calculate max zone traveled in the history (minimum fallback of Zone 2)
+  let maxZoneTraveled = 2;
+  for (const j of journeys) {
+    if (j.originZone) maxZoneTraveled = Math.max(maxZoneTraveled, j.originZone);
+    if (j.destinationZone) maxZoneTraveled = Math.max(maxZoneTraveled, j.destinationZone);
+  }
+
+  // Dynamically filter zoneRanges to only include zones up to maxZoneTraveled (min fallback of Z1-2)
+  const zoneRanges: string[] = [];
+  for (let z = 2; z <= maxZoneTraveled; z++) {
+    if (z <= 6) {
+      zoneRanges.push(`Z1-${z}`);
+    }
+  }
+  if (zoneRanges.length === 0) {
+    zoneRanges.push('Z1-2');
+  }
+
   const results: ProductComparisonResult[] = [];
 
   // Generate base FareResults
@@ -230,7 +247,8 @@ export function calculateProductComparison(
   const standardWeekly = calculateWeeklyCaps(standardDaily);
   const totalStandardWeeks = standardWeekly.length || 1;
   const totalStandardSpend = standardWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
-  const weeklyPayg = round2(totalStandardSpend / totalStandardWeeks);
+  const weeklyPaygRaw = totalStandardSpend / totalStandardWeeks;
+  const weeklyPayg = round2(weeklyPaygRaw);
 
   // 2. Simulate FareType PAYG with daily and weekly caps
   const fareTypeFares = baseFares.map(f => ({ ...f, actualCharge: f.fareTypeFare ?? f.expectedFare }));
@@ -238,11 +256,8 @@ export function calculateProductComparison(
   const fareTypeWeekly = calculateWeeklyCaps(fareTypeDaily, fareType);
   const totalFareTypeWeeks = fareTypeWeekly.length || 1;
   const totalFareTypeSpend = fareTypeWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
-  let weeklyPaygFareType = round2(totalFareTypeSpend / totalFareTypeWeeks);
-
-  if (fareType === 'none') {
-    weeklyPaygFareType = weeklyPayg;
-  }
+  const weeklyPaygFareTypeRaw = fareType === 'none' ? weeklyPaygRaw : totalFareTypeSpend / totalFareTypeWeeks;
+  const weeklyPaygFareType = round2(weeklyPaygFareTypeRaw);
 
   const totalWeeks = fareTypeWeekly.length || 1;
   const uncoveredBusPassSpend = simulateProductSpend(baseFares, fareType, 'bus_pass');
@@ -267,9 +282,9 @@ export function calculateProductComparison(
     const uncoveredSpend = simulateProductSpend(baseFares, fareType, 'travelcard', zoneRange);
     const weeklyUncoveredSpend = uncoveredSpend / totalWeeks;
 
-    const paygFareTypeCostWeekly = weeklyPaygFareType + round2((effectiveFareTypeCost + cardCost) / 52);
-    const paygFareTypeCostMonthly = round2(weeklyPaygFareType * 4.33 + (effectiveFareTypeCost + cardCost) / 12);
-    const paygFareTypeCostAnnual = round2(weeklyPaygFareType * 52 + effectiveFareTypeCost + cardCost);
+    const paygFareTypeCostWeekly = round2(weeklyPaygFareTypeRaw + (effectiveFareTypeCost + cardCost) / 52);
+    const paygFareTypeCostMonthly = round2(weeklyPaygFareTypeRaw * 4.33 + (effectiveFareTypeCost + cardCost) / 12);
+    const paygFareTypeCostAnnual = round2(weeklyPaygFareTypeRaw * 52 + effectiveFareTypeCost + cardCost);
 
     const weeklyTcWithCard = weeklyTc + weeklyUncoveredSpend + (fareType !== 'student' ? round2(cardCost / 52) : 0);
     const monthlyTcWithCard = monthlyTc + weeklyUncoveredSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
@@ -284,13 +299,13 @@ export function calculateProductComparison(
       weeklyPaygFareType: paygFareTypeCostWeekly,
       weeklyTravelcard: weeklyTcWithCard,
       weeklyBusPass: round2(weeklyBusPassCost),
-      monthlyPayg: round2(weeklyPayg * 4.33),
+      monthlyPayg: round2(weeklyPaygRaw * 4.33),
       monthlyPaygFareType: paygFareTypeCostMonthly,
       monthlyTravelcard: monthlyTcWithCard,
       monthlyStudentTravelcard: studentMonthlyTcWithCard,
       monthlyBusPass: round2(monthlyBusPassCost),
       monthlyStudentBusPass: round2(monthlyStudentBusPassCost),
-      annualPayg: round2(weeklyPayg * 52),
+      annualPayg: round2(weeklyPaygRaw * 52),
       annualPaygFareType: paygFareTypeCostAnnual,
       annualTravelcard: annualTcWithCard,
       annualStudentTravelcard: studentAnnualTcWithCard,
@@ -303,7 +318,7 @@ export function calculateProductComparison(
         ['Bus & Tram Pass', round2(weeklyBusPassCost)],
       ]),
       bestMonthly: getBest([
-        ['PAYG', round2(weeklyPayg * 4.33)],
+        ['PAYG', round2(weeklyPaygRaw * 4.33)],
         ['PAYG + Fare Type', paygFareTypeCostMonthly],
         ['Travelcard', monthlyTcWithCard],
         ['Student Travelcard', studentMonthlyTcWithCard],
@@ -311,7 +326,7 @@ export function calculateProductComparison(
         ['Student Bus Pass', round2(monthlyStudentBusPassCost)],
       ]),
       bestAnnual: getBest([
-        ['PAYG', round2(weeklyPayg * 52)],
+        ['PAYG', round2(weeklyPaygRaw * 52)],
         ['PAYG + Fare Type', paygFareTypeCostAnnual],
         ['Travelcard', annualTcWithCard],
         ['Student Travelcard', studentAnnualTcWithCard],

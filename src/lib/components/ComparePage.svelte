@@ -7,6 +7,8 @@
   import {
     FARE_TYPES, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
     TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_MONTHLY, STUDENT_TRAVELCARD_ANNUAL,
+    BUS_PASS_WEEKLY, BUS_PASS_MONTHLY, BUS_PASS_ANNUAL,
+    STUDENT_BUS_PASS_MONTHLY, STUDENT_BUS_PASS_ANNUAL,
     type FareType
   } from '$lib/data/fareData';
   import { Chart, registerables } from 'chart.js';
@@ -127,7 +129,7 @@
 
   // Chart data
   let chartData = $derived.by(() => {
-    const zoneLabels = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
+    const zoneLabels = $productComparison.map((c: any) => c.zoneRange);
     if ($productComparison.length === 0) return null;
 
     const getValues = (key: string) => $productComparison.map((c: any) => c[key]);
@@ -285,14 +287,14 @@
   });
 
   // Product matrix data
-  let matrixZones = ['Z1-2', 'Z1-3', 'Z1-4', 'Z1-5', 'Z1-6'];
+  let matrixZones = $derived($productComparison.map((c: any) => c.zoneRange));
 
   function getProductPrice(zone: string, product: string): string {
-    if (product === 'Weekly Bus Pass') return '£24.70';
-    if (product === 'Monthly Bus Pass') return '£94.90';
-    if (product === 'Annual Bus Pass') return '£988.00';
-    if (product === 'Student Monthly Bus Pass') return '£66.40';
-    if (product === 'Student Annual Bus Pass') return '£692.00';
+    if (product === 'Weekly Bus Pass') return `£${BUS_PASS_WEEKLY.toFixed(2)}`;
+    if (product === 'Monthly Bus Pass') return `£${BUS_PASS_MONTHLY.toFixed(2)}`;
+    if (product === 'Annual Bus Pass') return `£${BUS_PASS_ANNUAL.toFixed(0)}`;
+    if (product === 'Student Monthly Bus Pass') return `£${STUDENT_BUS_PASS_MONTHLY.toFixed(2)}`;
+    if (product === 'Student Annual Bus Pass') return `£${STUDENT_BUS_PASS_ANNUAL.toFixed(0)}`;
 
     const map: Record<string, Record<string, number>> = {
       'Weekly TC': TRAVELCARD_WEEKLY,

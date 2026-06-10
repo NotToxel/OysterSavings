@@ -29,6 +29,8 @@
     STUDENT_TRAVELCARD_MONTHLY,
     BUS_PASS_MONTHLY,
     STUDENT_BUS_PASS_MONTHLY,
+    TRAVELCARD_ANNUAL,
+    STUDENT_TRAVELCARD_ANNUAL,
   } from "$lib/data/fareData";
 
   // Calendar state
@@ -267,7 +269,23 @@
     // Scale monthly PAYG for the table display
     const monthlyPayg = totalPayg / (monthsInPeriod || 1);
 
-    const zoneRanges = ["Z1-2", "Z1-3", "Z1-4", "Z1-5", "Z1-6"];
+    // Calculate max zone traveled in planned journeys (minimum fallback of Zone 2)
+    let maxZoneTraveled = 2;
+    for (const j of $plannedJourneys) {
+      if (j.originZone) maxZoneTraveled = Math.max(maxZoneTraveled, j.originZone);
+      if (j.destinationZone) maxZoneTraveled = Math.max(maxZoneTraveled, j.destinationZone);
+    }
+    const zoneRanges: string[] = [];
+    for (let z = 2; z <= maxZoneTraveled; z++) {
+      if (z <= 6) {
+        zoneRanges.push(`Z1-${z}`);
+      }
+    }
+    if (zoneRanges.length === 0) {
+      zoneRanges.push('Z1-2');
+    }
+
+    const hasBusJourneys = $plannedJourneys.some(j => j.mode === 'bus');
 
     const studentUncoveredBusPassSpend = simulatePlannedJourneysSpend(
       $plannedJourneys,
@@ -278,33 +296,116 @@
     const studentBusPeriodCost = STUDENT_BUS_PASS_MONTHLY * monthsInPeriod + studentUncoveredBusPassSpend;
     const stdBusPeriodCost = BUS_PASS_MONTHLY * monthsInPeriod + studentUncoveredBusPassSpend;
 
-    const studentTravelcardPeriodCosts: Record<string, number> = {};
+    const railcardForecast = runForecast($plannedJourneys, 'railcard', 0);
+    const railcardPeriodCost = railcardForecast ? railcardForecast.totalPaygFareTypeCapped : totalPayg;
+    const railcardMonthlyCost = railcardPeriodCost / (monthsInPeriod || 1);
+
+    const options: any[] = [];
+
+    // 1. National Railcard PAYG
+    options.push({
+      id: 'railcard',
+      label: 'National Railcard PAYG',
+      monthlyRate: railcardMonthlyCost,
+      periodCost: railcardPeriodCost,
+      color: '#6950A1',
+      strikeThroughRate: null,
+      isPass: false,
+    });
+
+    // 2. Student Bus & Tram Pass (only if hasBusJourneys)
+    if (hasBusJourneys) {
+      options.push({
+        id: 'bus_pass',
+        label: 'Student Bus & Tram Pass',
+        monthlyRate: STUDENT_BUS_PASS_MONTHLY,
+        strikeThroughRate: BUS_PASS_MONTHLY,
+        periodCost: studentBusPeriodCost,
+        color: '#10b981',
+        isPass: true,
+      });
+    }
+
+    // 3. Travelcards
     for (const zone of zoneRanges) {
       const studMonthly = STUDENT_TRAVELCARD_MONTHLY[zone] || 0;
+      const stdMonthly = TRAVELCARD_MONTHLY[zone] || 0;
       const studentUncoveredTcSpend = simulatePlannedJourneysSpend(
         $plannedJourneys,
         'student',
         'travelcard',
         zone
       );
-      studentTravelcardPeriodCosts[zone] = studMonthly * monthsInPeriod + studentUncoveredTcSpend;
+      const monthlyPeriodCost = studMonthly * monthsInPeriod + studentUncoveredTcSpend;
+
+      options.push({
+        id: `travelcard_monthly_${zone}`,
+        label: `Student Monthly Travelcard (${zone})`,
+        monthlyRate: studMonthly,
+        strikeThroughRate: stdMonthly,
+        periodCost: monthlyPeriodCost,
+        color: '#EF7B10',
+        isPass: true,
+      });
+
+      // Smart Annual Option
+      const studAnnual = STUDENT_TRAVELCARD_ANNUAL[zone] || 0;
+      const stdAnnual = TRAVELCARD_ANNUAL[zone] || 0;
+      const annualPeriodCost = studAnnual + studentUncoveredTcSpend;
+
+      if (studAnnual > 0 && studAnnual < studMonthly * monthsInPeriod) {
+        options.push({
+          id: `travelcard_annual_${zone}`,
+          label: `Student Annual Travelcard (${zone})`,
+          monthlyRate: studAnnual / 12,
+          strikeThroughRate: stdAnnual / 12,
+          periodCost: annualPeriodCost,
+          color: '#d97706',
+          isPass: true,
+          isAnnual: true,
+          annualTotalRate: studAnnual,
+          stdAnnualTotalRate: stdAnnual,
+        });
+      }
     }
 
-    const railcardForecast = runForecast($plannedJourneys, 'railcard', 0);
-    const railcardPeriodCost = railcardForecast ? railcardForecast.totalPaygFareTypeCapped : totalPayg;
-    const railcardMonthlyCost = railcardPeriodCost / (monthsInPeriod || 1);
+    // Sort options by periodCost ascending (cheapest first)
+    options.sort((a, b) => a.periodCost - b.periodCost);
+
+    // Identify cheapest option
+    let cheapestCost = totalPayg;
+    let cheapestId = 'payg';
+    for (const opt of options) {
+      if (opt.periodCost < cheapestCost) {
+        cheapestCost = opt.periodCost;
+        cheapestId = opt.id;
+      }
+    }
+
+    const paygOption = {
+      id: 'payg',
+      label: 'PAYG (Student / Adult)',
+      monthlyRate: monthlyPayg,
+      periodCost: totalPayg,
+      color: '#009FE3',
+      strikeThroughRate: null,
+      isPass: false,
+      isCheapest: cheapestId === 'payg',
+    };
+
+    // Mark isCheapest and calculate savings
+    for (const opt of options) {
+      opt.isCheapest = opt.id === cheapestId;
+      opt.saving = totalPayg - opt.periodCost;
+    }
 
     return {
       durationDays,
       monthsInPeriod,
       totalPayg,
       monthlyPayg,
-      studentBusPeriodCost,
-      stdBusPeriodCost,
-      zoneRanges,
-      studentTravelcardPeriodCosts,
-      railcardPeriodCost,
-      railcardMonthlyCost,
+      paygOption,
+      options,
     };
   });
 
@@ -849,74 +950,49 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <!-- PAYG -->
-                    <tr>
+                    <!-- Pinned PAYG Baseline -->
+                    <tr class:cheapest-highlight={studentComparison.paygOption.isCheapest}>
                       <td class="font-medium">
-                        <span class="dot-indicator" style="background: #009FE3;"></span>
-                        PAYG (Student / Adult)
+                        <span class="dot-indicator" style="background: {studentComparison.paygOption.color};"></span>
+                        {studentComparison.paygOption.label}
+                        {#if studentComparison.paygOption.isCheapest}
+                          <span class="best-value-badge">Best Value</span>
+                        {/if}
                       </td>
-                      <td class="text-right font-mono">£{studentComparison.monthlyPayg.toFixed(2)}</td>
-                      <td class="text-right font-mono font-semibold">£{studentComparison.totalPayg.toFixed(2)}</td>
+                      <td class="text-right font-mono">£{studentComparison.paygOption.monthlyRate.toFixed(2)}</td>
+                      <td class="text-right font-mono font-semibold">£{studentComparison.paygOption.periodCost.toFixed(2)}</td>
                       <td class="text-muted">— (Baseline)</td>
                     </tr>
                     
-                    <!-- National Railcard PAYG -->
-                    <tr>
-                      <td class="font-medium">
-                        <span class="dot-indicator" style="background: #6950A1;"></span>
-                        National Railcard PAYG
-                      </td>
-                      <td class="text-right font-mono">£{studentComparison.railcardMonthlyCost.toFixed(2)}</td>
-                      <td class="text-right font-mono font-semibold">£{studentComparison.railcardPeriodCost.toFixed(2)}</td>
-                      <td>
-                        {#if studentComparison.railcardPeriodCost < studentComparison.totalPayg}
-                          <span class="save-tag">Saves £{(studentComparison.totalPayg - studentComparison.railcardPeriodCost).toFixed(2)}</span>
-                        {:else}
-                          <span class="extra-tag">+£{(studentComparison.railcardPeriodCost - studentComparison.totalPayg).toFixed(2)}</span>
-                        {/if}
-                      </td>
-                    </tr>
-                    
-                    <!-- Bus & Tram Pass -->
-                    <tr>
-                      <td class="font-medium">
-                        <span class="dot-indicator" style="background: #10b981;"></span>
-                        Student Bus & Tram Pass
-                      </td>
-                      <td class="text-right font-mono">
-                        £{STUDENT_BUS_PASS_MONTHLY.toFixed(2)}
-                        <span class="strike-through">£{BUS_PASS_MONTHLY.toFixed(2)}</span>
-                      </td>
-                      <td class="text-right font-mono font-semibold">£{studentComparison.studentBusPeriodCost.toFixed(2)}</td>
-                      <td>
-                        {#if studentComparison.studentBusPeriodCost < studentComparison.totalPayg}
-                          <span class="save-tag">Saves £{(studentComparison.totalPayg - studentComparison.studentBusPeriodCost).toFixed(2)}</span>
-                        {:else}
-                          <span class="extra-tag">+£{(studentComparison.studentBusPeriodCost - studentComparison.totalPayg).toFixed(2)}</span>
-                        {/if}
-                      </td>
-                    </tr>
-                    
-                    <!-- Travelcards -->
-                    {#each studentComparison.zoneRanges as zone}
-                      {@const stdMonthly = TRAVELCARD_MONTHLY[zone] || 0}
-                      {@const studMonthly = STUDENT_TRAVELCARD_MONTHLY[zone] || 0}
-                      {@const studPeriod = studentComparison.studentTravelcardPeriodCosts[zone]}
-                      <tr>
+                    <!-- Sorted options -->
+                    {#each studentComparison.options as opt}
+                      <tr class:cheapest-highlight={opt.isCheapest}>
                         <td class="font-medium">
-                          <span class="dot-indicator" style="background: #EF7B10;"></span>
-                          Student Monthly Travelcard ({zone})
+                          <span class="dot-indicator" style="background: {opt.color};"></span>
+                          {opt.label}
+                          {#if opt.isCheapest}
+                            <span class="best-value-badge">Best Value</span>
+                          {/if}
                         </td>
                         <td class="text-right font-mono">
-                          £{studMonthly.toFixed(2)}
-                          <span class="strike-through">£{stdMonthly.toFixed(2)}</span>
-                        </td>
-                        <td class="text-right font-mono font-semibold">£{studPeriod.toFixed(2)}</td>
-                        <td>
-                          {#if studPeriod < studentComparison.totalPayg}
-                            <span class="save-tag">Saves £{(studentComparison.totalPayg - studPeriod).toFixed(2)}</span>
+                          {#if opt.isAnnual}
+                            £{opt.monthlyRate.toFixed(2)}/mo
+                            <span class="annual-upfront" style="display: block; font-size: 0.7rem; color: var(--color-text-muted);">
+                              (£{opt.annualTotalRate} upfront)
+                            </span>
                           {:else}
-                            <span class="extra-tag">+£{(studPeriod - studentComparison.totalPayg).toFixed(2)}</span>
+                            £{opt.monthlyRate.toFixed(2)}
+                            {#if opt.strikeThroughRate}
+                              <span class="strike-through">£{opt.strikeThroughRate.toFixed(2)}</span>
+                            {/if}
+                          {/if}
+                        </td>
+                        <td class="text-right font-mono font-semibold">£{opt.periodCost.toFixed(2)}</td>
+                        <td>
+                          {#if opt.saving > 0}
+                            <span class="save-tag">Saves £{opt.saving.toFixed(2)}</span>
+                          {:else}
+                            <span class="extra-tag">+£{Math.abs(opt.saving).toFixed(2)}</span>
                           {/if}
                         </td>
                       </tr>
@@ -1526,6 +1602,26 @@
     font-size: 0.75rem;
     font-weight: 500;
     display: inline-block;
+  }
+
+  .cheapest-highlight td {
+    background: rgba(16, 185, 129, 0.05) !important;
+  }
+
+  .cheapest-highlight {
+    border-left: 3px solid #10b981;
+  }
+
+  .best-value-badge {
+    background: #10b981;
+    color: #064e3b;
+    padding: 0.125rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-left: 0.5rem;
+    display: inline-block;
+    text-transform: uppercase;
   }
 
   .dot-indicator {

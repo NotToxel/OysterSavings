@@ -129,6 +129,28 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
   return journeys;
 }
 
+// Helper to get time period from startTime string
+function getTimePeriodFromTime(timeStr: string): string {
+  if (!timeStr) return '09:31-15:59';
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return '09:31-15:59';
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  if (isNaN(hours) || isNaN(minutes)) return '09:31-15:59';
+  const totalMins = hours * 60 + minutes;
+
+  // 04:30 - 06:29
+  if (totalMins >= 270 && totalMins < 390) return '04:30-06:29';
+  // 06:30 - 09:30
+  if (totalMins >= 390 && totalMins < 570) return '06:30-09:30';
+  // 09:31 - 15:59
+  if (totalMins >= 570 && totalMins < 960) return '09:31-15:59';
+  // 16:00 - 19:00
+  if (totalMins >= 960 && totalMins < 1140) return '16:00-19:00';
+  // 19:01 - 04:29
+  return '19:01-04:29';
+}
+
 // Detect recurring commute patterns from CSV data
 export interface DetectedPattern {
   origin: string;
@@ -150,9 +172,17 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
   }>();
 
   for (const j of journeys) {
-    if (j.isBus || !j.origin || !j.destination) continue;
+    let routeKey: string;
+    let timePeriod: string;
 
-    const routeKey = `${j.originZone}-${j.destinationZone}|${j.isPeak ? '06:30-09:30' : '09:31-15:59'}`;
+    if (j.isBus) {
+      timePeriod = getTimePeriodFromTime(j.raw.startTime);
+      routeKey = `bus-${j.busRoute || 'any'}|${timePeriod}`;
+    } else {
+      if (!j.origin || !j.destination) continue;
+      timePeriod = j.isPeak ? '06:30-09:30' : '09:31-15:59';
+      routeKey = `${j.originZone}-${j.destinationZone}|${timePeriod}`;
+    }
 
     if (!routeMap.has(routeKey)) {
       routeMap.set(routeKey, {
@@ -176,7 +206,7 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
   const maxDate = Math.max(...dates);
   const totalWeeks = Math.max(1, (maxDate - minDate) / (7 * 24 * 60 * 60 * 1000));
 
-  for (const [, data] of routeMap) {
+  for (const [routeKey, data] of routeMap) {
     if (data.journeys.length < 4) continue;
 
     // Find days where this route occurs regularly
@@ -196,13 +226,31 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
     // Penalize confidence if journeys don't map cleanly to regular days
     const confidence = Math.min(1, frequency / regularDays.length) * (regularDays.length / (data.dayOccurrences.size || 1));
 
+    let origin: string;
+    let destination: string;
+    let originZone: number;
+    let destinationZone: number;
+    const timePeriod = routeKey.split('|')[1];
+
+    if (sample.isBus) {
+      origin = sample.busRoute ? `Bus Route ${sample.busRoute}` : 'Bus';
+      destination = 'Bus';
+      originZone = 1;
+      destinationZone = 1;
+    } else {
+      origin = sample.origin || 'Unknown';
+      destination = sample.destination || 'Unknown';
+      originZone = sample.originZone || 1;
+      destinationZone = sample.destinationZone || 1;
+    }
+
     patterns.push({
-      origin: sample.origin || 'Unknown',
-      destination: sample.destination || 'Unknown',
-      originZone: sample.originZone || 1,
-      destinationZone: sample.destinationZone || 1,
+      origin,
+      destination,
+      originZone,
+      destinationZone,
       mode: sample.mode,
-      timePeriod: sample.isPeak ? '06:30-09:30' : '09:31-15:59',
+      timePeriod,
       daysOfWeek: regularDays.sort(),
       frequency: Math.round(frequency * 10) / 10,
       confidence,

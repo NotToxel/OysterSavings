@@ -172,7 +172,6 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
       }
     }
   }
-
   const time = parseTime(journey.startTime);
   let isPeak = false;
   let eveningException = false;
