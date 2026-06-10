@@ -18,18 +18,15 @@ Thumbs.db
 !.env.example
 !.env.test
 
+# IDE / Editors
+.vscode/
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-adult-fares.pdf
-London stations.csv
-London tube lines.csv
-LondonRail.csv
-LondonUnderground.csv
-railcard-fares conv.xls
 
-# Querying and temp files
-fare_report.md
+# Project scripts
 src/scripts/
-railcard-fares.pdf
-fare_response.json
+
+# Reference data sources
+/reference/
