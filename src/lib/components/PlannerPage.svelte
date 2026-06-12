@@ -2238,7 +2238,7 @@
                 Flat Fare: <strong>£1.75</strong>
               {:else if advancedFareLoading}
                 <span class="fare-loading">🔍 Querying TfL Live API...</span>
-              {:else if selectedOriginStation && selectedDestStation && advancedFareResult}
+              {:else if selectedOriginStation && selectedDestStation && selectedOriginStation.info.naptanId !== selectedDestStation.info.naptanId && advancedFareResult}
                 {@const resolvedModeForDiscount = determineModeFromStations(
                   selectedOriginStation,
                   selectedDestStation,
@@ -2289,7 +2289,7 @@
                     Estimated Fare: <strong>£{advancedTotalFare.toFixed(2)}</strong>
                   </div>
                 </div>
-              {:else}
+              {:else if !selectedOriginStation || !selectedDestStation}
                 <span
                   style="font-size: 0.75rem; color: var(--color-text-muted);"
                 >
@@ -2345,18 +2345,26 @@
       <div class="hovercard-row">
         <span class="hovercard-label">Peak:</span>
         <span class="hovercard-value">
-          <span class="base-val">£{fareTooltipData.peakBase.toFixed(2)}</span>
-          <span class="arrow-icon">→</span>
-          <span class="disc-val">£{fareTooltipData.peakDiscounted.toFixed(2)}</span>
+          {#if fareTooltipData.peakDiscounted !== fareTooltipData.peakBase}
+            <span class="base-val">£{fareTooltipData.peakBase.toFixed(2)}</span>
+            <span class="arrow-icon">→</span>
+            <span class="disc-val">£{fareTooltipData.peakDiscounted.toFixed(2)}</span>
+          {:else}
+            <span class="disc-val">£{fareTooltipData.peakBase.toFixed(2)}</span>
+          {/if}
         </span>
       </div>
       
       <div class="hovercard-row">
         <span class="hovercard-label">Off-Peak:</span>
         <span class="hovercard-value">
-          <span class="base-val">£{fareTooltipData.offPeakBase.toFixed(2)}</span>
-          <span class="arrow-icon">→</span>
-          <span class="disc-val">£{fareTooltipData.offPeakDiscounted.toFixed(2)}</span>
+          {#if fareTooltipData.offPeakDiscounted !== fareTooltipData.offPeakBase}
+            <span class="base-val">£{fareTooltipData.offPeakBase.toFixed(2)}</span>
+            <span class="arrow-icon">→</span>
+            <span class="disc-val">£{fareTooltipData.offPeakDiscounted.toFixed(2)}</span>
+          {:else}
+            <span class="disc-val">£{fareTooltipData.offPeakBase.toFixed(2)}</span>
+          {/if}
         </span>
       </div>
       

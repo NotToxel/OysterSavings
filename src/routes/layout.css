@@ -250,6 +250,14 @@ select option {
   box-shadow: 0 4px 20px rgba(0, 159, 227, 0.4);
 }
 
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .btn-secondary {
   background: var(--color-bg-glass);
   color: var(--color-text-primary);
