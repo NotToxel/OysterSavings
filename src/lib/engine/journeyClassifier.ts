@@ -135,37 +135,40 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
       }
       
       // Refine mode if it's ambiguous
-      if (mode === 'unknown' || mode === 'underground' || mode === 'national_rail' || mode === 'overground') {
+      if (mode === 'unknown' || mode === 'underground' || mode === 'national_rail' || mode === 'overground' || mode === 'elizabeth') {
         const oInfo = getStationInfo(stations.origin);
         const dInfo = getStationInfo(stations.destination);
         if (oInfo && dInfo) {
-          // Check if station is purely National Rail (not overground, not underground)
-          const oIsNR = oInfo.modes.includes('national_rail') && !oInfo.modes.includes('underground') && !oInfo.modes.includes('overground');
-          const dIsNR = dInfo.modes.includes('national_rail') && !dInfo.modes.includes('underground') && !dInfo.modes.includes('overground');
-          const oIsLU = oInfo.modes.includes('underground') && !oInfo.modes.includes('national_rail');
-          const dIsLU = dInfo.modes.includes('underground') && !dInfo.modes.includes('national_rail');
-          const oIsOG = oInfo.modes.includes('overground') && !oInfo.modes.includes('national_rail');
-          const dIsOG = dInfo.modes.includes('overground') && !dInfo.modes.includes('national_rail');
+          const TFL_MODES = ['underground', 'dlr', 'elizabeth', 'overground'];
+          const oHasTfl = oInfo.modes.some(m => TFL_MODES.includes(m));
+          const dHasTfl = dInfo.modes.some(m => TFL_MODES.includes(m));
 
-          // Overground + Underground or Overground + Overground => TfL fares (underground)
-          if ((oIsOG && dIsLU) || (oIsLU && dIsOG) || (oIsOG && dIsOG)) {
+          // TfL boundary rule: both stations on TfL network → standard Tube fares
+          if (oHasTfl && dHasTfl) {
             mode = 'underground';
-          }
-          // NR + LU or LU + NR => nr_tube
-          else if ((oIsNR && dIsLU) || (oIsLU && dIsNR)) {
-            mode = 'nr_tube';
-          }
-          // NR + Overground => nr_tube (NR fare table for the NR leg)
-          else if ((oIsNR && dIsOG) || (oIsOG && dIsNR)) {
-            mode = 'nr_tube';
-          }
-          else if (mode === 'unknown' || mode === 'overground') {
-            if (oInfo.modes.includes('overground') || dInfo.modes.includes('overground')) mode = 'underground';
-            else if (oInfo.modes.includes('underground') || dInfo.modes.includes('underground')) mode = 'underground';
-            else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
+          } else {
+            const oIsNR = oInfo.modes.includes('national_rail') && !oHasTfl;
+            const dIsNR = dInfo.modes.includes('national_rail') && !dHasTfl;
+
+            // One TfL + one NR-only → mixed fare
+            if ((oHasTfl && dIsNR) || (dHasTfl && oIsNR)) {
+              mode = 'nr_tube';
+            }
+            // Both NR-only
+            else if (oIsNR && dIsNR) {
+              mode = 'national_rail';
+            }
+            // Fallback: try to infer from individual station modes
+            else if (mode === 'unknown' || mode === 'overground' || mode === 'elizabeth') {
+              if (oInfo.modes.includes('elizabeth') || dInfo.modes.includes('elizabeth')) mode = 'underground';
+              else if (oInfo.modes.includes('overground') || dInfo.modes.includes('overground')) mode = 'underground';
+              else if (oInfo.modes.includes('underground') || dInfo.modes.includes('underground')) mode = 'underground';
+              else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
+            }
           }
         } else if (mode === 'unknown' && oInfo) {
-          if (oInfo.modes.includes('overground')) mode = 'underground';
+          if (oInfo.modes.includes('elizabeth')) mode = 'underground';
+          else if (oInfo.modes.includes('overground')) mode = 'underground';
           else if (oInfo.modes.includes('underground')) mode = 'underground';
           else if (oInfo.modes.includes('national_rail')) mode = 'national_rail';
         }

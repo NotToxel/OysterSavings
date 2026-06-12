@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import type { CapSummary, DayCapResult, WeekCapResult } from '../engine/capEngine';
 import type { ParsedJourney } from '../engine/csvParser';
 import type { FareResult } from '../engine/fareCalculator';
@@ -57,6 +57,16 @@ export const includeOysterCost = writable<boolean>(true);
 export const includeStudentPhotocardFee = writable<boolean>(true);
 export const isDemoMode = writable<boolean>(false);
 
+const initialAdvancedMode = isBrowser && localStorage.getItem('oystersavings_global_advanced_mode') === 'true';
+export const globalAdvancedMode = writable<boolean>(initialAdvancedMode);
+
+if (isBrowser) {
+  globalAdvancedMode.subscribe(value => {
+    localStorage.setItem('oystersavings_global_advanced_mode', String(value));
+  });
+}
+
+
 // Savings results
 export const savingsResult = derived(
   [classifiedJourneys, selectedFareType, fareTypeCost, includeOysterCost],
@@ -93,11 +103,49 @@ const initialRules = isBrowser && localStorage.getItem('oystersavings_recurrence
   ? parseStoredRules(localStorage.getItem('oystersavings_recurrence_rules')!)
   : [];
 
-export const recurrenceRules = writable<RecurrenceRule[]>(initialRules);
+const initialAdvancedRules = isBrowser && localStorage.getItem('oystersavings_advanced_recurrence_rules')
+  ? parseStoredRules(localStorage.getItem('oystersavings_advanced_recurrence_rules')!)
+  : [];
+
+export const simpleRecurrenceRules = writable<RecurrenceRule[]>(initialRules);
+export const advancedRecurrenceRules = writable<RecurrenceRule[]>(initialAdvancedRules);
+
+export const recurrenceRules = writable<RecurrenceRule[]>(
+  initialAdvancedMode ? initialAdvancedRules : initialRules
+);
 
 if (isBrowser) {
-  recurrenceRules.subscribe(value => {
+  simpleRecurrenceRules.subscribe(value => {
     localStorage.setItem('oystersavings_recurrence_rules', JSON.stringify(value));
+  });
+
+  advancedRecurrenceRules.subscribe(value => {
+    localStorage.setItem('oystersavings_advanced_recurrence_rules', JSON.stringify(value));
+  });
+
+  let isSyncing = false;
+
+  globalAdvancedMode.subscribe(isAdvanced => {
+    if (isSyncing) return;
+    isSyncing = true;
+    if (isAdvanced) {
+      recurrenceRules.set(get(advancedRecurrenceRules));
+    } else {
+      recurrenceRules.set(get(simpleRecurrenceRules));
+    }
+    isSyncing = false;
+  });
+
+  recurrenceRules.subscribe(value => {
+    if (isSyncing) return;
+    isSyncing = true;
+    const isAdvanced = get(globalAdvancedMode);
+    if (isAdvanced) {
+      advancedRecurrenceRules.set(value);
+    } else {
+      simpleRecurrenceRules.set(value);
+    }
+    isSyncing = false;
   });
 }
 
@@ -132,6 +180,8 @@ export function resetData() {
   dailyCapResults.set([]);
   weeklyCapResults.set([]);
   capSummary.set(null);
+  simpleRecurrenceRules.set([]);
+  advancedRecurrenceRules.set([]);
   recurrenceRules.set([]);
   plannedJourneys.set([]);
   detectedPatterns.set([]);

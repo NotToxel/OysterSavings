@@ -16,6 +16,14 @@ export interface RecurrenceRule {
   startDate: Date;
   endDate: Date;
   excludeDates?: string[]; // Array of YYYY-MM-DD strings
+  // Advanced Mode: station-specific fields
+  originStation?: string;       // NaPTAN ID
+  destinationStation?: string;  // NaPTAN ID
+  originStationName?: string;   // Display name
+  destinationStationName?: string;
+  exactFarePeak?: number;       // Cached API fare
+  exactFareOffPeak?: number;
+  isAdvancedMode?: boolean;
 }
 
 export interface PlannedJourney {
@@ -27,6 +35,12 @@ export interface PlannedJourney {
   destinationZone: number;
   mode: 'underground' | 'national_rail' | 'nr_tube' | 'bus';
   timePeriod: string;
+  // Advanced Mode fields
+  exactFarePeak?: number;
+  exactFareOffPeak?: number;
+  isAdvancedMode?: boolean;
+  originStationName?: string;
+  destinationStationName?: string;
 }
 
 // Generate concrete journey instances from recurrence rules
@@ -104,6 +118,14 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
           destinationZone: rule.destinationZone,
           mode: rule.mode,
           timePeriod: rule.timePeriod,
+          // Advanced Mode fields
+          ...(rule.isAdvancedMode && {
+            isAdvancedMode: true,
+            exactFarePeak: rule.exactFarePeak,
+            exactFareOffPeak: rule.exactFareOffPeak,
+            originStationName: rule.originStationName,
+            destinationStationName: rule.destinationStationName,
+          }),
         });
 
         if (rule.isReturn && rule.returnTimePeriod) {
@@ -116,6 +138,14 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
             destinationZone: rule.originZone,
             mode: rule.mode,
             timePeriod: rule.returnTimePeriod,
+            // Advanced Mode: reverse direction fares are same
+            ...(rule.isAdvancedMode && {
+              isAdvancedMode: true,
+              exactFarePeak: rule.exactFarePeak,
+              exactFareOffPeak: rule.exactFareOffPeak,
+              originStationName: rule.destinationStationName,
+              destinationStationName: rule.originStationName,
+            }),
           });
         }
       }

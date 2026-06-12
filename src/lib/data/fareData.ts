@@ -156,6 +156,7 @@ export function lookupFare(zoneRange: string, isPeak: boolean, mode: string = 'u
   } else if (mode === 'nr_tube') {
     scale = PAYG_FARES.nr_tube;
   }
+  // 'elizabeth', 'underground', 'overground', 'dlr', and other TfL modes use the default tfl scale
 
   const fare = scale[zoneRange] || PAYG_FARES.tfl[zoneRange];
   if (!fare) {

@@ -103,9 +103,14 @@ export function runForecast(
       const repTime = getRepresentativeTime(j.timePeriod);
       const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
 
-      // Calculate raw single fare
+      // Calculate raw single fare — prefer station-specific API fares when available
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
-      const fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      let fare: number;
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        fare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+      } else {
+        fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      }
       
       let fareTypeFare = calculateDiscountedFare(fare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
@@ -328,7 +333,12 @@ export function simulatePlannedJourneysSpend(
       const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       
-      const rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      let rawFare: number;
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        rawFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+      } else {
+        rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      }
       const baseFare = calculateDiscountedFare(rawFare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
       let passFare = baseFare;

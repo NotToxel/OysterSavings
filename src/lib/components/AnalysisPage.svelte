@@ -6,6 +6,7 @@
   } from '$lib/stores/stores';
   import { calculateFareTypeSavings } from '$lib/engine/savingsEngine';
   import { FARE_TYPES, type FareType } from '$lib/data/fareData';
+  import { getZoneColor } from '$lib/data/stations';
 
   let activeTab = $state<'journeys' | 'savings' | 'caps'>('journeys');
   let sortKey = $state<string>('date');
@@ -76,17 +77,7 @@
     return mode;
   }
 
-  function getZoneColor(zoneRange: string): string {
-    if (!zoneRange) return 'var(--color-text-muted)';
-    if (zoneRange.includes('Z1-2')) return '#3b82f6'; // blue
-    if (zoneRange.includes('Z1-3')) return '#10b981'; // green
-    if (zoneRange.includes('Z1-4')) return '#f59e0b'; // amber
-    if (zoneRange.includes('Z1-5')) return '#f97316'; // orange
-    if (zoneRange.includes('Z1-6')) return '#8b5cf6'; // purple
-    if (zoneRange.includes('Z1-7') || zoneRange.includes('Z1-8') || zoneRange.includes('Z1-9')) return '#ec4899'; // pink
-    if (zoneRange.includes('Z1')) return '#0ea5e9'; // light blue
-    return 'var(--color-oyster-blue)';
-  }
+  // getZoneColor is imported from $lib/data/stations for consistent zone coloring
 
   function getModeBadgeClass(m: string): string {
     if (m === 'bus') return 'badge-bus';
