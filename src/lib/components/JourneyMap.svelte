@@ -1,52 +1,55 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { classifiedJourneys } from '$lib/stores/stores';
+  import { onMount } from "svelte";
+  import { classifiedJourneys } from "$lib/stores/stores";
   import {
     STATION_COORDS,
     LINE_CONNECTIONS,
     COORDINATE_BOUNDS,
     type NetworkStation,
-    type NetworkConnection
-  } from '$lib/data/networkData';
-  
-  import MapLine from './map/MapLine.svelte';
-  import MapStation from './map/MapStation.svelte';
-  import MapLegend from './map/MapLegend.svelte';
-  import ZoneBoundary from './map/ZoneBoundary.svelte';
+    type NetworkConnection,
+  } from "$lib/data/networkData";
+
+  import MapLine from "./map/MapLine.svelte";
+  import MapStation from "./map/MapStation.svelte";
+  import MapLegend from "./map/MapLegend.svelte";
+  import ZoneBoundary from "./map/ZoneBoundary.svelte";
 
   // Helper to normalize names exactly as done in pre-processing to ensure matches
   function normalizeName(name: string | null): string {
-    if (!name) return '';
+    if (!name) return "";
     let norm = name
       .toLowerCase()
-      .replace(/\[.*?\]/g, '') // remove [National Rail]
-      .replace(/\(.*?\)/g, '') // remove (Bakerloo)
+      .replace(/\[.*?\]/g, "") // remove [National Rail]
+      .replace(/\(.*?\)/g, "") // remove (Bakerloo)
       .replace(/’/g, "'") // normalize smart apostrophes
-      .replace(/\bst\./g, 'st') // normalize St. -> st
-      .replace(/\bst\b/g, 'st') // normalize st -> st
-      .replace(/\./g, '') // remove other periods
-      .replace(/\s+/g, ' ') // collapse multiple spaces
+      .replace(/\bst\./g, "st") // normalize St. -> st
+      .replace(/\bst\b/g, "st") // normalize st -> st
+      .replace(/\./g, "") // remove other periods
+      .replace(/\s+/g, " ") // collapse multiple spaces
       .trim();
 
     // Special case corrections to align csv with stations.ts keys
-    if (norm === 'caledonian road and barnsbury') norm = 'caledonian road & barnsbury';
-    if (norm === 'highbury and islington') norm = 'highbury & islington';
-    if (norm === 'kings cross st pancras') norm = "king's cross st pancras";
-    if (norm === 'elephants & castle') norm = 'elephant & castle';
-    if (norm === 'elephant and castle') norm = 'elephant & castle';
-    if (norm === 'st jamess park') norm = "st james's park";
-    if (norm === 'st johns wood') norm = "st john's wood";
-    if (norm === 'st pauls') norm = "st paul's";
-    if (norm === 'walthamstow queens road') norm = "walthamstow queen's road";
-    if (norm === 'earls court') norm = "earl's court";
-    if (norm === 'shepherds bush') norm = "shepherd's bush";
-    if (norm === 'queens road peckham') norm = 'queens road peckham';
-    if (norm === 'heathrow terminals 1 2 3') norm = 'heathrow terminals 2 & 3';
-    if (norm === 'heathrow terminals 2 and 3') norm = 'heathrow terminals 2 & 3';
-    if (norm === 'heathrow terminals 1, 2, 3') norm = 'heathrow terminals 2 & 3';
-    if (norm === 'heathrow terminal 4') norm = 'heathrow terminal 4';
-    if (norm === 'heathrow terminal 5') norm = 'heathrow terminal 5';
-    
+    if (norm === "caledonian road and barnsbury")
+      norm = "caledonian road & barnsbury";
+    if (norm === "highbury and islington") norm = "highbury & islington";
+    if (norm === "kings cross st pancras") norm = "king's cross st pancras";
+    if (norm === "elephants & castle") norm = "elephant & castle";
+    if (norm === "elephant and castle") norm = "elephant & castle";
+    if (norm === "st jamess park") norm = "st james's park";
+    if (norm === "st johns wood") norm = "st john's wood";
+    if (norm === "st pauls") norm = "st paul's";
+    if (norm === "walthamstow queens road") norm = "walthamstow queen's road";
+    if (norm === "earls court") norm = "earl's court";
+    if (norm === "shepherds bush") norm = "shepherd's bush";
+    if (norm === "queens road peckham") norm = "queens road peckham";
+    if (norm === "heathrow terminals 1 2 3") norm = "heathrow terminals 2 & 3";
+    if (norm === "heathrow terminals 2 and 3")
+      norm = "heathrow terminals 2 & 3";
+    if (norm === "heathrow terminals 1, 2, 3")
+      norm = "heathrow terminals 2 & 3";
+    if (norm === "heathrow terminal 4") norm = "heathrow terminal 4";
+    if (norm === "heathrow terminal 5") norm = "heathrow terminal 5";
+
     return norm;
   }
 
@@ -55,28 +58,34 @@
   const maxX = COORDINATE_BOUNDS.maxX;
   const minY = COORDINATE_BOUNDS.minY;
   const maxY = COORDINATE_BOUNDS.maxY;
-  
+
   const width = maxX - minX;
   const height = maxY - minY;
 
   // Store stations mapped directly to coordinates
-  const stations = Object.entries(STATION_COORDS).reduce((acc, [key, station]) => {
-    acc[key] = {
-      ...station,
-      x: station.x,
-      y: station.y
-    };
-    return acc;
-  }, {} as Record<string, NetworkStation & { x: number; y: number }>);
+  const stations = Object.entries(STATION_COORDS).reduce(
+    (acc, [key, station]) => {
+      acc[key] = {
+        ...station,
+        x: station.x,
+        y: station.y,
+      };
+      return acc;
+    },
+    {} as Record<string, NetworkStation & { x: number; y: number }>,
+  );
 
   // Adjacency graph for BFS routing
-  const graph = LINE_CONNECTIONS.reduce((acc, conn) => {
-    if (!acc[conn.from]) acc[conn.from] = [];
-    if (!acc[conn.to]) acc[conn.to] = [];
-    acc[conn.from].push(conn.to);
-    acc[conn.to].push(conn.from);
-    return acc;
-  }, {} as Record<string, string[]>);
+  const graph = LINE_CONNECTIONS.reduce(
+    (acc, conn) => {
+      if (!acc[conn.from]) acc[conn.from] = [];
+      if (!acc[conn.to]) acc[conn.to] = [];
+      acc[conn.from].push(conn.to);
+      acc[conn.to].push(conn.from);
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
 
   // Shortest path router (BFS)
   function findShortestPath(startKey: string, endKey: string): string[] {
@@ -112,30 +121,48 @@
   let startDragX = $state(0);
   let startDragY = $state(0);
   let showAllLabels = $state(false);
-  let mapFilterMode = $state<'all' | 'underground' | 'overground' | 'elizabeth' | 'national_rail'>('all');
+  let mapFilterMode = $state<
+    "all" | "underground" | "overground" | "elizabeth" | "national_rail"
+  >("all");
 
   // Tooltips
-  let hoveredNode = $state<(NetworkStation & { x: number; y: number; count: number }) | null>(null);
-  let hoveredConnection = $state<{ line: string; fromName: string; toName: string; count: number } | null>(null);
+  let hoveredNode = $state<
+    (NetworkStation & { x: number; y: number; count: number }) | null
+  >(null);
+  let hoveredConnection = $state<{
+    line: string;
+    fromName: string;
+    toName: string;
+    count: number;
+  } | null>(null);
   let tooltipX = $state(0);
   let tooltipY = $state(0);
-  
+
   // Hovered tube line (for full line glow highlight)
   let hoveredLine = $state<string | null>(null);
 
   // Major hubs to show at low zoom levels
   const MAJOR_HUBS = new Set([
-    'waterloo', 'victoria', 'kings cross st pancras', 'london bridge', 
-    'stratford', 'paddington', 'euston', 'liverpool street', 'clapham junction'
+    "waterloo",
+    "victoria",
+    "kings cross st pancras",
+    "london bridge",
+    "stratford",
+    "paddington",
+    "euston",
+    "liverpool street",
+    "clapham junction",
   ]);
 
   // Compute active traveled stations and lines from ClassifiedJourneys
   const travelFootprint = $derived.by(() => {
     const activeSegments: Record<string, number> = {}; // key: "stationA-stationB", val: count
-    const activeStations: Record<string, number> = {};  // key: stationKey, val: count
+    const activeStations: Record<string, number> = {}; // key: stationKey, val: count
     const unroutedPaths: { from: string; to: string; count: number }[] = [];
 
-    const railJourneys = $classifiedJourneys.filter(j => !j.isBus && j.origin && j.destination);
+    const railJourneys = $classifiedJourneys.filter(
+      (j) => !j.isBus && j.origin && j.destination,
+    );
 
     for (const j of railJourneys) {
       const fromKey = normalizeName(j.origin);
@@ -160,7 +187,8 @@
           }
         }
       } else {
-        const segKey = fromKey < toKey ? `${fromKey}-${toKey}` : `${toKey}-${fromKey}`;
+        const segKey =
+          fromKey < toKey ? `${fromKey}-${toKey}` : `${toKey}-${fromKey}`;
         unroutedPaths.push({ from: fromKey, to: toKey, count: 1 });
       }
     }
@@ -168,7 +196,7 @@
     return {
       activeSegments,
       activeStations,
-      unroutedPaths
+      unroutedPaths,
     };
   });
 
@@ -203,8 +231,8 @@
     }
 
     const padding = 80;
-    const boundsW = (maxActiveX - minActiveX) + padding * 2;
-    const boundsH = (maxActiveY - minActiveY) + padding * 2;
+    const boundsW = maxActiveX - minActiveX + padding * 2;
+    const boundsH = maxActiveY - minActiveY + padding * 2;
 
     const scaleX = containerW / boundsW;
     const scaleY = containerH / boundsH;
@@ -225,43 +253,45 @@
   // TfL line color palette
   function getLineColor(line: string): string {
     const name = line.toLowerCase();
-    if (name.includes('bakerloo')) return '#B36305';
-    if (name.includes('central')) return '#DC241F';
-    if (name.includes('circle')) return '#FFD300';
-    if (name.includes('district')) return '#007D32';
-    if (name.includes('hammersmith')) return '#F3A9BB';
-    if (name.includes('jubilee')) return '#A0A5A9';
-    if (name.includes('metropolitan')) return '#9B0058';
-    if (name.includes('northern')) return '#ffffff'; // white on dark background
-    if (name.includes('piccadilly')) return '#003688';
-    if (name.includes('victoria')) return '#0098D4';
-    if (name.includes('waterloo')) return '#95CDBA';
-    if (name.includes('elizabeth')) return '#6950A1';
-    if (name.includes('dlr')) return '#00AFAD';
+    if (name.includes("bakerloo")) return "#B36305";
+    if (name.includes("central")) return "#DC241F";
+    if (name.includes("circle")) return "#FFD300";
+    if (name.includes("district")) return "#007D32";
+    if (name.includes("hammersmith")) return "#F3A9BB";
+    if (name.includes("jubilee")) return "#A0A5A9";
+    if (name.includes("metropolitan")) return "#9B0058";
+    if (name.includes("northern")) return "#ffffff"; // white on dark background
+    if (name.includes("piccadilly")) return "#003688";
+    if (name.includes("victoria")) return "#0098D4";
+    if (name.includes("waterloo")) return "#95CDBA";
+    if (name.includes("elizabeth")) return "#6950A1";
+    if (name.includes("dlr")) return "#00AFAD";
     if (
-      name.includes('overground') || 
-      name.includes('mildmay') || 
-      name.includes('lioness') || 
-      name.includes('suffragette') || 
-      name.includes('weaver') || 
-      name.includes('windrush') || 
-      name.includes('liberty')
+      name.includes("overground") ||
+      name.includes("mildmay") ||
+      name.includes("lioness") ||
+      name.includes("suffragette") ||
+      name.includes("weaver") ||
+      name.includes("windrush") ||
+      name.includes("liberty")
     ) {
-      return '#EE7C0E';
+      return "#EE7C0E";
     }
-    return '#4b5563'; // Slate grey for standard rail
+    return "#4b5563"; // Slate grey for standard rail
   }
 
   // drag pan
   function handleMouseDown(e: MouseEvent) {
-    if ((e.target as HTMLElement).closest('.map-controls')) return;
+    if ((e.target as HTMLElement).closest(".map-controls")) return;
     isDragging = true;
     startDragX = e.clientX - panX;
     startDragY = e.clientY - panY;
   }
 
   function handleMouseMove(e: MouseEvent) {
-    const rect = e.currentTarget ? (e.currentTarget as HTMLElement).getBoundingClientRect() : null;
+    const rect = e.currentTarget
+      ? (e.currentTarget as HTMLElement).getBoundingClientRect()
+      : null;
     if (rect) {
       tooltipX = e.clientX - rect.left + 15;
       tooltipY = e.clientY - rect.top + 15;
@@ -280,7 +310,8 @@
   function handleWheel(e: WheelEvent) {
     e.preventDefault();
     const zoomFactor = 1.15;
-    const nextScale = e.deltaY < 0 ? zoomScale * zoomFactor : zoomScale / zoomFactor;
+    const nextScale =
+      e.deltaY < 0 ? zoomScale * zoomFactor : zoomScale / zoomFactor;
     const clampedScale = Math.max(0.4, Math.min(15, nextScale));
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -321,15 +352,17 @@
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (lastTouchDistance > 0) {
         const factor = distance / lastTouchDistance;
         const nextScale = zoomScale * factor;
         const clampedScale = Math.max(0.4, Math.min(15, nextScale));
 
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
-        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        const midX =
+          (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY =
+          (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
 
         const canvasX = (midX - panX) / zoomScale;
         const canvasY = (midY - panY) / zoomScale;
@@ -347,21 +380,67 @@
     lastTouchDistance = 0;
   }
 
-  function zoomIn() { zoomScale = Math.min(15, zoomScale * 1.35); }
-  function zoomOut() { zoomScale = Math.max(0.4, zoomScale / 1.35); }
+  function zoomIn() {
+    zoomScale = Math.min(15, zoomScale * 1.35);
+  }
+  function zoomOut() {
+    zoomScale = Math.max(0.4, zoomScale / 1.35);
+  }
 
   function shouldDisplaySegment(conn: NetworkConnection): boolean {
-    if (mapFilterMode === 'all') return true;
+    if (mapFilterMode === "all") return true;
     const lm = conn.line.toLowerCase();
-    if (mapFilterMode === 'underground') {
-      return ['bakerloo', 'central', 'circle', 'district', 'hammersmith', 'jubilee', 'metropolitan', 'northern', 'piccadilly', 'victoria', 'waterloo'].some(m => lm.includes(m));
+    if (mapFilterMode === "underground") {
+      return [
+        "bakerloo",
+        "central",
+        "circle",
+        "district",
+        "hammersmith",
+        "jubilee",
+        "metropolitan",
+        "northern",
+        "piccadilly",
+        "victoria",
+        "waterloo",
+      ].some((m) => lm.includes(m));
     }
-    if (mapFilterMode === 'overground') {
-      return ['overground', 'mildmay', 'lioness', 'suffragette', 'weaver', 'windrush', 'liberty', 'dlr'].some(m => lm.includes(m));
+    if (mapFilterMode === "overground") {
+      return [
+        "overground",
+        "mildmay",
+        "lioness",
+        "suffragette",
+        "weaver",
+        "windrush",
+        "liberty",
+        "dlr",
+      ].some((m) => lm.includes(m));
     }
-    if (mapFilterMode === 'elizabeth') return lm.includes('elizabeth');
-    if (mapFilterMode === 'national_rail') {
-      return !['bakerloo', 'central', 'circle', 'district', 'hammersmith', 'jubilee', 'metropolitan', 'northern', 'piccadilly', 'victoria', 'waterloo', 'elizabeth', 'dlr', 'overground', 'mildmay', 'lioness', 'suffragette', 'weaver', 'windrush', 'liberty'].some(m => lm.includes(m));
+    if (mapFilterMode === "elizabeth") return lm.includes("elizabeth");
+    if (mapFilterMode === "national_rail") {
+      return ![
+        "bakerloo",
+        "central",
+        "circle",
+        "district",
+        "hammersmith",
+        "jubilee",
+        "metropolitan",
+        "northern",
+        "piccadilly",
+        "victoria",
+        "waterloo",
+        "elizabeth",
+        "dlr",
+        "overground",
+        "mildmay",
+        "lioness",
+        "suffragette",
+        "weaver",
+        "windrush",
+        "liberty",
+      ].some((m) => lm.includes(m));
     }
     return true;
   }
@@ -417,22 +496,22 @@
   // Precompute average track directions at each station for perpendicular tick markers
   const stationDirections = $derived.by(() => {
     const directions: Record<string, { x: number; y: number }> = {};
-    
+
     for (const sKey in stations) {
       const station = stations[sKey];
       const conns = LINE_CONNECTIONS.filter(
-        c => shouldDisplaySegment(c) && (c.from === sKey || c.to === sKey)
+        (c) => shouldDisplaySegment(c) && (c.from === sKey || c.to === sKey),
       );
-      
+
       if (conns.length === 0) {
         directions[sKey] = { x: 1, y: 0 };
         continue;
       }
-      
+
       let sumDx = 0;
       let sumDy = 0;
       let count = 0;
-      
+
       for (const c of conns) {
         const otherKey = c.from === sKey ? c.to : c.from;
         const other = stations[otherKey];
@@ -449,12 +528,13 @@
           }
         }
       }
-      
+
       if (count > 0) {
         const avgDx = sumDx / count;
         const avgDy = sumDy / count;
         const len = Math.sqrt(avgDx * avgDx + avgDy * avgDy);
-        directions[sKey] = len > 0 ? { x: avgDx / len, y: avgDy / len } : { x: 1, y: 0 };
+        directions[sKey] =
+          len > 0 ? { x: avgDx / len, y: avgDy / len } : { x: 1, y: 0 };
       } else {
         directions[sKey] = { x: 1, y: 0 };
       }
@@ -470,7 +550,7 @@
         ...station,
         x: stations[station.key]?.x || station.x,
         y: stations[station.key]?.y || station.y,
-        count: Math.round(count)
+        count: Math.round(count),
       };
     } else {
       hoveredNode = null;
@@ -486,7 +566,7 @@
         line: conn.line,
         fromName: stations[conn.from]?.name || conn.from,
         toName: stations[conn.to]?.name || conn.to,
-        count
+        count,
       };
     } else {
       hoveredLine = null;
@@ -499,7 +579,10 @@
   <div class="map-header">
     <div class="map-title-row">
       <h3>🗺️ Personalised Vector-Recreated Schematic Map</h3>
-      <p class="map-subtitle">A pixel-perfect vector schematic of the London Tube & Rail network, highlighting your commute footprints.</p>
+      <p class="map-subtitle">
+        A pixel-perfect vector schematic of the London Tube & Rail network,
+        highlighting your commute footprints.
+      </p>
     </div>
 
     <!-- Filters HUD -->
@@ -507,25 +590,55 @@
       <div class="filter-group">
         <span class="filter-label">Filter Network:</span>
         <div class="tab-nav compact">
-          <button class="tab-btn" class:active={mapFilterMode === 'all'} onclick={() => mapFilterMode = 'all'}>All</button>
-          <button class="tab-btn" class:active={mapFilterMode === 'underground'} onclick={() => mapFilterMode = 'underground'}>Tube</button>
-          <button class="tab-btn" class:active={mapFilterMode === 'overground'} onclick={() => mapFilterMode = 'overground'}>Overground/DLR</button>
-          <button class="tab-btn" class:active={mapFilterMode === 'elizabeth'} onclick={() => mapFilterMode = 'elizabeth'}>Liz Line</button>
-          <button class="tab-btn" class:active={mapFilterMode === 'national_rail'} onclick={() => mapFilterMode = 'national_rail'}>Rail</button>
+          <button
+            class="tab-btn"
+            class:active={mapFilterMode === "all"}
+            onclick={() => (mapFilterMode = "all")}>All</button
+          >
+          <button
+            class="tab-btn"
+            class:active={mapFilterMode === "underground"}
+            onclick={() => (mapFilterMode = "underground")}>Tube</button
+          >
+          <button
+            class="tab-btn"
+            class:active={mapFilterMode === "overground"}
+            onclick={() => (mapFilterMode = "overground")}
+            >Overground/DLR</button
+          >
+          <button
+            class="tab-btn"
+            class:active={mapFilterMode === "elizabeth"}
+            onclick={() => (mapFilterMode = "elizabeth")}>Liz Line</button
+          >
+          <button
+            class="tab-btn"
+            class:active={mapFilterMode === "national_rail"}
+            onclick={() => (mapFilterMode = "national_rail")}>Rail</button
+          >
         </div>
       </div>
 
       <div class="toggle-row">
-        <input type="checkbox" id="toggle-all-labels" bind:checked={showAllLabels} style="accent-color: var(--color-oyster-blue); cursor: pointer;" />
-        <label for="toggle-all-labels" style="font-size: 0.8rem; color: var(--color-text-secondary); cursor: pointer; user-select: none;">Show all names</label>
+        <input
+          type="checkbox"
+          id="toggle-all-labels"
+          bind:checked={showAllLabels}
+          style="accent-color: var(--color-oyster-blue); cursor: pointer;"
+        />
+        <label
+          for="toggle-all-labels"
+          style="font-size: 0.8rem; color: var(--color-text-secondary); cursor: pointer; user-select: none;"
+          >Show all names</label
+        >
       </div>
     </div>
   </div>
 
   <!-- Interactive SVG Map Area -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div 
-    class="map-canvas" 
+  <div
+    class="map-canvas"
     onmousedown={handleMouseDown}
     onmousemove={handleMouseMove}
     onmouseup={handleMouseUp}
@@ -536,7 +649,12 @@
     ontouchend={handleTouchEnd}
     style="cursor: {isDragging ? 'grabbing' : 'grab'};"
   >
-    <svg width="100%" height="100%" viewBox="50 -30 830 710" preserveAspectRatio="xMidYMid meet">
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="50 -30 830 710"
+      preserveAspectRatio="xMidYMid meet"
+    >
       <!-- Defs for filter glow effects -->
       <defs>
         <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -547,7 +665,6 @@
 
       <!-- Transformable Group -->
       <g transform="translate({panX}, {panY}) scale({zoomScale})">
-        
         <!-- ==================== ZONE BOUNDARY RINGS ==================== -->
         <ZoneBoundary {zoomScale} />
 
@@ -585,13 +702,19 @@
               {@const fromStation = stations[conn.from]}
               {@const toStation = stations[conn.to]}
               {#if fromStation && toStation}
-                {@const segKey = conn.from < conn.to ? `${conn.from}-${conn.to}` : `${conn.to}-${conn.from}`}
-                {@const travelCount = travelFootprint.activeSegments[segKey] || 0}
+                {@const segKey =
+                  conn.from < conn.to
+                    ? `${conn.from}-${conn.to}`
+                    : `${conn.to}-${conn.from}`}
+                {@const travelCount =
+                  travelFootprint.activeSegments[segKey] || 0}
                 {@const isActive = travelCount > 0}
-                {@const isDimmed = hoveredLine !== null && conn.line.toLowerCase() !== hoveredLine.toLowerCase()}
+                {@const isDimmed =
+                  hoveredLine !== null &&
+                  conn.line.toLowerCase() !== hoveredLine.toLowerCase()}
                 {@const offset = getLineOffset(conn)}
                 {@const color = getLineColor(conn.line)}
-                
+
                 <MapLine
                   {conn}
                   {fromStation}
@@ -616,7 +739,10 @@
             {@const toStation = stations[path.to]}
             {#if fromStation && toStation}
               <path
-                d="M {fromStation.x} {fromStation.y} Q {(fromStation.x + toStation.x) / 2} {Math.min(fromStation.y, toStation.y) - 40} {toStation.x} {toStation.y}"
+                d="M {fromStation.x} {fromStation.y} Q {(fromStation.x +
+                  toStation.x) /
+                  2} {Math.min(fromStation.y, toStation.y) -
+                  40} {toStation.x} {toStation.y}"
                 fill="none"
                 stroke="#eab308"
                 stroke-width={2.2 / zoomScale}
@@ -633,9 +759,18 @@
             {@const count = travelFootprint.activeStations[key] || 0}
             {@const isTraveled = count > 0}
             {@const isMajor = MAJOR_HUBS.has(key)}
-            {@const showDot = isTraveled || (zoomScale > 1.2 && (mapFilterMode === 'all' || station.modes.includes(mapFilterMode)))}
-            {@const showLabel = showAllLabels || (isTraveled && zoomScale > 0.8) || (isMajor && zoomScale > 0.7) || (zoomScale > 2.8)}
-            {@const isDimmed = hoveredLine !== null && !stationServesLine(key, hoveredLine)}
+            {@const showDot =
+              isTraveled ||
+              (zoomScale > 1.2 &&
+                (mapFilterMode === "all" ||
+                  station.modes.includes(mapFilterMode)))}
+            {@const showLabel =
+              showAllLabels ||
+              (isTraveled && zoomScale > 0.8) ||
+              (isMajor && zoomScale > 0.7) ||
+              zoomScale > 2.8}
+            {@const isDimmed =
+              hoveredLine !== null && !stationServesLine(key, hoveredLine)}
 
             {#if showDot}
               <MapStation
@@ -665,11 +800,15 @@
         <div class="tooltip-body">
           <div class="tooltip-row">
             <span>Modes:</span>
-            <span style="text-transform: capitalize; font-size: 0.7rem;">{hoveredNode.modes.join(', ')}</span>
+            <span style="text-transform: capitalize; font-size: 0.7rem;"
+              >{hoveredNode.modes.join(", ")}</span
+            >
           </div>
           <div class="tooltip-row">
             <span>Your Trips:</span>
-            <strong style="color: var(--color-oyster-blue);">{hoveredNode.count}</strong>
+            <strong style="color: var(--color-oyster-blue);"
+              >{hoveredNode.count}</strong
+            >
           </div>
         </div>
       </div>
@@ -679,12 +818,19 @@
           <strong>{hoveredConnection.line} Line</strong>
         </div>
         <div class="tooltip-body">
-          <div class="tooltip-row" style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-            <span>{hoveredConnection.fromName} ➔ {hoveredConnection.toName}</span>
+          <div
+            class="tooltip-row"
+            style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;"
+          >
+            <span
+              >{hoveredConnection.fromName} ➔ {hoveredConnection.toName}</span
+            >
           </div>
           <div class="tooltip-row">
             <span>Trips Taken:</span>
-            <strong style="color: var(--color-oyster-blue);">{hoveredConnection.count}</strong>
+            <strong style="color: var(--color-oyster-blue);"
+              >{hoveredConnection.count}</strong
+            >
           </div>
         </div>
       </div>
@@ -694,7 +840,11 @@
     <div class="map-controls">
       <button class="control-btn" onclick={zoomIn} title="Zoom In">＋</button>
       <button class="control-btn" onclick={zoomOut} title="Zoom Out">－</button>
-      <button class="control-btn reset" onclick={fitToActiveBounds} title="Fit Commute Bounds">🎯</button>
+      <button
+        class="control-btn reset"
+        onclick={fitToActiveBounds}
+        title="Fit Commute Bounds">🎯</button
+      >
     </div>
   </div>
 
