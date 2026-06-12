@@ -24,6 +24,7 @@ export interface RecurrenceRule {
   exactFarePeak?: number;       // Cached API fare
   exactFareOffPeak?: number;
   isAdvancedMode?: boolean;
+  routeDescription?: string;
 }
 
 export interface PlannedJourney {
@@ -41,6 +42,7 @@ export interface PlannedJourney {
   isAdvancedMode?: boolean;
   originStationName?: string;
   destinationStationName?: string;
+  routeDescription?: string;
 }
 
 // Generate concrete journey instances from recurrence rules
@@ -125,6 +127,7 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
             exactFareOffPeak: rule.exactFareOffPeak,
             originStationName: rule.originStationName,
             destinationStationName: rule.destinationStationName,
+            routeDescription: rule.routeDescription,
           }),
         });
 
@@ -145,6 +148,7 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
               exactFareOffPeak: rule.exactFareOffPeak,
               originStationName: rule.destinationStationName,
               destinationStationName: rule.originStationName,
+              routeDescription: rule.routeDescription,
             }),
           });
         }

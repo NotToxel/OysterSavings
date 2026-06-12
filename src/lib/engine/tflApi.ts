@@ -5,6 +5,12 @@ const CACHE_KEY = 'oystersavings_station_fare_cache';
 const MAX_CACHE_ENTRIES = 500;
 const REQUEST_COOLDOWN_MS = 200;
 
+export interface RouteOption {
+  peak: number;
+  offPeak: number;
+  routeDescription: string;
+}
+
 export interface StationFare {
   peak: number;
   offPeak: number;
@@ -13,6 +19,8 @@ export interface StationFare {
   fetchedAt: number;
   validUntil: number;  // from API endDate — auto-expires when fare period ends
   isFromApi: true;
+  options?: RouteOption[];
+  routeDescription?: string;
 }
 
 export interface FallbackFare {
@@ -79,18 +87,27 @@ function isCacheValid(fare: StationFare): boolean {
 }
 
 // Look up fare from cache layers (session → localStorage)
-function getCachedFare(fromNaptan: string, toNaptan: string): StationFare | null {
+function getCachedFare(fromNaptan: string, toNaptan: string, useAlternativeFares: boolean = false): StationFare | null {
   const key = getCacheKey(fromNaptan, toNaptan);
 
   // Layer 1: Session cache (fastest)
-  const sessionHit = sessionCache.get(key);
+  let sessionHit = sessionCache.get(key);
+  if (!sessionHit) {
+    // Also try the old key for backwards compatibility
+    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}`;
+    sessionHit = sessionCache.get(oldKey);
+  }
   if (sessionHit && isCacheValid(sessionHit)) {
     return sessionHit;
   }
 
   // Layer 2: localStorage persistent cache
   const persistentCache = loadPersistentCache();
-  const persistentHit = persistentCache.entries[key];
+  let persistentHit = persistentCache.entries[key];
+  if (!persistentHit) {
+    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}`;
+    persistentHit = persistentCache.entries[oldKey];
+  }
   if (persistentHit && isCacheValid(persistentHit)) {
     // Promote to session cache
     sessionCache.set(key, persistentHit);
@@ -113,11 +130,33 @@ function setCachedFare(fromNaptan: string, toNaptan: string, fare: StationFare):
   savePersistentCache(cache);
 }
 
+export function mergeRouteOptions(options: RouteOption[]): RouteOption[] {
+  const merged: RouteOption[] = [];
+  for (const opt of options) {
+    const existing = merged.find(
+      m => Math.abs(m.peak - opt.peak) < 0.001 && Math.abs(m.offPeak - opt.offPeak) < 0.001
+    );
+    if (existing) {
+      if (!existing.routeDescription.includes(opt.routeDescription)) {
+        existing.routeDescription += ` OR ${opt.routeDescription}`;
+      }
+    } else {
+      merged.push({ ...opt });
+    }
+  }
+  return merged;
+}
+
 // Parse TfL FareTo API response
-function parseTflFareResponse(data: unknown[], fromNaptan: string, toNaptan: string): StationFare | null {
+function parseTflFareResponse(
+  data: unknown[],
+  fromNaptan: string,
+  toNaptan: string
+): StationFare | null {
   try {
-    // The response is an array of FaresSection objects
-    // We need to find Adult PAYG fares
+    const rawOptions: RouteOption[] = [];
+    let validUntil = Date.now() + 365 * 24 * 60 * 60 * 1000;
+
     for (const section of data) {
       const s = section as Record<string, unknown>;
       const rows = s.rows as Array<Record<string, unknown>> | undefined;
@@ -129,16 +168,16 @@ function parseTflFareResponse(data: unknown[], fromNaptan: string, toNaptan: str
         const ticketsAvailable = row.ticketsAvailable as Array<Record<string, unknown>> | undefined;
         if (!ticketsAvailable) continue;
 
-        let validUntil = 0;
-
         // Parse end date for cache expiry
         const endDateStr = row.endDate as string | undefined;
         if (endDateStr) {
-          validUntil = new Date(endDateStr).getTime();
-        } else {
-          // Default: 1 year from now
-          validUntil = Date.now() + 365 * 24 * 60 * 60 * 1000;
+          const t = new Date(endDateStr).getTime();
+          if (!isNaN(t) && t < validUntil) {
+            validUntil = t;
+          }
         }
+
+        const routeDescription = (row.routeDescription as string) || (row.displayName as string) || 'Default Route';
 
         // Collect all PAYG ticket costs
         const paygCosts: number[] = [];
@@ -153,10 +192,10 @@ function parseTflFareResponse(data: unknown[], fromNaptan: string, toNaptan: str
           const typeDesc = (ticketType?.description as string || '').toLowerCase();
           const timeDesc = (ticketTime?.description as string || '').toLowerCase();
 
-          // Look for PAYG / Pay as you go tickets (skip CashSingle etc)
+          // Look for PAYG / Pay as you go tickets
           if (!typeDesc.includes('pay as you go') && !typeDesc.includes('oyster')) continue;
 
-          // Try to identify peak vs off-peak by description keywords first
+          // Try to identify peak vs off-peak
           if (
             timeDesc.includes('peak') && !timeDesc.includes('off')
             || timeDesc.includes('0630') || timeDesc.includes('06:30')
@@ -170,50 +209,65 @@ function parseTflFareResponse(data: unknown[], fromNaptan: string, toNaptan: str
           ) {
             paygCosts.push(cost);
           } else {
-            // Unknown time description — still collect it
             paygCosts.push(cost);
           }
         }
 
-        // If we got at least 2 PAYG fares, the higher is peak, lower is off-peak
-        if (paygCosts.length >= 2) {
-          paygCosts.sort((a, b) => a - b);
-          const offPeakFare = paygCosts[0];           // lowest cost
-          const peakFare = paygCosts[paygCosts.length - 1]; // highest cost
+        if (paygCosts.length > 0) {
+          let peak = 0;
+          let offPeak = 0;
+          if (paygCosts.length >= 2) {
+            paygCosts.sort((a, b) => a - b);
+            peak = paygCosts[paygCosts.length - 1];
+            offPeak = paygCosts[0];
+          } else {
+            peak = paygCosts[0];
+            offPeak = paygCosts[0];
+          }
 
-          return {
-            peak: peakFare,
-            offPeak: offPeakFare,
-            fromStation: fromNaptan,
-            toStation: toNaptan,
-            fetchedAt: Date.now(),
-            validUntil,
-            isFromApi: true,
-          };
-        }
+          let finalRouteDesc = routeDescription;
+          if (finalRouteDesc.toLowerCase() === 'default route') {
+            finalRouteDesc = 'Default Route';
+          }
 
-        // If we only got 1 PAYG fare, use it for both peak and off-peak
-        if (paygCosts.length === 1) {
-          return {
-            peak: paygCosts[0],
-            offPeak: paygCosts[0],
-            fromStation: fromNaptan,
-            toStation: toNaptan,
-            fetchedAt: Date.now(),
-            validUntil,
-            isFromApi: true,
-          };
+          rawOptions.push({
+            peak,
+            offPeak,
+            routeDescription: finalRouteDesc
+          });
         }
       }
     }
-    return null;
+
+    if (rawOptions.length === 0) return null;
+
+    // Merge options that have identical peak and off-peak costs
+    const mergedOptions = mergeRouteOptions(rawOptions);
+
+    // Find the default option
+    const defaultOpt = mergedOptions.find(o => o.routeDescription === 'Default Route') || mergedOptions[0];
+
+    return {
+      peak: defaultOpt.peak,
+      offPeak: defaultOpt.offPeak,
+      fromStation: fromNaptan,
+      toStation: toNaptan,
+      fetchedAt: Date.now(),
+      validUntil,
+      isFromApi: true,
+      options: mergedOptions,
+      routeDescription: defaultOpt.routeDescription
+    };
   } catch {
     return null;
   }
 }
 
 // Fetch fare from TfL API with timeout, rate limiting, and retries
-async function fetchFromTfl(fromNaptan: string, toNaptan: string): Promise<StationFare | null> {
+async function fetchFromTfl(
+  fromNaptan: string,
+  toNaptan: string
+): Promise<StationFare | null> {
   const maxRetries = 3;
   let attempt = 0;
 
@@ -284,47 +338,83 @@ async function fetchFromTfl(fromNaptan: string, toNaptan: string): Promise<Stati
  * @param fromNaptan - NaPTAN ID of origin station
  * @param toNaptan - NaPTAN ID of destination station
  * @param fallbackFare - Zone-based fare to use if API is unavailable
+ * @param useAlternativeFares - Preference for cheapest route from TfL API
  */
 export async function lookupStationFare(
   fromNaptan: string,
   toNaptan: string,
-  fallbackFare: { peak: number; offPeak: number }
+  fallbackFare: { peak: number; offPeak: number },
+  useAlternativeFares: boolean = false
 ): Promise<FareResult> {
   // Check cache first
-  const cached = getCachedFare(fromNaptan, toNaptan);
-  if (cached) return cached;
+  const cached = getCachedFare(fromNaptan, toNaptan, useAlternativeFares);
+  let fareResult: FareResult;
 
-  const key = getCacheKey(fromNaptan, toNaptan);
+  if (cached) {
+    fareResult = cached;
+  } else {
+    const key = getCacheKey(fromNaptan, toNaptan);
 
-  // Check if already in-flight (deduplication)
-  const inFlight = inFlightRequests.get(key);
-  if (inFlight) return inFlight;
+    // Check if already in-flight (deduplication)
+    const inFlight = inFlightRequests.get(key);
+    if (inFlight) {
+      fareResult = await inFlight;
+    } else {
+      // Create the fetch promise
+      const fetchPromise = (async (): Promise<FareResult> => {
+        const apiFare = await fetchFromTfl(fromNaptan, toNaptan);
 
-  // Create the fetch promise
-  const fetchPromise = (async (): Promise<FareResult> => {
-    const apiFare = await fetchFromTfl(fromNaptan, toNaptan);
+        if (apiFare) {
+          setCachedFare(fromNaptan, toNaptan, apiFare);
+          return apiFare;
+        }
 
-    if (apiFare) {
-      setCachedFare(fromNaptan, toNaptan, apiFare);
-      return apiFare;
+        // Fallback to zone-based fare
+        return {
+          peak: fallbackFare.peak,
+          offPeak: fallbackFare.offPeak,
+          isFromApi: false,
+        };
+      })();
+
+      // Register in-flight
+      inFlightRequests.set(key, fetchPromise);
+
+      try {
+        fareResult = await fetchPromise;
+      } finally {
+        inFlightRequests.delete(key);
+      }
+    }
+  }
+
+  // Adjust top-level peak and off-peak fares based on useAlternativeFares setting
+  if (fareResult.isFromApi) {
+    if (!fareResult.options) {
+      fareResult.options = [
+        {
+          peak: fareResult.peak,
+          offPeak: fareResult.offPeak,
+          routeDescription: fareResult.routeDescription || 'Default Route',
+        }
+      ];
     }
 
-    // Fallback to zone-based fare
+    const defaultRoute = fareResult.options.find(o => o.routeDescription === 'Default Route') || fareResult.options[0];
+    const sorted = [...fareResult.options].sort((a, b) => (a.peak + a.offPeak) - (b.peak + b.offPeak));
+    const cheapestRoute = sorted[0];
+
+    const selectedRoute = useAlternativeFares ? cheapestRoute : defaultRoute;
+
     return {
-      peak: fallbackFare.peak,
-      offPeak: fallbackFare.offPeak,
-      isFromApi: false,
+      ...fareResult,
+      peak: selectedRoute.peak,
+      offPeak: selectedRoute.offPeak,
+      routeDescription: selectedRoute.routeDescription,
     };
-  })();
-
-  // Register in-flight
-  inFlightRequests.set(key, fetchPromise);
-
-  try {
-    return await fetchPromise;
-  } finally {
-    inFlightRequests.delete(key);
   }
+
+  return fareResult;
 }
 
 /**

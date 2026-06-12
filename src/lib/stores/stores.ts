@@ -66,6 +66,18 @@ if (isBrowser) {
   });
 }
 
+const initialUseAlternativeFares = isBrowser && (
+  localStorage.getItem('oystersavings_use_alternative_fares') === 'true' ||
+  localStorage.getItem('oystersavings_use_cheapest_tfl_route') === 'true'
+);
+export const useAlternativeFares = writable<boolean>(initialUseAlternativeFares);
+
+if (isBrowser) {
+  useAlternativeFares.subscribe(value => {
+    localStorage.setItem('oystersavings_use_alternative_fares', String(value));
+  });
+}
+
 
 // Savings results
 export const savingsResult = derived(

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     classifiedJourneys,
     detectedPatterns,
@@ -9,6 +8,7 @@
     selectedFareType,
     fareTypeCost,
     globalAdvancedMode,
+    useAlternativeFares,
   } from "$lib/stores/stores";
   import {
     type RecurrenceRule,
@@ -122,15 +122,34 @@
             offPeak: lookupFare(zoneRange, false, rule.mode)
           };
           
-          const result = await lookupStationFare(rule.originStation, rule.destinationStation, fallback);
+          const result = await lookupStationFare(rule.originStation, rule.destinationStation, fallback, $useAlternativeFares);
           
           if (result.isFromApi) {
-            // Check if exact fare is missing or different from cached API fare
-            if (rule.exactFarePeak !== result.peak || rule.exactFareOffPeak !== result.offPeak) {
+            let targetPeak = result.peak;
+            let targetOffPeak = result.offPeak;
+            let targetDesc = result.routeDescription;
+
+            // If the rule already has a route description, try to match it in result.options
+            if (rule.routeDescription && result.options) {
+              const matchedOpt = result.options.find(o => o.routeDescription === rule.routeDescription);
+              if (matchedOpt) {
+                targetPeak = matchedOpt.peak;
+                targetOffPeak = matchedOpt.offPeak;
+                targetDesc = matchedOpt.routeDescription;
+              }
+            }
+
+            // Check if exact fare is missing or different
+            if (
+              rule.exactFarePeak !== targetPeak || 
+              rule.exactFareOffPeak !== targetOffPeak ||
+              rule.routeDescription !== targetDesc
+            ) {
               currentRules[i] = {
                 ...rule,
-                exactFarePeak: result.peak,
-                exactFareOffPeak: result.offPeak
+                exactFarePeak: targetPeak,
+                exactFareOffPeak: targetOffPeak,
+                routeDescription: targetDesc
               };
               updatedAny = true;
             }
@@ -147,9 +166,21 @@
     }
   }
 
-  onMount(() => {
-    // Sync fares when component mounts
+  $effect(() => {
+    // Re-run advanced fare query and background sync when setting toggles
+    const cheapestOption = $useAlternativeFares;
+    if (showRecurrenceModal) {
+      fetchAdvancedFare();
+    }
     syncRuleFaresWithApi();
+  });
+
+  $effect(() => {
+    if ($globalAdvancedMode) {
+      if (defMode === "national_rail" || defMode === "nr_tube") {
+        defMode = "underground";
+      }
+    }
   });
 
   // Default fallback values to avoid state_referenced_locally warning and maintain single reference
@@ -203,6 +234,121 @@
   let showDestDropdown = $state(false);
   let advancedFareLoading = $state(false);
   let advancedFareResult = $state<ApiFareResult | null>(null);
+
+  let selectedRouteIndex = $state<number>(0);
+  let selectedPeakFare = $state<number>(0);
+  let selectedOffPeakFare = $state<number>(0);
+  let selectedRouteDescription = $state<string>("");
+
+  // Default Home Station state
+  let useDefaultHomeStation = $state(
+    typeof window !== "undefined" && localStorage.getItem("oystersavings_use_default_home_station") === "true"
+  );
+  let defaultHomeStation = $state<{ key: string; info: StationInfo } | null>(null);
+  let sidebarHomeQuery = $state("");
+  let sidebarHomeResults = $state<StationSearchResult[]>([]);
+  let showSidebarHomeDropdown = $state(false);
+
+  // Restore defaultHomeStation from localStorage if available
+  $effect(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("oystersavings_default_home_station");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.key && parsed.info) {
+            defaultHomeStation = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse defaultHomeStation", e);
+        }
+      }
+    }
+  });
+
+  // Watch for changes to persist
+  $effect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("oystersavings_use_default_home_station", String(useDefaultHomeStation));
+      if (defaultHomeStation) {
+        localStorage.setItem("oystersavings_default_home_station", JSON.stringify(defaultHomeStation));
+      } else {
+        localStorage.removeItem("oystersavings_default_home_station");
+      }
+    }
+  });
+
+  function handleSidebarHomeSearch(query: string) {
+    sidebarHomeQuery = query;
+    if (query.trim().length >= 1) {
+      sidebarHomeResults = searchStations(query, 5);
+      showSidebarHomeDropdown = true;
+    } else {
+      sidebarHomeResults = [];
+      showSidebarHomeDropdown = false;
+    }
+  }
+
+  // Effect to reactively update selected fare options when advancedFareResult or useAlternativeFares changes
+  $effect(() => {
+    if (advancedFareResult && advancedFareResult.isFromApi && advancedFareResult.options) {
+      // If we are editing an existing rule, try to pre-select based on the saved routeDescription
+      const savedDesc = editRuleId ? $recurrenceRules.find(r => r.id === editRuleId)?.routeDescription : null;
+      let targetIndex = -1;
+
+      if (savedDesc) {
+        targetIndex = advancedFareResult.options.findIndex(o => o.routeDescription === savedDesc);
+      }
+
+      if (targetIndex === -1) {
+        // Fallback: match by cheapest if useAlternativeFares is true, else default
+        if ($useAlternativeFares) {
+          let cheapestIdx = 0;
+          let minCost = Infinity;
+          advancedFareResult.options.forEach((opt, idx) => {
+            const cost = opt.peak + opt.offPeak;
+            if (cost < minCost) {
+              minCost = cost;
+              cheapestIdx = idx;
+            }
+          });
+          targetIndex = cheapestIdx;
+        } else {
+          const defIdx = advancedFareResult.options.findIndex(o => o.routeDescription === 'Default Route');
+          targetIndex = defIdx !== -1 ? defIdx : 0;
+        }
+      }
+
+      selectedRouteIndex = targetIndex;
+      const selectedOpt = advancedFareResult.options[targetIndex] || advancedFareResult.options[0];
+      if (selectedOpt) {
+        selectedPeakFare = selectedOpt.peak;
+        selectedOffPeakFare = selectedOpt.offPeak;
+        selectedRouteDescription = selectedOpt.routeDescription;
+      }
+    } else if (advancedFareResult) {
+      selectedRouteIndex = 0;
+      selectedPeakFare = advancedFareResult.peak;
+      selectedOffPeakFare = advancedFareResult.offPeak;
+      selectedRouteDescription = "";
+    } else {
+      selectedRouteIndex = 0;
+      selectedPeakFare = 0;
+      selectedOffPeakFare = 0;
+      selectedRouteDescription = "";
+    }
+  });
+
+  function handleRouteChoiceChange() {
+    if (advancedFareResult && advancedFareResult.isFromApi && advancedFareResult.options) {
+      const selectedOpt = advancedFareResult.options[selectedRouteIndex];
+      if (selectedOpt) {
+        selectedPeakFare = selectedOpt.peak;
+        selectedOffPeakFare = selectedOpt.offPeak;
+        selectedRouteDescription = selectedOpt.routeDescription;
+      }
+    }
+  }
 
   // Transition Overlay state
   let showTransition = $state(false);
@@ -313,6 +459,7 @@
       selectedOriginStation.info.naptanId,
       selectedDestStation.info.naptanId,
       fallback,
+      $useAlternativeFares,
     );
     advancedFareLoading = false;
   }
@@ -419,7 +566,7 @@
     // Outbound
     const outboundRepTime = getRepresentativeTime(newTimePeriod);
     const isOutboundPeak = isPeakJourney(dateObj, outboundRepTime, newOriginZone, newDestZone);
-    const outboundBase = isOutboundPeak ? advancedFareResult.peak : advancedFareResult.offPeak;
+    const outboundBase = isOutboundPeak ? selectedPeakFare : selectedOffPeakFare;
     const outboundFare = calculateDiscountedFare(
       outboundBase,
       $selectedFareType,
@@ -435,7 +582,7 @@
     // Return
     const returnRepTime = getRepresentativeTime(newReturnTimePeriod);
     const isReturnPeak = isPeakJourney(dateObj, returnRepTime, newOriginZone, newDestZone);
-    const returnBase = isReturnPeak ? advancedFareResult.peak : advancedFareResult.offPeak;
+    const returnBase = isReturnPeak ? selectedPeakFare : selectedOffPeakFare;
     const returnFare = calculateDiscountedFare(
       returnBase,
       $selectedFareType,
@@ -880,8 +1027,9 @@
           destinationStationName: selectedDestStation.info.name,
           ...(advancedFareResult &&
             advancedFareResult.isFromApi && {
-              exactFarePeak: advancedFareResult.peak,
-              exactFareOffPeak: advancedFareResult.offPeak,
+              exactFarePeak: selectedPeakFare,
+              exactFareOffPeak: selectedOffPeakFare,
+              routeDescription: selectedRouteDescription,
             }),
         }),
     };
@@ -944,6 +1092,7 @@
           peak: rule.exactFarePeak,
           offPeak: rule.exactFareOffPeak,
           isFromApi: true,
+          routeDescription: rule.routeDescription,
         } as ApiFareResult;
       }
     }
@@ -1030,16 +1179,22 @@
     newRuleEndDate = planEnd;
     // Reset Advanced Mode
     advancedMode = $globalAdvancedMode;
-    originStationQuery = "";
-    destStationQuery = "";
-    selectedOriginStation = null;
-    selectedDestStation = null;
     originStationResults = [];
     destStationResults = [];
     showOriginDropdown = false;
     showDestDropdown = false;
     advancedFareResult = null;
     advancedFareLoading = false;
+
+    if (advancedMode && useDefaultHomeStation && defaultHomeStation) {
+      selectedOriginStation = { ...defaultHomeStation };
+      originStationQuery = defaultHomeStation.info.name;
+    } else {
+      selectedOriginStation = null;
+      originStationQuery = "";
+    }
+    destStationQuery = "";
+    selectedDestStation = null;
   }
 
   function clearOriginStation() {
@@ -1211,6 +1366,11 @@
                         {rule.originStationName}
                         {rule.isReturn ? " ↔ " : " → "}
                         {rule.destinationStationName} •
+                        {#if rule.routeDescription && rule.routeDescription !== 'Default Route'}
+                          <div class="route-path-desc" style="color: var(--color-text-secondary); font-size: 0.75rem; font-style: italic; margin-top: 0.15rem; margin-bottom: 0.1rem; word-break: break-word;">
+                            ↳ {rule.routeDescription}
+                          </div>
+                        {/if}
                       {:else if rule.mode === "bus"}
                         Bus •
                       {:else}
@@ -1295,6 +1455,11 @@
                       {rule.originStationName}
                       {rule.isReturn ? " ↔ " : " → "}
                       {rule.destinationStationName}
+                      {#if rule.routeDescription && rule.routeDescription !== 'Default Route'}
+                        <div class="route-path-desc" style="color: var(--color-text-secondary); font-size: 0.75rem; font-style: italic; margin-top: 0.15rem; margin-bottom: 0.1rem; word-break: break-word;">
+                          ↳ {rule.routeDescription}
+                        </div>
+                      {/if}
                     {:else if rule.mode === "bus"}
                       Bus
                     {:else}
@@ -1644,73 +1809,210 @@
           {#if $globalAdvancedMode}
             <div
               class="advanced-sidebar-notice"
-              style="margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; background: rgba(239, 123, 16, 0.1); border: 1px dashed rgba(239, 123, 16, 0.35); border-radius: 6px; font-size: 0.7rem; color: #ef7b10; line-height: 1.4;"
+              style="margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; background: rgba(0, 114, 206, 0.1); border: 1px dashed rgba(0, 114, 206, 0.35); border-radius: 6px; font-size: 0.7rem; color: var(--color-oyster-blue); line-height: 1.4;"
             >
-              ⚠️ Not applicable in Advanced Mode. Station fares are retrieved
-              directly from the TfL API.
+              🚇 Advanced Mode defaults: Station fares will be queried using the selected mode & time.
             </div>
           {/if}
 
-          <div
-            class="default-settings-inputs"
-            style={$globalAdvancedMode
-              ? "opacity: 0.4; pointer-events: none; user-select: none;"
-              : ""}
-          >
-            <label class="setting-label" for="def-mode">Default Mode</label>
-            <select class="input-field" id="def-mode" bind:value={defMode}>
-              <option value="underground">Tube</option>
-              <option value="national_rail">National Rail</option>
-              <option value="nr_tube">NR + Tube / Mixed</option>
-              <option value="bus">Bus / Tram</option>
-            </select>
-
-            <label
-              class="setting-label"
-              for="def-time-period"
-              style="margin-top: 0.5rem;">Default Time</label
-            >
-            <select
-              class="input-field"
-              id="def-time-period"
-              bind:value={defTimePeriod}
-            >
-              {#each TIME_PERIODS as t}
-                <option value={t.value}>{t.label}</option>
-              {/each}
-            </select>
-
-            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-              <div style="flex: 1;">
-                <label class="setting-label" for="def-origin-zone"
-                  >Origin Zone</label
+          <div class="default-settings-inputs">
+            <span class="setting-label" style="display: block; margin-bottom: 0.25rem;">Default Mode</span>
+            {#if $globalAdvancedMode}
+              <div class="segmented-control" style="margin-bottom: 0.5rem;">
+                <button
+                  type="button"
+                  class="segment-btn"
+                  class:active={defMode !== "bus"}
+                  onclick={() => {
+                    defMode = "underground";
+                  }}
+                  style="padding: 0.35rem 0.5rem; font-size: 0.75rem;"
                 >
-                <select
-                  class="input-field"
-                  id="def-origin-zone"
-                  bind:value={defOriginZone}
+                  <span class="btn-icon">🚇</span> Tube/Rail
+                </button>
+                <button
+                  type="button"
+                  class="segment-btn"
+                  class:active={defMode === "bus"}
+                  onclick={() => {
+                    defMode = "bus";
+                  }}
+                  style="padding: 0.35rem 0.5rem; font-size: 0.75rem;"
                 >
-                  {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
-                    <option value={z}>Zone {z}</option>
-                  {/each}
-                </select>
+                  <span class="btn-icon">🚌</span> Bus/Tram
+                </button>
               </div>
-              <div style="flex: 1;">
-                <label class="setting-label" for="def-dest-zone"
-                  >Dest. Zone</label
-                >
-                <select
-                  class="input-field"
-                  id="def-dest-zone"
-                  bind:value={defDestZone}
-                >
-                  {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
-                    <option value={z}>Zone {z}</option>
-                  {/each}
-                </select>
+            {:else}
+              <select class="input-field" id="def-mode" bind:value={defMode} style="margin-bottom: 0.5rem;">
+                <option value="underground">Tube</option>
+                <option value="national_rail">National Rail</option>
+                <option value="nr_tube">NR + Tube / Mixed</option>
+                <option value="bus">Bus / Tram</option>
+              </select>
+            {/if}
+
+            {#if defMode !== "bus"}
+              <label
+                class="setting-label"
+                for="def-time-period"
+                style="margin-top: 0.25rem;">Default Time</label
+              >
+              <select
+                class="input-field"
+                id="def-time-period"
+                bind:value={defTimePeriod}
+              >
+                {#each TIME_PERIODS as t}
+                  <option value={t.value}>{t.label}</option>
+                {/each}
+              </select>
+            {/if}
+
+            {#if !$globalAdvancedMode}
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <div style="flex: 1;">
+                  <label class="setting-label" for="def-origin-zone"
+                    >Origin Zone</label
+                  >
+                  <select
+                    class="input-field"
+                    id="def-origin-zone"
+                    bind:value={defOriginZone}
+                  >
+                    {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
+                      <option value={z}>Zone {z}</option>
+                    {/each}
+                  </select>
+                </div>
+                <div style="flex: 1;">
+                  <label class="setting-label" for="def-dest-zone"
+                    >Dest. Zone</label
+                  >
+                  <select
+                    class="input-field"
+                    id="def-dest-zone"
+                    bind:value={defDestZone}
+                  >
+                    {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as z}
+                      <option value={z}>Zone {z}</option>
+                    {/each}
+                  </select>
+                </div>
               </div>
-            </div>
+            {/if}
           </div>
+
+          {#if $globalAdvancedMode}
+            <div class="form-group" style="margin-top: 0.75rem; margin-bottom: 0.25rem;">
+              <label class="checkbox-field" class:active={useDefaultHomeStation} for="sidebar-use-home-station">
+                <input
+                  type="checkbox"
+                  id="sidebar-use-home-station"
+                  bind:checked={useDefaultHomeStation}
+                />
+                <span class="checkmark"></span>
+                <span class="checkbox-text">🏠 Set Default Home Station</span>
+              </label>
+            </div>
+
+            {#if useDefaultHomeStation}
+              <div class="form-group station-autocomplete" style="margin-top: 0.5rem; position: relative;">
+                <label class="setting-label" for="sidebar-home-station">Home Station</label>
+                <div class="station-input-wrapper">
+                  {#if defaultHomeStation && !showSidebarHomeDropdown}
+                    <div
+                      class="station-selected-display"
+                      onclick={() => {
+                        sidebarHomeQuery = defaultHomeStation?.info.name ?? '';
+                        showSidebarHomeDropdown = true;
+                        const el = document.getElementById('sidebar-home-station');
+                        if (el) el.focus();
+                      }}
+                      onkeydown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          sidebarHomeQuery = defaultHomeStation?.info.name ?? '';
+                          showSidebarHomeDropdown = true;
+                          const el = document.getElementById('sidebar-home-station');
+                          if (el) el.focus();
+                        }
+                      }}
+                      role="button"
+                      tabindex="-1"
+                    >
+                      <span class="station-display-name">{defaultHomeStation.info.name}</span>
+                      {#each defaultHomeStation.info.modes as mode}
+                        <img src="/images/{mode}.svg" alt={mode} class="mode-icon-inline small" title={mode} />
+                      {/each}
+                      <span class="station-zone-badge small" style="color: {getZoneColor(defaultHomeStation.info.zone)}; border-color: {getZoneColor(defaultHomeStation.info.zone)}40; background: {getZoneColor(defaultHomeStation.info.zone)}15;"
+                        >{formatZoneDisplay(defaultHomeStation.info)}</span
+                      >
+                    </div>
+                  {:else}
+                    <input
+                      type="text"
+                      class="input-field"
+                      id="sidebar-home-station"
+                      value={sidebarHomeQuery}
+                      oninput={(e) => handleSidebarHomeSearch(e.currentTarget.value)}
+                      onfocus={() => {
+                        if (sidebarHomeQuery.length >= 1)
+                          showSidebarHomeDropdown = true;
+                      }}
+                      placeholder="Type a station name..."
+                      autocomplete="off"
+                    />
+                    {#if sidebarHomeQuery}
+                      <button
+                        type="button"
+                        class="clear-input-btn"
+                        style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 0.8rem;"
+                        onclick={() => {
+                          defaultHomeStation = null;
+                          sidebarHomeQuery = "";
+                          sidebarHomeResults = [];
+                          showSidebarHomeDropdown = false;
+                        }}
+                      >
+                        ✕
+                      </button>
+                    {/if}
+                  {/if}
+                </div>
+
+                {#if showSidebarHomeDropdown && sidebarHomeResults.length > 0}
+                  <div
+                    class="autocomplete-dropdown"
+                    style="position: absolute; z-index: 100; width: 100%; max-height: 200px; overflow-y: auto; background: var(--color-bg-card); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; margin-top: 0.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.4);"
+                  >
+                    {#each sidebarHomeResults as result}
+                      <button
+                        type="button"
+                        class="dropdown-item"
+                        style="display: flex; width: 100%; align-items: center; gap: 0.4rem; padding: 0.5rem; text-align: left; background: none; border: none; color: var(--color-text); cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.05);"
+                        onclick={() => {
+                          defaultHomeStation = { key: result.key, info: result.info };
+                          sidebarHomeQuery = result.info.name;
+                          showSidebarHomeDropdown = false;
+                          sidebarHomeResults = [];
+                        }}
+                      >
+                        <span style="flex: 1; font-size: 0.85rem;">{result.info.name}</span>
+                        {#each result.info.modes as m}
+                          <img src="/images/{m}.svg" alt={m} style="width: 14px; height: 14px;" />
+                        {/each}
+                        <span
+                          class="station-zone-badge small"
+                          style="font-size: 0.7rem; padding: 0.1rem 0.25rem; border-radius: 4px; border: 1px solid; color: {getZoneColor(result.info.zone)}; border-color: {getZoneColor(result.info.zone)}40; background: {getZoneColor(result.info.zone)}15;"
+                        >
+                          {formatZoneDisplay(result.info)}
+                        </span>
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          {/if}
 
           <!-- Advanced Mode Toggle -->
           <div
@@ -1733,6 +2035,30 @@
               >
             </label>
           </div>
+
+          <!-- Always Use Cheapest Route Toggle -->
+          {#if $globalAdvancedMode}
+            <div
+              class="form-group"
+              style="margin-top: 0.5rem; margin-bottom: 0;"
+            >
+              <label
+                class="checkbox-field"
+                class:active={$useAlternativeFares}
+                for="sidebar-cheapest-tfl-route"
+              >
+                <input
+                  type="checkbox"
+                  id="sidebar-cheapest-tfl-route"
+                  bind:checked={$useAlternativeFares}
+                />
+                <span class="checkmark"></span>
+                <span class="checkbox-text"
+                  >🔄 Always Use Cheapest Route</span
+                >
+              </label>
+            </div>
+          {/if}
         </div>
       </div>
 
@@ -2244,7 +2570,7 @@
                   selectedDestStation,
                 )}
                 {@const discountedPeak = calculateDiscountedFare(
-                  advancedFareResult.peak,
+                  selectedPeakFare,
                   $selectedFareType,
                   true,
                   false,
@@ -2253,7 +2579,7 @@
                   resolvedModeForDiscount,
                 )}
                 {@const discountedOffPeak = calculateDiscountedFare(
-                  advancedFareResult.offPeak,
+                  selectedOffPeakFare,
                   $selectedFareType,
                   false,
                   false,
@@ -2269,7 +2595,7 @@
                         class="fare-api-badge"
                         style="cursor: help;"
                         role="status"
-                        onmouseenter={(e) => showFareTooltip(e, true, fareResult.peak, discountedPeak, fareResult.offPeak, discountedOffPeak)}
+                        onmouseenter={(e) => showFareTooltip(e, true, selectedPeakFare, discountedPeak, selectedOffPeakFare, discountedOffPeak)}
                         onmouseleave={hideFareTooltip}
                       >✓ TfL API</span>
                     {:else}
@@ -2277,7 +2603,7 @@
                         class="fare-fallback-badge"
                         style="cursor: help;"
                         role="status"
-                        onmouseenter={(e) => showFareTooltip(e, false, fareResult.peak, discountedPeak, fareResult.offPeak, discountedOffPeak)}
+                        onmouseenter={(e) => showFareTooltip(e, false, selectedPeakFare, discountedPeak, selectedOffPeakFare, discountedOffPeak)}
                         onmouseleave={hideFareTooltip}
                       >~ Estimated</span>
                     {/if}
@@ -2285,6 +2611,48 @@
                     <span style="margin: 0 0.3rem; color: var(--color-text-muted);">|</span>
                     Off-Peak: <strong>£{discountedOffPeak.toFixed(2)}</strong>
                   </div>
+
+                  {#if fareResult.isFromApi && fareResult.options && fareResult.options.length > 1}
+                    <div class="route-select-wrapper" style="margin-top: 0.35rem;">
+                      <span style="font-size: 0.8rem; color: var(--color-text-muted); display: block; margin-bottom: 0.25rem;">
+                        Select Route / Alternative Fare:
+                      </span>
+                      <div class="route-options-list" style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
+                        {#each fareResult.options as opt, idx}
+                          <button
+                            type="button"
+                            class="route-option-card"
+                            style="display: flex; align-items: flex-start; text-align: left; width: 100%; padding: 0.5rem 0.65rem; border-radius: 8px; background: {selectedRouteIndex === idx ? 'rgba(0, 114, 206, 0.12)' : 'rgba(255, 255, 255, 0.02)'}; border: 1px solid {selectedRouteIndex === idx ? 'var(--color-oyster-blue)' : 'rgba(255, 255, 255, 0.08)'}; color: var(--color-text); cursor: pointer; transition: all 0.2s ease; gap: 0.5rem;"
+                            onclick={() => {
+                              selectedRouteIndex = idx;
+                              handleRouteChoiceChange();
+                            }}
+                          >
+                            <!-- Styled Radio indicator -->
+                            <div style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid {selectedRouteIndex === idx ? 'var(--color-oyster-blue)' : 'rgba(255, 255, 255, 0.25)'}; margin-top: 0.1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: {selectedRouteIndex === idx ? 'var(--color-oyster-blue)' : 'transparent'};">
+                              {#if selectedRouteIndex === idx}
+                                <div style="width: 6px; height: 6px; border-radius: 50%; background: #fff;"></div>
+                              {/if}
+                            </div>
+                            <!-- Route details -->
+                            <div style="display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0;">
+                              <div style="font-size: 0.78rem; font-weight: 500; line-height: 1.25; color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text-secondary)'}; word-break: break-word; overflow-wrap: break-word;">
+                                {opt.routeDescription}
+                              </div>
+                              <div style="font-size: 0.72rem; color: var(--color-text-muted);">
+                                Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{opt.peak.toFixed(2)}</strong> <span style="margin: 0 0.15rem; opacity: 0.5;">•</span> Off-Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{opt.offPeak.toFixed(2)}</strong>
+                              </div>
+                            </div>
+                          </button>
+                        {/each}
+                      </div>
+                    </div>
+                  {:else if fareResult.isFromApi && fareResult.routeDescription && fareResult.routeDescription !== 'Default Route'}
+                    <div class="route-desc-display" style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem;">
+                      Route: <span style="color: var(--color-text); font-style: italic;">{fareResult.routeDescription}</span>
+                    </div>
+                  {/if}
+
                   <div class="estimated-total-row" style="font-size: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 0.35rem; margin-top: 0.15rem;">
                     Estimated Fare: <strong>£{advancedTotalFare.toFixed(2)}</strong>
                   </div>
