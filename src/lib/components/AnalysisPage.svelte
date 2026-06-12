@@ -6,7 +6,7 @@
   } from '$lib/stores/stores';
   import { calculateFareTypeSavings } from '$lib/engine/savingsEngine';
   import { FARE_TYPES, type FareType } from '$lib/data/fareData';
-  import { getZoneColor } from '$lib/data/stations';
+  import { getZoneColor } from '$lib/data/stationService';
 
   let activeTab = $state<'journeys' | 'savings' | 'caps'>('journeys');
   let sortKey = $state<string>('date');
@@ -77,7 +77,7 @@
     return mode;
   }
 
-  // getZoneColor is imported from $lib/data/stations for consistent zone coloring
+  // getZoneColor is imported from $lib/data/stationService for consistent zone coloring
 
   function getModeBadgeClass(m: string): string {
     if (m === 'bus') return 'badge-bus';

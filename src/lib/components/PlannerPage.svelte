@@ -45,7 +45,7 @@
     getStationByNaptan,
     type StationSearchResult,
     type StationInfo,
-  } from "$lib/data/stations";
+  } from "$lib/data/stationService";
   import {
     lookupStationFare,
     type FareResult as ApiFareResult,

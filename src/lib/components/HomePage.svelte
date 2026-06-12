@@ -11,7 +11,7 @@
     capSummary,
     currentPage,
   } from "$lib/stores/stores";
-  import { loadDemoData } from "$lib/data/demoData";
+  import { loadDemoData } from "$lib/data/demoDataGenerator";
 
   let showStats = $derived($fileLoaded);
   let journeyCount = $derived($totalJourneys);

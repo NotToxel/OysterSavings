@@ -1,6 +1,6 @@
 // Journey Classifier — extracts mode, zones, peak/off-peak from CSV journey strings
 import type { ParsedJourney } from './csvParser';
-import { detectTransportMode, getStationZone, getStationBestZone, getStationInfo, type TransportMode } from '../data/stations';
+import { detectTransportMode, getStationZone, getStationBestZone, getStationInfo, type TransportMode } from '../data/stationService';
 import { getZoneRange, isPeakJourney, isUKBankHoliday } from '../data/fareData';
 
 export interface ClassifiedJourney {
