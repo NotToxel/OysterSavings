@@ -6,7 +6,7 @@
   } from '$lib/stores/stores';
   import {
     FARE_TYPES, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
-    TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_MONTHLY, STUDENT_TRAVELCARD_ANNUAL,
+    TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_WEEKLY, STUDENT_TRAVELCARD_MONTHLY, STUDENT_TRAVELCARD_ANNUAL,
     BUS_PASS_WEEKLY, BUS_PASS_MONTHLY, BUS_PASS_ANNUAL,
     STUDENT_BUS_PASS_MONTHLY, STUDENT_BUS_PASS_ANNUAL,
     type FareType
@@ -206,7 +206,7 @@
         labels: zoneLabels,
         datasets: buildDatasets(
           'weeklyPayg', 'weeklyPaygFareType', 'weeklyTravelcard', 'Weekly Travelcard',
-          undefined, undefined,
+          'weeklyStudentTravelcard', 'Student Weekly TC',
           'weeklyBusPass', 'Weekly Bus & Tram Pass'
         ),
       };
@@ -300,6 +300,7 @@
       'Weekly TC': TRAVELCARD_WEEKLY,
       'Monthly TC': TRAVELCARD_MONTHLY,
       'Annual TC': TRAVELCARD_ANNUAL,
+      'Student Weekly TC': STUDENT_TRAVELCARD_WEEKLY,
       'Student Monthly TC': STUDENT_TRAVELCARD_MONTHLY,
       'Student TC': STUDENT_TRAVELCARD_ANNUAL,
     };
@@ -417,14 +418,12 @@
               <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyTravelcard' : activeSpan === 'monthly' ? 'monthlyTravelcard' : 'annualTravelcard')}</td>
             {/each}
           </tr>
-          {#if activeSpan !== 'weekly'}
-            <tr>
-              <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Travelcard</td>
-              {#each matrixZones as zone}
-                <td class="price-cell">{getCostForZone(zone, activeSpan === 'monthly' ? 'monthlyStudentTravelcard' : 'annualStudentTravelcard')}</td>
-              {/each}
-            </tr>
-          {/if}
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Travelcard</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyStudentTravelcard' : activeSpan === 'monthly' ? 'monthlyStudentTravelcard' : 'annualStudentTravelcard')}</td>
+            {/each}
+          </tr>
           <tr>
             <td class="product-name"><span class="product-dot" style="background: #DC241F;"></span> Bus & Tram Pass</td>
             {#each matrixZones as zone}
@@ -526,6 +525,12 @@
             <td class="product-name"><span class="product-dot" style="background: #DC241F;"></span> Annual Travelcard</td>
             {#each matrixZones as zone}
               <td class="price-cell">{getProductPrice(zone, 'Annual TC')}</td>
+            {/each}
+          </tr>
+          <tr>
+            <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Weekly TC</td>
+            {#each matrixZones as zone}
+              <td class="price-cell">{getProductPrice(zone, 'Student Weekly TC')}</td>
             {/each}
           </tr>
           <tr>

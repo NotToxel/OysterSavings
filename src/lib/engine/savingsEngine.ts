@@ -9,6 +9,7 @@ import {
   TRAVELCARD_WEEKLY,
   TRAVELCARD_MONTHLY,
   TRAVELCARD_ANNUAL,
+  STUDENT_TRAVELCARD_WEEKLY,
   STUDENT_TRAVELCARD_MONTHLY,
   STUDENT_TRAVELCARD_ANNUAL,
   STUDENT_PHOTOCARD_FEE,
@@ -55,6 +56,7 @@ export interface ProductComparisonResult {
   weeklyPayg: number;
   weeklyPaygFareType: number;
   weeklyTravelcard: number;
+  weeklyStudentTravelcard: number;
   weeklyBusPass: number;
   monthlyPayg: number;
   monthlyPaygFareType: number;
@@ -218,18 +220,37 @@ export function calculateProductComparison(
     }
   }
 
-  // Calculate max zone traveled in the history (minimum fallback of Zone 2)
+  // Calculate max/min zone traveled in the history (minimum fallback of Zone 2)
+  let minZoneTraveled = 9;
   let maxZoneTraveled = 2;
+  let hasRailOrTube = false;
   for (const j of journeys) {
-    if (j.originZone) maxZoneTraveled = Math.max(maxZoneTraveled, j.originZone);
-    if (j.destinationZone) maxZoneTraveled = Math.max(maxZoneTraveled, j.destinationZone);
+    if (j.mode !== 'bus' && (j.mode as string) !== 'tram') {
+      if (j.originZone) {
+        minZoneTraveled = Math.min(minZoneTraveled, j.originZone);
+        maxZoneTraveled = Math.max(maxZoneTraveled, j.originZone);
+        hasRailOrTube = true;
+      }
+      if (j.destinationZone) {
+        minZoneTraveled = Math.min(minZoneTraveled, j.destinationZone);
+        maxZoneTraveled = Math.max(maxZoneTraveled, j.destinationZone);
+        hasRailOrTube = true;
+      }
+    }
   }
 
   // Dynamically filter zoneRanges to only include zones up to maxZoneTraveled (min fallback of Z1-2)
   const zoneRanges: string[] = [];
   for (let z = 2; z <= maxZoneTraveled; z++) {
-    if (z <= 6) {
+    if (z <= 9) {
       zoneRanges.push(`Z1-${z}`);
+    }
+  }
+  // Specific outer zone range if traveler stays outside Zone 1
+  if (hasRailOrTube && minZoneTraveled > 1 && maxZoneTraveled >= minZoneTraveled) {
+    const rangeKey = minZoneTraveled === maxZoneTraveled ? `Z${minZoneTraveled}` : `Z${minZoneTraveled}-${maxZoneTraveled}`;
+    if (!zoneRanges.includes(rangeKey)) {
+      zoneRanges.push(rangeKey);
     }
   }
   if (zoneRanges.length === 0) {
@@ -276,6 +297,7 @@ export function calculateProductComparison(
     const weeklyTc = isZip ? (TRAVELCARD_WEEKLY[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_WEEKLY[zoneRange] ?? 0);
     const monthlyTc = isZip ? (TRAVELCARD_MONTHLY[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_MONTHLY[zoneRange] ?? 0);
     const annualTc = isZip ? (TRAVELCARD_ANNUAL[zoneRange] ?? 0) * 0.5 : (TRAVELCARD_ANNUAL[zoneRange] ?? 0);
+    const studentWeeklyTc = isZip ? 0 : (STUDENT_TRAVELCARD_WEEKLY[zoneRange] ?? 0);
     const studentMonthlyTc = isZip ? 0 : (STUDENT_TRAVELCARD_MONTHLY[zoneRange] ?? 0);
     const studentAnnualTc = isZip ? 0 : (STUDENT_TRAVELCARD_ANNUAL[zoneRange] ?? 0);
 
@@ -290,6 +312,7 @@ export function calculateProductComparison(
     const monthlyTcWithCard = monthlyTc + weeklyUncoveredSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
     const annualTcWithCard = annualTc + weeklyUncoveredSpend * 52 + (fareType !== 'student' ? cardCost : 0);
 
+    const studentWeeklyTcWithCard = studentWeeklyTc > 0 ? studentWeeklyTc + weeklyUncoveredSpend + (cardCost / 52) : 0;
     const studentMonthlyTcWithCard = studentMonthlyTc > 0 ? studentMonthlyTc + weeklyUncoveredSpend * 4.33 + (cardCost / 12) : 0;
     const studentAnnualTcWithCard = studentAnnualTc > 0 ? studentAnnualTc + weeklyUncoveredSpend * 52 + cardCost : 0;
 
@@ -298,6 +321,7 @@ export function calculateProductComparison(
       weeklyPayg,
       weeklyPaygFareType: paygFareTypeCostWeekly,
       weeklyTravelcard: weeklyTcWithCard,
+      weeklyStudentTravelcard: studentWeeklyTcWithCard,
       weeklyBusPass: round2(weeklyBusPassCost),
       monthlyPayg: round2(weeklyPaygRaw * 4.33),
       monthlyPaygFareType: paygFareTypeCostMonthly,
@@ -315,6 +339,7 @@ export function calculateProductComparison(
         ['PAYG', weeklyPayg],
         ['PAYG + Fare Type', paygFareTypeCostWeekly],
         ['Travelcard', weeklyTcWithCard],
+        ['Student Travelcard', studentWeeklyTcWithCard],
         ['Bus & Tram Pass', round2(weeklyBusPassCost)],
       ]),
       bestMonthly: getBest([

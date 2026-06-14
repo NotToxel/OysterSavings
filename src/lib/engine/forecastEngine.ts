@@ -424,3 +424,145 @@ export function simulatePlannedJourneysSpend(
 
   return totalCappedSpend;
 }
+
+/**
+ * Simulate the total capped spend over a planning period where a Travelcard is only active
+ * for a specific sub-range of dates, and PAYG is used for the remaining days.
+ */
+export function simulateHybridPlannedJourneysSpend(
+  plannedJourneys: PlannedJourney[],
+  tcZoneRange: string,
+  tcStartDate: Date | null,
+  tcEndDate: Date | null,
+  tcFareType: FareType,
+  paygFareType: FareType
+): number {
+  const dayMap = new Map<string, PlannedJourney[]>();
+  for (const j of plannedJourneys) {
+    const key = j.dateStr;
+    if (!dayMap.has(key)) dayMap.set(key, []);
+    dayMap.get(key)!.push(j);
+  }
+
+  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; isTcActive: boolean }[] = [];
+
+  for (const [dateStr, journeys] of dayMap) {
+    let totalFare = 0;
+    let maxZoneSpread = 0;
+    let maxZoneRange = 'Z1';
+
+    const firstJourneyDate = journeys[0].date;
+    // Normalize date parts to compare dates (ignoring time)
+    const dTime = new Date(firstJourneyDate.getFullYear(), firstJourneyDate.getMonth(), firstJourneyDate.getDate()).getTime();
+    
+    let isTcActive = false;
+    if (tcStartDate && tcEndDate) {
+      const tcStartTime = new Date(tcStartDate.getFullYear(), tcStartDate.getMonth(), tcStartDate.getDate()).getTime();
+      const tcEndTime = new Date(tcEndDate.getFullYear(), tcEndDate.getMonth(), tcEndDate.getDate()).getTime();
+      isTcActive = dTime >= tcStartTime && dTime <= tcEndTime;
+    }
+
+    const activeFareType = isTcActive ? tcFareType : paygFareType;
+
+    for (const j of journeys) {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const zoneRange = getZoneRange(j.originZone, j.destinationZone);
+      
+      let rawFare: number;
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        rawFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+      } else {
+        rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      }
+
+      const baseFare = calculateDiscountedFare(rawFare, activeFareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
+
+      let fare = baseFare;
+      if (isTcActive) {
+        const mockJourneyForPass = {
+          mode: j.mode,
+          originZone: j.originZone,
+          destinationZone: j.destinationZone,
+          isPeak: isPeakFare
+        };
+        // Travelcard coverage applies
+        fare = getTravelcardJourneyFare(mockJourneyForPass, tcZoneRange, baseFare, activeFareType);
+      }
+
+      totalFare += fare;
+
+      const parts = zoneRange.replace('Z', '').split('-');
+      const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
+      if (spread > maxZoneSpread) {
+        maxZoneSpread = spread;
+        maxZoneRange = zoneRange;
+      }
+    }
+
+    const isPeakDay = journeys.some(j => {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+    });
+
+    if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
+      maxZoneRange = 'Z1-2';
+    }
+
+    days.push({
+      date: firstJourneyDate,
+      dateStr,
+      totalFare,
+      maxZoneRange,
+      isPeakDay,
+      isTcActive
+    });
+  }
+
+  days.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const weekMap = new Map<string, typeof days>();
+  for (const day of days) {
+    const monday = getMonday(day.date);
+    const key = formatLocalDate(monday);
+    if (!weekMap.has(key)) weekMap.set(key, []);
+    weekMap.get(key)!.push(day);
+  }
+
+  let totalCappedSpend = 0;
+
+  for (const [weekKey, weekDays] of weekMap) {
+    // Determine the capping fare type for this week.
+    // If the Travelcard is active for any day in this week, use the tcFareType (student/adult).
+    // Otherwise, use paygFareType.
+    const weekHasTc = weekDays.some(d => d.isTcActive);
+    const weekFareType = weekHasTc ? tcFareType : paygFareType;
+
+    for (const d of weekDays) {
+      const dailyCap = lookupDailyCap(d.maxZoneRange, d.isPeakDay, d.isTcActive ? tcFareType : paygFareType);
+      d.totalFare = Math.min(d.totalFare, dailyCap);
+    }
+
+    const weekStart = parseLocalDate(weekKey);
+    const totalWeekFare = weekDays.reduce((s, d) => s + d.totalFare, 0);
+
+    const weekJourneys = weekDays.flatMap(d => dayMap.get(d.dateStr) || []);
+    let maxSpread = 0;
+    let maxRange = 'Z1';
+    for (const j of weekJourneys) {
+      const zr = getZoneRange(j.originZone, j.destinationZone);
+      const parts = zr.replace('Z', '').split('-');
+      const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
+      if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
+    }
+
+    if (maxRange === 'Z1' || maxRange === 'Z2') {
+      maxRange = 'Z1-2';
+    }
+
+    const weeklyCap = lookupWeeklyCap(maxRange, weekFareType);
+    totalCappedSpend += Math.min(totalWeekFare, weeklyCap);
+  }
+
+  return totalCappedSpend;
+}

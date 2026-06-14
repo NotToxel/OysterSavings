@@ -70,6 +70,7 @@ import {
   TRAVELCARD_WEEKLY,
   TRAVELCARD_MONTHLY,
   TRAVELCARD_ANNUAL,
+  STUDENT_TRAVELCARD_WEEKLY,
   STUDENT_TRAVELCARD_MONTHLY,
   STUDENT_TRAVELCARD_ANNUAL,
   FARE_TYPES,
@@ -448,4 +449,147 @@ export function getBusPassJourneyFare(
     return 0; // covered by Bus & Tram Pass
   }
   return baseFare; // rail/tube is not covered
+}
+
+/**
+ * Advance a date by N calendar months (TfL rolling month logic).
+ * A rolling month runs from the Nth of one month to the (N-1)th of the next.
+ * E.g., June 15 → July 15 (1 month advance), coverage: June 15 to July 14.
+ * Clamps to month end if needed (e.g., Jan 31 → Feb 28).
+ */
+export function advanceByMonths(date: Date, months: number): Date {
+  const result = new Date(date.getFullYear(), date.getMonth() + months, date.getDate());
+  // Clamp to end of target month if day overflowed
+  // (e.g., Jan 31 + 1 month → Mar 3 in some years, should be Feb 28)
+  const targetMonth = (date.getMonth() + months) % 12;
+  const targetYear = date.getFullYear() + Math.floor((date.getMonth() + months) / 12);
+  if (result.getMonth() !== ((targetMonth + 12) % 12) || result.getFullYear() !== targetYear) {
+    // Day overflowed — clamp to last day of target month
+    return new Date(targetYear, targetMonth + 1, 0);
+  }
+  return result;
+}
+
+/**
+ * Count calendar days between two dates (inclusive of start, exclusive of end).
+ */
+export function daysBetween(start: Date, end: Date): number {
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.round((end.getTime() - start.getTime()) / msPerDay);
+}
+
+/**
+ * Ceil a number to the nearest 10p (£0.10).
+ */
+function ceilTo10p(amount: number): number {
+  return Math.ceil(amount * 10) / 10;
+}
+
+export interface TravelcardPeriodResult {
+  cost: number;
+  label: string;
+}
+
+/**
+ * Calculate the cheapest way to cover a planning period with TfL travelcards.
+ *
+ * TfL sells: weekly (7-day), monthly (rolling calendar month), annual, and
+ * odd-period travelcards (min 1 month + 1 day, priced using monthly/30 daily
+ * rate, ceiling to nearest 10p).
+ *
+ * The price per month is fixed regardless of actual month length, but coverage
+ * varies (Feb=28d, Jun=30d, Jul=31d). This function uses actual calendar month
+ * boundaries from startDate to correctly count whole months and remaining days.
+ */
+export function calculateTravelcardPeriodCost(
+  startDate: Date,
+  endDate: Date,
+  weeklyRate: number,
+  monthlyRate: number,
+  annualRate: number
+): TravelcardPeriodResult {
+  if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return { cost: 0, label: 'N/A' };
+  }
+  const totalDays = daysBetween(startDate, endDate) + 1; // inclusive of both ends
+
+  // No TC product under 7 days
+  if (isNaN(totalDays) || totalDays <= 0) return { cost: 0, label: 'N/A' };
+  if (totalDays <= 6) return { cost: 0, label: 'Use PAYG' };
+
+  // Strategy 1: Weekly TCs only
+  const weeksNeeded = Math.ceil(totalDays / 7);
+  const weeklyCost = weeksNeeded * weeklyRate;
+  let bestCost = weeklyCost;
+  let bestLabel = `${weeksNeeded}× Weekly`;
+
+  // Strategy 2: Monthly-based (with odd-period extension if needed)
+  if (monthlyRate > 0 && totalDays >= 28) {
+    // Count how many whole calendar months fit from startDate
+    let wholeMonths = 0;
+    let cursor = new Date(startDate);
+    while (wholeMonths < 100) {
+      const nextMonth = advanceByMonths(startDate, wholeMonths + 1);
+      if (daysBetween(startDate, nextMonth) > totalDays) break;
+      wholeMonths++;
+      cursor = nextMonth;
+    }
+
+    // Remaining calendar days after whole months
+    const coveredDays = daysBetween(startDate, cursor);
+    const extraDays = totalDays - coveredDays;
+
+    let monthlyCost: number;
+    let monthlyLabel: string;
+
+    if (extraDays <= 0) {
+      // Exactly covered by whole months
+      monthlyCost = wholeMonths * monthlyRate;
+      monthlyLabel = wholeMonths === 1 ? '1× Monthly' : `${wholeMonths}× Monthly`;
+    } else {
+      // Odd-period surcharge: extraDays × (monthlyRate / 30), ceil to 10p
+      const dailyRate = monthlyRate / 30;
+      const surcharge = ceilTo10p(extraDays * dailyRate);
+      monthlyCost = wholeMonths * monthlyRate + surcharge;
+      monthlyLabel = wholeMonths === 0
+        ? `${extraDays}-day odd-period`
+        : wholeMonths === 1
+          ? `1 Month + ${extraDays} days`
+          : `${wholeMonths} Months + ${extraDays} days`;
+
+      // Also compare: buy one more monthly TC instead of odd-period surcharge
+      // (might be cheaper if extra days are many)
+      const extraWeeklyCost = Math.ceil(extraDays / 7) * weeklyRate;
+      const monthlyPlusWeeklyCost = wholeMonths * monthlyRate + extraWeeklyCost;
+      if (monthlyPlusWeeklyCost < monthlyCost) {
+        const extraWeeks = Math.ceil(extraDays / 7);
+        monthlyCost = monthlyPlusWeeklyCost;
+        monthlyLabel = wholeMonths === 1
+          ? `1× Monthly + ${extraWeeks}× Weekly`
+          : `${wholeMonths}× Monthly + ${extraWeeks}× Weekly`;
+      }
+
+      const onMoreMonthlyCost = (wholeMonths + 1) * monthlyRate;
+      if (onMoreMonthlyCost < monthlyCost) {
+        monthlyCost = onMoreMonthlyCost;
+        monthlyLabel = `${wholeMonths + 1}× Monthly`;
+      }
+    }
+
+    if (monthlyCost < bestCost) {
+      bestCost = monthlyCost;
+      bestLabel = monthlyLabel;
+    }
+  }
+
+  // Strategy 3: Annual TC (only if it beats the monthly-based cost)
+  if (annualRate > 0 && annualRate < bestCost) {
+    bestCost = annualRate;
+    bestLabel = 'Annual';
+  }
+
+  return {
+    cost: Math.round(bestCost * 100) / 100,
+    label: bestLabel,
+  };
 }

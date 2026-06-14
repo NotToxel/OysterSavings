@@ -56,10 +56,8 @@ export const fareTypeCost = writable<number>(0);
 export const includeOysterCost = writable<boolean>(true);
 export const includeStudentPhotocardFee = writable<boolean>(true);
 export const isDemoMode = writable<boolean>(false);
-
-const initialAdvancedMode = isBrowser && localStorage.getItem('oystersavings_global_advanced_mode') === 'true';
+const initialAdvancedMode = isBrowser && localStorage.getItem('oystersavings_global_advanced_mode') !== 'false';
 export const globalAdvancedMode = writable<boolean>(initialAdvancedMode);
-
 if (isBrowser) {
   globalAdvancedMode.subscribe(value => {
     localStorage.setItem('oystersavings_global_advanced_mode', String(value));
