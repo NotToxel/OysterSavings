@@ -27,6 +27,7 @@ export interface FallbackFare {
   peak: number;
   offPeak: number;
   isFromApi: false;
+  reason?: 'offline' | 'timeout' | 'no_route' | 'api_error';
 }
 
 export type FareResult = StationFare | FallbackFare;
@@ -267,9 +268,14 @@ function parseTflFareResponse(
 async function fetchFromTfl(
   fromNaptan: string,
   toNaptan: string
-): Promise<StationFare | null> {
+): Promise<StationFare | { isError: true; reason: 'offline' | 'timeout' | 'no_route' | 'api_error' }> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return { isError: true, reason: 'offline' };
+  }
+
   const maxRetries = 3;
   let attempt = 0;
+  let lastErrorReason: 'offline' | 'timeout' | 'no_route' | 'api_error' = 'api_error';
 
   while (attempt < maxRetries) {
     attempt++;
@@ -295,36 +301,50 @@ async function fetchFromTfl(
       if (response.status === 429) {
         // Too Many Requests — wait longer before retry
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        lastErrorReason = 'api_error';
         continue;
+      }
+
+      if (response.status === 404) {
+        // Not Found / No direct route or no fares available
+        return { isError: true, reason: 'no_route' };
       }
 
       if (!response.ok) {
         // HTTP error (500, 502, 503, etc) — wait and retry
+        lastErrorReason = 'api_error';
         if (attempt < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, 500));
           continue;
         }
-        return null;
+        return { isError: true, reason: 'api_error' };
       }
 
       const data = await response.json();
-      if (!Array.isArray(data)) return null;
+      if (!Array.isArray(data)) return { isError: true, reason: 'api_error' };
 
       const parsed = parseTflFareResponse(data, fromNaptan, toNaptan);
       if (parsed) return parsed;
 
       // If parsing failed on a valid response structure, don't retry
-      return null;
-    } catch {
-      // Timeout or network error — wait and retry
+      return { isError: true, reason: 'api_error' };
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        lastErrorReason = 'timeout';
+      } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        lastErrorReason = 'offline';
+      } else {
+        lastErrorReason = 'api_error';
+      }
+
       if (attempt < maxRetries) {
         await new Promise(resolve => setTimeout(resolve, 500));
         continue;
       }
-      return null;
+      return { isError: true, reason: lastErrorReason };
     }
   }
-  return null;
+  return { isError: true, reason: lastErrorReason };
 }
 
 /**
@@ -362,18 +382,21 @@ export async function lookupStationFare(
     } else {
       // Create the fetch promise
       const fetchPromise = (async (): Promise<FareResult> => {
-        const apiFare = await fetchFromTfl(fromNaptan, toNaptan);
+        const apiResult = await fetchFromTfl(fromNaptan, toNaptan);
 
-        if (apiFare) {
-          setCachedFare(fromNaptan, toNaptan, apiFare);
-          return apiFare;
+        if (apiResult && !('isError' in apiResult)) {
+          setCachedFare(fromNaptan, toNaptan, apiResult);
+          return apiResult;
         }
+
+        const reason = apiResult && 'isError' in apiResult ? apiResult.reason : 'api_error';
 
         // Fallback to zone-based fare
         return {
           peak: fallbackFare.peak,
           offPeak: fallbackFare.offPeak,
           isFromApi: false,
+          reason,
         };
       })();
 

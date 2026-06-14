@@ -284,6 +284,13 @@
         },
       });
     }
+
+    return () => {
+      if (chart) {
+        chart.destroy();
+        chart = null;
+      }
+    };
   });
 
   // Product matrix data

@@ -182,6 +182,8 @@
     syncRuleFaresWithApi();
   });
 
+
+
   $effect(() => {
     if ($globalAdvancedMode) {
       if (defMode === "national_rail" || defMode === "nr_tube") {
@@ -606,6 +608,10 @@
   // Date range for planning
   let planStart = $state(formatInputDate(new Date()));
   let planEnd = $state(formatInputDate(addMonths(new Date(), 1)));
+  const maxYear = new Date().getFullYear() + 2;
+  const maxDateStr = `${maxYear}-12-31`;
+  const minYear = new Date().getFullYear() - 2;
+  const minDateStr = `${minYear}-01-01`;
 
   let calendarMonth = $derived(calendarDate.getMonth());
   let calendarYear = $derived(calendarDate.getFullYear());
@@ -897,6 +903,27 @@
           category: 'travelcard_monthly'
         });
 
+        // Odd-Period Student Travelcard (for periods over 1 month, e.g. 1 month + 10 days)
+        const studentTcPeriodResult = calculateTravelcardPeriodCost(startDate, endDate, studWeekly, studMonthly, studAnnual);
+        const studentUncoveredTcSpend = simulatePlannedJourneysSpend(
+          $plannedJourneys,
+          "student",
+          "travelcard",
+          zone
+        );
+        const oddPeriodCost = studentTcPeriodResult.cost + studentUncoveredTcSpend;
+
+        rawOptions.push({
+          id: `travelcard_odd_${zone}`,
+          label: `Student Odd-Period Travelcard (${zone}) — ${studentTcPeriodResult.label}`,
+          monthlyRate: studMonthly,
+          strikeThroughRate: stdMonthly,
+          periodCost: oddPeriodCost,
+          color: "#b45309",
+          isPass: true,
+          category: 'travelcard_odd'
+        });
+
         if (durationDays >= 300 && studAnnual > 0) {
           const annualTcPeriodCost = studAnnual + studentUncoveredTcSpend;
           rawOptions.push({
@@ -1170,6 +1197,7 @@
   }
 
   function saveRule() {
+    clampModalDates();
     if (
       advancedMode &&
       newMode !== "bus" &&
@@ -1449,10 +1477,22 @@
   }
 
   function clampDates() {
+    if (planStart && planStart < minDateStr) {
+      planStart = minDateStr;
+    }
+    if (planStart && planStart > maxDateStr) {
+      planStart = maxDateStr;
+    }
+    if (planEnd && planEnd < minDateStr) {
+      planEnd = minDateStr;
+    }
+    if (planEnd && planEnd > maxDateStr) {
+      planEnd = maxDateStr;
+    }
     if (planStart && planEnd && planEnd < planStart) {
       planEnd = planStart;
-      regenerate();
     }
+    regenerate();
   }
 
   function handleBlur(e: FocusEvent) {
@@ -1473,11 +1513,43 @@
     }
   }
 
+  function clampModalDates() {
+    if (newRuleDate && newRuleDate < minDateStr) {
+      newRuleDate = minDateStr;
+    }
+    if (newRuleDate && newRuleDate > maxDateStr) {
+      newRuleDate = maxDateStr;
+    }
+    if (newRuleEndDate && newRuleEndDate < minDateStr) {
+      newRuleEndDate = minDateStr;
+    }
+    if (newRuleEndDate && newRuleEndDate > maxDateStr) {
+      newRuleEndDate = maxDateStr;
+    }
+    if (newRuleDate && newRuleEndDate && newRuleEndDate < newRuleDate) {
+      newRuleEndDate = newRuleDate;
+    }
+  }
+
+  function handleModalBlur(e: FocusEvent) {
+    const target = e.target as HTMLInputElement;
+    if (!target.value) {
+      if (target.id === "modal-start-date" || target.id === "modal-journey-date") {
+        newRuleDate = planStart;
+        target.value = planStart;
+      } else if (target.id === "modal-end-date") {
+        newRuleEndDate = planEnd;
+        target.value = planEnd;
+      }
+    }
+    clampModalDates();
+  }
+
   function handleStartChange(e: Event) {
     const val = (e.target as HTMLInputElement).value;
     if (val) {
       planStart = val;
-      regenerate();
+      clampDates();
     }
   }
 
@@ -1485,7 +1557,7 @@
     const val = (e.target as HTMLInputElement).value;
     if (val) {
       planEnd = val;
-      regenerate();
+      clampDates();
     }
   }
 
@@ -1638,6 +1710,8 @@
             onchange={handleStartChange}
             onblur={handleBlur}
             onkeydown={handleKeyDown}
+            min={minDateStr}
+            max={maxDateStr}
           />
           <label
             class="setting-label"
@@ -1652,6 +1726,8 @@
             onchange={handleEndChange}
             onblur={handleBlur}
             onkeydown={handleKeyDown}
+            min={minDateStr}
+            max={maxDateStr}
           />
         </div>
       </div>
@@ -2299,6 +2375,18 @@
                         if (sidebarHomeQuery.length >= 1)
                           showSidebarHomeDropdown = true;
                       }}
+                      onkeydown={(e) => {
+                        if (e.key === "Enter") {
+                          if (sidebarHomeResults.length > 0) {
+                            e.preventDefault();
+                            const result = sidebarHomeResults[0];
+                            defaultHomeStation = { key: result.key, info: result.info };
+                            sidebarHomeQuery = result.info.name;
+                            showSidebarHomeDropdown = false;
+                            sidebarHomeResults = [];
+                          }
+                        }
+                      }}
                       placeholder="Type a station name..."
                       autocomplete="off"
                     />
@@ -2480,6 +2568,7 @@
                     newIntervalType = "none";
                   } else {
                     newIntervalType = "weeks";
+                    newRuleEndDate = planEnd;
                   }
                 }}
               >
@@ -2514,6 +2603,9 @@
                   class="input-field"
                   id="modal-journey-date"
                   bind:value={newRuleDate}
+                  onblur={handleModalBlur}
+                  min={minDateStr}
+                  max={maxDateStr}
                 />
               </div>
             {/if}
@@ -2530,6 +2622,9 @@
                   class="input-field"
                   id="modal-start-date"
                   bind:value={newRuleDate}
+                  onblur={handleModalBlur}
+                  min={minDateStr}
+                  max={maxDateStr}
                 />
               </div>
               <div class="form-group">
@@ -2541,6 +2636,9 @@
                   class="input-field"
                   id="modal-end-date"
                   bind:value={newRuleEndDate}
+                  onblur={handleModalBlur}
+                  min={minDateStr}
+                  max={maxDateStr}
                 />
               </div>
             </div>
@@ -2706,6 +2804,14 @@
                         if (originStationQuery.length >= 1)
                           showOriginDropdown = true;
                       }}
+                      onkeydown={(e) => {
+                        if (e.key === "Enter") {
+                          if (originStationResults.length > 0) {
+                            e.preventDefault();
+                            selectOriginStation(originStationResults[0]);
+                          }
+                        }
+                      }}
                       placeholder="Type a station name..."
                       autocomplete="off"
                     />
@@ -2766,6 +2872,14 @@
                       oninput={(e) => handleDestSearch(e.currentTarget.value)}
                       onfocus={() => {
                         if (destStationQuery.length >= 1) showDestDropdown = true;
+                      }}
+                      onkeydown={(e) => {
+                        if (e.key === "Enter") {
+                          if (destStationResults.length > 0) {
+                            e.preventDefault();
+                            selectDestStation(destStationResults[0]);
+                          }
+                        }
                       }}
                       placeholder="Type a station name..."
                       autocomplete="off"
@@ -2944,16 +3058,30 @@
                     {:else}
                       <span
                         class="fare-fallback-badge"
-                        style="cursor: help;"
+                        style="cursor: help; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;"
                         role="status"
                         onmouseenter={(e) => showFareTooltip(e, false, selectedPeakFare, discountedPeak, selectedOffPeakFare, discountedOffPeak)}
                         onmouseleave={hideFareTooltip}
-                      >~ Estimated</span>
+                      >⚠️ Estimated</span>
                     {/if}
                     Peak: <strong>£{discountedPeak.toFixed(2)}</strong>
                     <span style="margin: 0 0.3rem; color: var(--color-text-muted);">|</span>
                     Off-Peak: <strong>£{discountedOffPeak.toFixed(2)}</strong>
                   </div>
+
+                  {#if !fareResult.isFromApi && fareResult.reason}
+                    <div class="fare-fallback-reason" style="font-size: 0.72rem; color: var(--color-danger); margin-top: 0.15rem; display: flex; align-items: center; gap: 0.2rem;">
+                      {#if fareResult.reason === 'offline'}
+                        <span>🔌 Network Offline — using local zone estimation.</span>
+                      {:else if fareResult.reason === 'timeout'}
+                        <span>⏱️ TfL request timed out — using local zone estimation.</span>
+                      {:else if fareResult.reason === 'no_route'}
+                        <span>🗺️ No direct TfL fares found — using local zone estimation.</span>
+                      {:else}
+                        <span>⚠️ TfL API lookup failed — using local zone estimation.</span>
+                      {/if}
+                    </div>
+                  {/if}
 
                   {#if fareResult.isFromApi && fareResult.options && fareResult.options.length > 1}
                     <div class="route-select-wrapper" style="margin-top: 0.35rem;">
@@ -2962,6 +3090,24 @@
                       </span>
                       <div class="route-options-list" style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
                         {#each fareResult.options as opt, idx}
+                          {@const discountedOptPeak = calculateDiscountedFare(
+                            opt.peak,
+                            $selectedFareType,
+                            true,
+                            false,
+                            newOriginZone,
+                            newDestZone,
+                            resolvedModeForDiscount,
+                          )}
+                          {@const discountedOptOffPeak = calculateDiscountedFare(
+                            opt.offPeak,
+                            $selectedFareType,
+                            false,
+                            false,
+                            newOriginZone,
+                            newDestZone,
+                            resolvedModeForDiscount,
+                          )}
                           <button
                             type="button"
                             class="route-option-card"
@@ -2983,7 +3129,7 @@
                                 {opt.routeDescription}
                               </div>
                               <div style="font-size: 0.72rem; color: var(--color-text-muted);">
-                                Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{opt.peak.toFixed(2)}</strong> <span style="margin: 0 0.15rem; opacity: 0.5;">•</span> Off-Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{opt.offPeak.toFixed(2)}</strong>
+                                Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{discountedOptPeak.toFixed(2)}</strong> <span style="margin: 0 0.15rem; opacity: 0.5;">•</span> Off-Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{discountedOptOffPeak.toFixed(2)}</strong>
                               </div>
                             </div>
                           </button>
@@ -2997,7 +3143,7 @@
                   {/if}
 
                   <div class="estimated-total-row" style="font-size: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 0.35rem; margin-top: 0.15rem;">
-                    Estimated Fare: <strong>£{advancedTotalFare.toFixed(2)}</strong>
+                    {fareResult.isFromApi ? "Actual Fare" : "Estimated Fare"}: <strong>£{advancedTotalFare.toFixed(2)}</strong>
                   </div>
                 </div>
               {:else if !selectedOriginStation || !selectedDestStation}
@@ -3716,8 +3862,10 @@
     background: linear-gradient(135deg, rgba(10, 14, 26, 0.98), rgba(17, 24, 39, 0.98));
     border: 1px solid var(--color-border);
     border-radius: 12px;
-    padding: 0.85rem 1rem;
-    width: 270px;
+    padding: 0.85rem 1.15rem;
+    min-width: 320px;
+    max-width: 420px;
+    width: max-content;
     box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -3783,11 +3931,13 @@
     justify-content: space-between;
     align-items: center;
     font-size: 0.775rem;
+    gap: 1.5rem;
   }
 
   .hovercard-label {
     color: var(--color-text-secondary);
     font-weight: 500;
+    flex-shrink: 0;
   }
 
   .hovercard-value {
@@ -3826,7 +3976,7 @@
     font-weight: 600;
     font-size: 0.75rem;
     color: var(--color-text-primary);
-    max-width: 150px;
+    max-width: 240px;
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
