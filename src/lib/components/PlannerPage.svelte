@@ -2628,9 +2628,19 @@
                 />
               </div>
               <div class="form-group">
-                <label class="setting-label" for="modal-end-date"
-                  >End Date</label
-                >
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.15rem;">
+                  <label class="setting-label" for="modal-end-date" style="margin-bottom: 0;">End Date</label>
+                  <button
+                    type="button"
+                    class="modal-sync-btn"
+                    onclick={() => {
+                      newRuleEndDate = planEnd;
+                      clampModalDates();
+                    }}
+                  >
+                    Sync to Planning End
+                  </button>
+                </div>
                 <input
                   type="date"
                   class="input-field"
@@ -3855,6 +3865,22 @@
   .mode-icon-inline.small {
     width: 14px;
     height: 14px;
+  }
+
+  .modal-sync-btn {
+    font-size: 0.7rem;
+    color: var(--color-oyster-blue);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: underline;
+    transition: color 0.15s ease;
+  }
+
+  .modal-sync-btn:hover {
+    color: #38bdf8;
   }
 
   /* Custom premium fare hovercard tooltip */
