@@ -1,5 +1,4 @@
-// TfL API Service — station-to-station fare lookup with multi-layer caching
-// Privacy: Only NaPTAN IDs are sent to TfL. No user data, CSV data, or travel history.
+import { getStationByNaptan } from '../data/stationService';
 
 const CACHE_KEY = 'oystersavings_station_fare_cache';
 const MAX_CACHE_ENTRIES = 500;
@@ -355,17 +354,20 @@ async function fetchFromTfl(
  *   3. TfL FareTo API (network, ~500ms)
  *   4. Fallback to zone-based local fare
  *
- * @param fromNaptan - NaPTAN ID of origin station
- * @param toNaptan - NaPTAN ID of destination station
+ * @param fromNaptanRaw - NaPTAN ID of origin station (can be parent Hub or child)
+ * @param toNaptanRaw - NaPTAN ID of destination station (can be parent Hub or child)
  * @param fallbackFare - Zone-based fare to use if API is unavailable
  * @param useAlternativeFares - Preference for cheapest route from TfL API
+ * @param mode - Transport mode context to resolve the correct child platform ID
  */
 export async function lookupStationFare(
   fromNaptan: string,
   toNaptan: string,
   fallbackFare: { peak: number; offPeak: number },
-  useAlternativeFares: boolean = false
+  useAlternativeFares: boolean = false,
+  mode: string = 'underground'
 ): Promise<FareResult> {
+
   // Check cache first
   const cached = getCachedFare(fromNaptan, toNaptan, useAlternativeFares);
   let fareResult: FareResult;

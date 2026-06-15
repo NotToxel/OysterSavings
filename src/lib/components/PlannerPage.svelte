@@ -129,7 +129,7 @@
             offPeak: lookupFare(zoneRange, false, rule.mode)
           };
           
-          const result = await lookupStationFare(rule.originStation, rule.destinationStation, fallback, $useAlternativeFares);
+          const result = await lookupStationFare(rule.originStation, rule.destinationStation, fallback, $useAlternativeFares, rule.mode);
           
           if (result.isFromApi) {
             let targetPeak = result.peak;
@@ -469,6 +469,7 @@
       selectedDestStation.info.naptanId,
       fallback,
       $useAlternativeFares,
+      resolvedMode,
     );
     advancedFareLoading = false;
   }

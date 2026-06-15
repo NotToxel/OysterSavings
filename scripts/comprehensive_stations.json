@@ -1,0 +1,9813 @@
+{
+  "910GACTNCTL": {
+    "id": "910GACTNCTL",
+    "name": "Acton Central Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GACTONML": {
+    "id": "910GACTONML",
+    "name": "Acton Main Line Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GALBNFCL": {
+    "id": "910GALBNFCL",
+    "name": "Albany Park - Footscray Lane",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GALBNHV": {
+    "id": "910GALBNHV",
+    "name": "Albany Park - Hurst Road/Valentine Avenue",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GALBNYPK": {
+    "id": "910GALBNYPK",
+    "name": "Albany Park Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GALBNFCL",
+        "name": "Albany Park - Footscray Lane",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GALBNHV",
+        "name": "Albany Park - Hurst Road/Valentine Avenue",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GALEXNDP": {
+    "id": "910GALEXNDP",
+    "name": "Alexandra Palace Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GANERLEY": {
+    "id": "910GANERLEY",
+    "name": "Anerley Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZDLABR": {
+    "id": "940GZZDLABR",
+    "name": "Abbey Road DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLALL": {
+    "id": "940GZZDLALL",
+    "name": "All Saints DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUACT": {
+    "id": "940GZZLUACT",
+    "name": "Acton Town Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUACY": {
+    "id": "940GZZLUACY",
+    "name": "Archway Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUADE": {
+    "id": "940GZZLUADE",
+    "name": "Aldgate East Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUAGL": {
+    "id": "940GZZLUAGL",
+    "name": "Angel Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUALD": {
+    "id": "940GZZLUALD",
+    "name": "Aldgate Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUALP": {
+    "id": "940GZZLUALP",
+    "name": "Alperton Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUASG": {
+    "id": "940GZZLUASG",
+    "name": "Arnos Grove Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUASL": {
+    "id": "940GZZLUASL",
+    "name": "Arsenal Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBST": {
+    "id": "940GZZLUBST",
+    "name": "Baker Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GABWD": {
+    "id": "910GABWD",
+    "name": "Abbey Wood (London) Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GABWDXR": {
+    "id": "910GABWDXR",
+    "name": "Abbey Wood",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "HUBABW": {
+    "id": "HUBABW",
+    "name": "Abbey Wood",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GABWD",
+        "name": "Abbey Wood (London) Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "910GABWDXR",
+        "name": "Abbey Wood",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUAMS": {
+    "id": "940GZZLUAMS",
+    "name": "Amersham Underground Station",
+    "zone": 9,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GAMERSHM": {
+    "id": "910GAMERSHM",
+    "name": "Amersham Rail Station",
+    "zone": 9,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZLUAMS",
+        "name": "Amersham Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 9,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBAMR": {
+    "id": "HUBAMR",
+    "name": "Amersham",
+    "zone": 9,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GAMERSHM",
+        "name": "Amersham Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 9,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBALHAM": {
+    "id": "910GBALHAM",
+    "name": "Balham Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUBLM": {
+    "id": "940GZZLUBLM",
+    "name": "Balham Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBBAL": {
+    "id": "HUBBAL",
+    "name": "Balham",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBALHAM",
+        "name": "Balham Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUBLM",
+        "name": "Balham Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBANSBUS": {
+    "id": "910GBANSBUS",
+    "name": "Banstead - Fir Tree Road",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GBANSTED": {
+    "id": "910GBANSTED",
+    "name": "Banstead Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBANSBUS",
+        "name": "Banstead - Fir Tree Road",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBARKRIV": {
+    "id": "910GBARKRIV",
+    "name": "Barking Riverside",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GBARNES": {
+    "id": "910GBARNES",
+    "name": "Barnes Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBATRSPK": {
+    "id": "910GBATRSPK",
+    "name": "Battersea Park Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBCKNHMH": {
+    "id": "910GBCKNHMH",
+    "name": "Beckenham Hill Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBNSBDGE": {
+    "id": "910GBNSBDGE",
+    "name": "Barnes Bridge Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBRNHRST": {
+    "id": "910GBRNHRST",
+    "name": "Barnehurst Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZBPSUST": {
+    "id": "940GZZBPSUST",
+    "name": "Battersea Power Station Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZDLBEC": {
+    "id": "940GZZDLBEC",
+    "name": "Beckton DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLBPK": {
+    "id": "940GZZDLBPK",
+    "name": "Beckton Park DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUBBN": {
+    "id": "940GZZLUBBN",
+    "name": "Barbican Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBKE": {
+    "id": "940GZZLUBKE",
+    "name": "Barkingside Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBSC": {
+    "id": "940GZZLUBSC",
+    "name": "Barons Court Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBWT": {
+    "id": "940GZZLUBWT",
+    "name": "Bayswater Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZDLBNK": {
+    "id": "940GZZDLBNK",
+    "name": "Bank DLR Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUBNK": {
+    "id": "940GZZLUBNK",
+    "name": "Bank Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBBAN": {
+    "id": "HUBBAN",
+    "name": "Bank",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZDLBNK",
+        "name": "Bank DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUBNK",
+        "name": "Bank Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBCKNMJC": {
+    "id": "910GBCKNMJC",
+    "name": "Beckenham Junction Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GBCKNHMJ": {
+    "id": "910GBCKNHMJ",
+    "name": "Beckenham Junction Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBCKNMJC",
+        "name": "Beckenham Junction Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBBEK": {
+    "id": "HUBBEK",
+    "name": "Beckenham Junction",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBCKNHMJ",
+        "name": "Beckenham Junction Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBARKING": {
+    "id": "910GBARKING",
+    "name": "Barking Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZLUBKG": {
+    "id": "940GZZLUBKG",
+    "name": "Barking Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBBKG": {
+    "id": "HUBBKG",
+    "name": "Barking",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBARKING",
+        "name": "Barking Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUBKG",
+        "name": "Barking Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBELM": {
+    "id": "910GBELM",
+    "name": "Belmont Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBELNGHM": {
+    "id": "910GBELNGHM",
+    "name": "Bellingham Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBELVEDR": {
+    "id": "910GBELVEDR",
+    "name": "Belvedere Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBEXLEY": {
+    "id": "910GBEXLEY",
+    "name": "Bexley Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBICKLEY": {
+    "id": "910GBICKLEY",
+    "name": "Bickley Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBLKHTH": {
+    "id": "910GBLKHTH",
+    "name": "Blackheath Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBRLANDS": {
+    "id": "910GBRLANDS",
+    "name": "Berrylands Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBTHNLGR": {
+    "id": "910GBTHNLGR",
+    "name": "Bethnal Green Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "national_rail"
+    ]
+  },
+  "910GBXLYHTH": {
+    "id": "910GBXLYHTH",
+    "name": "Bexleyheath Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLBLA": {
+    "id": "940GZZDLBLA",
+    "name": "Blackwall DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUBEC": {
+    "id": "940GZZLUBEC",
+    "name": "Becontree Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBLG": {
+    "id": "940GZZLUBLG",
+    "name": "Bethnal Green Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBMY": {
+    "id": "940GZZLUBMY",
+    "name": "Bermondsey Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBOR": {
+    "id": "940GZZLUBOR",
+    "name": "Borough Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBZP": {
+    "id": "940GZZLUBZP",
+    "name": "Belsize Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GBONDST": {
+    "id": "910GBONDST",
+    "name": "Bond Street",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZLUBND": {
+    "id": "940GZZLUBND",
+    "name": "Bond Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBBDS": {
+    "id": "HUBBDS",
+    "name": "Bond Street",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBONDST",
+        "name": "Bond Street",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUBND",
+        "name": "Bond Street Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBLFR": {
+    "id": "910GBLFR",
+    "name": "London Blackfriars Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUBKF": {
+    "id": "940GZZLUBKF",
+    "name": "Blackfriars Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBBFR": {
+    "id": "HUBBFR",
+    "name": "Blackfriars",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBLFR",
+        "name": "London Blackfriars Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUBKF",
+        "name": "Blackfriars Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBLCHSRD": {
+    "id": "910GBLCHSRD",
+    "name": "Blackhorse Road Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUBLR": {
+    "id": "940GZZLUBLR",
+    "name": "Blackhorse Road Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBBHO": {
+    "id": "HUBBHO",
+    "name": "Blackhorse Road",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBLCHSRD",
+        "name": "Blackhorse Road Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUBLR",
+        "name": "Blackhorse Road Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBIRKBCK": {
+    "id": "910GBIRKBCK",
+    "name": "Birkbeck Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "HUBBIR": {
+    "id": "HUBBIR",
+    "name": "Birkbeck",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBIRKBCK",
+        "name": "Birkbeck Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBNTFORD": {
+    "id": "910GBNTFORD",
+    "name": "Brentford Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBOWESPK": {
+    "id": "910GBOWESPK",
+    "name": "Bowes Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBRBY": {
+    "id": "910GBRBY",
+    "name": "Brondesbury Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GBRBYPK": {
+    "id": "910GBRBYPK",
+    "name": "Brondesbury Park Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GBRENTX": {
+    "id": "910GBRENTX",
+    "name": "Brent Cross West Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBRIMSDN": {
+    "id": "910GBRIMSDN",
+    "name": "Brimsdown Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBROCKLY": {
+    "id": "910GBROCKLY",
+    "name": "Brockley Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GBROMLYN": {
+    "id": "910GBROMLYN",
+    "name": "Bromley North Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBROMLYS": {
+    "id": "910GBROMLYS",
+    "name": "Bromley South Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GBRTWOOD": {
+    "id": "910GBRTWOOD",
+    "name": "Brentwood Rail Station",
+    "zone": 9,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GBRUCGRV": {
+    "id": "910GBRUCGRV",
+    "name": "Bruce Grove Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZDLBOW": {
+    "id": "940GZZDLBOW",
+    "name": "Bow Church DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUBBB": {
+    "id": "940GZZLUBBB",
+    "name": "Bromley-by-Bow Underground Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBDS": {
+    "id": "940GZZLUBDS",
+    "name": "Bounds Green Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBKH": {
+    "id": "940GZZLUBKH",
+    "name": "Buckhurst Hill Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBOS": {
+    "id": "940GZZLUBOS",
+    "name": "Boston Manor Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBTX": {
+    "id": "940GZZLUBTX",
+    "name": "Brent Cross Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUBWR": {
+    "id": "940GZZLUBWR",
+    "name": "Bow Road Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GBRIXTON": {
+    "id": "910GBRIXTON",
+    "name": "Brixton Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUBXN": {
+    "id": "940GZZLUBXN",
+    "name": "Brixton Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBBRX": {
+    "id": "HUBBRX",
+    "name": "Brixton",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBRIXTON",
+        "name": "Brixton Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUBXN",
+        "name": "Brixton Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBHILLPK": {
+    "id": "910GBHILLPK",
+    "name": "Bush Hill Park Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GCAMHTH": {
+    "id": "910GCAMHTH",
+    "name": "Cambridge Heath (London) Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GCBARPAR": {
+    "id": "910GCBARPAR",
+    "name": "Castle Bar Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCLDNNRB": {
+    "id": "910GCLDNNRB",
+    "name": "Caledonian Road & Barnsbury Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GCMDNRD": {
+    "id": "910GCMDNRD",
+    "name": "Camden Road Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GCNNB": {
+    "id": "910GCNNB",
+    "name": "Canonbury Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GCRSHLTB": {
+    "id": "910GCRSHLTB",
+    "name": "Carshalton Beeches Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCRSHLTN": {
+    "id": "910GCRSHLTN",
+    "name": "Carshalton Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUBTK": {
+    "id": "940GZZLUBTK",
+    "name": "Burnt Oak Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCAR": {
+    "id": "940GZZLUCAR",
+    "name": "Caledonian Road Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCPK": {
+    "id": "940GZZLUCPK",
+    "name": "Canons Park Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCTN": {
+    "id": "940GZZLUCTN",
+    "name": "Camden Town Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZDLCGT": {
+    "id": "940GZZDLCGT",
+    "name": "Canning Town DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUCGT": {
+    "id": "940GZZLUCGT",
+    "name": "Canning Town Underground Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBCAN": {
+    "id": "HUBCAN",
+    "name": "Canning Town",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZDLCGT",
+        "name": "Canning Town DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": 3
+      },
+      {
+        "id": "940GZZLUCGT",
+        "name": "Canning Town Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": 3
+      }
+    ]
+  },
+  "910GCANWHRF": {
+    "id": "910GCANWHRF",
+    "name": "Canary Wharf",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZDLCAN": {
+    "id": "940GZZDLCAN",
+    "name": "Canary Wharf DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUCYF": {
+    "id": "940GZZLUCYF",
+    "name": "Canary Wharf Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBCAW": {
+    "id": "HUBCAW",
+    "name": "Canary Wharf",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "elizabeth",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCANWHRF",
+        "name": "Canary Wharf",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLCAN",
+        "name": "Canary Wharf DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUCYF",
+        "name": "Canary Wharf Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCANONST": {
+    "id": "910GCANONST",
+    "name": "London Cannon Street Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUCST": {
+    "id": "940GZZLUCST",
+    "name": "Cannon Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBCST": {
+    "id": "HUBCST",
+    "name": "Cannon Street",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCANONST",
+        "name": "London Cannon Street Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUCST",
+        "name": "Cannon Street Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCNDAW": {
+    "id": "910GCNDAW",
+    "name": "Canada Water Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUCWR": {
+    "id": "940GZZLUCWR",
+    "name": "Canada Water Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBZCW": {
+    "id": "HUBZCW",
+    "name": "Canada Water",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCNDAW",
+        "name": "Canada Water Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUCWR",
+        "name": "Canada Water Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCATERHM": {
+    "id": "910GCATERHM",
+    "name": "Caterham Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCATFBDG": {
+    "id": "910GCATFBDG",
+    "name": "Catford Bridge Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCATFORD": {
+    "id": "910GCATFORD",
+    "name": "Catford Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCHDWLHT": {
+    "id": "910GCHDWLHT",
+    "name": "Chadwell Heath Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GCHEAM": {
+    "id": "910GCHEAM",
+    "name": "Cheam Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCHINGFD": {
+    "id": "910GCHINGFD",
+    "name": "Chingford Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GCHISWCK": {
+    "id": "910GCHISWCK",
+    "name": "Chiswick Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCHLSFLD": {
+    "id": "910GCHLSFLD",
+    "name": "Chelsfield Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCHSD": {
+    "id": "910GCHSD",
+    "name": "Chipstead Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCHSLHRS": {
+    "id": "910GCHSLHRS",
+    "name": "Chislehurst Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCHSSN": {
+    "id": "910GCHSSN",
+    "name": "Chessington North Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCHSSS": {
+    "id": "910GCHSSS",
+    "name": "Chessington South Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCRLN": {
+    "id": "910GCRLN",
+    "name": "Charlton Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUCFM": {
+    "id": "940GZZLUCFM",
+    "name": "Chalk Farm Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCHL": {
+    "id": "940GZZLUCHL",
+    "name": "Chancery Lane Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCSM": {
+    "id": "940GZZLUCSM",
+    "name": "Chesham Underground Station",
+    "zone": 9,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCWL": {
+    "id": "940GZZLUCWL",
+    "name": "Chigwell Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCWP": {
+    "id": "940GZZLUCWP",
+    "name": "Chiswick Park Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCAL": {
+    "id": "940GZZLUCAL",
+    "name": "Chalfont & Latimer Underground Station",
+    "zone": 8,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GCHLFNAL": {
+    "id": "910GCHLFNAL",
+    "name": "Chalfont & Latimer Rail Station",
+    "zone": 8,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZLUCAL",
+        "name": "Chalfont & Latimer Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 8,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBCFO": {
+    "id": "HUBCFO",
+    "name": "Chalfont & Latimer",
+    "zone": 8,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCHLFNAL",
+        "name": "Chalfont & Latimer Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 8,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCHRX": {
+    "id": "910GCHRX",
+    "name": "London Charing Cross Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUCHX": {
+    "id": "940GZZLUCHX",
+    "name": "Charing Cross Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBCHX": {
+    "id": "HUBCHX",
+    "name": "Charing Cross",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCHRX",
+        "name": "London Charing Cross Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUCHX",
+        "name": "Charing Cross Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCFPK": {
+    "id": "910GCFPK",
+    "name": "Crofton Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCLAPTON": {
+    "id": "910GCLAPTON",
+    "name": "Clapton Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GCLOCKHS": {
+    "id": "910GCLOCKHS",
+    "name": "Clock House Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCLPHHS": {
+    "id": "910GCLPHHS",
+    "name": "Clapham High Street Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "national_rail"
+    ]
+  },
+  "910GCOLSDNS": {
+    "id": "910GCOLSDNS",
+    "name": "Coulsdon South Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCOLSTWN": {
+    "id": "910GCOLSTWN",
+    "name": "Coulsdon Town Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCRFD": {
+    "id": "910GCRFD",
+    "name": "Crayford Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCRHL": {
+    "id": "910GCRHL",
+    "name": "Crews Hill Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCRKLWD": {
+    "id": "910GCRKLWD",
+    "name": "Cricklewood Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GCTMSLNK": {
+    "id": "910GCTMSLNK",
+    "name": "City Thameslink Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLCLA": {
+    "id": "940GZZDLCLA",
+    "name": "Crossharbour DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUCGN": {
+    "id": "940GZZLUCGN",
+    "name": "Covent Garden Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCKS": {
+    "id": "940GZZLUCKS",
+    "name": "Cockfosters Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCND": {
+    "id": "940GZZLUCND",
+    "name": "Colindale Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCPC": {
+    "id": "940GZZLUCPC",
+    "name": "Clapham Common Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCPN": {
+    "id": "940GZZLUCPN",
+    "name": "Clapham North Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCPS": {
+    "id": "940GZZLUCPS",
+    "name": "Clapham South Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUCSD": {
+    "id": "940GZZLUCSD",
+    "name": "Colliers Wood Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GCLPHMJ1": {
+    "id": "910GCLPHMJ1",
+    "name": "Clapham Junction Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GCLPHMJ2": {
+    "id": "910GCLPHMJ2",
+    "name": "Clapham Junction Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GCLPHMJM": {
+    "id": "910GCLPHMJM",
+    "name": "Clapham Junction Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GCLPHMJW": {
+    "id": "910GCLPHMJW",
+    "name": "Clapham Junction Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GCLPHMJC": {
+    "id": "910GCLPHMJC",
+    "name": "Clapham Junction Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCLPHMJ1",
+        "name": "Clapham Junction Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GCLPHMJ2",
+        "name": "Clapham Junction Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GCLPHMJM",
+        "name": "Clapham Junction Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GCLPHMJW",
+        "name": "Clapham Junction Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBCLJ": {
+    "id": "HUBCLJ",
+    "name": "Clapham Junction",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCLPHMJC",
+        "name": "Clapham Junction Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUCYD": {
+    "id": "940GZZLUCYD",
+    "name": "Chorleywood Underground Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GCHRW": {
+    "id": "910GCHRW",
+    "name": "Chorleywood Rail Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZLUCYD",
+        "name": "Chorleywood Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 7,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBCLW": {
+    "id": "HUBCLW",
+    "name": "Chorleywood",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCHRW",
+        "name": "Chorleywood Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 7,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCROUCHH": {
+    "id": "910GCROUCHH",
+    "name": "Crouch Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GCUFFLEY": {
+    "id": "910GCUFFLEY",
+    "name": "Cuffley Rail Station",
+    "zone": 9,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GDALS": {
+    "id": "910GDALS",
+    "name": "Dalston Junction Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GDALSKLD": {
+    "id": "910GDALSKLD",
+    "name": "Dalston Kingsland Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GDENMRKH": {
+    "id": "910GDENMRKH",
+    "name": "Denmark Hill Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GDEPTFD": {
+    "id": "910GDEPTFD",
+    "name": "Deptford Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GDGNHMDC": {
+    "id": "910GDGNHMDC",
+    "name": "Dagenham Dock Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GDRAYGRN": {
+    "id": "910GDRAYGRN",
+    "name": "Drayton Green Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GDRYP": {
+    "id": "910GDRYP",
+    "name": "Drayton Park Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLCYP": {
+    "id": "940GZZDLCYP",
+    "name": "Cyprus DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLDEP": {
+    "id": "940GZZDLDEP",
+    "name": "Deptford Bridge DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUCXY": {
+    "id": "940GZZLUCXY",
+    "name": "Croxley Underground Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUDBN": {
+    "id": "940GZZLUDBN",
+    "name": "Debden Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUDGE": {
+    "id": "940GZZLUDGE",
+    "name": "Dagenham East Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUDGY": {
+    "id": "940GZZLUDGY",
+    "name": "Dagenham Heathway Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUDOH": {
+    "id": "940GZZLUDOH",
+    "name": "Dollis Hill Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GCUSTMHS": {
+    "id": "910GCUSTMHS",
+    "name": "Custom House Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZDLCUS": {
+    "id": "940GZZDLCUS",
+    "name": "Custom House (for ExCel) DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBCUS": {
+    "id": "HUBCUS",
+    "name": "Custom House",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "elizabeth"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCUSTMHS",
+        "name": "Custom House Rail Station",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLCUS",
+        "name": "Custom House (for ExCel) DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZDLCUT": {
+    "id": "940GZZDLCUT",
+    "name": "Cutty Sark (for Maritime Greenwich) DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBCUT": {
+    "id": "HUBCUT",
+    "name": "Cutty Sark",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZDLCUT",
+        "name": "Cutty Sark (for Maritime Greenwich) DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCRYSTLP": {
+    "id": "910GCRYSTLP",
+    "name": "Crystal Palace Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "HUBCYP": {
+    "id": "HUBCYP",
+    "name": "Crystal Palace",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCRYSTLP",
+        "name": "Crystal Palace Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GEDMNGRN": {
+    "id": "910GEDMNGRN",
+    "name": "Edmonton Green Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GEDPK": {
+    "id": "910GEDPK",
+    "name": "Eden Park Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GEDULWCH": {
+    "id": "910GEDULWCH",
+    "name": "East Dulwich Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GELMW": {
+    "id": "910GELMW",
+    "name": "Elmstead Woods Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GERLFLD": {
+    "id": "910GERLFLD",
+    "name": "Earlsfield Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLEIN": {
+    "id": "940GZZDLEIN",
+    "name": "East India DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUEAE": {
+    "id": "940GZZLUEAE",
+    "name": "Eastcote Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUEAN": {
+    "id": "940GZZLUEAN",
+    "name": "East Acton Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUECM": {
+    "id": "940GZZLUECM",
+    "name": "Ealing Common Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUEFY": {
+    "id": "940GZZLUEFY",
+    "name": "East Finchley Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUEGW": {
+    "id": "940GZZLUEGW",
+    "name": "Edgware Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUEHM": {
+    "id": "940GZZLUEHM",
+    "name": "East Ham Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUEPK": {
+    "id": "940GZZLUEPK",
+    "name": "Elm Park Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUEPY": {
+    "id": "940GZZLUEPY",
+    "name": "East Putney Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUERB": {
+    "id": "940GZZLUERB",
+    "name": "Edgware Road (Bakerloo) Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GEALINGB": {
+    "id": "910GEALINGB",
+    "name": "Ealing Broadway Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "940GZZLUEBY": {
+    "id": "940GZZLUEBY",
+    "name": "Ealing Broadway Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBEAL": {
+    "id": "HUBEAL",
+    "name": "Ealing Broadway",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GEALINGB",
+        "name": "Ealing Broadway Rail Station",
+        "modes": [
+          "elizabeth",
+          "national_rail"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUEBY",
+        "name": "Ealing Broadway Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GECROYDN": {
+    "id": "910GECROYDN",
+    "name": "East Croydon Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "HUBECY": {
+    "id": "HUBECY",
+    "name": "East Croydon",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GECROYDN",
+        "name": "East Croydon Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 5,
+        "altZone": null
+      }
+    ]
+  },
+  "910GELMERSE": {
+    "id": "910GELMERSE",
+    "name": "Elmers End Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "HUBELM": {
+    "id": "HUBELM",
+    "name": "Elmers End",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GELMERSE",
+        "name": "Elmers End Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GELPHNAC": {
+    "id": "910GELPHNAC",
+    "name": "Elephant & Castle Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUEAC": {
+    "id": "940GZZLUEAC",
+    "name": "Elephant & Castle Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBEPH": {
+    "id": "HUBEPH",
+    "name": "Elephant & Castle",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GELPHNAC",
+        "name": "Elephant & Castle Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUEAC",
+        "name": "Elephant & Castle Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GELTHAM": {
+    "id": "910GELTHAM",
+    "name": "Eltham Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GELTR": {
+    "id": "910GELTR",
+    "name": "Elstree & Borehamwood Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GEMRSPKH": {
+    "id": "910GEMRSPKH",
+    "name": "Emerson Park Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GENFC": {
+    "id": "910GENFC",
+    "name": "Enfield Chase Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GENFLDLK": {
+    "id": "910GENFLDLK",
+    "name": "Enfield Lock Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GENFLDTN": {
+    "id": "910GENFLDTN",
+    "name": "Enfield Town Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GEPSDNS": {
+    "id": "910GEPSDNS",
+    "name": "Epsom Downs Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GERITH": {
+    "id": "910GERITH",
+    "name": "Erith Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GESSEXRD": {
+    "id": "910GESSEXRD",
+    "name": "Essex Road Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GEWELLE": {
+    "id": "910GEWELLE",
+    "name": "Ewell East Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GEWELW": {
+    "id": "910GEWELW",
+    "name": "Ewell West Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GFALCNWD": {
+    "id": "910GFALCNWD",
+    "name": "Falconwood Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUEMB": {
+    "id": "940GZZLUEMB",
+    "name": "Embankment Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUEPG": {
+    "id": "940GZZLUEPG",
+    "name": "Epping Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUESQ": {
+    "id": "940GZZLUESQ",
+    "name": "Euston Square Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUFLP": {
+    "id": "940GZZLUFLP",
+    "name": "Fairlop Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GEUSTON": {
+    "id": "910GEUSTON",
+    "name": "London Euston Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZLUEUS": {
+    "id": "940GZZLUEUS",
+    "name": "Euston Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBEUS": {
+    "id": "HUBEUS",
+    "name": "Euston",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GEUSTON",
+        "name": "London Euston Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUEUS",
+        "name": "Euston Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GFRNDNLT": {
+    "id": "910GFRNDNLT",
+    "name": "Farringdon Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GFRNDXR": {
+    "id": "910GFRNDXR",
+    "name": "Farringdon",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZLUFCN": {
+    "id": "940GZZLUFCN",
+    "name": "Farringdon Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBZFD": {
+    "id": "HUBZFD",
+    "name": "Farringdon",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GFRNDNLT",
+        "name": "Farringdon Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "910GFRNDXR",
+        "name": "Farringdon",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUFCN",
+        "name": "Farringdon Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GFELTHAM": {
+    "id": "910GFELTHAM",
+    "name": "Feltham Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GFENCHRS": {
+    "id": "910GFENCHRS",
+    "name": "London Fenchurch Street Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GFNCHLYR": {
+    "id": "910GFNCHLYR",
+    "name": "Finchley Road & Frognal Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GFORESTH": {
+    "id": "910GFORESTH",
+    "name": "Forest Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GFRSTGT": {
+    "id": "910GFRSTGT",
+    "name": "Forest Gate Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GFULWELL": {
+    "id": "910GFULWELL",
+    "name": "Fulwell Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GGIDEAPK": {
+    "id": "910GGIDEAPK",
+    "name": "Gidea Park Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GGIPSYH": {
+    "id": "910GGIPSYH",
+    "name": "Gipsy Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GGODMAYS": {
+    "id": "910GGODMAYS",
+    "name": "Goodmayes Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZDLGAL": {
+    "id": "940GZZDLGAL",
+    "name": "Gallions Reach DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUFBY": {
+    "id": "940GZZLUFBY",
+    "name": "Fulham Broadway Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUFYC": {
+    "id": "940GZZLUFYC",
+    "name": "Finchley Central Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUFYR": {
+    "id": "940GZZLUFYR",
+    "name": "Finchley Road Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUGDG": {
+    "id": "940GZZLUGDG",
+    "name": "Goodge Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUGGN": {
+    "id": "940GZZLUGGN",
+    "name": "Golders Green Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUGHK": {
+    "id": "940GZZLUGHK",
+    "name": "Goldhawk Road Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUGTH": {
+    "id": "940GZZLUGTH",
+    "name": "Gants Hill Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUGTR": {
+    "id": "940GZZLUGTR",
+    "name": "Gloucester Road Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GFNPK": {
+    "id": "910GFNPK",
+    "name": "Finsbury Park Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUFPK": {
+    "id": "940GZZLUFPK",
+    "name": "Finsbury Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBFPK": {
+    "id": "HUBFPK",
+    "name": "Finsbury Park",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GFNPK",
+        "name": "Finsbury Park Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUFPK",
+        "name": "Finsbury Park Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GGORDONH": {
+    "id": "910GGORDONH",
+    "name": "Gordon Hill Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GGOSPLOK": {
+    "id": "910GGOSPLOK",
+    "name": "Gospel Oak Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GGRPK": {
+    "id": "910GGRPK",
+    "name": "Grange Park Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GGRVPK": {
+    "id": "910GGRVPK",
+    "name": "Grove Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHACKNYC": {
+    "id": "910GHACKNYC",
+    "name": "Hackney Central Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHACKNYW": {
+    "id": "910GHACKNYW",
+    "name": "Hackney Wick Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHADLYWD": {
+    "id": "910GHADLYWD",
+    "name": "Hadley Wood Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHAGGERS": {
+    "id": "910GHAGGERS",
+    "name": "Haggerston Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHAKNYNM": {
+    "id": "910GHAKNYNM",
+    "name": "Hackney Downs Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GHKBG": {
+    "id": "910GHKBG",
+    "name": "Hackbridge Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUGGH": {
+    "id": "940GZZLUGGH",
+    "name": "Grange Hill Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUGPK": {
+    "id": "940GZZLUGPK",
+    "name": "Green Park Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUGPS": {
+    "id": "940GZZLUGPS",
+    "name": "Great Portland Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GGFORD": {
+    "id": "910GGFORD",
+    "name": "Greenford Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUGFD": {
+    "id": "940GZZLUGFD",
+    "name": "Greenford Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBGFD": {
+    "id": "HUBGFD",
+    "name": "Greenford",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GGFORD",
+        "name": "Greenford Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUGFD",
+        "name": "Greenford Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GGNWH": {
+    "id": "910GGNWH",
+    "name": "Greenwich Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLGRE": {
+    "id": "940GZZDLGRE",
+    "name": "Greenwich DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBGNW": {
+    "id": "HUBGNW",
+    "name": "Greenwich",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GGNWH",
+        "name": "Greenwich Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLGRE",
+        "name": "Greenwich DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GGNRSBRY": {
+    "id": "910GGNRSBRY",
+    "name": "Gunnersbury Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUGBY": {
+    "id": "940GZZLUGBY",
+    "name": "Gunnersbury Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBGUN": {
+    "id": "HUBGUN",
+    "name": "Gunnersbury",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GGNRSBRY",
+        "name": "Gunnersbury Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUGBY",
+        "name": "Gunnersbury Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZALGWP": {
+    "id": "940GZZALGWP",
+    "name": "Greenwich Peninsula",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "940GZZLUNGW": {
+    "id": "940GZZLUNGW",
+    "name": "North Greenwich Underground Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBNGW": {
+    "id": "HUBNGW",
+    "name": "North Greenwich",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZALGWP",
+        "name": "Greenwich Peninsula",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUNGW",
+        "name": "North Greenwich Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": 3
+      }
+    ]
+  },
+  "910GHAMPTON": {
+    "id": "910GHAMPTON",
+    "name": "Hampton (London) Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHAMWICK": {
+    "id": "910GHAMWICK",
+    "name": "Hampton Wick Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHANWELL": {
+    "id": "910GHANWELL",
+    "name": "Hanwell Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GHMPSTDH": {
+    "id": "910GHMPSTDH",
+    "name": "Hampstead Heath Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHRGY": {
+    "id": "910GHRGY",
+    "name": "Harringay Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHRGYGL": {
+    "id": "910GHRGYGL",
+    "name": "Harringay Green Lanes Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHRLDWOD": {
+    "id": "910GHRLDWOD",
+    "name": "Harold Wood Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GHTCHEND": {
+    "id": "910GHTCHEND",
+    "name": "Hatch End Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHYDNSRD": {
+    "id": "910GHYDNSRD",
+    "name": "Haydons Road Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUHGR": {
+    "id": "940GZZLUHGR",
+    "name": "Hanger Lane Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHLT": {
+    "id": "940GZZLUHLT",
+    "name": "Hainault Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHNX": {
+    "id": "940GZZLUHNX",
+    "name": "Hatton Cross Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHTD": {
+    "id": "940GZZLUHTD",
+    "name": "Hampstead Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GHCRT": {
+    "id": "910GHCRT",
+    "name": "Hampton Court Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "HUBHAM": {
+    "id": "HUBHAM",
+    "name": "Hampton Court",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHCRT",
+        "name": "Hampton Court Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 6,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHARLSDN": {
+    "id": "910GHARLSDN",
+    "name": "Harlesden Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUHSN": {
+    "id": "940GZZLUHSN",
+    "name": "Harlesden Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBHDN": {
+    "id": "HUBHDN",
+    "name": "Harlesden",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHARLSDN",
+        "name": "Harlesden Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHSN",
+        "name": "Harlesden Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUHSC": {
+    "id": "940GZZLUHSC",
+    "name": "Hammersmith (H&C Line) Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHSD": {
+    "id": "940GZZLUHSD",
+    "name": "Hammersmith (Dist&Picc Line) Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBHMS": {
+    "id": "HUBHMS",
+    "name": "Hammersmith",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZLUHSC",
+        "name": "Hammersmith (H&C Line) Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHSD",
+        "name": "Hammersmith (Dist&Picc Line) Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHAROOTH": {
+    "id": "910GHAROOTH",
+    "name": "Harrow-on-the-Hill Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUHOH": {
+    "id": "940GZZLUHOH",
+    "name": "Harrow-on-the-Hill Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBHOH": {
+    "id": "HUBHOH",
+    "name": "Harrow-on-the-Hill",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHAROOTH",
+        "name": "Harrow-on-the-Hill Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 5,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHOH",
+        "name": "Harrow-on-the-Hill Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 5,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHROWDC": {
+    "id": "910GHROWDC",
+    "name": "Harrow & Wealdstone Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GHROW": {
+    "id": "910GHROW",
+    "name": "Harrow & Wealdstone Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHROWDC",
+        "name": "Harrow & Wealdstone Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUHAW": {
+    "id": "940GZZLUHAW",
+    "name": "Harrow & Wealdstone Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBHRW": {
+    "id": "HUBHRW",
+    "name": "Harrow & Wealdstone",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHROW",
+        "name": "Harrow & Wealdstone Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 5,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHAW",
+        "name": "Harrow & Wealdstone Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 5,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHAYESAH": {
+    "id": "910GHAYESAH",
+    "name": "Hayes & Harlington Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GHAYS": {
+    "id": "910GHAYS",
+    "name": "Hayes (Kent) Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHDON": {
+    "id": "910GHDON",
+    "name": "Hendon Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHEDSTNL": {
+    "id": "910GHEDSTNL",
+    "name": "Headstone Lane Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHERNEH": {
+    "id": "910GHERNEH",
+    "name": "Herne Hill Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHGHMSPK": {
+    "id": "910GHGHMSPK",
+    "name": "Highams Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZDLHEQ": {
+    "id": "940GZZDLHEQ",
+    "name": "Heron Quays DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUHBT": {
+    "id": "940GZZLUHBT",
+    "name": "High Barnet Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHCL": {
+    "id": "940GZZLUHCL",
+    "name": "Hendon Central Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHGD": {
+    "id": "940GZZLUHGD",
+    "name": "Hillingdon Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHGT": {
+    "id": "940GZZLUHGT",
+    "name": "Highgate Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHSK": {
+    "id": "940GZZLUHSK",
+    "name": "High Street Kensington Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GHTRWAPT": {
+    "id": "910GHTRWAPT",
+    "name": "Heathrow Terminals 2 & 3 Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "elizabeth"
+    ]
+  },
+  "910GHTRWCBS": {
+    "id": "910GHTRWCBS",
+    "name": "Heathrow Central Bus Stn (Rail-Air)",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "940GZZLUHRC": {
+    "id": "940GZZLUHRC",
+    "name": "Heathrow Terminals 2 & 3 Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBH13": {
+    "id": "HUBH13",
+    "name": "Heathrow Terminals 2 & 3",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHTRWAPT",
+        "name": "Heathrow Terminals 2 & 3 Rail Station",
+        "modes": [
+          "national_rail",
+          "elizabeth"
+        ],
+        "zone": 6,
+        "altZone": null
+      },
+      {
+        "id": "910GHTRWCBS",
+        "name": "Heathrow Central Bus Stn (Rail-Air)",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHRC",
+        "name": "Heathrow Terminals 2 & 3 Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 6,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHIGHBYA": {
+    "id": "910GHIGHBYA",
+    "name": "Highbury & Islington Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GHGHI": {
+    "id": "910GHGHI",
+    "name": "Highbury & Islington Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHIGHBYA",
+        "name": "Highbury & Islington Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUHAI": {
+    "id": "940GZZLUHAI",
+    "name": "Highbury & Islington Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBHHY": {
+    "id": "HUBHHY",
+    "name": "Highbury & Islington",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHGHI",
+        "name": "Highbury & Islington Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHAI",
+        "name": "Highbury & Islington Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHTRWTE4": {
+    "id": "910GHTRWTE4",
+    "name": "Heathrow Terminal 4 (Rail-Air)",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GHTRWTM4": {
+    "id": "910GHTRWTM4",
+    "name": "Heathrow Terminal 4 Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZLUHR4": {
+    "id": "940GZZLUHR4",
+    "name": "Heathrow Terminal 4 Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBHX4": {
+    "id": "HUBHX4",
+    "name": "Heathrow Airport Terminal 4",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHTRWTE4",
+        "name": "Heathrow Terminal 4 (Rail-Air)",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GHTRWTM4",
+        "name": "Heathrow Terminal 4 Rail Station",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 6,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHR4",
+        "name": "Heathrow Terminal 4 Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 6,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHTRBUS5": {
+    "id": "910GHTRBUS5",
+    "name": "Heathrow Terminal 5",
+    "zone": 6,
+    "altZone": null,
+    "modes": []
+  },
+  "910GHTRWTM5": {
+    "id": "910GHTRWTM5",
+    "name": "Heathrow Terminal 5 Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "940GZZLUHR5": {
+    "id": "940GZZLUHR5",
+    "name": "Heathrow Terminal 5 Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBHX5": {
+    "id": "HUBHX5",
+    "name": "Heathrow Airport Terminal 5",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GHTRBUS5",
+        "name": "Heathrow Terminal 5",
+        "modes": [],
+        "zone": 6,
+        "altZone": null
+      },
+      {
+        "id": "910GHTRWTM5",
+        "name": "Heathrow Terminal 5 Rail Station",
+        "modes": [
+          "elizabeth",
+          "national_rail"
+        ],
+        "zone": 6,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUHR5",
+        "name": "Heathrow Terminal 5 Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 6,
+        "altZone": null
+      }
+    ]
+  },
+  "910GHOMRTON": {
+    "id": "910GHOMRTON",
+    "name": "Homerton Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHONROPK": {
+    "id": "910GHONROPK",
+    "name": "Honor Oak Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GHOUNSLW": {
+    "id": "910GHOUNSLW",
+    "name": "Hounslow Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHOXTON": {
+    "id": "910GHOXTON",
+    "name": "Hoxton Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GHRNSY": {
+    "id": "910GHRNSY",
+    "name": "Hornsey Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GHTHRGRN": {
+    "id": "910GHTHRGRN",
+    "name": "Hither Green Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GILFORD": {
+    "id": "910GILFORD",
+    "name": "Ilford Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GISLEWTH": {
+    "id": "910GISLEWTH",
+    "name": "Isleworth Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GKNLYBUS": {
+    "id": "910GKNLYBUS",
+    "name": "Kenley - Kenley Hotel",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GKNLY": {
+    "id": "910GKNLY",
+    "name": "Kenley Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GKNLYBUS",
+        "name": "Kenley - Kenley Hotel",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZDLISL": {
+    "id": "940GZZDLISL",
+    "name": "Island Gardens DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUHBN": {
+    "id": "940GZZLUHBN",
+    "name": "Holborn Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHCH": {
+    "id": "940GZZLUHCH",
+    "name": "Hornchurch Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHPC": {
+    "id": "940GZZLUHPC",
+    "name": "Hyde Park Corner Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHPK": {
+    "id": "940GZZLUHPK",
+    "name": "Holland Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHWC": {
+    "id": "940GZZLUHWC",
+    "name": "Hounslow Central Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHWE": {
+    "id": "940GZZLUHWE",
+    "name": "Hounslow East Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHWT": {
+    "id": "940GZZLUHWT",
+    "name": "Hounslow West Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUHWY": {
+    "id": "940GZZLUHWY",
+    "name": "Holloway Road Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUICK": {
+    "id": "940GZZLUICK",
+    "name": "Ickenham Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GCSEAH": {
+    "id": "910GCSEAH",
+    "name": "Imperial Wharf Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "HUBIMP": {
+    "id": "HUBIMP",
+    "name": "Imperial Wharf",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GCSEAH",
+        "name": "Imperial Wharf Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GKENR": {
+    "id": "910GKENR",
+    "name": "Kensal Rise Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GKENTHOS": {
+    "id": "910GKENTHOS",
+    "name": "Kent House Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GKEWBDGE": {
+    "id": "910GKEWBDGE",
+    "name": "Kew Bridge Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GKIDBROK": {
+    "id": "910GKIDBROK",
+    "name": "Kidbrooke Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GKLBRNHR": {
+    "id": "910GKLBRNHR",
+    "name": "Kilburn High Road Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GKNTSHTW": {
+    "id": "910GKNTSHTW",
+    "name": "Kentish Town West Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZDLKGV": {
+    "id": "940GZZDLKGV",
+    "name": "King George V DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUKBN": {
+    "id": "940GZZLUKBN",
+    "name": "Kilburn Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUKBY": {
+    "id": "940GZZLUKBY",
+    "name": "Kingsbury Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUKNG": {
+    "id": "940GZZLUKNG",
+    "name": "Kennington Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUKPK": {
+    "id": "940GZZLUKPK",
+    "name": "Kilburn Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GKNGX": {
+    "id": "910GKNGX",
+    "name": "London King's Cross Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTPADOM": {
+    "id": "910GSTPADOM",
+    "name": "London St Pancras International Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTPX": {
+    "id": "910GSTPX",
+    "name": "London St Pancras International Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTPXBOX": {
+    "id": "910GSTPXBOX",
+    "name": "London St Pancras International LL Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUKSX": {
+    "id": "940GZZLUKSX",
+    "name": "King's Cross St. Pancras Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBKGX": {
+    "id": "HUBKGX",
+    "name": "King's Cross & St Pancras International",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GKNGX",
+        "name": "London King's Cross Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "910GSTPADOM",
+        "name": "London St Pancras International Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GSTPX",
+        "name": "London St Pancras International Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "910GSTPXBOX",
+        "name": "London St Pancras International LL Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUKSX",
+        "name": "King's Cross St. Pancras Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GKENSLG": {
+    "id": "910GKENSLG",
+    "name": "Kensal Green Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUKSL": {
+    "id": "940GZZLUKSL",
+    "name": "Kensal Green Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBKNL": {
+    "id": "HUBKNL",
+    "name": "Kensal Green",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GKENSLG",
+        "name": "Kensal Green Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUKSL",
+        "name": "Kensal Green Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GKTON": {
+    "id": "910GKTON",
+    "name": "Kenton Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUKEN": {
+    "id": "940GZZLUKEN",
+    "name": "Kenton Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBKNT": {
+    "id": "HUBKNT",
+    "name": "Kenton",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GKTON",
+        "name": "Kenton Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUKEN",
+        "name": "Kenton Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GKENOLYM": {
+    "id": "910GKENOLYM",
+    "name": "Kensington (Olympia) Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZLUKOY": {
+    "id": "940GZZLUKOY",
+    "name": "Kensington (Olympia) Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBKPA": {
+    "id": "HUBKPA",
+    "name": "Kensington (Olympia)",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GKENOLYM",
+        "name": "Kensington (Olympia) Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUKOY",
+        "name": "Kensington (Olympia) Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GKNTSHTN": {
+    "id": "910GKNTSHTN",
+    "name": "Kentish Town Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUKSH": {
+    "id": "940GZZLUKSH",
+    "name": "Kentish Town Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBKTN": {
+    "id": "HUBKTN",
+    "name": "Kentish Town",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GKNTSHTN",
+        "name": "Kentish Town Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUKSH",
+        "name": "Kentish Town Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GKEWGRDN": {
+    "id": "910GKEWGRDN",
+    "name": "Kew Gardens Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUKWG": {
+    "id": "940GZZLUKWG",
+    "name": "Kew Gardens Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBKWG": {
+    "id": "HUBKWG",
+    "name": "Kew Gardens",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GKEWGRDN",
+        "name": "Kew Gardens Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUKWG",
+        "name": "Kew Gardens Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GKGSTON": {
+    "id": "910GKGSTON",
+    "name": "Kingston Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GKGWD": {
+    "id": "910GKGWD",
+    "name": "Kingswood Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GKNCKHLT": {
+    "id": "910GKNCKHLT",
+    "name": "Knockholt Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GLDYW": {
+    "id": "910GLDYW",
+    "name": "Ladywell Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GLEABDGE": {
+    "id": "910GLEABDGE",
+    "name": "Lea Bridge Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GLEEE": {
+    "id": "910GLEEE",
+    "name": "Lee Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GLEYTNMR": {
+    "id": "910GLEYTNMR",
+    "name": "Leyton Midland Road Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GLYTNSHR": {
+    "id": "910GLYTNSHR",
+    "name": "Leytonstone High Road Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZDLLDP": {
+    "id": "940GZZDLLDP",
+    "name": "Langdon Park DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUKNB": {
+    "id": "940GZZLUKNB",
+    "name": "Knightsbridge Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLULAD": {
+    "id": "940GZZLULAD",
+    "name": "Ladbroke Grove Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLULBN": {
+    "id": "940GZZLULBN",
+    "name": "Lambeth North Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLULGT": {
+    "id": "940GZZLULGT",
+    "name": "Lancaster Gate Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLULRD": {
+    "id": "940GZZLULRD",
+    "name": "Latimer Road Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLULSQ": {
+    "id": "940GZZLULSQ",
+    "name": "Leicester Square Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLULYN": {
+    "id": "940GZZLULYN",
+    "name": "Leyton Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLULYS": {
+    "id": "940GZZLULYS",
+    "name": "Leytonstone Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GLEWISHM": {
+    "id": "910GLEWISHM",
+    "name": "Lewisham Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLLEW": {
+    "id": "940GZZDLLEW",
+    "name": "Lewisham DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBLEW": {
+    "id": "HUBLEW",
+    "name": "Lewisham",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GLEWISHM",
+        "name": "Lewisham Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLLEW",
+        "name": "Lewisham DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GLIMHSE": {
+    "id": "910GLIMHSE",
+    "name": "Limehouse Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLLIM": {
+    "id": "940GZZDLLIM",
+    "name": "Limehouse DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBLHS": {
+    "id": "HUBLHS",
+    "name": "Limehouse",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GLIMHSE",
+        "name": "Limehouse Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLLIM",
+        "name": "Limehouse DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GLONFLDS": {
+    "id": "910GLONFLDS",
+    "name": "London Fields Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GWLOE": {
+    "id": "910GWLOE",
+    "name": "London Waterloo East Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GLNDNBDE": {
+    "id": "910GLNDNBDE",
+    "name": "London Bridge Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": []
+  },
+  "910GLNDNBDC": {
+    "id": "910GLNDNBDC",
+    "name": "London Bridge Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GLNDNBDE",
+        "name": "London Bridge Rail Station",
+        "modes": [],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLULNB": {
+    "id": "940GZZLULNB",
+    "name": "London Bridge Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBLBG": {
+    "id": "HUBLBG",
+    "name": "London Bridge",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GLNDNBDC",
+        "name": "London Bridge Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLULNB",
+        "name": "London Bridge Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZDLLCA": {
+    "id": "940GZZDLLCA",
+    "name": "London City Airport DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBLCY": {
+    "id": "HUBLCY",
+    "name": "London City Airport",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZDLLCA",
+        "name": "London City Airport DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GLIVST": {
+    "id": "910GLIVST",
+    "name": "London Liverpool Street Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GLIVSTLL": {
+    "id": "910GLIVSTLL",
+    "name": "Liverpool Street",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZLULVT": {
+    "id": "940GZZLULVT",
+    "name": "Liverpool Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBLST": {
+    "id": "HUBLST",
+    "name": "Liverpool Street",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GLIVST",
+        "name": "London Liverpool Street Rail Station",
+        "modes": [
+          "elizabeth",
+          "national_rail",
+          "overground"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "910GLIVSTLL",
+        "name": "Liverpool Street",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLULVT",
+        "name": "Liverpool Street Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GMARYLBN": {
+    "id": "910GMARYLBN",
+    "name": "London Marylebone Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUMYB": {
+    "id": "940GZZLUMYB",
+    "name": "Marylebone Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBMYB": {
+    "id": "HUBMYB",
+    "name": "Marylebone",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GMARYLBN",
+        "name": "London Marylebone Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUMYB",
+        "name": "Marylebone Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GPADTLL": {
+    "id": "910GPADTLL",
+    "name": "Paddington",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GPADTON": {
+    "id": "910GPADTON",
+    "name": "London Paddington Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "940GZZLUPAC": {
+    "id": "940GZZLUPAC",
+    "name": "Paddington Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPAH": {
+    "id": "940GZZLUPAH",
+    "name": "Paddington (H&C Line)-Underground",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBPAD": {
+    "id": "HUBPAD",
+    "name": "Paddington",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GPADTLL",
+        "name": "Paddington",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "910GPADTON",
+        "name": "London Paddington Rail Station",
+        "modes": [
+          "elizabeth",
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUPAC",
+        "name": "Paddington Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUPAH",
+        "name": "Paddington (H&C Line)-Underground",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GVICTRIE": {
+    "id": "910GVICTRIE",
+    "name": "London Victoria Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GVICTRIC": {
+    "id": "910GVICTRIC",
+    "name": "London Victoria Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GVICTRIE",
+        "name": "London Victoria Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUVIC": {
+    "id": "940GZZLUVIC",
+    "name": "Victoria Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBVIC": {
+    "id": "HUBVIC",
+    "name": "Victoria",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GVICTRIC",
+        "name": "London Victoria Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUVIC",
+        "name": "Victoria Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWATRLMN": {
+    "id": "910GWATRLMN",
+    "name": "London Waterloo Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUWLO": {
+    "id": "940GZZLUWLO",
+    "name": "Waterloo Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWAT": {
+    "id": "HUBWAT",
+    "name": "Waterloo",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWATRLMN",
+        "name": "London Waterloo Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWLO",
+        "name": "Waterloo Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GESTFLDS": {
+    "id": "910GESTFLDS",
+    "name": "Mitcham Eastfields Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GLBGHJN": {
+    "id": "910GLBGHJN",
+    "name": "Loughborough Junction Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GLSYDNHM": {
+    "id": "910GLSYDNHM",
+    "name": "Lower Sydenham Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GMALDENM": {
+    "id": "910GMALDENM",
+    "name": "Malden Manor Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GMANRPK": {
+    "id": "910GMANRPK",
+    "name": "Manor Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GMAZEH": {
+    "id": "910GMAZEH",
+    "name": "Maze Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GMLHB": {
+    "id": "910GMLHB",
+    "name": "Mill Hill Broadway Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GMRYLAND": {
+    "id": "910GMRYLAND",
+    "name": "Maryland Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GMWRWSTN": {
+    "id": "910GMWRWSTN",
+    "name": "Meridian Water Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLULGN": {
+    "id": "940GZZLULGN",
+    "name": "Loughton Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMBA": {
+    "id": "940GZZLUMBA",
+    "name": "Marble Arch Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMED": {
+    "id": "940GZZLUMED",
+    "name": "Mile End Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMHL": {
+    "id": "940GZZLUMHL",
+    "name": "Mill Hill East Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMMT": {
+    "id": "940GZZLUMMT",
+    "name": "Monument Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMPK": {
+    "id": "940GZZLUMPK",
+    "name": "Moor Park Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMRH": {
+    "id": "940GZZLUMRH",
+    "name": "Manor House Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMSH": {
+    "id": "940GZZLUMSH",
+    "name": "Mansion House Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMVL": {
+    "id": "940GZZLUMVL",
+    "name": "Maida Vale Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GMITCHMJ": {
+    "id": "910GMITCHMJ",
+    "name": "Mitcham Junction Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "HUBMJT": {
+    "id": "HUBMJT",
+    "name": "Mitcham Junction",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GMITCHMJ",
+        "name": "Mitcham Junction Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GILFENBP": {
+    "id": "910GILFENBP",
+    "name": "Newbury Park Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": []
+  },
+  "910GMORDENS": {
+    "id": "910GMORDENS",
+    "name": "Morden South Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GMOTNGHM": {
+    "id": "910GMOTNGHM",
+    "name": "Mottingham Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GMOTSPRP": {
+    "id": "910GMOTSPRP",
+    "name": "Motspur Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GMRTLKE": {
+    "id": "910GMRTLKE",
+    "name": "Mortlake Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNBARNET": {
+    "id": "910GNBARNET",
+    "name": "New Barnet Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNBCKNHM": {
+    "id": "910GNBCKNHM",
+    "name": "New Beckenham Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNEWMLDN": {
+    "id": "910GNEWMLDN",
+    "name": "New Malden Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNEWSGAT": {
+    "id": "910GNEWSGAT",
+    "name": "New Southgate Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNWELTHM": {
+    "id": "910GNWELTHM",
+    "name": "New Eltham Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLMUD": {
+    "id": "940GZZDLMUD",
+    "name": "Mudchute DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUMDN": {
+    "id": "940GZZLUMDN",
+    "name": "Morden Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUMTC": {
+    "id": "940GZZLUMTC",
+    "name": "Mornington Crescent Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNDN": {
+    "id": "940GZZLUNDN",
+    "name": "Neasden Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GNWCRELL": {
+    "id": "910GNWCRELL",
+    "name": "New Cross ELL Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GNWCROSS": {
+    "id": "910GNWCROSS",
+    "name": "New Cross Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": []
+  },
+  "HUBNWX": {
+    "id": "HUBNWX",
+    "name": "New Cross",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GNWCRELL",
+        "name": "New Cross ELL Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "910GNWCROSS",
+        "name": "New Cross Rail Station",
+        "modes": [],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GNEWXGEL": {
+    "id": "910GNEWXGEL",
+    "name": "New Cross Gate ELL Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GNEWXGTE": {
+    "id": "910GNEWXGTE",
+    "name": "New Cross Gate Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "HUBNXG": {
+    "id": "HUBNXG",
+    "name": "New Cross Gate",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GNEWXGEL",
+        "name": "New Cross Gate ELL Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GNEWXGTE",
+        "name": "New Cross Gate Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GMRGT": {
+    "id": "910GMRGT",
+    "name": "Moorgate Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUMGT": {
+    "id": "940GZZLUMGT",
+    "name": "Moorgate Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBZMG": {
+    "id": "HUBZMG",
+    "name": "Moorgate",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GMRGT",
+        "name": "Moorgate Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUMGT",
+        "name": "Moorgate Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GNDULWCH": {
+    "id": "910GNDULWCH",
+    "name": "North Dulwich Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNMBRLPK": {
+    "id": "910GNMBRLPK",
+    "name": "Northumberland Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNORBURY": {
+    "id": "910GNORBURY",
+    "name": "Norbury Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNRBITON": {
+    "id": "910GNRBITON",
+    "name": "Norbiton Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNSHEEN": {
+    "id": "910GNSHEEN",
+    "name": "North Sheen Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GNTHOLTP": {
+    "id": "910GNTHOLTP",
+    "name": "Northolt Park Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUNAN": {
+    "id": "940GZZLUNAN",
+    "name": "North Acton Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNBP": {
+    "id": "940GZZLUNBP",
+    "name": "Newbury Park Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNEN": {
+    "id": "940GZZLUNEN",
+    "name": "North Ealing Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNFD": {
+    "id": "940GZZLUNFD",
+    "name": "Northfields Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNHA": {
+    "id": "940GZZLUNHA",
+    "name": "North Harrow Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNHT": {
+    "id": "940GZZLUNHT",
+    "name": "Northolt Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNKP": {
+    "id": "940GZZLUNKP",
+    "name": "Northwick Park Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNOW": {
+    "id": "940GZZLUNOW",
+    "name": "Northwood Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUNWH": {
+    "id": "940GZZLUNWH",
+    "name": "Northwood Hills Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZNEUGST": {
+    "id": "940GZZNEUGST",
+    "name": "Nine Elms Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GNWEMBLY": {
+    "id": "910GNWEMBLY",
+    "name": "North Wembley Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUNWY": {
+    "id": "940GZZLUNWY",
+    "name": "North Wembley Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBNWB": {
+    "id": "HUBNWB",
+    "name": "North Wembley",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GNWEMBLY",
+        "name": "North Wembley Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUNWY",
+        "name": "North Wembley Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GNORWDJ": {
+    "id": "910GNORWDJ",
+    "name": "Norwood Junction Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "HUBNWD": {
+    "id": "HUBNWD",
+    "name": "Norwood Junction",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GNORWDJ",
+        "name": "Norwood Junction Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GNUNHEAD": {
+    "id": "910GNUNHEAD",
+    "name": "Nunhead Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GOKLGHPK": {
+    "id": "910GOKLGHPK",
+    "name": "Oakleigh Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GORPNGTN": {
+    "id": "910GORPNGTN",
+    "name": "Orpington Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GPALMRSG": {
+    "id": "910GPALMRSG",
+    "name": "Palmers Green Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GPKHMRYC": {
+    "id": "910GPKHMRYC",
+    "name": "Peckham Rye Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GPCKHMRY": {
+    "id": "910GPCKHMRY",
+    "name": "Peckham Rye Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GPKHMRYC",
+        "name": "Peckham Rye Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GPENEW": {
+    "id": "910GPENEW",
+    "name": "Penge West Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GPNGEE": {
+    "id": "910GPNGEE",
+    "name": "Penge East Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUNHG": {
+    "id": "940GZZLUNHG",
+    "name": "Notting Hill Gate Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUOAK": {
+    "id": "940GZZLUOAK",
+    "name": "Oakwood Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUOSY": {
+    "id": "940GZZLUOSY",
+    "name": "Osterley Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUOVL": {
+    "id": "940GZZLUOVL",
+    "name": "Oval Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUOXC": {
+    "id": "940GZZLUOXC",
+    "name": "Oxford Circus Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPKR": {
+    "id": "940GZZLUPKR",
+    "name": "Park Royal Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPSG": {
+    "id": "940GZZLUPSG",
+    "name": "Parsons Green Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPVL": {
+    "id": "940GZZLUPVL",
+    "name": "Perivale Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GOLDST": {
+    "id": "910GOLDST",
+    "name": "Old Street Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUODS": {
+    "id": "940GZZLUODS",
+    "name": "Old Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBOLD": {
+    "id": "HUBOLD",
+    "name": "Old Street",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GOLDST",
+        "name": "Old Street Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUODS",
+        "name": "Old Street Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GPCKHMQD": {
+    "id": "910GPCKHMQD",
+    "name": "Queens Road Peckham Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GPETSWD": {
+    "id": "910GPETSWD",
+    "name": "Petts Wood Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GPLMS": {
+    "id": "910GPLMS",
+    "name": "Plumstead Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GPNDRSEN": {
+    "id": "910GPNDRSEN",
+    "name": "Ponders End Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GPURLEY": {
+    "id": "910GPURLEY",
+    "name": "Purley Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GPURLEYO": {
+    "id": "910GPURLEYO",
+    "name": "Purley Oaks Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GPUTNEY": {
+    "id": "910GPUTNEY",
+    "name": "Putney Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLPDK": {
+    "id": "940GZZDLPDK",
+    "name": "Pontoon Dock DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLPOP": {
+    "id": "940GZZDLPOP",
+    "name": "Poplar DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLPRE": {
+    "id": "940GZZDLPRE",
+    "name": "Prince Regent DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLPUD": {
+    "id": "940GZZDLPUD",
+    "name": "Pudding Mill Lane DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUPCC": {
+    "id": "940GZZLUPCC",
+    "name": "Piccadilly Circus Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPCO": {
+    "id": "940GZZLUPCO",
+    "name": "Pimlico Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPLW": {
+    "id": "940GZZLUPLW",
+    "name": "Plaistow Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPNR": {
+    "id": "940GZZLUPNR",
+    "name": "Pinner Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPRD": {
+    "id": "940GZZLUPRD",
+    "name": "Preston Road Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUPYB": {
+    "id": "940GZZLUPYB",
+    "name": "Putney Bridge Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUQBY": {
+    "id": "940GZZLUQBY",
+    "name": "Queensbury Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GQPRK": {
+    "id": "910GQPRK",
+    "name": "Queens Park (London) Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUQPS": {
+    "id": "940GZZLUQPS",
+    "name": "Queen's Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBQPW": {
+    "id": "HUBQPW",
+    "name": "Queen's Park",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GQPRK",
+        "name": "Queens Park (London) Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUQPS",
+        "name": "Queen's Park Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GQTRDBAT": {
+    "id": "910GQTRDBAT",
+    "name": "Queenstown Road (Battersea) Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GRADLETT": {
+    "id": "910GRADLETT",
+    "name": "Radlett Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GRAYNSPK": {
+    "id": "910GRAYNSPK",
+    "name": "Raynes Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GRBRN": {
+    "id": "910GRBRN",
+    "name": "Ravensbourne Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GRCTRYRD": {
+    "id": "910GRCTRYRD",
+    "name": "Rectory Road Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GRDLSDWN": {
+    "id": "910GRDLSDWN",
+    "name": "Riddlesdown Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GREEDHMS": {
+    "id": "910GREEDHMS",
+    "name": "Reedham (Surrey) Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GRNHAME": {
+    "id": "910GRNHAME",
+    "name": "Rainham (London) Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GROMFORD": {
+    "id": "910GROMFORD",
+    "name": "Romford Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GRTHERHI": {
+    "id": "910GRTHERHI",
+    "name": "Rotherhithe Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZDLRAL": {
+    "id": "940GZZDLRAL",
+    "name": "Royal Albert DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUQWY": {
+    "id": "940GZZLUQWY",
+    "name": "Queensway Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURBG": {
+    "id": "940GZZLURBG",
+    "name": "Redbridge Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURVP": {
+    "id": "940GZZLURVP",
+    "name": "Ravenscourt Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURVY": {
+    "id": "940GZZLURVY",
+    "name": "Roding Valley Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURYL": {
+    "id": "940GZZLURYL",
+    "name": "Rayners Lane Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURKW": {
+    "id": "940GZZLURKW",
+    "name": "Rickmansworth Underground Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GRCKMNSW": {
+    "id": "910GRCKMNSW",
+    "name": "Rickmansworth Rail Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZLURKW",
+        "name": "Rickmansworth Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 7,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBRIC": {
+    "id": "HUBRIC",
+    "name": "Rickmansworth",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GRCKMNSW",
+        "name": "Rickmansworth Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 7,
+        "altZone": null
+      }
+    ]
+  },
+  "910GRICHNLL": {
+    "id": "910GRICHNLL",
+    "name": "Richmond NLL Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GRICHMND": {
+    "id": "910GRICHMND",
+    "name": "Richmond (London) Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GRICHNLL",
+        "name": "Richmond NLL Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLURMD": {
+    "id": "940GZZLURMD",
+    "name": "Richmond Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBRMD": {
+    "id": "HUBRMD",
+    "name": "Richmond",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GRICHMND",
+        "name": "Richmond (London) Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLURMD",
+        "name": "Richmond Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSDSD": {
+    "id": "910GSDSD",
+    "name": "Sanderstead Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSELHRST": {
+    "id": "910GSELHRST",
+    "name": "Selhurst Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSHRDHST": {
+    "id": "910GSHRDHST",
+    "name": "Shoreditch High Street Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GSHRTLND": {
+    "id": "910GSHRTLND",
+    "name": "Shortlands Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSIDCUP": {
+    "id": "910GSIDCUP",
+    "name": "Sidcup Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSVNKNGS": {
+    "id": "910GSVNKNGS",
+    "name": "Seven Kings Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "940GZZLURSG": {
+    "id": "940GZZLURSG",
+    "name": "Ruislip Gardens Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURSM": {
+    "id": "940GZZLURSM",
+    "name": "Ruislip Manor Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURSP": {
+    "id": "940GZZLURSP",
+    "name": "Ruislip Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURSQ": {
+    "id": "940GZZLURSQ",
+    "name": "Russell Square Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURYO": {
+    "id": "940GZZLURYO",
+    "name": "Royal Oak Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSBM": {
+    "id": "940GZZLUSBM",
+    "name": "Shepherd's Bush Market Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZALRDK": {
+    "id": "940GZZALRDK",
+    "name": "Royal Docks",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "940GZZDLRVC": {
+    "id": "940GZZDLRVC",
+    "name": "Royal Victoria DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBRVC": {
+    "id": "HUBRVC",
+    "name": "Royal Victoria",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZALRDK",
+        "name": "Royal Docks",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLRVC",
+        "name": "Royal Victoria DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSHADWEL": {
+    "id": "910GSHADWEL",
+    "name": "Shadwell Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZDLSHA": {
+    "id": "940GZZDLSHA",
+    "name": "Shadwell DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBSDE": {
+    "id": "HUBSDE",
+    "name": "Shadwell",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSHADWEL",
+        "name": "Shadwell Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLSHA",
+        "name": "Shadwell DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSHPDSB": {
+    "id": "910GSHPDSB",
+    "name": "Shepherds Bush Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZLUSBC": {
+    "id": "940GZZLUSBC",
+    "name": "Shepherd's Bush (Central) Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBSPB": {
+    "id": "HUBSPB",
+    "name": "Shepherd's Bush",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSHPDSB",
+        "name": "Shepherds Bush Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUSBC",
+        "name": "Shepherd's Bush (Central) Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSEVNSIS": {
+    "id": "910GSEVNSIS",
+    "name": "Seven Sisters Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZLUSVS": {
+    "id": "940GZZLUSVS",
+    "name": "Seven Sisters Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBSVS": {
+    "id": "HUBSVS",
+    "name": "Seven Sisters",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSEVNSIS",
+        "name": "Seven Sisters Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUSVS",
+        "name": "Seven Sisters Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSACTON": {
+    "id": "910GSACTON",
+    "name": "South Acton Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GSBRMNDS": {
+    "id": "910GSBRMNDS",
+    "name": "South Bermondsey Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSCROYDN": {
+    "id": "910GSCROYDN",
+    "name": "South Croydon Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSGFORD": {
+    "id": "910GSGFORD",
+    "name": "South Greenford Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSHMPSTD": {
+    "id": "910GSHMPSTD",
+    "name": "South Hampstead Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GSIVRST": {
+    "id": "910GSIVRST",
+    "name": "Silver Street Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GSLADEGN": {
+    "id": "910GSLADEGN",
+    "name": "Slade Green Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSMERTON": {
+    "id": "910GSMERTON",
+    "name": "South Merton Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTOTNHM": {
+    "id": "910GSTOTNHM",
+    "name": "South Tottenham Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZDLSOQ": {
+    "id": "940GZZDLSOQ",
+    "name": "South Quay DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUSEA": {
+    "id": "940GZZLUSEA",
+    "name": "South Ealing Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSHH": {
+    "id": "940GZZLUSHH",
+    "name": "South Harrow Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSKS": {
+    "id": "940GZZLUSKS",
+    "name": "South Kensington Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSNB": {
+    "id": "940GZZLUSNB",
+    "name": "Snaresbrook Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSSQ": {
+    "id": "940GZZLUSSQ",
+    "name": "Sloane Square Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSWF": {
+    "id": "940GZZLUSWF",
+    "name": "South Woodford Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSWN": {
+    "id": "940GZZLUSWN",
+    "name": "South Wimbledon Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GSKENTON": {
+    "id": "910GSKENTON",
+    "name": "South Kenton Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUSKT": {
+    "id": "940GZZLUSKT",
+    "name": "South Kenton Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBSOK": {
+    "id": "HUBSOK",
+    "name": "South Kenton",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSKENTON",
+        "name": "South Kenton Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUSKT",
+        "name": "South Kenton Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSRUISLP": {
+    "id": "910GSRUISLP",
+    "name": "South Ruislip Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUSRP": {
+    "id": "940GZZLUSRP",
+    "name": "South Ruislip Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBSRU": {
+    "id": "HUBSRU",
+    "name": "South Ruislip",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSRUISLP",
+        "name": "South Ruislip Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 5,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUSRP",
+        "name": "South Ruislip Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 5,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSBURY": {
+    "id": "910GSBURY",
+    "name": "Southbury Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GSHLIER": {
+    "id": "910GSHLIER",
+    "name": "St Helier (London) Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTHALL": {
+    "id": "910GSTHALL",
+    "name": "Southall Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GSTJMSST": {
+    "id": "910GSTJMSST",
+    "name": "St James Street (London) Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GSTJOHNS": {
+    "id": "910GSTJOHNS",
+    "name": "St Johns (London) Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTKNWNG": {
+    "id": "910GSTKNWNG",
+    "name": "Stoke Newington Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GSTMFDHL": {
+    "id": "910GSTMFDHL",
+    "name": "Stamford Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GSTMGTS": {
+    "id": "910GSTMGTS",
+    "name": "St Margarets (London) Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTMRYC": {
+    "id": "910GSTMRYC",
+    "name": "St Mary Cray Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLSTL": {
+    "id": "940GZZDLSTL",
+    "name": "Star Lane DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUSFB": {
+    "id": "940GZZLUSFB",
+    "name": "Stamford Brook Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSFS": {
+    "id": "940GZZLUSFS",
+    "name": "Southfields Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSGN": {
+    "id": "940GZZLUSGN",
+    "name": "Stepney Green Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSGT": {
+    "id": "940GZZLUSGT",
+    "name": "Southgate Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSJP": {
+    "id": "940GZZLUSJP",
+    "name": "St. James's Park Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSJW": {
+    "id": "940GZZLUSJW",
+    "name": "St. John's Wood Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSKW": {
+    "id": "940GZZLUSKW",
+    "name": "Stockwell Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSPU": {
+    "id": "940GZZLUSPU",
+    "name": "St. Paul's Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSTM": {
+    "id": "940GZZLUSTM",
+    "name": "Stanmore Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSWK": {
+    "id": "940GZZLUSWK",
+    "name": "Southwark Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GSDBRYHH": {
+    "id": "910GSDBRYHH",
+    "name": "Sudbury Hill Harrow Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSDBRYHR": {
+    "id": "910GSDBRYHR",
+    "name": "Sudbury & Harrow Road Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSNDP": {
+    "id": "910GSNDP",
+    "name": "Sundridge Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTFODOM": {
+    "id": "910GSTFODOM",
+    "name": "Stratford International Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTLEIGH": {
+    "id": "910GSTLEIGH",
+    "name": "Stoneleigh Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTRETHM": {
+    "id": "910GSTRETHM",
+    "name": "Streatham Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTRHCOM": {
+    "id": "910GSTRHCOM",
+    "name": "Streatham Common Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTRHILL": {
+    "id": "910GSTRHILL",
+    "name": "Streatham Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSTRWBYH": {
+    "id": "910GSTRWBYH",
+    "name": "Strawberry Hill Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSURBITN": {
+    "id": "910GSURBITN",
+    "name": "Surbiton Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSURREYQ": {
+    "id": "910GSURREYQ",
+    "name": "Surrey Quays Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GSUTTONC": {
+    "id": "910GSUTTONC",
+    "name": "Sutton Common Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLSHS": {
+    "id": "940GZZDLSHS",
+    "name": "Stratford High Street DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLSIT": {
+    "id": "940GZZDLSIT",
+    "name": "Stratford International DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUSUH": {
+    "id": "940GZZLUSUH",
+    "name": "Sudbury Hill Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUSUT": {
+    "id": "940GZZLUSUT",
+    "name": "Sudbury Town Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GSTNBGPK": {
+    "id": "910GSTNBGPK",
+    "name": "Stonebridge Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUSGP": {
+    "id": "940GZZLUSGP",
+    "name": "Stonebridge Park Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBSBP": {
+    "id": "HUBSBP",
+    "name": "Stonebridge Park",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSTNBGPK",
+        "name": "Stonebridge Park Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUSGP",
+        "name": "Stonebridge Park Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSTFD": {
+    "id": "910GSTFD",
+    "name": "Stratford (London) Rail Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "elizabeth",
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZDLSTD": {
+    "id": "940GZZDLSTD",
+    "name": "Stratford DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUSTD": {
+    "id": "940GZZLUSTD",
+    "name": "Stratford Underground Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBSRA": {
+    "id": "HUBSRA",
+    "name": "Stratford",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr",
+      "elizabeth",
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSTFD",
+        "name": "Stratford (London) Rail Station",
+        "modes": [
+          "elizabeth",
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": 3
+      },
+      {
+        "id": "940GZZDLSTD",
+        "name": "Stratford DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": 3
+      },
+      {
+        "id": "940GZZLUSTD",
+        "name": "Stratford Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": 3
+      }
+    ]
+  },
+  "910GSUTTON": {
+    "id": "910GSUTTON",
+    "name": "Sutton (London) Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSWLY": {
+    "id": "910GSWLY",
+    "name": "Swanley Rail Station",
+    "zone": 8,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSYDNHMH": {
+    "id": "910GSYDNHMH",
+    "name": "Sydenham Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GSYONLA": {
+    "id": "910GSYONLA",
+    "name": "Syon Lane Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GTADWBUS": {
+    "id": "910GTADWBUS",
+    "name": "Tadworth - The Avenue",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GTADWTH": {
+    "id": "910GTADWTH",
+    "name": "Tadworth Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GTADWBUS",
+        "name": "Tadworth - The Avenue",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GTATNHMC": {
+    "id": "910GTATNHMC",
+    "name": "Tattenham Corner Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GTDITTON": {
+    "id": "910GTDITTON",
+    "name": "Thames Ditton Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GTEDNGTN": {
+    "id": "910GTEDNGTN",
+    "name": "Teddington Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GTHTH": {
+    "id": "910GTHTH",
+    "name": "Thornton Heath Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GTOLWTH": {
+    "id": "910GTOLWTH",
+    "name": "Tolworth Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GTOOTING": {
+    "id": "910GTOOTING",
+    "name": "Tooting Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUSWC": {
+    "id": "940GZZLUSWC",
+    "name": "Swiss Cottage Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTBC": {
+    "id": "940GZZLUTBC",
+    "name": "Tooting Bec Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTBY": {
+    "id": "940GZZLUTBY",
+    "name": "Tooting Broadway Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTHB": {
+    "id": "940GZZLUTHB",
+    "name": "Theydon Bois Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTMP": {
+    "id": "940GZZLUTMP",
+    "name": "Temple Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GSYDENHM": {
+    "id": "910GSYDENHM",
+    "name": "Sydenham Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "HUBSYD": {
+    "id": "HUBSYD",
+    "name": "Sydenham",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GSYDENHM",
+        "name": "Sydenham Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GTOTCTRD": {
+    "id": "910GTOTCTRD",
+    "name": "Tottenham Court Road",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZLUTCR": {
+    "id": "940GZZLUTCR",
+    "name": "Tottenham Court Road Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBTCR": {
+    "id": "HUBTCR",
+    "name": "Tottenham Court Road",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GTOTCTRD",
+        "name": "Tottenham Court Road",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUTCR",
+        "name": "Tottenham Court Road Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GTTNHMHL": {
+    "id": "910GTTNHMHL",
+    "name": "Tottenham Hale Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUTMH": {
+    "id": "940GZZLUTMH",
+    "name": "Tottenham Hale Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBTOM": {
+    "id": "HUBTOM",
+    "name": "Tottenham Hale",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GTTNHMHL",
+        "name": "Tottenham Hale Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUTMH",
+        "name": "Tottenham Hale Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GTULSEH": {
+    "id": "910GTULSEH",
+    "name": "Tulse Hill Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GTURKYST": {
+    "id": "910GTURKYST",
+    "name": "Turkey Street Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "national_rail"
+    ]
+  },
+  "910GTWCKNHM": {
+    "id": "910GTWCKNHM",
+    "name": "Twickenham Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GUPRHLWY": {
+    "id": "910GUPRHLWY",
+    "name": "Upper Holloway Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GUWRLNGH": {
+    "id": "910GUWRLNGH",
+    "name": "Upper Warlingham Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWHYTELF": {
+    "id": "910GWHYTELF",
+    "name": "Whyteleafe Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GUWRLNGH",
+        "name": "Upper Warlingham Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 6,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUTAW": {
+    "id": "940GZZLUTAW",
+    "name": "Totteridge & Whetstone Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTFP": {
+    "id": "940GZZLUTFP",
+    "name": "Tufnell Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTNG": {
+    "id": "940GZZLUTNG",
+    "name": "Turnham Green Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTPN": {
+    "id": "940GZZLUTPN",
+    "name": "Turnpike Lane Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUTWH": {
+    "id": "940GZZLUTWH",
+    "name": "Tower Hill Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUUPB": {
+    "id": "940GZZLUUPB",
+    "name": "Upminster Bridge Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUUPK": {
+    "id": "940GZZLUUPK",
+    "name": "Upton Park Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUUPY": {
+    "id": "940GZZLUUPY",
+    "name": "Upney Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUUXB": {
+    "id": "940GZZLUUXB",
+    "name": "Uxbridge Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZDLTWG": {
+    "id": "940GZZDLTWG",
+    "name": "Tower Gateway DLR Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBTOG": {
+    "id": "HUBTOG",
+    "name": "Tower Gateway",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZDLTWG",
+        "name": "Tower Gateway DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GUPMNSP6": {
+    "id": "910GUPMNSP6",
+    "name": "Upminster Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GUPMNSTR": {
+    "id": "910GUPMNSTR",
+    "name": "Upminster Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GUPMNSP6",
+        "name": "Upminster Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUUPM": {
+    "id": "940GZZLUUPM",
+    "name": "Upminster Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBUPM": {
+    "id": "HUBUPM",
+    "name": "Upminster",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GUPMNSTR",
+        "name": "Upminster Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 6,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUUPM",
+        "name": "Upminster Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 6,
+        "altZone": null
+      }
+    ]
+  },
+  "910GVAUXHLW": {
+    "id": "910GVAUXHLW",
+    "name": "Vauxhall Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GVAUXHLM": {
+    "id": "910GVAUXHLM",
+    "name": "Vauxhall Rail Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GVAUXHLW",
+        "name": "Vauxhall Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUVXL": {
+    "id": "940GZZLUVXL",
+    "name": "Vauxhall Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBVXH": {
+    "id": "HUBVXH",
+    "name": "Vauxhall",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GVAUXHLM",
+        "name": "Vauxhall Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 1,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUVXL",
+        "name": "Vauxhall Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWADDON": {
+    "id": "910GWADDON",
+    "name": "Waddon Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWALNGTN": {
+    "id": "910GWALNGTN",
+    "name": "Wallington Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWALHAMX": {
+    "id": "910GWALHAMX",
+    "name": "Waltham Cross Rail Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWLTWCEN": {
+    "id": "910GWLTWCEN",
+    "name": "Walthamstow Central Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUWWL": {
+    "id": "940GZZLUWWL",
+    "name": "Walthamstow Central Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWHC": {
+    "id": "HUBWHC",
+    "name": "Walthamstow Central",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWLTWCEN",
+        "name": "Walthamstow Central Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWWL",
+        "name": "Walthamstow Central Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWLTHQRD": {
+    "id": "910GWLTHQRD",
+    "name": "Walthamstow Queens Road Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GWANDCMN": {
+    "id": "910GWANDCMN",
+    "name": "Wandsworth Common Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWNDSWRD": {
+    "id": "910GWNDSWRD",
+    "name": "Wandsworth Road Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GWDWTOWN": {
+    "id": "910GWDWTOWN",
+    "name": "Wandsworth Town Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWNSTDPK": {
+    "id": "910GWNSTDPK",
+    "name": "Wanstead Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUWSD": {
+    "id": "940GZZLUWSD",
+    "name": "Wanstead Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GWAPPING": {
+    "id": "910GWAPPING",
+    "name": "Wapping Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZLUWRR": {
+    "id": "940GZZLUWRR",
+    "name": "Warren Street Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWKA": {
+    "id": "940GZZLUWKA",
+    "name": "Warwick Avenue Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWAF": {
+    "id": "940GZZLUWAF",
+    "name": "Watford Underground Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GWELLING": {
+    "id": "910GWELLING",
+    "name": "Welling Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWMBYDC": {
+    "id": "910GWMBYDC",
+    "name": "Wembley Central Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GWMBY": {
+    "id": "910GWMBY",
+    "name": "Wembley Central Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWMBYDC",
+        "name": "Wembley Central Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUWYC": {
+    "id": "940GZZLUWYC",
+    "name": "Wembley Central Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWMB": {
+    "id": "HUBWMB",
+    "name": "Wembley Central",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWMBY",
+        "name": "Wembley Central Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWYC",
+        "name": "Wembley Central Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUWYP": {
+    "id": "940GZZLUWYP",
+    "name": "Wembley Park Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GWDRYTON": {
+    "id": "910GWDRYTON",
+    "name": "West Drayton Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GWDULCRD": {
+    "id": "910GWDULCRD",
+    "name": "West Dulwich - Croxted Road",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GWDULWCH": {
+    "id": "910GWDULWCH",
+    "name": "West Dulwich Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWDULCRD",
+        "name": "West Dulwich - Croxted Road",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWEALING": {
+    "id": "910GWEALING",
+    "name": "West Ealing Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GWEMBLSM": {
+    "id": "910GWEMBLSM",
+    "name": "Wembley Stadium Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWNORWOD": {
+    "id": "910GWNORWOD",
+    "name": "West Norwood Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLWIQ": {
+    "id": "940GZZDLWIQ",
+    "name": "West India Quay DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUWFN": {
+    "id": "940GZZLUWFN",
+    "name": "West Finchley Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWHW": {
+    "id": "940GZZLUWHW",
+    "name": "West Harrow Underground Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWKN": {
+    "id": "940GZZLUWKN",
+    "name": "West Kensington Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWTA": {
+    "id": "940GZZLUWTA",
+    "name": "West Acton Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GWBRMPTN": {
+    "id": "910GWBRMPTN",
+    "name": "West Brompton Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "940GZZLUWBN": {
+    "id": "940GZZLUWBN",
+    "name": "West Brompton Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWBP": {
+    "id": "HUBWBP",
+    "name": "West Brompton",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWBRMPTN",
+        "name": "West Brompton Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWBN",
+        "name": "West Brompton Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWCROYDN": {
+    "id": "910GWCROYDN",
+    "name": "West Croydon Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "national_rail"
+    ]
+  },
+  "HUBWCY": {
+    "id": "HUBWCY",
+    "name": "West Croydon",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWCROYDN",
+        "name": "West Croydon Rail Station",
+        "modes": [
+          "overground",
+          "national_rail"
+        ],
+        "zone": 5,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWHAMHL": {
+    "id": "910GWHAMHL",
+    "name": "West Ham Rail Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLWHM": {
+    "id": "940GZZDLWHM",
+    "name": "West Ham DLR Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUWHM": {
+    "id": "940GZZLUWHM",
+    "name": "West Ham Underground Station",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWEH": {
+    "id": "HUBWEH",
+    "name": "West Ham",
+    "zone": 2,
+    "altZone": 3,
+    "modes": [
+      "dlr",
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWHAMHL",
+        "name": "West Ham Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": 3
+      },
+      {
+        "id": "940GZZDLWHM",
+        "name": "West Ham DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 2,
+        "altZone": 3
+      },
+      {
+        "id": "940GZZLUWHM",
+        "name": "West Ham Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": 3
+      }
+    ]
+  },
+  "910GWHMDSTD": {
+    "id": "910GWHMDSTD",
+    "name": "West Hampstead Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GWHMPSTM": {
+    "id": "910GWHMPSTM",
+    "name": "West Hampstead Thameslink Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUWHP": {
+    "id": "940GZZLUWHP",
+    "name": "West Hampstead Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWHD": {
+    "id": "HUBWHD",
+    "name": "West Hampstead",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWHMDSTD",
+        "name": "West Hampstead Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "910GWHMPSTM",
+        "name": "West Hampstead Thameslink Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWHP",
+        "name": "West Hampstead Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWRUISLP": {
+    "id": "910GWRUISLP",
+    "name": "West Ruislip Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUWRP": {
+    "id": "940GZZLUWRP",
+    "name": "West Ruislip Underground Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWRU": {
+    "id": "HUBWRU",
+    "name": "West Ruislip",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWRUISLP",
+        "name": "West Ruislip Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 6,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWRP",
+        "name": "West Ruislip Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 6,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWCOMBEP": {
+    "id": "910GWCOMBEP",
+    "name": "Westcombe Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWHHRTLA": {
+    "id": "910GWHHRTLA",
+    "name": "White Hart Lane Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GWHTTON": {
+    "id": "910GWHTTON",
+    "name": "Whitton Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWHYTBUS": {
+    "id": "910GWHYTBUS",
+    "name": "Whyteleafe South - Main Road",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GWHYTLFS": {
+    "id": "910GWHYTLFS",
+    "name": "Whyteleafe South Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWHYTBUS",
+        "name": "Whyteleafe South - Main Road",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWSUTTON": {
+    "id": "910GWSUTTON",
+    "name": "West Sutton Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWWICKHM": {
+    "id": "910GWWICKHM",
+    "name": "West Wickham Rail Station",
+    "zone": 5,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLWFE": {
+    "id": "940GZZDLWFE",
+    "name": "Westferry DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLWSV": {
+    "id": "940GZZDLWSV",
+    "name": "West Silvertown DLR Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZLUWCY": {
+    "id": "940GZZLUWCY",
+    "name": "White City Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWIG": {
+    "id": "940GZZLUWIG",
+    "name": "Willesden Green Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWSP": {
+    "id": "940GZZLUWSP",
+    "name": "Westbourne Park Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GWLSDNJL": {
+    "id": "910GWLSDNJL",
+    "name": "Willesden Junction LL Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GWLSDJHL": {
+    "id": "910GWLSDJHL",
+    "name": "Willesden Junction Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWLSDNJL",
+        "name": "Willesden Junction LL Rail Station",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUWJN": {
+    "id": "940GZZLUWJN",
+    "name": "Willesden Junction Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWIJ": {
+    "id": "HUBWIJ",
+    "name": "Willesden Junction",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWLSDJHL",
+        "name": "Willesden Junction Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWJN",
+        "name": "Willesden Junction Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUWSM": {
+    "id": "940GZZLUWSM",
+    "name": "Westminster Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWSM": {
+    "id": "HUBWSM",
+    "name": "Westminster",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "940GZZLUWSM",
+        "name": "Westminster Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 1,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWCHAPEL": {
+    "id": "910GWCHAPEL",
+    "name": "Whitechapel Rail Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GWCHAPXR": {
+    "id": "910GWCHAPXR",
+    "name": "Whitechapel",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "940GZZLUWPL": {
+    "id": "940GZZLUWPL",
+    "name": "Whitechapel Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBZWL": {
+    "id": "HUBZWL",
+    "name": "Whitechapel",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "overground",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWCHAPEL",
+        "name": "Whitechapel Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "910GWCHAPXR",
+        "name": "Whitechapel",
+        "modes": [
+          "elizabeth"
+        ],
+        "zone": 2,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWPL",
+        "name": "Whitechapel Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 2,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWDGRNPK": {
+    "id": "910GWDGRNPK",
+    "name": "Woodgrange Park Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GWDMNSTR": {
+    "id": "910GWDMNSTR",
+    "name": "Woodmansterne Rail Station",
+    "zone": 6,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWDST": {
+    "id": "910GWDST",
+    "name": "Wood Street Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GWIMLCHS": {
+    "id": "910GWIMLCHS",
+    "name": "Wimbledon Chase Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWNMHILL": {
+    "id": "910GWNMHILL",
+    "name": "Winchmore Hill Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWOLWCDY": {
+    "id": "910GWOLWCDY",
+    "name": "Woolwich Dockyard Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWOLWXR": {
+    "id": "910GWOLWXR",
+    "name": "Woolwich",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "elizabeth"
+    ]
+  },
+  "910GWRCSTRP": {
+    "id": "910GWRCSTRP",
+    "name": "Worcester Park Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZLUECT": {
+    "id": "940GZZLUECT",
+    "name": "Earl's Court Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUERC": {
+    "id": "940GZZLUERC",
+    "name": "Edgware Road (Circle Line) Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLURGP": {
+    "id": "940GZZLURGP",
+    "name": "Regent's Park Underground Station",
+    "zone": 1,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWIP": {
+    "id": "940GZZLUWIP",
+    "name": "Wimbledon Park Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWLA": {
+    "id": "940GZZLUWLA",
+    "name": "Wood Lane Underground Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWOF": {
+    "id": "940GZZLUWOF",
+    "name": "Woodford Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWOG": {
+    "id": "940GZZLUWOG",
+    "name": "Wood Green Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "940GZZLUWOP": {
+    "id": "940GZZLUWOP",
+    "name": "Woodside Park Underground Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "910GWIMBLDN": {
+    "id": "910GWIMBLDN",
+    "name": "Wimbledon Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GWDON": {
+    "id": "910GWDON",
+    "name": "Wimbledon Rail Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWIMBLDN",
+        "name": "Wimbledon Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "940GZZLUWIM": {
+    "id": "940GZZLUWIM",
+    "name": "Wimbledon Underground Station",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "underground"
+    ]
+  },
+  "HUBWIM": {
+    "id": "HUBWIM",
+    "name": "Wimbledon",
+    "zone": 3,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "underground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWDON",
+        "name": "Wimbledon Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 3,
+        "altZone": null
+      },
+      {
+        "id": "940GZZLUWIM",
+        "name": "Wimbledon Underground Station",
+        "modes": [
+          "underground"
+        ],
+        "zone": 3,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWOLWCHA": {
+    "id": "910GWOLWCHA",
+    "name": "Woolwich Arsenal Rail Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "940GZZDLWLA": {
+    "id": "940GZZDLWLA",
+    "name": "Woolwich Arsenal DLR Station",
+    "zone": 4,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "HUBWWA": {
+    "id": "HUBWWA",
+    "name": "Woolwich Arsenal",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "dlr",
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWOLWCHA",
+        "name": "Woolwich Arsenal Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": 4,
+        "altZone": null
+      },
+      {
+        "id": "940GZZDLWLA",
+        "name": "Woolwich Arsenal DLR Station",
+        "modes": [
+          "dlr"
+        ],
+        "zone": 4,
+        "altZone": null
+      }
+    ]
+  },
+  "910GCHESHNT": {
+    "id": "910GCHESHNT",
+    "name": "Cheshunt Rail Station",
+    "zone": 8,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GCRPNDPK": {
+    "id": "910GCRPNDPK",
+    "name": "Carpenders Park Rail Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GTHBLDSG": {
+    "id": "910GTHBLDSG",
+    "name": "Theobalds Grove Rail Station",
+    "zone": 7,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ]
+  },
+  "910GWATFDHS": {
+    "id": "910GWATFDHS",
+    "name": "Watford High Street Rail Station",
+    "zone": 8,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "940GZZDLDEV": {
+    "id": "940GZZDLDEV",
+    "name": "Devons Road DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "940GZZDLELV": {
+    "id": "940GZZDLELV",
+    "name": "Elverson Road DLR Station",
+    "zone": 2,
+    "altZone": null,
+    "modes": [
+      "dlr"
+    ]
+  },
+  "910GBUSHYDC": {
+    "id": "910GBUSHYDC",
+    "name": "Bushey Rail Station",
+    "zone": 8,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GBUSHEY": {
+    "id": "910GBUSHEY",
+    "name": "Bushey Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBUSHYDC",
+        "name": "Bushey Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": 8,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBBSH": {
+    "id": "HUBBSH",
+    "name": "Bushey",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GBUSHEY",
+        "name": "Bushey Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GWATFJDC": {
+    "id": "910GWATFJDC",
+    "name": "Watford Junction Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "overground"
+    ]
+  },
+  "910GWATFDJ": {
+    "id": "910GWATFDJ",
+    "name": "Watford Junction Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWATFJDC",
+        "name": "Watford Junction Rail Station",
+        "modes": [
+          "overground"
+        ],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "HUBWFJ": {
+    "id": "HUBWFJ",
+    "name": "Watford Junction",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail",
+      "overground"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GWATFDJ",
+        "name": "Watford Junction Rail Station",
+        "modes": [
+          "national_rail",
+          "overground"
+        ],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GBNHAM": {
+    "id": "910GBNHAM",
+    "name": "Burnham (Berks) Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GIVER": {
+    "id": "910GIVER",
+    "name": "Iver Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GLANGLEY": {
+    "id": "910GLANGLEY",
+    "name": "Langley (Berks) Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GMDNHEAD": {
+    "id": "910GMDNHEAD",
+    "name": "Maidenhead Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GRDNG4AB": {
+    "id": "910GRDNG4AB",
+    "name": "Reading Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "national_rail"
+    ]
+  },
+  "910GRDNGBUS": {
+    "id": "910GRDNGBUS",
+    "name": "Reading Rail Station - buses",
+    "zone": null,
+    "altZone": null,
+    "modes": []
+  },
+  "910GRDNGSTN": {
+    "id": "910GRDNGSTN",
+    "name": "Reading Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ],
+    "childNaptans": [
+      {
+        "id": "910GRDNG4AB",
+        "name": "Reading Rail Station",
+        "modes": [
+          "national_rail"
+        ],
+        "zone": null,
+        "altZone": null
+      },
+      {
+        "id": "910GRDNGBUS",
+        "name": "Reading Rail Station - buses",
+        "modes": [],
+        "zone": null,
+        "altZone": null
+      }
+    ]
+  },
+  "910GSHENFLD": {
+    "id": "910GSHENFLD",
+    "name": "Shenfield Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GSLOUGH": {
+    "id": "910GSLOUGH",
+    "name": "Slough Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GTAPLOW": {
+    "id": "910GTAPLOW",
+    "name": "Taplow Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  },
+  "910GTWYFORD": {
+    "id": "910GTWYFORD",
+    "name": "Twyford Rail Station",
+    "zone": null,
+    "altZone": null,
+    "modes": [
+      "elizabeth",
+      "national_rail"
+    ]
+  }
+}

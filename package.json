@@ -1,7 +1,7 @@
 {
 	"name": "oystersavings",
 	"private": true,
-	"version": "1.8.7",
+	"version": "1.8.8",
 	"license": "AGPL-3.0-only",
 	"type": "module",
 	"scripts": {
@@ -10,7 +10,10 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"stations:fetch": "node scripts/fetchStations.cjs",
+		"stations:build": "node scripts/buildDatabase.cjs",
+		"stations:update": "node scripts/fetchStations.cjs && node scripts/buildDatabase.cjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

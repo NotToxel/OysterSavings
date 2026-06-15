@@ -1,685 +1,4232 @@
 import type { StationInfo } from './stationService';
 
 export const STATIONS: Record<string, StationInfo> = {
-  'abbey road dlr station': { name: 'Abbey Road DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLABR' },
-  'abbey wood': { name: 'Abbey Wood', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GABWDXR' },
-  'abbey woodrail station': { name: 'Abbey Wood (London) Rail Station', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GABWD' },
-  'acton central rail station': { name: 'Acton Central Rail Station', zone: 3, modes: ['overground'], naptanId: '910GACTNCTL' },
-  'acton main line rail station': { name: 'Acton Main Line Rail Station', zone: 3, modes: ['national_rail', 'elizabeth'], naptanId: '910GACTONML' },
-  'acton town': { name: 'Acton Town', zone: 3, modes: ['underground'], naptanId: '940GZZLUACT' },
-  'albany park rail station': { name: 'Albany Park Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GALBNYPK' },
-  'aldgate east underground station': { name: 'Aldgate East Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUADE' },
-  'aldgate underground station': { name: 'Aldgate Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUALD' },
-  'alexandra palace rail station': { name: 'Alexandra Palace Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GALEXNDP' },
-  'all saints dlr station': { name: 'All Saints DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLALL' },
-  'alperton underground station': { name: 'Alperton Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUALP' },
-  'amersham': { name: 'Amersham', zone: 9, modes: ['underground'], naptanId: '940GZZLUAMS' },
-  'anerley rail station': { name: 'Anerley Rail Station', zone: 4, modes: ['national_rail', 'overground'], naptanId: '910GANERLEY' },
-  'angel underground station': { name: 'Angel Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUAGL' },
-  'archway underground station': { name: 'Archway Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUACY' },
-  'arnos grove underground station': { name: 'Arnos Grove Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUASG' },
-  'arsenal underground station': { name: 'Arsenal Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUASL' },
-  'baker street': { name: 'Baker Street', zone: 1, modes: ['underground'], naptanId: '940GZZLUBST' },
-  'balham rail station': { name: 'Balham Rail Station', zone: 3, modes: ['underground', 'national_rail'], naptanId: '910GBALHAM' },
-  'balham underground station': { name: 'Balham Underground Station', zone: 3, modes: ['underground', 'national_rail'], naptanId: '940GZZLUBLM' },
-  'bank dlr station': { name: 'Bank DLR Station', zone: 1, modes: ['underground'], naptanId: '940GZZDLBNK' },
-  'bank underground station': { name: 'Bank Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUBNK' },
-  'banstead': { name: 'Banstead', zone: 6, modes: ['national_rail'], naptanId: '910GBANSTED' },
-  'barbican underground station': { name: 'Barbican Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUBBN' },
-  'barking rail station': { name: 'Barking Rail Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GBARKING' },
-  'barking riverside': { name: 'Barking Riverside', zone: 4, modes: ['overground'], naptanId: '910GBARKRIV' },
-  'barking underground station': { name: 'Barking Underground Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUBKG' },
-  'barkingside underground station': { name: 'Barkingside Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUBKE' },
-  'barnehurst rail station': { name: 'Barnehurst Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GBRNHRST' },
-  'barnes bridge rail station': { name: 'Barnes Bridge Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GBNSBDGE' },
-  'barnes rail station': { name: 'Barnes Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GBARNES' },
-  'barons court underground station': { name: 'Barons Court Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUBSC' },
-  'battersea park rail station': { name: 'Battersea Park Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GBATRSPK' },
-  'battersea power station underground station': { name: 'Battersea Power Station Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZBPSUST' },
-  'bayswater underground station': { name: 'Bayswater Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUBWT' },
-  'beckenham hill rail station': { name: 'Beckenham Hill Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GBCKNHMH' },
-  'beckenham junction rail station': { name: 'Beckenham Junction Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GBCKNMJC' },
-  'beckton dlr station': { name: 'Beckton DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLBEC' },
-  'beckton park dlr station': { name: 'Beckton Park DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLBPK' },
-  'becontree underground station': { name: 'Becontree Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUBEC' },
-  'bellingham rail station': { name: 'Bellingham Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GBELNGHM' },
-  'belmont rail station': { name: 'Belmont Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GBELM' },
-  'belsize park underground station': { name: 'Belsize Park Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUBZP' },
-  'belvedere rail station': { name: 'Belvedere Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GBELVEDR' },
-  'bermondsey underground station': { name: 'Bermondsey Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUBMY' },
-  'berrylands rail station': { name: 'Berrylands Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GBRLANDS' },
-  'bethnal green rail station': { name: 'Bethnal Green Rail Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '910GBTHNLGR' },
-  'bethnal green underground station': { name: 'Bethnal Green Underground Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '940GZZLUBLG' },
-  'bexley rail station': { name: 'Bexley Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GBEXLEY' },
-  'bexleyheath rail station': { name: 'Bexleyheath Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GBXLYHTH' },
-  'bickley rail station': { name: 'Bickley Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GBICKLEY' },
-  'birkbeck rail station': { name: 'Birkbeck Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GBIRKBCK' },
-  'blackfriars underground station': { name: 'Blackfriars Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUBKF' },
-  'blackheath rail station': { name: 'Blackheath Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GBLKHTH' },
-  'blackhorse road': { name: 'Blackhorse Road', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUBLR' },
-  'blackwall dlr station': { name: 'Blackwall DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLBLA' },
-  'bond street': { name: 'Bond Street', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '910GBONDST' },
-  'bond street underground station': { name: 'Bond Street Underground Station', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUBND' },
-  'borough underground station': { name: 'Borough Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUBOR' },
-  'boston manor underground station': { name: 'Boston Manor Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUBOS' },
-  'bounds green underground station': { name: 'Bounds Green Underground Station', zone: 3, altZone: 4, modes: ['underground'], naptanId: '940GZZLUBDS' },
-  'bow church dlr station': { name: 'Bow Church DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLBOW' },
-  'bow road underground station': { name: 'Bow Road Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUBWR' },
-  'bowes park rail station': { name: 'Bowes Park Rail Station', zone: 3, altZone: 4, modes: ['national_rail'], naptanId: '910GBOWESPK' },
-  'brent cross': { name: 'Brent Cross', zone: 3, modes: ['underground'], naptanId: '940GZZLUBTX' },
-  'brent cross west': { name: 'Brent Cross West', zone: 3, modes: ['national_rail'], naptanId: '910GBRENTX' },
-  'brentford rail station': { name: 'Brentford Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GBNTFORD' },
-  'brentwood': { name: 'Brentwood', zone: 9, modes: ['national_rail', 'elizabeth'], naptanId: '910GBRTWOOD' },
-  'brimsdown rail station': { name: 'Brimsdown Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GBRIMSDN' },
-  'brixton rail station': { name: 'Brixton Rail Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '910GBRIXTON' },
-  'brixton underground station': { name: 'Brixton Underground Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '940GZZLUBXN' },
-  'brockley rail station': { name: 'Brockley Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GBROCKLY' },
-  'bromley north rail station': { name: 'Bromley North Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GBROMLYN' },
-  'bromley south rail station': { name: 'Bromley South Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GBROMLYS' },
-  'bromley-by-bow underground station': { name: 'Bromley-by-Bow Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUBBB' },
-  'brondesbury park rail station': { name: 'Brondesbury Park Rail Station', zone: 2, modes: ['overground'], naptanId: '910GBRBYPK' },
-  'brondesbury rail station': { name: 'Brondesbury Rail Station', zone: 2, modes: ['overground'], naptanId: '910GBRBY' },
-  'bruce grove rail station': { name: 'Bruce Grove Rail Station', zone: 3, modes: ['overground'], naptanId: '910GBRUCGRV' },
-  'buckhurst hill': { name: 'Buckhurst Hill', zone: 5, modes: ['underground'], naptanId: '940GZZLUBKH' },
-  'burnt oak underground station': { name: 'Burnt Oak Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUBTK' },
-  'bush hill park': { name: 'Bush Hill Park', zone: 5, modes: ['overground'], naptanId: '910GBHILLPK' },
-  'caledonian road & barnsbury rail station': { name: 'Caledonian Road & Barnsbury Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GCLDNNRB' },
-  'caledonian road underground station': { name: 'Caledonian Road Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUCAR' },
-  'cambridge heathrail station': { name: 'Cambridge Heath (London) Rail Station', zone: 2, modes: ['overground'], naptanId: '910GCAMHTH' },
-  'camden road rail station': { name: 'Camden Road Rail Station', zone: 2, modes: ['overground'], naptanId: '910GCMDNRD' },
-  'camden town underground station': { name: 'Camden Town Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUCTN' },
-  'canada water rail station': { name: 'Canada Water Rail Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GCNDAW' },
-  'canada water underground station': { name: 'Canada Water Underground Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUCWR' },
-  'canary wharf': { name: 'Canary Wharf', zone: 2, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '910GCANWHRF' },
-  'canary wharf dlr station': { name: 'Canary Wharf DLR Station', zone: 2, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZDLCAN' },
-  'canary wharf underground station': { name: 'Canary Wharf Underground Station', zone: 2, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUCYF' },
-  'canning town dlr station': { name: 'Canning Town DLR Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZDLCGT' },
-  'canning town underground station': { name: 'Canning Town Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUCGT' },
-  'cannon street underground station': { name: 'Cannon Street Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUCST' },
-  'canonbury rail station': { name: 'Canonbury Rail Station', zone: 2, modes: ['overground'], naptanId: '910GCNNB' },
-  'canons park': { name: 'Canons Park', zone: 5, modes: ['underground'], naptanId: '940GZZLUCPK' },
-  'carshalton beeches rail station': { name: 'Carshalton Beeches Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GCRSHLTB' },
-  'carshalton rail station': { name: 'Carshalton Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GCRSHLTN' },
-  'castle bar park': { name: 'Castle Bar Park', zone: 4, modes: ['national_rail'], naptanId: '910GCBARPAR' },
-  'caterham': { name: 'Caterham', zone: 6, modes: ['national_rail'], naptanId: '910GCATERHM' },
-  'catford bridge rail station': { name: 'Catford Bridge Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GCATFBDG' },
-  'catford rail station': { name: 'Catford Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GCATFORD' },
-  'chadwell heath rail station': { name: 'Chadwell Heath Rail Station', zone: 5, modes: ['national_rail', 'elizabeth'], naptanId: '910GCHDWLHT' },
-  'chalfont & latimer': { name: 'Chalfont & Latimer', zone: 8, modes: ['underground'], naptanId: '940GZZLUCAL' },
-  'chalk farm underground station': { name: 'Chalk Farm Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUCFM' },
-  'chancery lane': { name: 'Chancery Lane', zone: 1, modes: ['underground'], naptanId: '940GZZLUCHL' },
-  'charing cross underground station': { name: 'Charing Cross Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUCHX' },
-  'charlton rail station': { name: 'Charlton Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GCRLN' },
-  'cheam rail station': { name: 'Cheam Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GCHEAM' },
-  'chelsfield': { name: 'Chelsfield', zone: 6, modes: ['national_rail'], naptanId: '910GCHLSFLD' },
-  'chesham': { name: 'Chesham', zone: 9, modes: ['underground'], naptanId: '940GZZLUCSM' },
-  'chessington north rail station': { name: 'Chessington North Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GCHSSN' },
-  'chessington south rail station': { name: 'Chessington South Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GCHSSS' },
-  'chigwell': { name: 'Chigwell', zone: 4, modes: ['underground'], naptanId: '940GZZLUCWL' },
-  'chingford rail station': { name: 'Chingford Rail Station', zone: 5, modes: ['overground'], naptanId: '910GCHINGFD' },
-  'chipstead': { name: 'Chipstead', zone: 6, modes: ['national_rail'], naptanId: '910GCHSD' },
-  'chislehurst rail station': { name: 'Chislehurst Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GCHSLHRS' },
-  'chiswick park underground station': { name: 'Chiswick Park Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUCWP' },
-  'chiswick rail station': { name: 'Chiswick Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GCHISWCK' },
-  'chorleywood': { name: 'Chorleywood', zone: 7, modes: ['underground'], naptanId: '940GZZLUCYD' },
-  'city thameslink rail station': { name: 'City Thameslink Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GCTMSLNK' },
-  'clapham common underground station': { name: 'Clapham Common Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUCPC' },
-  'clapham high street rail station': { name: 'Clapham High Street Rail Station', zone: 2, modes: ['overground'], naptanId: '910GCLPHHS' },
-  'clapham junction rail station': { name: 'Clapham Junction Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GCLPHMJW' },
-  'clapham north underground station': { name: 'Clapham North Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUCPN' },
-  'clapham south underground station': { name: 'Clapham South Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUCPS' },
-  'clapton rail station': { name: 'Clapton Rail Station', zone: 2, altZone: 3, modes: ['overground'], naptanId: '910GCLAPTON' },
-  'clock house rail station': { name: 'Clock House Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GCLOCKHS' },
-  'cockfosters underground station': { name: 'Cockfosters Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUCKS' },
-  'colindale underground station': { name: 'Colindale Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUCND' },
-  'colliers wood underground station': { name: 'Colliers Wood Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUCSD' },
-  'coulsdon south rail station': { name: 'Coulsdon South Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GCOLSDNS' },
-  'coulsdon town rail station': { name: 'Coulsdon Town Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GCOLSTWN' },
-  'covent garden underground station': { name: 'Covent Garden Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUCGN' },
-  'crayford rail station': { name: 'Crayford Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GCRFD' },
-  'crews hill rail station': { name: 'Crews Hill Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GCRHL' },
-  'cricklewood rail station': { name: 'Cricklewood Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GCRKLWD' },
-  'crofton park rail station': { name: 'Crofton Park Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GCFPK' },
-  'crossharbour dlr station': { name: 'Crossharbour DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLCLA' },
-  'crouch hill rail station': { name: 'Crouch Hill Rail Station', zone: 3, modes: ['overground'], naptanId: '910GCROUCHH' },
-  'croxley': { name: 'Croxley', zone: 7, modes: ['underground'], naptanId: '940GZZLUCXY' },
-  'crystal palace rail station': { name: 'Crystal Palace Rail Station', zone: 3, altZone: 4, modes: ['national_rail', 'overground'], naptanId: '910GCRYSTLP' },
-  'cuffley': { name: 'Cuffley', zone: 9, modes: ['national_rail'], naptanId: '910GCUFFLEY' },
-  'custom house': { name: 'Custom House', zone: 3, modes: ['national_rail', 'elizabeth'], naptanId: '910GCUSTMHS' },
-  'custom house (for excel) dlr station': { name: 'Custom House (for ExCel) DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLCUS' },
-  'cutty sark (for maritime greenwich) dlr station': { name: 'Cutty Sark (for Maritime Greenwich) DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLCUT' },
-  'cyprus dlr station': { name: 'Cyprus DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLCYP' },
-  'dagenham dock rail station': { name: 'Dagenham Dock Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GDGNHMDC' },
-  'dagenham east': { name: 'Dagenham East', zone: 5, modes: ['underground'], naptanId: '940GZZLUDGE' },
-  'dagenham heathway underground station': { name: 'Dagenham Heathway Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUDGY' },
-  'dalston junction rail station': { name: 'Dalston Junction Rail Station', zone: 2, modes: ['overground'], naptanId: '910GDALS' },
-  'dalston kingsland rail station': { name: 'Dalston Kingsland Rail Station', zone: 2, modes: ['overground'], naptanId: '910GDALSKLD' },
-  'debden': { name: 'Debden', zone: 6, modes: ['underground'], naptanId: '940GZZLUDBN' },
-  'denmark hill rail station': { name: 'Denmark Hill Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GDENMRKH' },
-  'deptford bridge dlr station': { name: 'Deptford Bridge DLR Station', zone: 2, altZone: 3, modes: ['dlr'], naptanId: '940GZZDLDEP' },
-  'deptford rail station': { name: 'Deptford Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GDEPTFD' },
-  'dollis hill underground station': { name: 'Dollis Hill Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUDOH' },
-  'drayton green rail station': { name: 'Drayton Green Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GDRAYGRN' },
-  'drayton park rail station': { name: 'Drayton Park Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GDRYP' },
-  'ealing broadway': { name: 'Ealing Broadway', zone: 3, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUEBY' },
-  'ealing common': { name: 'Ealing Common', zone: 3, modes: ['underground'], naptanId: '940GZZLUECM' },
-  'earlsfield rail station': { name: 'Earlsfield Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GERLFLD' },
-  'east acton': { name: 'East Acton', zone: 2, modes: ['underground'], naptanId: '940GZZLUEAN' },
-  'east croydon rail station': { name: 'East Croydon Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GECROYDN' },
-  'east dulwich': { name: 'East Dulwich', zone: 2, modes: ['national_rail'], naptanId: '910GEDULWCH' },
-  'east finchley underground station': { name: 'East Finchley Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUEFY' },
-  'east ham underground station': { name: 'East Ham Underground Station', zone: 3, altZone: 4, modes: ['underground'], naptanId: '940GZZLUEHM' },
-  'east india dlr station': { name: 'East India DLR Station', zone: 2, altZone: 3, modes: ['dlr'], naptanId: '940GZZDLEIN' },
-  'east putney underground station': { name: 'East Putney Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUEPY' },
-  'eastcote underground station': { name: 'Eastcote Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUEAE' },
-  'eden park rail station': { name: 'Eden Park Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GEDPK' },
-  'edgware road': { name: 'Edgware Road', zone: 1, modes: ['underground'], naptanId: '940GZZLUERB' },
-  'edgware underground station': { name: 'Edgware Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUEGW' },
-  'edmonton green rail station': { name: 'Edmonton Green Rail Station', zone: 4, modes: ['national_rail', 'overground'], naptanId: '910GEDMNGRN' },
-  'elephant & castle rail station': { name: 'Elephant & Castle Rail Station', zone: 1, altZone: 2, modes: ['underground', 'national_rail'], naptanId: '910GELPHNAC' },
-  'elephant & castle underground station': { name: 'Elephant & Castle Underground Station', zone: 1, altZone: 2, modes: ['underground', 'national_rail'], naptanId: '940GZZLUEAC' },
-  'elm park underground station': { name: 'Elm Park Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUEPK' },
-  'elmers end rail station': { name: 'Elmers End Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GELMERSE' },
-  'elmstead woods rail station': { name: 'Elmstead Woods Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GELMW' },
-  'elstree & borehamwood': { name: 'Elstree & Borehamwood', zone: 6, modes: ['national_rail'], naptanId: '910GELTR' },
-  'eltham rail station': { name: 'Eltham Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GELTHAM' },
-  'embankment underground station': { name: 'Embankment Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUEMB' },
-  'emerson park rail station': { name: 'Emerson Park Rail Station', zone: 6, modes: ['overground'], naptanId: '910GEMRSPKH' },
-  'enfield chase': { name: 'Enfield Chase', zone: 5, modes: ['national_rail'], naptanId: '910GENFC' },
-  'enfield lock rail station': { name: 'Enfield Lock Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GENFLDLK' },
-  'enfield town': { name: 'Enfield Town', zone: 5, modes: ['overground'], naptanId: '910GENFLDTN' },
-  'epping': { name: 'Epping', zone: 6, modes: ['underground'], naptanId: '940GZZLUEPG' },
-  'epsom downs': { name: 'Epsom Downs', zone: 6, modes: ['national_rail'], naptanId: '910GEPSDNS' },
-  'erith rail station': { name: 'Erith Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GERITH' },
-  'essex road rail station': { name: 'Essex Road Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GESSEXRD' },
-  'euston square underground station': { name: 'Euston Square Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUESQ' },
-  'euston underground station': { name: 'Euston Underground Station', zone: 1, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUEUS' },
-  'ewell east': { name: 'Ewell East', zone: 6, modes: ['national_rail'], naptanId: '910GEWELLE' },
-  'ewell west': { name: 'Ewell West', zone: 6, modes: ['national_rail'], naptanId: '910GEWELW' },
-  'fairlop underground station': { name: 'Fairlop Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUFLP' },
-  'falconwood rail station': { name: 'Falconwood Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GFALCNWD' },
-  'farringdon': { name: 'Farringdon', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '910GFRNDXR' },
-  'farringdon rail station': { name: 'Farringdon Rail Station', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '910GFRNDNLT' },
-  'farringdon underground station': { name: 'Farringdon Underground Station', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUFCN' },
-  'feltham rail station': { name: 'Feltham Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GFELTHAM' },
-  'fenchurch street': { name: 'Fenchurch Street', zone: 1, modes: ['national_rail'], naptanId: '910GFENCHRS' },
-  'finchley central': { name: 'Finchley Central', zone: 4, modes: ['underground'], naptanId: '940GZZLUFYC' },
-  'finchley road': { name: 'Finchley Road', zone: 2, modes: ['underground'], naptanId: '940GZZLUFYR' },
-  'finchley road & frognal rail station': { name: 'Finchley Road & Frognal Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GFNCHLYR' },
-  'finsbury park rail station': { name: 'Finsbury Park Rail Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '910GFNPK' },
-  'finsbury park underground station': { name: 'Finsbury Park Underground Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '940GZZLUFPK' },
-  'forest gate rail station': { name: 'Forest Gate Rail Station', zone: 3, modes: ['national_rail', 'elizabeth'], naptanId: '910GFRSTGT' },
-  'forest hill rail station': { name: 'Forest Hill Rail Station', zone: 3, modes: ['national_rail', 'overground'], naptanId: '910GFORESTH' },
-  'fulham broadway': { name: 'Fulham Broadway', zone: 2, modes: ['underground'], naptanId: '940GZZLUFBY' },
-  'fulwell rail station': { name: 'Fulwell Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GFULWELL' },
-  'gallions reach dlr station': { name: 'Gallions Reach DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLGAL' },
-  'gants hill underground station': { name: 'Gants Hill Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUGTH' },
-  'gidea park': { name: 'Gidea Park', zone: 6, modes: ['national_rail', 'elizabeth'], naptanId: '910GGIDEAPK' },
-  'gipsy hill': { name: 'Gipsy Hill', zone: 3, modes: ['national_rail'], naptanId: '910GGIPSYH' },
-  'gloucester road': { name: 'Gloucester Road', zone: 1, modes: ['underground'], naptanId: '940GZZLUGTR' },
-  'golders green underground station': { name: 'Golders Green Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUGGN' },
-  'goldhawk road underground station': { name: 'Goldhawk Road Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUGHK' },
-  'goodge street underground station': { name: 'Goodge Street Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUGDG' },
-  'goodmayes rail station': { name: 'Goodmayes Rail Station', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GGODMAYS' },
-  'gordon hill': { name: 'Gordon Hill', zone: 5, modes: ['national_rail'], naptanId: '910GGORDONH' },
-  'gospel oak rail station': { name: 'Gospel Oak Rail Station', zone: 2, modes: ['overground'], naptanId: '910GGOSPLOK' },
-  'grange hill': { name: 'Grange Hill', zone: 4, modes: ['underground'], naptanId: '940GZZLUGGH' },
-  'grange park': { name: 'Grange Park', zone: 5, modes: ['national_rail'], naptanId: '910GGRPK' },
-  'great portland street underground station': { name: 'Great Portland Street Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUGPS' },
-  'green park underground station': { name: 'Green Park Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUGPK' },
-  'greenford rail station': { name: 'Greenford Rail Station', zone: 4, modes: ['underground', 'national_rail'], naptanId: '910GGFORD' },
-  'greenford underground station': { name: 'Greenford Underground Station', zone: 4, modes: ['underground', 'national_rail'], naptanId: '940GZZLUGFD' },
-  'greenwich dlr station': { name: 'Greenwich DLR Station', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '940GZZDLGRE' },
-  'greenwich peninsula': { name: 'Greenwich Peninsula', zone: 6, modes: ['underground'], naptanId: '940GZZALGWP' },
-  'greenwich rail station': { name: 'Greenwich Rail Station', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '910GGNWH' },
-  'grove park rail station': { name: 'Grove Park Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GGRVPK' },
-  'gunnersbury rail station': { name: 'Gunnersbury Rail Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GGNRSBRY' },
-  'gunnersbury underground station': { name: 'Gunnersbury Underground Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUGBY' },
-  'hackbridge rail station': { name: 'Hackbridge Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GHKBG' },
-  'hackney central rail station': { name: 'Hackney Central Rail Station', zone: 2, modes: ['overground'], naptanId: '910GHACKNYC' },
-  'hackney downs rail station': { name: 'Hackney Downs Rail Station', zone: 2, modes: ['overground', 'national_rail'], naptanId: '910GHAKNYNM' },
-  'hackney wick rail station': { name: 'Hackney Wick Rail Station', zone: 2, modes: ['overground'], naptanId: '910GHACKNYW' },
-  'hadley wood rail station': { name: 'Hadley Wood Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GHADLYWD' },
-  'haggerston rail station': { name: 'Haggerston Rail Station', zone: 2, modes: ['overground'], naptanId: '910GHAGGERS' },
-  'hainault underground station': { name: 'Hainault Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUHLT' },
-  'hammersmith': { name: 'Hammersmith', zone: 2, modes: ['underground'], naptanId: '940GZZLUHSD' },
-  'hammersmith (dist&picc line) underground station': { name: 'Hammersmith (Dist&Picc Line) Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUHSD' },
-  'hammersmith (h&c line) underground station': { name: 'Hammersmith (H&C Line) Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUHSC' },
-  'hampstead heath rail station': { name: 'Hampstead Heath Rail Station', zone: 2, modes: ['overground'], naptanId: '910GHMPSTDH' },
-  'hampstead underground station': { name: 'Hampstead Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUHTD' },
-  'hampton court': { name: 'Hampton Court', zone: 6, modes: ['national_rail'], naptanId: '910GHCRT' },
-  'hampton wick rail station': { name: 'Hampton Wick Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GHAMWICK' },
-  'hamptonrail station': { name: 'Hampton (London) Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GHAMPTON' },
-  'hanger lane underground station': { name: 'Hanger Lane Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUHGR' },
-  'hanwell rail station': { name: 'Hanwell Rail Station', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GHANWELL' },
-  'harlesden rail station': { name: 'Harlesden Rail Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GHARLSDN' },
-  'harlesden underground station': { name: 'Harlesden Underground Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUHSN' },
-  'harold wood': { name: 'Harold Wood', zone: 6, modes: ['national_rail', 'elizabeth'], naptanId: '910GHRLDWOD' },
-  'harringay green lanes rail station': { name: 'Harringay Green Lanes Rail Station', zone: 3, modes: ['overground'], naptanId: '910GHRGYGL' },
-  'harringay rail station': { name: 'Harringay Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GHRGY' },
-  'harrow & wealdstone rail station': { name: 'Harrow & Wealdstone Rail Station', zone: 5, modes: ['underground', 'national_rail'], naptanId: '910GHROWDC' },
-  'harrow-on-the-hill underground station': { name: 'Harrow-on-the-Hill Underground Station', zone: 5, modes: ['underground', 'national_rail'], naptanId: '940GZZLUHOH' },
-  'hatch end rail station': { name: 'Hatch End Rail Station', zone: 6, modes: ['overground'], naptanId: '910GHTCHEND' },
-  'hatton cross underground station': { name: 'Hatton Cross Underground Station', zone: 5, altZone: 6, modes: ['underground'], naptanId: '940GZZLUHNX' },
-  'haydons road rail station': { name: 'Haydons Road Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GHYDNSRD' },
-  'hayes': { name: 'Hayes', zone: 5, modes: ['national_rail'], naptanId: '910GHAYS' },
-  'hayes & harlington rail station': { name: 'Hayes & Harlington Rail Station', zone: 5, modes: ['national_rail', 'elizabeth'], naptanId: '910GHAYESAH' },
-  'hayes (kent) rail station': { name: 'Hayes (Kent) Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GHAYS' },
-  'headstone lane rail station': { name: 'Headstone Lane Rail Station', zone: 5, modes: ['overground'], naptanId: '910GHEDSTNL' },
-  'heathrow terminal 4': { name: 'Heathrow Terminal 4', zone: 6, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUHR4' },
-  'heathrow terminal 4 rail station': { name: 'Heathrow Terminal 4 Rail Station', zone: 6, modes: ['national_rail', 'elizabeth'], naptanId: '910GHTRWTM4' },
-  'heathrow terminal 5': { name: 'Heathrow Terminal 5', zone: 6, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUHR5' },
-  'heathrow terminal 5 rail station': { name: 'Heathrow Terminal 5 Rail Station', zone: 6, modes: ['national_rail', 'elizabeth'], naptanId: '910GHTRWTM5' },
-  'heathrow terminals 2 & 3': { name: 'Heathrow Terminals 2 & 3', zone: 6, modes: ['underground'], naptanId: '940GZZLUHRC' },
-  'heathrow terminals 2 & 3 rail station': { name: 'Heathrow Terminals 2 & 3 Rail Station', zone: 6, modes: ['national_rail', 'elizabeth'], naptanId: '910GHTRWAPT' },
-  'hendon central': { name: 'Hendon Central', zone: 3, altZone: 4, modes: ['underground'], naptanId: '940GZZLUHCL' },
-  'hendon rail station': { name: 'Hendon Rail Station', zone: 3, altZone: 4, modes: ['national_rail'], naptanId: '910GHDON' },
-  'herne hill rail station': { name: 'Herne Hill Rail Station', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '910GHERNEH' },
-  'heron quays dlr station': { name: 'Heron Quays DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLHEQ' },
-  'high barnet underground station': { name: 'High Barnet Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUHBT' },
-  'high street kensington': { name: 'High Street Kensington', zone: 1, modes: ['underground'], naptanId: '940GZZLUHSK' },
-  'highams park rail station': { name: 'Highams Park Rail Station', zone: 4, modes: ['overground'], naptanId: '910GHGHMSPK' },
-  'highbury & islington rail station': { name: 'Highbury & Islington Rail Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '910GHIGHBYA' },
-  'highbury & islington underground station': { name: 'Highbury & Islington Underground Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '940GZZLUHAI' },
-  'highgate underground station': { name: 'Highgate Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUHGT' },
-  'hillingdon underground station': { name: 'Hillingdon Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUHGD' },
-  'hither green rail station': { name: 'Hither Green Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GHTHRGRN' },
-  'holborn underground station': { name: 'Holborn Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUHBN' },
-  'holland park underground station': { name: 'Holland Park Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUHPK' },
-  'holloway road underground station': { name: 'Holloway Road Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUHWY' },
-  'homerton': { name: 'Homerton', zone: 2, modes: ['overground'], naptanId: '910GHOMRTON' },
-  'honor oak park rail station': { name: 'Honor Oak Park Rail Station', zone: 3, modes: ['national_rail', 'overground'], naptanId: '910GHONROPK' },
-  'hornchurch underground station': { name: 'Hornchurch Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUHCH' },
-  'hornsey rail station': { name: 'Hornsey Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GHRNSY' },
-  'hounslow central': { name: 'Hounslow Central', zone: 4, modes: ['underground'], naptanId: '940GZZLUHWC' },
-  'hounslow east': { name: 'Hounslow East', zone: 4, modes: ['underground'], naptanId: '940GZZLUHWE' },
-  'hounslow rail station': { name: 'Hounslow Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GHOUNSLW' },
-  'hounslow west': { name: 'Hounslow West', zone: 5, modes: ['underground'], naptanId: '940GZZLUHWT' },
-  'hoxton rail station': { name: 'Hoxton Rail Station', zone: 1, altZone: 2, modes: ['overground'], naptanId: '910GHOXTON' },
-  'hyde park corner underground station': { name: 'Hyde Park Corner Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUHPC' },
-  'ickenham underground station': { name: 'Ickenham Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUICK' },
-  'ilford rail station': { name: 'Ilford Rail Station', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GILFORD' },
-  'imperial wharf rail station': { name: 'Imperial Wharf Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GCSEAH' },
-  'island gardens dlr station': { name: 'Island Gardens DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLISL' },
-  'isleworth rail station': { name: 'Isleworth Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GISLEWTH' },
-  'kenley rail station': { name: 'Kenley Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GKNLY' },
-  'kennington underground station': { name: 'Kennington Underground Station', zone: 1, altZone: 2, modes: ['underground'], naptanId: '940GZZLUKNG' },
-  'kensal green rail station': { name: 'Kensal Green Rail Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GKENSLG' },
-  'kensal green underground station': { name: 'Kensal Green Underground Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUKSL' },
-  'kensal rise rail station': { name: 'Kensal Rise Rail Station', zone: 2, modes: ['overground'], naptanId: '910GKENR' },
-  'kensington (olympia) rail station': { name: 'Kensington (Olympia) Rail Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GKENOLYM' },
-  'kensington (olympia) underground station': { name: 'Kensington (Olympia) Underground Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUKOY' },
-  'kent house rail station': { name: 'Kent House Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GKENTHOS' },
-  'kentish town rail station': { name: 'Kentish Town Rail Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '910GKNTSHTN' },
-  'kentish town underground station': { name: 'Kentish Town Underground Station', zone: 2, modes: ['underground', 'national_rail'], naptanId: '940GZZLUKSH' },
-  'kentish town west rail station': { name: 'Kentish Town West Rail Station', zone: 2, modes: ['overground'], naptanId: '910GKNTSHTW' },
-  'kenton': { name: 'Kenton', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUKEN' },
-  'kew bridge rail station': { name: 'Kew Bridge Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GKEWBDGE' },
-  'kew gardens rail station': { name: 'Kew Gardens Rail Station', zone: 3, altZone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GKEWGRDN' },
-  'kidbrooke rail station': { name: 'Kidbrooke Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GKIDBROK' },
-  'kilburn high road rail station': { name: 'Kilburn High Road Rail Station', zone: 2, modes: ['overground'], naptanId: '910GKLBRNHR' },
-  'kilburn park': { name: 'Kilburn Park', zone: 2, modes: ['underground'], naptanId: '940GZZLUKPK' },
-  'kilburn underground station': { name: 'Kilburn Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUKBN' },
-  'king george v dlr station': { name: 'King George V DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLKGV' },
-  'king\'s cross st. pancras underground station': { name: 'King\'s Cross St. Pancras Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUKSX' },
-  'kingsbury underground station': { name: 'Kingsbury Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUKBY' },
-  'kingston rail station': { name: 'Kingston Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GKGSTON' },
-  'kingswood': { name: 'Kingswood', zone: 6, modes: ['national_rail'], naptanId: '910GKGWD' },
-  'knightsbridge underground station': { name: 'Knightsbridge Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUKNB' },
-  'knockholt': { name: 'Knockholt', zone: 6, modes: ['national_rail'], naptanId: '910GKNCKHLT' },
-  'ladbroke grove underground station': { name: 'Ladbroke Grove Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLULAD' },
-  'ladywell': { name: 'Ladywell', zone: 3, modes: ['national_rail'], naptanId: '910GLDYW' },
-  'lambeth north': { name: 'Lambeth North', zone: 1, modes: ['underground'], naptanId: '940GZZLULBN' },
-  'lancaster gate underground station': { name: 'Lancaster Gate Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLULGT' },
-  'langdon park dlr station': { name: 'Langdon Park DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLLDP' },
-  'latimer road underground station': { name: 'Latimer Road Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLULRD' },
-  'lea bridge rail station': { name: 'Lea Bridge Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GLEABDGE' },
-  'lee rail station': { name: 'Lee Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GLEEE' },
-  'leicester square underground station': { name: 'Leicester Square Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLULSQ' },
-  'lewisham dlr station': { name: 'Lewisham DLR Station', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '940GZZDLLEW' },
-  'lewisham rail station': { name: 'Lewisham Rail Station', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '910GLEWISHM' },
-  'leyton midland road rail station': { name: 'Leyton Midland Road Rail Station', zone: 3, modes: ['overground'], naptanId: '910GLEYTNMR' },
-  'leyton underground station': { name: 'Leyton Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLULYN' },
-  'leytonstone high road rail station': { name: 'Leytonstone High Road Rail Station', zone: 3, modes: ['overground'], naptanId: '910GLYTNSHR' },
-  'leytonstone underground station': { name: 'Leytonstone Underground Station', zone: 3, altZone: 4, modes: ['underground'], naptanId: '940GZZLULYS' },
-  'limehouse dlr station': { name: 'Limehouse DLR Station', zone: 2, modes: ['national_rail'], naptanId: '940GZZDLLIM' },
-  'limehouse rail station': { name: 'Limehouse Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GLIMHSE' },
-  'liverpool street': { name: 'Liverpool Street', zone: 1, modes: ['elizabeth', 'national_rail', 'overground', 'underground'], naptanId: '910GLIVSTLL' },
-  'liverpool street underground station': { name: 'Liverpool Street Underground Station', zone: 1, modes: ['elizabeth', 'national_rail', 'overground', 'underground'], naptanId: '940GZZLULVT' },
-  'london blackfriars rail station': { name: 'London Blackfriars Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GBLFR' },
-  'london bridge rail station': { name: 'London Bridge Rail Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '910GLNDNBDE' },
-  'london bridge underground station': { name: 'London Bridge Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLULNB' },
-  'london cannon street rail station': { name: 'London Cannon Street Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GCANONST' },
-  'london charing cross rail station': { name: 'London Charing Cross Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GCHRX' },
-  'london city airport dlr station': { name: 'London City Airport DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLLCA' },
-  'london euston rail station': { name: 'London Euston Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GEUSTON' },
-  'london fenchurch street rail station': { name: 'London Fenchurch Street Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GFENCHRS' },
-  'london fields rail station': { name: 'London Fields Rail Station', zone: 2, modes: ['overground'], naptanId: '910GLONFLDS' },
-  'london kings cross rail station': { name: 'London Kings Cross Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GKNGX' },
-  'london liverpool street rail station': { name: 'London Liverpool Street Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GLIVST' },
-  'london marylebone rail station': { name: 'London Marylebone Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GMARYLBN' },
-  'london paddington rail station': { name: 'London Paddington Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GPADTON' },
-  'london st pancras international ll rail station': { name: 'London St Pancras International LL Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GSTPXBOX' },
-  'london st pancras international rail station': { name: 'London St Pancras International Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GSTPX' },
-  'london victoria rail station': { name: 'London Victoria Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GVICTRIE' },
-  'london waterloo east rail station': { name: 'London Waterloo East Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GWLOE' },
-  'london waterloo rail station': { name: 'London Waterloo Rail Station', zone: 1, modes: ['national_rail'], naptanId: '910GWATRLMN' },
-  'loughborough junction rail station': { name: 'Loughborough Junction Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GLBGHJN' },
-  'loughton': { name: 'Loughton', zone: 6, modes: ['underground'], naptanId: '940GZZLULGN' },
-  'lower sydenham rail station': { name: 'Lower Sydenham Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GLSYDNHM' },
-  'maida vale underground station': { name: 'Maida Vale Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUMVL' },
-  'malden manor rail station': { name: 'Malden Manor Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GMALDENM' },
-  'manor house underground station': { name: 'Manor House Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUMRH' },
-  'manor park rail station': { name: 'Manor Park Rail Station', zone: 3, altZone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GMANRPK' },
-  'mansion house underground station': { name: 'Mansion House Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUMSH' },
-  'marble arch underground station': { name: 'Marble Arch Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUMBA' },
-  'maryland rail station': { name: 'Maryland Rail Station', zone: 3, modes: ['national_rail', 'elizabeth'], naptanId: '910GMRYLAND' },
-  'marylebone underground station': { name: 'Marylebone Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUMYB' },
-  'maze hill rail station': { name: 'Maze Hill Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GMAZEH' },
-  'meridian water rail station': { name: 'Meridian Water Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GMWRWSTN' },
-  'mile end underground station': { name: 'Mile End Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUMED' },
-  'mill hill broadway rail station': { name: 'Mill Hill Broadway Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GMLHB' },
-  'mill hill east underground station': { name: 'Mill Hill East Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUMHL' },
-  'mitcham eastfields rail station': { name: 'Mitcham Eastfields Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GESTFLDS' },
-  'mitcham junction rail station': { name: 'Mitcham Junction Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GMITCHMJ' },
-  'monument underground station': { name: 'Monument Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUMMT' },
-  'moor park': { name: 'Moor Park', zone: 6, altZone: 7, modes: ['underground'], naptanId: '940GZZLUMPK' },
-  'moorgate rail station': { name: 'Moorgate Rail Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '910GMRGT' },
-  'moorgate underground station': { name: 'Moorgate Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUMGT' },
-  'morden south rail station': { name: 'Morden South Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GMORDENS' },
-  'morden underground station': { name: 'Morden Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUMDN' },
-  'mornington crescent': { name: 'Mornington Crescent', zone: 2, modes: ['underground'], naptanId: '940GZZLUMTC' },
-  'mortlake rail station': { name: 'Mortlake Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GMRTLKE' },
-  'motspur park rail station': { name: 'Motspur Park Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GMOTSPRP' },
-  'mottingham rail station': { name: 'Mottingham Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GMOTNGHM' },
-  'mudchute dlr station': { name: 'Mudchute DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLMUD' },
-  'neasden underground station': { name: 'Neasden Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUNDN' },
-  'new barnet rail station': { name: 'New Barnet Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GNBARNET' },
-  'new beckenham rail station': { name: 'New Beckenham Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GNBCKNHM' },
-  'new cross ell rail station': { name: 'New Cross ELL Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GNWCRELL' },
-  'new cross gate ell rail station': { name: 'New Cross Gate ELL Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GNEWXGEL' },
-  'new cross gate rail station': { name: 'New Cross Gate Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GNEWXGTE' },
-  'new cross rail station': { name: 'New Cross Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GNWCROSS' },
-  'new eltham rail station': { name: 'New Eltham Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GNWELTHM' },
-  'new malden rail station': { name: 'New Malden Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GNEWMLDN' },
-  'new southgate rail station': { name: 'New Southgate Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GNEWSGAT' },
-  'newbury park station': { name: 'Newbury Park Station', zone: 4, modes: ['national_rail'], naptanId: '910GILFENBP' },
-  'newbury park underground station': { name: 'Newbury Park Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUNBP' },
-  'nine elms underground station': { name: 'Nine Elms Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZNEUGST' },
-  'norbiton rail station': { name: 'Norbiton Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GNRBITON' },
-  'norbury rail station': { name: 'Norbury Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GNORBURY' },
-  'north acton': { name: 'North Acton', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUNAN' },
-  'north dulwich': { name: 'North Dulwich', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '910GNDULWCH' },
-  'north ealing': { name: 'North Ealing', zone: 3, modes: ['underground'], naptanId: '940GZZLUNEN' },
-  'north greenwich underground station': { name: 'North Greenwich Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUNGW' },
-  'north harrow': { name: 'North Harrow', zone: 5, modes: ['underground'], naptanId: '940GZZLUNHA' },
-  'north sheen rail station': { name: 'North Sheen Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GNSHEEN' },
-  'north wembley rail station': { name: 'North Wembley Rail Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GNWEMBLY' },
-  'north wembley underground station': { name: 'North Wembley Underground Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUNWY' },
-  'northfields underground station': { name: 'Northfields Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUNFD' },
-  'northolt park rail station': { name: 'Northolt Park Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GNTHOLTP' },
-  'northolt underground station': { name: 'Northolt Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUNHT' },
-  'northumberland park rail station': { name: 'Northumberland Park Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GNMBRLPK' },
-  'northwick park': { name: 'Northwick Park', zone: 4, modes: ['underground'], naptanId: '940GZZLUNKP' },
-  'northwood hills underground station': { name: 'Northwood Hills Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUNWH' },
-  'northwood underground station': { name: 'Northwood Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUNOW' },
-  'norwood junction rail station': { name: 'Norwood Junction Rail Station', zone: 4, modes: ['national_rail', 'overground'], naptanId: '910GNORWDJ' },
-  'notting hill gate underground station': { name: 'Notting Hill Gate Underground Station', zone: 1, altZone: 2, modes: ['underground'], naptanId: '940GZZLUNHG' },
-  'nunhead rail station': { name: 'Nunhead Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GNUNHEAD' },
-  'oakleigh park rail station': { name: 'Oakleigh Park Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GOKLGHPK' },
-  'oakwood underground station': { name: 'Oakwood Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUOAK' },
-  'old street rail station': { name: 'Old Street Rail Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '910GOLDST' },
-  'old street underground station': { name: 'Old Street Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUODS' },
-  'orpington rail station': { name: 'Orpington Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GORPNGTN' },
-  'osterley underground station': { name: 'Osterley Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUOSY' },
-  'oval': { name: 'Oval', zone: 2, modes: ['underground'], naptanId: '940GZZLUOVL' },
-  'oxford circus underground station': { name: 'Oxford Circus Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUOXC' },
-  'paddington': { name: 'Paddington', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '910GPADTLL' },
-  'paddington (h&c line)-underground': { name: 'Paddington (H&C Line)-Underground', zone: 1, modes: ['underground'], naptanId: '940GZZLUPAH' },
-  'paddington underground station': { name: 'Paddington Underground Station', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUPAC' },
-  'palmers green rail station': { name: 'Palmers Green Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GPALMRSG' },
-  'park royal underground station': { name: 'Park Royal Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUPKR' },
-  'parsons green underground station': { name: 'Parsons Green Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUPSG' },
-  'peckham rye rail station': { name: 'Peckham Rye Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GPKHMRYC' },
-  'penge east rail station': { name: 'Penge East Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GPNGEE' },
-  'penge west rail station': { name: 'Penge West Rail Station', zone: 4, modes: ['national_rail', 'overground'], naptanId: '910GPENEW' },
-  'perivale underground station': { name: 'Perivale Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUPVL' },
-  'petts wood rail station': { name: 'Petts Wood Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GPETSWD' },
-  'piccadilly circus underground station': { name: 'Piccadilly Circus Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUPCC' },
-  'pimlico underground station': { name: 'Pimlico Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUPCO' },
-  'pinner underground station': { name: 'Pinner Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUPNR' },
-  'plaistow underground station': { name: 'Plaistow Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUPLW' },
-  'plumstead rail station': { name: 'Plumstead Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GPLMS' },
-  'ponders end rail station': { name: 'Ponders End Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GPNDRSEN' },
-  'pontoon dock dlr station': { name: 'Pontoon Dock DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLPDK' },
-  'poplar dlr station': { name: 'Poplar DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLPOP' },
-  'preston road': { name: 'Preston Road', zone: 4, modes: ['underground'], naptanId: '940GZZLUPRD' },
-  'prince regent': { name: 'Prince Regent', zone: 3, modes: ['dlr'], naptanId: '940GZZDLPRE' },
-  'pudding mill lane dlr station': { name: 'Pudding Mill Lane DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLPUD' },
-  'purley oaks rail station': { name: 'Purley Oaks Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GPURLEYO' },
-  'purley rail station': { name: 'Purley Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GPURLEY' },
-  'putney bridge underground station': { name: 'Putney Bridge Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUPYB' },
-  'putney rail station': { name: 'Putney Rail Station', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '910GPUTNEY' },
-  'queen\'s park underground station': { name: 'Queen\'s Park Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUQPS' },
-  'queens parkrail station': { name: 'Queens Park (London) Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GQPRK' },
-  'queens road peckham rail station': { name: 'Queens Road Peckham Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GPCKHMQD' },
-  'queensbury underground station': { name: 'Queensbury Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUQBY' },
-  'queenstown road (battersea) rail station': { name: 'Queenstown Road (Battersea) Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GQTRDBAT' },
-  'queensway': { name: 'Queensway', zone: 1, modes: ['underground'], naptanId: '940GZZLUQWY' },
-  'radlett': { name: 'Radlett', zone: 7, modes: ['national_rail'], naptanId: '910GRADLETT' },
-  'rainhamrail station': { name: 'Rainham (London) Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GRNHAME' },
-  'ravensbourne': { name: 'Ravensbourne', zone: 4, modes: ['national_rail'], naptanId: '910GRBRN' },
-  'ravenscourt park underground station': { name: 'Ravenscourt Park Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLURVP' },
-  'rayners lane underground station': { name: 'Rayners Lane Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLURYL' },
-  'raynes park rail station': { name: 'Raynes Park Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GRAYNSPK' },
-  'rectory road rail station': { name: 'Rectory Road Rail Station', zone: 2, modes: ['overground'], naptanId: '910GRCTRYRD' },
-  'redbridge underground station': { name: 'Redbridge Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLURBG' },
-  'reedham': { name: 'Reedham', zone: 6, modes: ['national_rail'], naptanId: '910GREEDHMS' },
-  'reedham (surrey) rail station': { name: 'Reedham (Surrey) Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GREEDHMS' },
-  'richmond nll rail station': { name: 'Richmond NLL Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GRICHNLL' },
-  'richmond underground station': { name: 'Richmond Underground Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLURMD' },
-  'richmondrail station': { name: 'Richmond (London) Rail Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GRICHMND' },
-  'rickmansworth': { name: 'Rickmansworth', zone: 7, modes: ['underground'], naptanId: '940GZZLURKW' },
-  'riddlesdown rail station': { name: 'Riddlesdown Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GRDLSDWN' },
-  'roding valley underground station': { name: 'Roding Valley Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLURVY' },
-  'romford rail station': { name: 'Romford Rail Station', zone: 6, modes: ['elizabeth', 'national_rail', 'overground'], naptanId: '910GROMFORD' },
-  'rotherhithe rail station': { name: 'Rotherhithe Rail Station', zone: 2, modes: ['overground'], naptanId: '910GRTHERHI' },
-  'royal albert dlr station': { name: 'Royal Albert DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLRAL' },
-  'royal docks': { name: 'Royal Docks', zone: 6, modes: ['underground'], naptanId: '940GZZALRDK' },
-  'royal oak underground station': { name: 'Royal Oak Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLURYO' },
-  'royal victoria dlr station': { name: 'Royal Victoria DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLRVC' },
-  'ruislip gardens underground station': { name: 'Ruislip Gardens Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLURSG' },
-  'ruislip manor underground station': { name: 'Ruislip Manor Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLURSM' },
-  'ruislip underground station': { name: 'Ruislip Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLURSP' },
-  'russell square': { name: 'Russell Square', zone: 1, modes: ['underground'], naptanId: '940GZZLURSQ' },
-  'sanderstead rail station': { name: 'Sanderstead Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GSDSD' },
-  'selhurst': { name: 'Selhurst', zone: 4, modes: ['national_rail'], naptanId: '910GSELHRST' },
-  'seven kings rail station': { name: 'Seven Kings Rail Station', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GSVNKNGS' },
-  'seven sisters rail station': { name: 'Seven Sisters Rail Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GSEVNSIS' },
-  'seven sisters underground station': { name: 'Seven Sisters Underground Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUSVS' },
-  'shadwell dlr station': { name: 'Shadwell DLR Station', zone: 2, modes: ['overground', 'dlr'], naptanId: '940GZZDLSHA' },
-  'shadwell rail station': { name: 'Shadwell Rail Station', zone: 2, modes: ['overground', 'dlr'], naptanId: '910GSHADWEL' },
-  'shepherd\'s bush (central) underground station': { name: 'Shepherd\'s Bush (Central) Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUSBC' },
-  'shepherd\'s bush market underground station': { name: 'Shepherd\'s Bush Market Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUSBM' },
-  'shepherds bush rail station': { name: 'Shepherds Bush Rail Station', zone: 2, modes: ['national_rail', 'overground'], naptanId: '910GSHPDSB' },
-  'shoreditch high street rail station': { name: 'Shoreditch High Street Rail Station', zone: 1, modes: ['overground'], naptanId: '910GSHRDHST' },
-  'shortlands': { name: 'Shortlands', zone: 4, modes: ['national_rail'], naptanId: '910GSHRTLND' },
-  'sidcup rail station': { name: 'Sidcup Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GSIDCUP' },
-  'silver street rail station': { name: 'Silver Street Rail Station', zone: 4, modes: ['overground'], naptanId: '910GSIVRST' },
-  'slade green rail station': { name: 'Slade Green Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GSLADEGN' },
-  'sloane square underground station': { name: 'Sloane Square Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUSSQ' },
-  'snaresbrook underground station': { name: 'Snaresbrook Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUSNB' },
-  'south acton': { name: 'South Acton', zone: 3, modes: ['overground'], naptanId: '910GSACTON' },
-  'south bermondsey rail station': { name: 'South Bermondsey Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GSBRMNDS' },
-  'south croydon': { name: 'South Croydon', zone: 5, modes: ['national_rail'], naptanId: '910GSCROYDN' },
-  'south ealing': { name: 'South Ealing', zone: 3, modes: ['underground'], naptanId: '940GZZLUSEA' },
-  'south greenford rail station': { name: 'South Greenford Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSGFORD' },
-  'south hampstead rail station': { name: 'South Hampstead Rail Station', zone: 2, modes: ['overground'], naptanId: '910GSHMPSTD' },
-  'south harrow underground station': { name: 'South Harrow Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUSHH' },
-  'south kensington underground station': { name: 'South Kensington Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUSKS' },
-  'south kenton': { name: 'South Kenton', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUSKT' },
-  'south merton rail station': { name: 'South Merton Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSMERTON' },
-  'south quay dlr station': { name: 'South Quay DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLSOQ' },
-  'south ruislip rail station': { name: 'South Ruislip Rail Station', zone: 5, modes: ['underground', 'national_rail'], naptanId: '910GSRUISLP' },
-  'south ruislip underground station': { name: 'South Ruislip Underground Station', zone: 5, modes: ['underground', 'national_rail'], naptanId: '940GZZLUSRP' },
-  'south tottenham rail station': { name: 'South Tottenham Rail Station', zone: 3, modes: ['overground'], naptanId: '910GSTOTNHM' },
-  'south wimbledon underground station': { name: 'South Wimbledon Underground Station', zone: 3, altZone: 4, modes: ['underground'], naptanId: '940GZZLUSWN' },
-  'south woodford': { name: 'South Woodford', zone: 4, modes: ['underground'], naptanId: '940GZZLUSWF' },
-  'southall rail station': { name: 'Southall Rail Station', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GSTHALL' },
-  'southbury rail station': { name: 'Southbury Rail Station', zone: 5, modes: ['overground'], naptanId: '910GSBURY' },
-  'southfields underground station': { name: 'Southfields Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUSFS' },
-  'southgate underground station': { name: 'Southgate Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUSGT' },
-  'southwark underground station': { name: 'Southwark Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUSWK' },
-  'st helierrail station': { name: 'St Helier (London) Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSHLIER' },
-  'st james streetrail station': { name: 'St James Street (London) Rail Station', zone: 3, modes: ['overground'], naptanId: '910GSTJMSST' },
-  'st james\'s park': { name: 'St James\'s Park', zone: 1, modes: ['underground'], naptanId: '940GZZLUSJP' },
-  'st johns': { name: 'St Johns', zone: 2, modes: ['national_rail'], naptanId: '910GSTJOHNS' },
-  'st margaretsrail station': { name: 'St Margarets (London) Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSTMGTS' },
-  'st mary cray rail station': { name: 'St Mary Cray Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GSTMRYC' },
-  'st. john\'s wood underground station': { name: 'St. John\'s Wood Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUSJW' },
-  'st. paul\'s underground station': { name: 'St. Paul\'s Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUSPU' },
-  'stamford brook underground station': { name: 'Stamford Brook Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUSFB' },
-  'stamford hill rail station': { name: 'Stamford Hill Rail Station', zone: 3, modes: ['overground'], naptanId: '910GSTMFDHL' },
-  'stanmore underground station': { name: 'Stanmore Underground Station', zone: 5, modes: ['underground'], naptanId: '940GZZLUSTM' },
-  'star lane dlr station': { name: 'Star Lane DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLSTL' },
-  'stepney green underground station': { name: 'Stepney Green Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUSGN' },
-  'stockwell underground station': { name: 'Stockwell Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUSKW' },
-  'stoke newington rail station': { name: 'Stoke Newington Rail Station', zone: 2, modes: ['overground'], naptanId: '910GSTKNWNG' },
-  'stonebridge park rail station': { name: 'Stonebridge Park Rail Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GSTNBGPK' },
-  'stoneleigh': { name: 'Stoneleigh', zone: 5, modes: ['national_rail'], naptanId: '910GSTLEIGH' },
-  'stratford dlr station': { name: 'Stratford DLR Station', zone: 2, altZone: 3, modes: ['dlr'], naptanId: '940GZZDLSTD' },
-  'stratford high street dlr station': { name: 'Stratford High Street DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLSHS' },
-  'stratford international dlr station': { name: 'Stratford International DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLSIT' },
-  'stratford international rail station': { name: 'Stratford International Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GSTFODOM' },
-  'stratford underground station': { name: 'Stratford Underground Station', zone: 2, altZone: 3, modes: ['elizabeth', 'national_rail', 'overground', 'underground'], naptanId: '940GZZLUSTD' },
-  'stratfordrail station': { name: 'Stratford (London) Rail Station', zone: 2, altZone: 3, modes: ['elizabeth', 'national_rail', 'overground', 'underground'], naptanId: '910GSTFD' },
-  'strawberry hill rail station': { name: 'Strawberry Hill Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GSTRWBYH' },
-  'streatham common rail station': { name: 'Streatham Common Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GSTRHCOM' },
-  'streatham hill rail station': { name: 'Streatham Hill Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GSTRHILL' },
-  'streatham rail station': { name: 'Streatham Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GSTRETHM' },
-  'sudbury & harrow road rail station': { name: 'Sudbury & Harrow Road Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSDBRYHR' },
-  'sudbury hill harrow rail station': { name: 'Sudbury Hill Harrow Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSDBRYHH' },
-  'sudbury hill underground station': { name: 'Sudbury Hill Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUSUH' },
-  'sudbury town': { name: 'Sudbury Town', zone: 4, modes: ['underground'], naptanId: '940GZZLUSUT' },
-  'sundridge park': { name: 'Sundridge Park', zone: 4, modes: ['national_rail'], naptanId: '910GSNDP' },
-  'surbiton rail station': { name: 'Surbiton Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GSURBITN' },
-  'surrey quays rail station': { name: 'Surrey Quays Rail Station', zone: 2, modes: ['overground'], naptanId: '910GSURREYQ' },
-  'sutton common rail station': { name: 'Sutton Common Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSUTTONC' },
-  'suttonrail station': { name: 'Sutton (London) Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GSUTTON' },
-  'swanley': { name: 'Swanley', zone: 8, modes: ['national_rail'], naptanId: '910GSWLY' },
-  'swiss cottage': { name: 'Swiss Cottage', zone: 2, modes: ['underground'], naptanId: '940GZZLUSWC' },
-  'sydenham hill rail station': { name: 'Sydenham Hill Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GSYDNHMH' },
-  'sydenham rail station': { name: 'Sydenham Rail Station', zone: 3, modes: ['national_rail', 'overground'], naptanId: '910GSYDENHM' },
-  'syon lane rail station': { name: 'Syon Lane Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GSYONLA' },
-  'tadworth': { name: 'Tadworth', zone: 6, modes: ['national_rail'], naptanId: '910GTADWTH' },
-  'tattenham corner': { name: 'Tattenham Corner', zone: 6, modes: ['national_rail'], naptanId: '910GTATNHMC' },
-  'teddington rail station': { name: 'Teddington Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GTEDNGTN' },
-  'temple underground station': { name: 'Temple Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUTMP' },
-  'thames ditton': { name: 'Thames Ditton', zone: 6, modes: ['national_rail'], naptanId: '910GTDITTON' },
-  'theydon bois': { name: 'Theydon Bois', zone: 6, modes: ['underground'], naptanId: '940GZZLUTHB' },
-  'thornton heath': { name: 'Thornton Heath', zone: 4, modes: ['national_rail'], naptanId: '910GTHTH' },
-  'tolworth rail station': { name: 'Tolworth Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GTOLWTH' },
-  'tooting bec underground station': { name: 'Tooting Bec Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUTBC' },
-  'tooting broadway underground station': { name: 'Tooting Broadway Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUTBY' },
-  'tooting rail station': { name: 'Tooting Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GTOOTING' },
-  'tottenham court road': { name: 'Tottenham Court Road', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '910GTOTCTRD' },
-  'tottenham court road underground station': { name: 'Tottenham Court Road Underground Station', zone: 1, modes: ['underground', 'national_rail', 'elizabeth'], naptanId: '940GZZLUTCR' },
-  'tottenham hale rail station': { name: 'Tottenham Hale Rail Station', zone: 3, modes: ['underground', 'national_rail'], naptanId: '910GTTNHMHL' },
-  'tottenham hale underground station': { name: 'Tottenham Hale Underground Station', zone: 3, modes: ['underground', 'national_rail'], naptanId: '940GZZLUTMH' },
-  'totteridge & whetstone underground station': { name: 'Totteridge & Whetstone Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUTAW' },
-  'tower gateway dlr station': { name: 'Tower Gateway DLR Station', zone: 1, modes: ['dlr'], naptanId: '940GZZDLTWG' },
-  'tower hill underground station': { name: 'Tower Hill Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUTWH' },
-  'tufnell park underground station': { name: 'Tufnell Park Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUTFP' },
-  'tulse hill rail station': { name: 'Tulse Hill Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GTULSEH' },
-  'turkey street rail station': { name: 'Turkey Street Rail Station', zone: 6, modes: ['overground'], naptanId: '910GTURKYST' },
-  'turnham green underground station': { name: 'Turnham Green Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUTNG' },
-  'turnpike lane underground station': { name: 'Turnpike Lane Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUTPN' },
-  'twickenham rail station': { name: 'Twickenham Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GTWCKNHM' },
-  'upminster': { name: 'Upminster', zone: 6, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUUPM' },
-  'upminster bridge underground station': { name: 'Upminster Bridge Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUUPB' },
-  'upney underground station': { name: 'Upney Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUUPY' },
-  'upper holloway rail station': { name: 'Upper Holloway Rail Station', zone: 2, modes: ['overground'], naptanId: '910GUPRHLWY' },
-  'upper warlingham': { name: 'Upper Warlingham', zone: 6, modes: ['national_rail'], naptanId: '910GUWRLNGH' },
-  'upton park underground station': { name: 'Upton Park Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUUPK' },
-  'uxbridge underground station': { name: 'Uxbridge Underground Station', zone: 6, modes: ['underground'], naptanId: '940GZZLUUXB' },
-  'vauxhall rail station': { name: 'Vauxhall Rail Station', zone: 1, altZone: 2, modes: ['underground', 'national_rail'], naptanId: '910GVAUXHLW' },
-  'vauxhall underground station': { name: 'Vauxhall Underground Station', zone: 1, altZone: 2, modes: ['underground', 'national_rail'], naptanId: '940GZZLUVXL' },
-  'victoria underground station': { name: 'Victoria Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUVIC' },
-  'waddon': { name: 'Waddon', zone: 5, modes: ['national_rail'], naptanId: '910GWADDON' },
-  'wallington rail station': { name: 'Wallington Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GWALNGTN' },
-  'waltham cross': { name: 'Waltham Cross', zone: 7, modes: ['national_rail'], naptanId: '910GWALHAMX' },
-  'walthamstow central rail station': { name: 'Walthamstow Central Rail Station', zone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GWLTWCEN' },
-  'walthamstow queens road rail station': { name: 'Walthamstow Queens Road Rail Station', zone: 3, modes: ['overground'], naptanId: '910GWLTHQRD' },
-  'wandsworth common rail station': { name: 'Wandsworth Common Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GWANDCMN' },
-  'wandsworth road rail station': { name: 'Wandsworth Road Rail Station', zone: 2, modes: ['overground'], naptanId: '910GWNDSWRD' },
-  'wandsworth town rail station': { name: 'Wandsworth Town Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GWDWTOWN' },
-  'wanstead park rail station': { name: 'Wanstead Park Rail Station', zone: 3, modes: ['overground'], naptanId: '910GWNSTDPK' },
-  'wanstead underground station': { name: 'Wanstead Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUWSD' },
-  'wapping rail station': { name: 'Wapping Rail Station', zone: 2, modes: ['overground'], naptanId: '910GWAPPING' },
-  'warren street underground station': { name: 'Warren Street Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUWRR' },
-  'warwick avenue underground station': { name: 'Warwick Avenue Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUWKA' },
-  'waterloo east': { name: 'Waterloo East', zone: 1, modes: ['national_rail'], naptanId: '910GWATLOOE' },
-  'waterloo underground station': { name: 'Waterloo Underground Station', zone: 1, modes: ['underground', 'national_rail'], naptanId: '940GZZLUWLO' },
-  'watford': { name: 'Watford', zone: 7, modes: ['underground'], naptanId: '940GZZLUWAF' },
-  'welling rail station': { name: 'Welling Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GWELLING' },
-  'wembley central rail station': { name: 'Wembley Central Rail Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GWMBYDC' },
-  'wembley central underground station': { name: 'Wembley Central Underground Station', zone: 4, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUWYC' },
-  'wembley park': { name: 'Wembley Park', zone: 4, modes: ['underground'], naptanId: '940GZZLUWYP' },
-  'wembley stadium rail station': { name: 'Wembley Stadium Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GWEMBLSM' },
-  'west acton': { name: 'West Acton', zone: 3, modes: ['underground'], naptanId: '940GZZLUWTA' },
-  'west brompton rail station': { name: 'West Brompton Rail Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GWBRMPTN' },
-  'west brompton underground station': { name: 'West Brompton Underground Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUWBN' },
-  'west croydon rail station': { name: 'West Croydon Rail Station', zone: 5, modes: ['national_rail', 'overground'], naptanId: '910GWCROYDN' },
-  'west drayton rail station': { name: 'West Drayton Rail Station', zone: 6, modes: ['national_rail', 'elizabeth'], naptanId: '910GWDRYTON' },
-  'west dulwich': { name: 'West Dulwich', zone: 3, modes: ['national_rail'], naptanId: '910GWDULWCH' },
-  'west ealing': { name: 'West Ealing', zone: 3, modes: ['national_rail', 'elizabeth'], naptanId: '910GWEALING' },
-  'west finchley underground station': { name: 'West Finchley Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUWFN' },
-  'west ham dlr station': { name: 'West Ham DLR Station', zone: 2, altZone: 3, modes: ['underground', 'national_rail'], naptanId: '940GZZDLWHM' },
-  'west ham rail station': { name: 'West Ham Rail Station', zone: 2, altZone: 3, modes: ['underground', 'national_rail'], naptanId: '910GWHAMHL' },
-  'west ham underground station': { name: 'West Ham Underground Station', zone: 2, altZone: 3, modes: ['underground', 'national_rail'], naptanId: '940GZZLUWHM' },
-  'west hampstead rail station': { name: 'West Hampstead Rail Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GWHMDSTD' },
-  'west hampstead thameslink rail station': { name: 'West Hampstead Thameslink Rail Station', zone: 2, modes: ['national_rail'], naptanId: '910GWHMPSTM' },
-  'west hampstead underground station': { name: 'West Hampstead Underground Station', zone: 2, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUWHP' },
-  'west harrow': { name: 'West Harrow', zone: 5, modes: ['underground'], naptanId: '940GZZLUWHW' },
-  'west india quay dlr station': { name: 'West India Quay DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLWIQ' },
-  'west kensington underground station': { name: 'West Kensington Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUWKN' },
-  'west norwood rail station': { name: 'West Norwood Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GWNORWOD' },
-  'west ruislip rail station': { name: 'West Ruislip Rail Station', zone: 6, modes: ['underground', 'national_rail'], naptanId: '910GWRUISLP' },
-  'west ruislip underground station': { name: 'West Ruislip Underground Station', zone: 6, modes: ['underground', 'national_rail'], naptanId: '940GZZLUWRP' },
-  'west silvertown dlr station': { name: 'West Silvertown DLR Station', zone: 3, modes: ['dlr'], naptanId: '940GZZDLWSV' },
-  'west sutton rail station': { name: 'West Sutton Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GWSUTTON' },
-  'west wickham rail station': { name: 'West Wickham Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GWWICKHM' },
-  'westbourne park underground station': { name: 'Westbourne Park Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUWSP' },
-  'westcombe park rail station': { name: 'Westcombe Park Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GWCOMBEP' },
-  'westferry dlr station': { name: 'Westferry DLR Station', zone: 2, modes: ['dlr'], naptanId: '940GZZDLWFE' },
-  'westminster underground station': { name: 'Westminster Underground Station', zone: 1, modes: ['underground'], naptanId: '940GZZLUWSM' },
-  'white city underground station': { name: 'White City Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUWCY' },
-  'white hart lane rail station': { name: 'White Hart Lane Rail Station', zone: 3, modes: ['overground'], naptanId: '910GWHHRTLA' },
-  'whitechapel': { name: 'Whitechapel', zone: 2, modes: ['elizabeth', 'national_rail', 'overground', 'underground'], naptanId: '910GWCHAPXR' },
-  'whitechapel rail station': { name: 'Whitechapel Rail Station', zone: 2, modes: ['elizabeth', 'national_rail', 'overground', 'underground'], naptanId: '910GWCHAPEL' },
-  'whitechapel underground station': { name: 'Whitechapel Underground Station', zone: 2, modes: ['elizabeth', 'national_rail', 'overground', 'underground'], naptanId: '940GZZLUWPL' },
-  'whitton rail station': { name: 'Whitton Rail Station', zone: 5, modes: ['national_rail'], naptanId: '910GWHTTON' },
-  'whyteleafe': { name: 'Whyteleafe', zone: 6, modes: ['national_rail'], naptanId: '910GWHYTELF' },
-  'whyteleafe south': { name: 'Whyteleafe South', zone: 6, modes: ['national_rail'], naptanId: '910GWHYTLFS' },
-  'willesden green underground station': { name: 'Willesden Green Underground Station', zone: 2, altZone: 3, modes: ['underground'], naptanId: '940GZZLUWIG' },
-  'willesden junction low level rail station': { name: 'Willesden Junction Low Level Rail Station', zone: 2, altZone: 3, modes: ['national_rail'], naptanId: '910GWLSDNJL' },
-  'willesden junction rail station': { name: 'Willesden Junction Rail Station', zone: 2, altZone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '910GWLSDJHL' },
-  'willesden junction underground station': { name: 'Willesden Junction Underground Station', zone: 2, altZone: 3, modes: ['national_rail', 'overground', 'underground'], naptanId: '940GZZLUWJN' },
-  'wimbledon chase rail station': { name: 'Wimbledon Chase Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GWIMLCHS' },
-  'wimbledon park underground station': { name: 'Wimbledon Park Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUWIP' },
-  'wimbledon rail station': { name: 'Wimbledon Rail Station', zone: 3, modes: ['underground', 'national_rail'], naptanId: '910GWIMBLDN' },
-  'wimbledon underground station': { name: 'Wimbledon Underground Station', zone: 3, modes: ['underground', 'national_rail'], naptanId: '940GZZLUWIM' },
-  'winchmore hill rail station': { name: 'Winchmore Hill Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GWNMHILL' },
-  'wood green underground station': { name: 'Wood Green Underground Station', zone: 3, modes: ['underground'], naptanId: '940GZZLUWOG' },
-  'wood lane underground station': { name: 'Wood Lane Underground Station', zone: 2, modes: ['underground'], naptanId: '940GZZLUWLA' },
-  'wood street': { name: 'Wood Street', zone: 4, modes: ['overground'], naptanId: '910GWDST' },
-  'woodford underground station': { name: 'Woodford Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUWOF' },
-  'woodgrange park rail station': { name: 'Woodgrange Park Rail Station', zone: 3, altZone: 4, modes: ['overground'], naptanId: '910GWDGRNPK' },
-  'woodmansterne rail station': { name: 'Woodmansterne Rail Station', zone: 6, modes: ['national_rail'], naptanId: '910GWDMNSTR' },
-  'woodside park underground station': { name: 'Woodside Park Underground Station', zone: 4, modes: ['underground'], naptanId: '940GZZLUWOP' },
-  'woolwich': { name: 'Woolwich', zone: 4, modes: ['national_rail', 'elizabeth'], naptanId: '910GWOLWXR' },
-  'woolwich arsenal dlr station': { name: 'Woolwich Arsenal DLR Station', zone: 4, modes: ['national_rail'], naptanId: '940GZZDLWLA' },
-  'woolwich arsenal rail station': { name: 'Woolwich Arsenal Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GWOLWCHA' },
-  'woolwich dockyard rail station': { name: 'Woolwich Dockyard Rail Station', zone: 3, modes: ['national_rail'], naptanId: '910GWOLWCDY' },
-  'worcester park rail station': { name: 'Worcester Park Rail Station', zone: 4, modes: ['national_rail'], naptanId: '910GWRCSTRP' },
+  'abbey road': {
+    name: 'Abbey Road',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLABR'
+  },
+  'abbey wood': {
+    name: 'Abbey Wood',
+    zone: 4,
+    modes: ['elizabeth'],
+    naptanId: '910GABWDXR'
+  },
+  'abbey wood (london)': {
+    name: 'Abbey Wood (London)',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GABWD'
+  },
+  'acton central': {
+    name: 'Acton Central',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GACTNCTL'
+  },
+  'acton main line': {
+    name: 'Acton Main Line',
+    zone: 3,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GACTONML'
+  },
+  'acton town': {
+    name: 'Acton Town',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUACT'
+  },
+  'albany park': {
+    name: 'Albany Park',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GALBNYPK'
+  },
+  'aldgate': {
+    name: 'Aldgate',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUALD'
+  },
+  'aldgate east': {
+    name: 'Aldgate East',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUADE'
+  },
+  'alexandra palace': {
+    name: 'Alexandra Palace',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GALEXNDP'
+  },
+  'all saints': {
+    name: 'All Saints',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLALL'
+  },
+  'alperton': {
+    name: 'Alperton',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUALP'
+  },
+  'amersham rail station': {
+    name: 'Amersham Rail Station',
+    zone: 9,
+    modes: ['national_rail'],
+    naptanId: '910GAMERSHM'
+  },
+  'amersham underground station': {
+    name: 'Amersham Underground Station',
+    zone: 9,
+    modes: ['underground'],
+    naptanId: '940GZZLUAMS'
+  },
+  'anerley': {
+    name: 'Anerley',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GANERLEY'
+  },
+  'angel': {
+    name: 'Angel',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUAGL'
+  },
+  'archway': {
+    name: 'Archway',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUACY'
+  },
+  'arnos grove': {
+    name: 'Arnos Grove',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUASG'
+  },
+  'arsenal': {
+    name: 'Arsenal',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUASL'
+  },
+  'baker street': {
+    name: 'Baker Street',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUBST'
+  },
+  'balham rail station': {
+    name: 'Balham Rail Station',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GBALHAM'
+  },
+  'balham underground station': {
+    name: 'Balham Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUBLM'
+  },
+  'bank dlr station': {
+    name: 'Bank DLR Station',
+    zone: 1,
+    modes: ['dlr'],
+    naptanId: '940GZZDLBNK'
+  },
+  'bank underground station': {
+    name: 'Bank Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUBNK'
+  },
+  'banstead': {
+    name: 'Banstead',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GBANSTED'
+  },
+  'barbican': {
+    name: 'Barbican',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUBBN'
+  },
+  'barking rail station': {
+    name: 'Barking Rail Station',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GBARKING'
+  },
+  'barking riverside': {
+    name: 'Barking Riverside',
+    zone: 4,
+    modes: ['overground'],
+    naptanId: '910GBARKRIV'
+  },
+  'barking underground station': {
+    name: 'Barking Underground Station',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUBKG'
+  },
+  'barkingside': {
+    name: 'Barkingside',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUBKE'
+  },
+  'barnehurst': {
+    name: 'Barnehurst',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GBRNHRST'
+  },
+  'barnes': {
+    name: 'Barnes',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GBARNES'
+  },
+  'barnes bridge': {
+    name: 'Barnes Bridge',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GBNSBDGE'
+  },
+  'barons court': {
+    name: 'Barons Court',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUBSC'
+  },
+  'battersea park': {
+    name: 'Battersea Park',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GBATRSPK'
+  },
+  'battersea power station': {
+    name: 'Battersea Power Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZBPSUST'
+  },
+  'bayswater': {
+    name: 'Bayswater',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUBWT'
+  },
+  'beckenham hill': {
+    name: 'Beckenham Hill',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GBCKNHMH'
+  },
+  'beckenham junction': {
+    name: 'Beckenham Junction',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GBCKNHMJ'
+  },
+  'beckton': {
+    name: 'Beckton',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLBEC'
+  },
+  'beckton park': {
+    name: 'Beckton Park',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLBPK'
+  },
+  'becontree': {
+    name: 'Becontree',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUBEC'
+  },
+  'bellingham': {
+    name: 'Bellingham',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GBELNGHM'
+  },
+  'belmont': {
+    name: 'Belmont',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GBELM'
+  },
+  'belsize park': {
+    name: 'Belsize Park',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUBZP'
+  },
+  'belvedere': {
+    name: 'Belvedere',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GBELVEDR'
+  },
+  'bermondsey': {
+    name: 'Bermondsey',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUBMY'
+  },
+  'berrylands': {
+    name: 'Berrylands',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GBRLANDS'
+  },
+  'bethnal green rail station': {
+    name: 'Bethnal Green Rail Station',
+    zone: 2,
+    modes: ['overground', 'national_rail'],
+    naptanId: '910GBTHNLGR'
+  },
+  'bethnal green underground station': {
+    name: 'Bethnal Green Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUBLG'
+  },
+  'bexley': {
+    name: 'Bexley',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GBEXLEY'
+  },
+  'bexleyheath': {
+    name: 'Bexleyheath',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GBXLYHTH'
+  },
+  'bickley': {
+    name: 'Bickley',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GBICKLEY'
+  },
+  'birkbeck': {
+    name: 'Birkbeck',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GBIRKBCK'
+  },
+  'blackfriars': {
+    name: 'Blackfriars',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUBKF'
+  },
+  'blackheath': {
+    name: 'Blackheath',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GBLKHTH'
+  },
+  'blackhorse road rail station': {
+    name: 'Blackhorse Road Rail Station',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GBLCHSRD'
+  },
+  'blackhorse road underground station': {
+    name: 'Blackhorse Road Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUBLR'
+  },
+  'blackwall': {
+    name: 'Blackwall',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLBLA'
+  },
+  'bond street elizabeth line station': {
+    name: 'Bond Street Elizabeth line Station',
+    zone: 1,
+    modes: ['elizabeth'],
+    naptanId: '910GBONDST'
+  },
+  'bond street underground station': {
+    name: 'Bond Street Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUBND'
+  },
+  'borough': {
+    name: 'Borough',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUBOR'
+  },
+  'boston manor': {
+    name: 'Boston Manor',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUBOS'
+  },
+  'bounds green': {
+    name: 'Bounds Green',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUBDS'
+  },
+  'bow church': {
+    name: 'Bow Church',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLBOW'
+  },
+  'bow road': {
+    name: 'Bow Road',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUBWR'
+  },
+  'bowes park': {
+    name: 'Bowes Park',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GBOWESPK'
+  },
+  'brent cross': {
+    name: 'Brent Cross',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUBTX'
+  },
+  'brent cross west station': {
+    name: 'Brent Cross West Station',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GBRENTX'
+  },
+  'brentford': {
+    name: 'Brentford',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GBNTFORD'
+  },
+  'brentwood': {
+    name: 'Brentwood',
+    zone: 9,
+    modes: ['elizabeth'],
+    naptanId: '910GBRTWOOD'
+  },
+  'brimsdown': {
+    name: 'Brimsdown',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GBRIMSDN'
+  },
+  'brixton rail station': {
+    name: 'Brixton Rail Station',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GBRIXTON'
+  },
+  'brixton underground station': {
+    name: 'Brixton Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUBXN'
+  },
+  'brockley': {
+    name: 'Brockley',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GBROCKLY'
+  },
+  'bromley north': {
+    name: 'Bromley North',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GBROMLYN'
+  },
+  'bromley south': {
+    name: 'Bromley South',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GBROMLYS'
+  },
+  'bromley-by-bow': {
+    name: 'Bromley-by-Bow',
+    zone: 2,
+    altZone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUBBB'
+  },
+  'brondesbury': {
+    name: 'Brondesbury',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GBRBY'
+  },
+  'brondesbury park': {
+    name: 'Brondesbury Park',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GBRBYPK'
+  },
+  'bruce grove': {
+    name: 'Bruce Grove',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GBRUCGRV'
+  },
+  'buckhurst hill': {
+    name: 'Buckhurst Hill',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUBKH'
+  },
+  'burnham (berks)': {
+    name: 'Burnham (Berks)',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GBNHAM'
+  },
+  'burnt oak': {
+    name: 'Burnt Oak',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUBTK'
+  },
+  'bush hill park': {
+    name: 'Bush Hill Park',
+    zone: 5,
+    modes: ['overground'],
+    naptanId: '910GBHILLPK'
+  },
+  'bushey': {
+    name: 'Bushey',
+    zone: 8,
+    modes: ['overground', 'national_rail'],
+    naptanId: '910GBUSHYDC'
+  },
+  'caledonian road': {
+    name: 'Caledonian Road',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCAR'
+  },
+  'caledonian road & barnsbury': {
+    name: 'Caledonian Road & Barnsbury',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GCLDNNRB'
+  },
+  'cambridge heath (london)': {
+    name: 'Cambridge Heath (London)',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GCAMHTH'
+  },
+  'camden road': {
+    name: 'Camden Road',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GCMDNRD'
+  },
+  'camden town': {
+    name: 'Camden Town',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCTN'
+  },
+  'canada water rail station': {
+    name: 'Canada Water Rail Station',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GCNDAW'
+  },
+  'canada water underground station': {
+    name: 'Canada Water Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCWR'
+  },
+  'canary wharf dlr station': {
+    name: 'Canary Wharf DLR Station',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLCAN'
+  },
+  'canary wharf elizabeth line station': {
+    name: 'Canary Wharf Elizabeth line Station',
+    zone: 2,
+    modes: ['elizabeth'],
+    naptanId: '910GCANWHRF'
+  },
+  'canary wharf underground station': {
+    name: 'Canary Wharf Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCYF'
+  },
+  'canning town dlr station': {
+    name: 'Canning Town DLR Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLCGT'
+  },
+  'canning town underground station': {
+    name: 'Canning Town Underground Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUCGT'
+  },
+  'cannon street': {
+    name: 'Cannon Street',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUCST'
+  },
+  'canonbury': {
+    name: 'Canonbury',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GCNNB'
+  },
+  'canons park': {
+    name: 'Canons Park',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUCPK'
+  },
+  'carpenders park': {
+    name: 'Carpenders Park',
+    zone: 7,
+    modes: ['overground'],
+    naptanId: '910GCRPNDPK'
+  },
+  'carshalton': {
+    name: 'Carshalton',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GCRSHLTN'
+  },
+  'carshalton beeches': {
+    name: 'Carshalton Beeches',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GCRSHLTB'
+  },
+  'castle bar park': {
+    name: 'Castle Bar Park',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GCBARPAR'
+  },
+  'caterham': {
+    name: 'Caterham',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCATERHM'
+  },
+  'catford': {
+    name: 'Catford',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GCATFORD'
+  },
+  'catford bridge': {
+    name: 'Catford Bridge',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GCATFBDG'
+  },
+  'chadwell heath': {
+    name: 'Chadwell Heath',
+    zone: 5,
+    modes: ['elizabeth'],
+    naptanId: '910GCHDWLHT'
+  },
+  'chalfont & latimer rail station': {
+    name: 'Chalfont & Latimer Rail Station',
+    zone: 8,
+    modes: ['national_rail'],
+    naptanId: '910GCHLFNAL'
+  },
+  'chalfont & latimer underground station': {
+    name: 'Chalfont & Latimer Underground Station',
+    zone: 8,
+    modes: ['underground'],
+    naptanId: '940GZZLUCAL'
+  },
+  'chalk farm': {
+    name: 'Chalk Farm',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCFM'
+  },
+  'chancery lane': {
+    name: 'Chancery Lane',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUCHL'
+  },
+  'charing cross': {
+    name: 'Charing Cross',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUCHX'
+  },
+  'charlton': {
+    name: 'Charlton',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GCRLN'
+  },
+  'cheam': {
+    name: 'Cheam',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GCHEAM'
+  },
+  'chelsfield': {
+    name: 'Chelsfield',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCHLSFLD'
+  },
+  'chesham': {
+    name: 'Chesham',
+    zone: 9,
+    modes: ['underground'],
+    naptanId: '940GZZLUCSM'
+  },
+  'cheshunt': {
+    name: 'Cheshunt',
+    zone: 8,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GCHESHNT'
+  },
+  'chessington north': {
+    name: 'Chessington North',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCHSSN'
+  },
+  'chessington south': {
+    name: 'Chessington South',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCHSSS'
+  },
+  'chigwell': {
+    name: 'Chigwell',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUCWL'
+  },
+  'chingford': {
+    name: 'Chingford',
+    zone: 5,
+    modes: ['overground'],
+    naptanId: '910GCHINGFD'
+  },
+  'chipstead': {
+    name: 'Chipstead',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCHSD'
+  },
+  'chislehurst': {
+    name: 'Chislehurst',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GCHSLHRS'
+  },
+  'chiswick': {
+    name: 'Chiswick',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GCHISWCK'
+  },
+  'chiswick park': {
+    name: 'Chiswick Park',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUCWP'
+  },
+  'chorleywood rail station': {
+    name: 'Chorleywood Rail Station',
+    zone: 7,
+    modes: ['national_rail'],
+    naptanId: '910GCHRW'
+  },
+  'chorleywood underground station': {
+    name: 'Chorleywood Underground Station',
+    zone: 7,
+    modes: ['underground'],
+    naptanId: '940GZZLUCYD'
+  },
+  'city thameslink': {
+    name: 'City Thameslink',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GCTMSLNK'
+  },
+  'clapham common': {
+    name: 'Clapham Common',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCPC'
+  },
+  'clapham high street': {
+    name: 'Clapham High Street',
+    zone: 2,
+    modes: ['overground', 'national_rail'],
+    naptanId: '910GCLPHHS'
+  },
+  'clapham junction': {
+    name: 'Clapham Junction',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GCLPHMJ1'
+  },
+  'clapham north': {
+    name: 'Clapham North',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCPN'
+  },
+  'clapham south': {
+    name: 'Clapham South',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUCPS'
+  },
+  'clapton': {
+    name: 'Clapton',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GCLAPTON'
+  },
+  'clock house': {
+    name: 'Clock House',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GCLOCKHS'
+  },
+  'cockfosters': {
+    name: 'Cockfosters',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUCKS'
+  },
+  'colindale': {
+    name: 'Colindale',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUCND'
+  },
+  'colliers wood': {
+    name: 'Colliers Wood',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUCSD'
+  },
+  'coulsdon south': {
+    name: 'Coulsdon South',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCOLSDNS'
+  },
+  'coulsdon town': {
+    name: 'Coulsdon Town',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCOLSTWN'
+  },
+  'covent garden': {
+    name: 'Covent Garden',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUCGN'
+  },
+  'crayford': {
+    name: 'Crayford',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCRFD'
+  },
+  'crews hill': {
+    name: 'Crews Hill',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GCRHL'
+  },
+  'cricklewood': {
+    name: 'Cricklewood',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GCRKLWD'
+  },
+  'crofton park': {
+    name: 'Crofton Park',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GCFPK'
+  },
+  'crossharbour': {
+    name: 'Crossharbour',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLCLA'
+  },
+  'crouch hill': {
+    name: 'Crouch Hill',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GCROUCHH'
+  },
+  'croxley': {
+    name: 'Croxley',
+    zone: 7,
+    modes: ['underground'],
+    naptanId: '940GZZLUCXY'
+  },
+  'crystal palace': {
+    name: 'Crystal Palace',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GCRYSTLP'
+  },
+  'cuffley': {
+    name: 'Cuffley',
+    zone: 9,
+    modes: ['national_rail'],
+    naptanId: '910GCUFFLEY'
+  },
+  'custom house': {
+    name: 'Custom House',
+    zone: 3,
+    modes: ['elizabeth'],
+    naptanId: '910GCUSTMHS'
+  },
+  'custom house (for excel)': {
+    name: 'Custom House (for ExCel)',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLCUS'
+  },
+  'cutty sark (for maritime greenwich)': {
+    name: 'Cutty Sark (for Maritime Greenwich)',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLCUT'
+  },
+  'cyprus': {
+    name: 'Cyprus',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLCYP'
+  },
+  'dagenham dock': {
+    name: 'Dagenham Dock',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GDGNHMDC'
+  },
+  'dagenham east': {
+    name: 'Dagenham East',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUDGE'
+  },
+  'dagenham heathway': {
+    name: 'Dagenham Heathway',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUDGY'
+  },
+  'dalston junction': {
+    name: 'Dalston Junction',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GDALS'
+  },
+  'dalston kingsland': {
+    name: 'Dalston Kingsland',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GDALSKLD'
+  },
+  'debden': {
+    name: 'Debden',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUDBN'
+  },
+  'denmark hill': {
+    name: 'Denmark Hill',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GDENMRKH'
+  },
+  'deptford': {
+    name: 'Deptford',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GDEPTFD'
+  },
+  'deptford bridge': {
+    name: 'Deptford Bridge',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLDEP'
+  },
+  'devons road': {
+    name: 'Devons Road',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLDEV'
+  },
+  'dollis hill': {
+    name: 'Dollis Hill',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUDOH'
+  },
+  'drayton green': {
+    name: 'Drayton Green',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GDRAYGRN'
+  },
+  'drayton park': {
+    name: 'Drayton Park',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GDRYP'
+  },
+  'ealing broadway rail station': {
+    name: 'Ealing Broadway Rail Station',
+    zone: 3,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GEALINGB'
+  },
+  'ealing broadway underground station': {
+    name: 'Ealing Broadway Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUEBY'
+  },
+  'ealing common': {
+    name: 'Ealing Common',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUECM'
+  },
+  'earl\'s court': {
+    name: 'Earl\'s Court',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUECT'
+  },
+  'earlsfield': {
+    name: 'Earlsfield',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GERLFLD'
+  },
+  'east acton': {
+    name: 'East Acton',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUEAN'
+  },
+  'east croydon': {
+    name: 'East Croydon',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GECROYDN'
+  },
+  'east dulwich': {
+    name: 'East Dulwich',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GEDULWCH'
+  },
+  'east finchley': {
+    name: 'East Finchley',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUEFY'
+  },
+  'east ham': {
+    name: 'East Ham',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUEHM'
+  },
+  'east india': {
+    name: 'East India',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLEIN'
+  },
+  'east putney': {
+    name: 'East Putney',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUEPY'
+  },
+  'eastcote': {
+    name: 'Eastcote',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUEAE'
+  },
+  'eden park': {
+    name: 'Eden Park',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GEDPK'
+  },
+  'edgware': {
+    name: 'Edgware',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUEGW'
+  },
+  'edgware road (bakerloo)': {
+    name: 'Edgware Road (Bakerloo)',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUERB'
+  },
+  'edgware road (circle line)': {
+    name: 'Edgware Road (Circle Line)',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUERC'
+  },
+  'edmonton green': {
+    name: 'Edmonton Green',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GEDMNGRN'
+  },
+  'elephant & castle rail station': {
+    name: 'Elephant & Castle Rail Station',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GELPHNAC'
+  },
+  'elephant & castle underground station': {
+    name: 'Elephant & Castle Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUEAC'
+  },
+  'elm park': {
+    name: 'Elm Park',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUEPK'
+  },
+  'elmers end': {
+    name: 'Elmers End',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GELMERSE'
+  },
+  'elmstead woods': {
+    name: 'Elmstead Woods',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GELMW'
+  },
+  'elstree & borehamwood': {
+    name: 'Elstree & Borehamwood',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GELTR'
+  },
+  'eltham': {
+    name: 'Eltham',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GELTHAM'
+  },
+  'elverson road': {
+    name: 'Elverson Road',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLELV'
+  },
+  'embankment': {
+    name: 'Embankment',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUEMB'
+  },
+  'emerson park': {
+    name: 'Emerson Park',
+    zone: 6,
+    modes: ['overground'],
+    naptanId: '910GEMRSPKH'
+  },
+  'enfield chase': {
+    name: 'Enfield Chase',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GENFC'
+  },
+  'enfield lock': {
+    name: 'Enfield Lock',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GENFLDLK'
+  },
+  'enfield town': {
+    name: 'Enfield Town',
+    zone: 5,
+    modes: ['overground'],
+    naptanId: '910GENFLDTN'
+  },
+  'epping': {
+    name: 'Epping',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUEPG'
+  },
+  'epsom downs': {
+    name: 'Epsom Downs',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GEPSDNS'
+  },
+  'erith': {
+    name: 'Erith',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GERITH'
+  },
+  'essex road': {
+    name: 'Essex Road',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GESSEXRD'
+  },
+  'euston': {
+    name: 'Euston',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUEUS'
+  },
+  'euston square': {
+    name: 'Euston Square',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUESQ'
+  },
+  'ewell east': {
+    name: 'Ewell East',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GEWELLE'
+  },
+  'ewell west': {
+    name: 'Ewell West',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GEWELW'
+  },
+  'fairlop': {
+    name: 'Fairlop',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUFLP'
+  },
+  'falconwood': {
+    name: 'Falconwood',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GFALCNWD'
+  },
+  'farringdon elizabeth line station': {
+    name: 'Farringdon Elizabeth line Station',
+    zone: 1,
+    modes: ['elizabeth'],
+    naptanId: '910GFRNDXR'
+  },
+  'farringdon rail station': {
+    name: 'Farringdon Rail Station',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GFRNDNLT'
+  },
+  'farringdon underground station': {
+    name: 'Farringdon Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUFCN'
+  },
+  'feltham': {
+    name: 'Feltham',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GFELTHAM'
+  },
+  'finchley central': {
+    name: 'Finchley Central',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUFYC'
+  },
+  'finchley road': {
+    name: 'Finchley Road',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUFYR'
+  },
+  'finchley road & frognal': {
+    name: 'Finchley Road & Frognal',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GFNCHLYR'
+  },
+  'finsbury park rail station': {
+    name: 'Finsbury Park Rail Station',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GFNPK'
+  },
+  'finsbury park underground station': {
+    name: 'Finsbury Park Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUFPK'
+  },
+  'forest gate': {
+    name: 'Forest Gate',
+    zone: 3,
+    modes: ['elizabeth'],
+    naptanId: '910GFRSTGT'
+  },
+  'forest hill': {
+    name: 'Forest Hill',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GFORESTH'
+  },
+  'fulham broadway': {
+    name: 'Fulham Broadway',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUFBY'
+  },
+  'fulwell': {
+    name: 'Fulwell',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GFULWELL'
+  },
+  'gallions reach': {
+    name: 'Gallions Reach',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLGAL'
+  },
+  'gants hill': {
+    name: 'Gants Hill',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUGTH'
+  },
+  'gidea park': {
+    name: 'Gidea Park',
+    zone: 6,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GGIDEAPK'
+  },
+  'gipsy hill': {
+    name: 'Gipsy Hill',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GGIPSYH'
+  },
+  'gloucester road': {
+    name: 'Gloucester Road',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUGTR'
+  },
+  'golders green': {
+    name: 'Golders Green',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUGGN'
+  },
+  'goldhawk road': {
+    name: 'Goldhawk Road',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUGHK'
+  },
+  'goodge street': {
+    name: 'Goodge Street',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUGDG'
+  },
+  'goodmayes': {
+    name: 'Goodmayes',
+    zone: 4,
+    modes: ['elizabeth'],
+    naptanId: '910GGODMAYS'
+  },
+  'gordon hill': {
+    name: 'Gordon Hill',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GGORDONH'
+  },
+  'gospel oak': {
+    name: 'Gospel Oak',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GGOSPLOK'
+  },
+  'grange hill': {
+    name: 'Grange Hill',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUGGH'
+  },
+  'grange park': {
+    name: 'Grange Park',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GGRPK'
+  },
+  'great portland street': {
+    name: 'Great Portland Street',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUGPS'
+  },
+  'green park': {
+    name: 'Green Park',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUGPK'
+  },
+  'greenford rail station': {
+    name: 'Greenford Rail Station',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GGFORD'
+  },
+  'greenford underground station': {
+    name: 'Greenford Underground Station',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUGFD'
+  },
+  'greenwich dlr station': {
+    name: 'Greenwich DLR Station',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLGRE'
+  },
+  'greenwich rail station': {
+    name: 'Greenwich Rail Station',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GGNWH'
+  },
+  'grove park': {
+    name: 'Grove Park',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GGRVPK'
+  },
+  'gunnersbury rail station': {
+    name: 'Gunnersbury Rail Station',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GGNRSBRY'
+  },
+  'gunnersbury underground station': {
+    name: 'Gunnersbury Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUGBY'
+  },
+  'hackbridge': {
+    name: 'Hackbridge',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GHKBG'
+  },
+  'hackney central': {
+    name: 'Hackney Central',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GHACKNYC'
+  },
+  'hackney downs': {
+    name: 'Hackney Downs',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GHAKNYNM'
+  },
+  'hackney wick': {
+    name: 'Hackney Wick',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GHACKNYW'
+  },
+  'hadley wood': {
+    name: 'Hadley Wood',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GHADLYWD'
+  },
+  'haggerston': {
+    name: 'Haggerston',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GHAGGERS'
+  },
+  'hainault': {
+    name: 'Hainault',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUHLT'
+  },
+  'hammersmith (dist&picc line)': {
+    name: 'Hammersmith (Dist&Picc Line)',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUHSD'
+  },
+  'hammersmith (h&c line)': {
+    name: 'Hammersmith (H&C Line)',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUHSC'
+  },
+  'hampstead': {
+    name: 'Hampstead',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUHTD'
+  },
+  'hampstead heath': {
+    name: 'Hampstead Heath',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GHMPSTDH'
+  },
+  'hampton (london)': {
+    name: 'Hampton (London)',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GHAMPTON'
+  },
+  'hampton court': {
+    name: 'Hampton Court',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GHCRT'
+  },
+  'hampton wick': {
+    name: 'Hampton Wick',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GHAMWICK'
+  },
+  'hanger lane': {
+    name: 'Hanger Lane',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUHGR'
+  },
+  'hanwell': {
+    name: 'Hanwell',
+    zone: 4,
+    modes: ['elizabeth'],
+    naptanId: '910GHANWELL'
+  },
+  'harlesden rail station': {
+    name: 'Harlesden Rail Station',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GHARLSDN'
+  },
+  'harlesden underground station': {
+    name: 'Harlesden Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUHSN'
+  },
+  'harold wood': {
+    name: 'Harold Wood',
+    zone: 6,
+    modes: ['elizabeth'],
+    naptanId: '910GHRLDWOD'
+  },
+  'harringay': {
+    name: 'Harringay',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GHRGY'
+  },
+  'harringay green lanes': {
+    name: 'Harringay Green Lanes',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GHRGYGL'
+  },
+  'harrow & wealdstone rail station': {
+    name: 'Harrow & Wealdstone Rail Station',
+    zone: 5,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GHROW'
+  },
+  'harrow & wealdstone underground station': {
+    name: 'Harrow & Wealdstone Underground Station',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUHAW'
+  },
+  'harrow-on-the-hill rail station': {
+    name: 'Harrow-on-the-Hill Rail Station',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GHAROOTH'
+  },
+  'harrow-on-the-hill underground station': {
+    name: 'Harrow-on-the-Hill Underground Station',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUHOH'
+  },
+  'hatch end': {
+    name: 'Hatch End',
+    zone: 6,
+    modes: ['overground'],
+    naptanId: '910GHTCHEND'
+  },
+  'hatton cross': {
+    name: 'Hatton Cross',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUHNX'
+  },
+  'haydons road': {
+    name: 'Haydons Road',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GHYDNSRD'
+  },
+  'hayes & harlington': {
+    name: 'Hayes & Harlington',
+    zone: 5,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GHAYESAH'
+  },
+  'hayes (kent)': {
+    name: 'Hayes (Kent)',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GHAYS'
+  },
+  'headstone lane': {
+    name: 'Headstone Lane',
+    zone: 5,
+    modes: ['overground'],
+    naptanId: '910GHEDSTNL'
+  },
+  'heathrow terminal 4 elizabeth line station': {
+    name: 'Heathrow Terminal 4 Elizabeth line Station',
+    zone: 6,
+    modes: ['elizabeth'],
+    naptanId: '910GHTRWTM4'
+  },
+  'heathrow terminal 4 underground station': {
+    name: 'Heathrow Terminal 4 Underground Station',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUHR4'
+  },
+  'heathrow terminal 5 rail station': {
+    name: 'Heathrow Terminal 5 Rail Station',
+    zone: 6,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GHTRWTM5'
+  },
+  'heathrow terminal 5 underground station': {
+    name: 'Heathrow Terminal 5 Underground Station',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUHR5'
+  },
+  'heathrow terminals 2 & 3 rail station': {
+    name: 'Heathrow Terminals 2 & 3 Rail Station',
+    zone: 6,
+    modes: ['national_rail', 'elizabeth'],
+    naptanId: '910GHTRWAPT'
+  },
+  'heathrow terminals 2 & 3 underground station': {
+    name: 'Heathrow Terminals 2 & 3 Underground Station',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUHRC'
+  },
+  'hendon': {
+    name: 'Hendon',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GHDON'
+  },
+  'hendon central': {
+    name: 'Hendon Central',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUHCL'
+  },
+  'herne hill': {
+    name: 'Herne Hill',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GHERNEH'
+  },
+  'heron quays': {
+    name: 'Heron Quays',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLHEQ'
+  },
+  'high barnet': {
+    name: 'High Barnet',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUHBT'
+  },
+  'high street kensington': {
+    name: 'High Street Kensington',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUHSK'
+  },
+  'highams park': {
+    name: 'Highams Park',
+    zone: 4,
+    modes: ['overground'],
+    naptanId: '910GHGHMSPK'
+  },
+  'highbury & islington rail station': {
+    name: 'Highbury & Islington Rail Station',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GHGHI'
+  },
+  'highbury & islington underground station': {
+    name: 'Highbury & Islington Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUHAI'
+  },
+  'highgate': {
+    name: 'Highgate',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUHGT'
+  },
+  'hillingdon': {
+    name: 'Hillingdon',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUHGD'
+  },
+  'hither green': {
+    name: 'Hither Green',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GHTHRGRN'
+  },
+  'holborn': {
+    name: 'Holborn',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUHBN'
+  },
+  'holland park': {
+    name: 'Holland Park',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUHPK'
+  },
+  'holloway road': {
+    name: 'Holloway Road',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUHWY'
+  },
+  'homerton': {
+    name: 'Homerton',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GHOMRTON'
+  },
+  'honor oak park': {
+    name: 'Honor Oak Park',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GHONROPK'
+  },
+  'hornchurch': {
+    name: 'Hornchurch',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUHCH'
+  },
+  'hornsey': {
+    name: 'Hornsey',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GHRNSY'
+  },
+  'hounslow': {
+    name: 'Hounslow',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GHOUNSLW'
+  },
+  'hounslow central': {
+    name: 'Hounslow Central',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUHWC'
+  },
+  'hounslow east': {
+    name: 'Hounslow East',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUHWE'
+  },
+  'hounslow west': {
+    name: 'Hounslow West',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUHWT'
+  },
+  'hoxton': {
+    name: 'Hoxton',
+    zone: 1,
+    modes: ['overground'],
+    naptanId: '910GHOXTON'
+  },
+  'hyde park corner': {
+    name: 'Hyde Park Corner',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUHPC'
+  },
+  'ickenham': {
+    name: 'Ickenham',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUICK'
+  },
+  'ilford': {
+    name: 'Ilford',
+    zone: 4,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GILFORD'
+  },
+  'imperial wharf': {
+    name: 'Imperial Wharf',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GCSEAH'
+  },
+  'island gardens': {
+    name: 'Island Gardens',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLISL'
+  },
+  'isleworth': {
+    name: 'Isleworth',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GISLEWTH'
+  },
+  'iver': {
+    name: 'Iver',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GIVER'
+  },
+  'kenley': {
+    name: 'Kenley',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GKNLY'
+  },
+  'kennington': {
+    name: 'Kennington',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUKNG'
+  },
+  'kensal green rail station': {
+    name: 'Kensal Green Rail Station',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GKENSLG'
+  },
+  'kensal green underground station': {
+    name: 'Kensal Green Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUKSL'
+  },
+  'kensal rise': {
+    name: 'Kensal Rise',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GKENR'
+  },
+  'kensington (olympia) rail station': {
+    name: 'Kensington (Olympia) Rail Station',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GKENOLYM'
+  },
+  'kensington (olympia) underground station': {
+    name: 'Kensington (Olympia) Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUKOY'
+  },
+  'kent house': {
+    name: 'Kent House',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GKENTHOS'
+  },
+  'kentish town rail station': {
+    name: 'Kentish Town Rail Station',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GKNTSHTN'
+  },
+  'kentish town underground station': {
+    name: 'Kentish Town Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUKSH'
+  },
+  'kentish town west': {
+    name: 'Kentish Town West',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GKNTSHTW'
+  },
+  'kenton rail station': {
+    name: 'Kenton Rail Station',
+    zone: 4,
+    modes: ['overground'],
+    naptanId: '910GKTON'
+  },
+  'kenton underground station': {
+    name: 'Kenton Underground Station',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUKEN'
+  },
+  'kew bridge': {
+    name: 'Kew Bridge',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GKEWBDGE'
+  },
+  'kew gardens rail station': {
+    name: 'Kew Gardens Rail Station',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GKEWGRDN'
+  },
+  'kew gardens underground station': {
+    name: 'Kew Gardens Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUKWG'
+  },
+  'kidbrooke': {
+    name: 'Kidbrooke',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GKIDBROK'
+  },
+  'kilburn': {
+    name: 'Kilburn',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUKBN'
+  },
+  'kilburn high road': {
+    name: 'Kilburn High Road',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GKLBRNHR'
+  },
+  'kilburn park': {
+    name: 'Kilburn Park',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUKPK'
+  },
+  'king george v': {
+    name: 'King George V',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLKGV'
+  },
+  'king\'s cross st. pancras': {
+    name: 'King\'s Cross St. Pancras',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUKSX'
+  },
+  'kingsbury': {
+    name: 'Kingsbury',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUKBY'
+  },
+  'kingston': {
+    name: 'Kingston',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GKGSTON'
+  },
+  'kingswood': {
+    name: 'Kingswood',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GKGWD'
+  },
+  'knightsbridge': {
+    name: 'Knightsbridge',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUKNB'
+  },
+  'knockholt': {
+    name: 'Knockholt',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GKNCKHLT'
+  },
+  'ladbroke grove': {
+    name: 'Ladbroke Grove',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLULAD'
+  },
+  'ladywell': {
+    name: 'Ladywell',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GLDYW'
+  },
+  'lambeth north': {
+    name: 'Lambeth North',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLULBN'
+  },
+  'lancaster gate': {
+    name: 'Lancaster Gate',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLULGT'
+  },
+  'langdon park': {
+    name: 'Langdon Park',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLLDP'
+  },
+  'langley (berks)': {
+    name: 'Langley (Berks)',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GLANGLEY'
+  },
+  'latimer road': {
+    name: 'Latimer Road',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLULRD'
+  },
+  'lea bridge': {
+    name: 'Lea Bridge',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GLEABDGE'
+  },
+  'lee': {
+    name: 'Lee',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GLEEE'
+  },
+  'leicester square': {
+    name: 'Leicester Square',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLULSQ'
+  },
+  'lewisham dlr station': {
+    name: 'Lewisham DLR Station',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLLEW'
+  },
+  'lewisham rail station': {
+    name: 'Lewisham Rail Station',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GLEWISHM'
+  },
+  'leyton': {
+    name: 'Leyton',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLULYN'
+  },
+  'leyton midland road': {
+    name: 'Leyton Midland Road',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GLEYTNMR'
+  },
+  'leytonstone': {
+    name: 'Leytonstone',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLULYS'
+  },
+  'leytonstone high road': {
+    name: 'Leytonstone High Road',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GLYTNSHR'
+  },
+  'limehouse dlr station': {
+    name: 'Limehouse DLR Station',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLLIM'
+  },
+  'limehouse rail station': {
+    name: 'Limehouse Rail Station',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GLIMHSE'
+  },
+  'liverpool street elizabeth line station': {
+    name: 'Liverpool Street Elizabeth line Station',
+    zone: 1,
+    modes: ['elizabeth'],
+    naptanId: '910GLIVSTLL'
+  },
+  'liverpool street underground station': {
+    name: 'Liverpool Street Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLULVT'
+  },
+  'london blackfriars': {
+    name: 'London Blackfriars',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GBLFR'
+  },
+  'london bridge rail station': {
+    name: 'London Bridge Rail Station',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GLNDNBDC'
+  },
+  'london bridge underground station': {
+    name: 'London Bridge Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLULNB'
+  },
+  'london cannon street': {
+    name: 'London Cannon Street',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GCANONST'
+  },
+  'london charing cross': {
+    name: 'London Charing Cross',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GCHRX'
+  },
+  'london city airport': {
+    name: 'London City Airport',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLLCA'
+  },
+  'london euston': {
+    name: 'London Euston',
+    zone: 1,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GEUSTON'
+  },
+  'london fenchurch street': {
+    name: 'London Fenchurch Street',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GFENCHRS'
+  },
+  'london fields': {
+    name: 'London Fields',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GLONFLDS'
+  },
+  'london liverpool street': {
+    name: 'London Liverpool Street',
+    zone: 1,
+    modes: ['elizabeth', 'national_rail', 'overground'],
+    naptanId: '910GLIVST'
+  },
+  'london marylebone': {
+    name: 'London Marylebone',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GMARYLBN'
+  },
+  'london paddington': {
+    name: 'London Paddington',
+    zone: 1,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GPADTON'
+  },
+  'london st pancras international': {
+    name: 'London St Pancras International',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GSTPX'
+  },
+  'london st pancras international ll': {
+    name: 'London St Pancras International LL',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GSTPXBOX'
+  },
+  'london victoria': {
+    name: 'London Victoria',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GVICTRIC'
+  },
+  'london waterloo': {
+    name: 'London Waterloo',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GWATRLMN'
+  },
+  'london waterloo east': {
+    name: 'London Waterloo East',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GWLOE'
+  },
+  'loughborough junction': {
+    name: 'Loughborough Junction',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GLBGHJN'
+  },
+  'loughton': {
+    name: 'Loughton',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLULGN'
+  },
+  'lower sydenham': {
+    name: 'Lower Sydenham',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GLSYDNHM'
+  },
+  'maida vale': {
+    name: 'Maida Vale',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUMVL'
+  },
+  'maidenhead': {
+    name: 'Maidenhead',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GMDNHEAD'
+  },
+  'malden manor': {
+    name: 'Malden Manor',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GMALDENM'
+  },
+  'manor house': {
+    name: 'Manor House',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUMRH'
+  },
+  'manor park': {
+    name: 'Manor Park',
+    zone: 3,
+    modes: ['elizabeth'],
+    naptanId: '910GMANRPK'
+  },
+  'mansion house': {
+    name: 'Mansion House',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUMSH'
+  },
+  'marble arch': {
+    name: 'Marble Arch',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUMBA'
+  },
+  'maryland': {
+    name: 'Maryland',
+    zone: 3,
+    modes: ['elizabeth'],
+    naptanId: '910GMRYLAND'
+  },
+  'marylebone': {
+    name: 'Marylebone',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUMYB'
+  },
+  'maze hill': {
+    name: 'Maze Hill',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GMAZEH'
+  },
+  'meridian water': {
+    name: 'Meridian Water',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GMWRWSTN'
+  },
+  'mile end': {
+    name: 'Mile End',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUMED'
+  },
+  'mill hill broadway': {
+    name: 'Mill Hill Broadway',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GMLHB'
+  },
+  'mill hill east': {
+    name: 'Mill Hill East',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUMHL'
+  },
+  'mitcham eastfields': {
+    name: 'Mitcham Eastfields',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GESTFLDS'
+  },
+  'mitcham junction': {
+    name: 'Mitcham Junction',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GMITCHMJ'
+  },
+  'monument': {
+    name: 'Monument',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUMMT'
+  },
+  'moor park': {
+    name: 'Moor Park',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUMPK'
+  },
+  'moorgate rail station': {
+    name: 'Moorgate Rail Station',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GMRGT'
+  },
+  'moorgate underground station': {
+    name: 'Moorgate Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUMGT'
+  },
+  'morden': {
+    name: 'Morden',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUMDN'
+  },
+  'morden south': {
+    name: 'Morden South',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GMORDENS'
+  },
+  'mornington crescent': {
+    name: 'Mornington Crescent',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUMTC'
+  },
+  'mortlake': {
+    name: 'Mortlake',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GMRTLKE'
+  },
+  'motspur park': {
+    name: 'Motspur Park',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GMOTSPRP'
+  },
+  'mottingham': {
+    name: 'Mottingham',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GMOTNGHM'
+  },
+  'mudchute': {
+    name: 'Mudchute',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLMUD'
+  },
+  'neasden': {
+    name: 'Neasden',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUNDN'
+  },
+  'new barnet': {
+    name: 'New Barnet',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GNBARNET'
+  },
+  'new beckenham': {
+    name: 'New Beckenham',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GNBCKNHM'
+  },
+  'new cross ell': {
+    name: 'New Cross ELL',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GNWCRELL'
+  },
+  'new cross gate': {
+    name: 'New Cross Gate',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GNEWXGTE'
+  },
+  'new eltham': {
+    name: 'New Eltham',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GNWELTHM'
+  },
+  'new malden': {
+    name: 'New Malden',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GNEWMLDN'
+  },
+  'new southgate': {
+    name: 'New Southgate',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GNEWSGAT'
+  },
+  'newbury park': {
+    name: 'Newbury Park',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUNBP'
+  },
+  'nine elms': {
+    name: 'Nine Elms',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZNEUGST'
+  },
+  'norbiton': {
+    name: 'Norbiton',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GNRBITON'
+  },
+  'norbury': {
+    name: 'Norbury',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GNORBURY'
+  },
+  'north acton': {
+    name: 'North Acton',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUNAN'
+  },
+  'north dulwich': {
+    name: 'North Dulwich',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GNDULWCH'
+  },
+  'north ealing': {
+    name: 'North Ealing',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUNEN'
+  },
+  'north greenwich': {
+    name: 'North Greenwich',
+    zone: 2,
+    altZone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUNGW'
+  },
+  'north harrow': {
+    name: 'North Harrow',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUNHA'
+  },
+  'north sheen': {
+    name: 'North Sheen',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GNSHEEN'
+  },
+  'north wembley rail station': {
+    name: 'North Wembley Rail Station',
+    zone: 4,
+    modes: ['overground'],
+    naptanId: '910GNWEMBLY'
+  },
+  'north wembley underground station': {
+    name: 'North Wembley Underground Station',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUNWY'
+  },
+  'northfields': {
+    name: 'Northfields',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUNFD'
+  },
+  'northolt': {
+    name: 'Northolt',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUNHT'
+  },
+  'northolt park': {
+    name: 'Northolt Park',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GNTHOLTP'
+  },
+  'northumberland park': {
+    name: 'Northumberland Park',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GNMBRLPK'
+  },
+  'northwick park': {
+    name: 'Northwick Park',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUNKP'
+  },
+  'northwood': {
+    name: 'Northwood',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUNOW'
+  },
+  'northwood hills': {
+    name: 'Northwood Hills',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUNWH'
+  },
+  'norwood junction': {
+    name: 'Norwood Junction',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GNORWDJ'
+  },
+  'notting hill gate': {
+    name: 'Notting Hill Gate',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUNHG'
+  },
+  'nunhead': {
+    name: 'Nunhead',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GNUNHEAD'
+  },
+  'oakleigh park': {
+    name: 'Oakleigh Park',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GOKLGHPK'
+  },
+  'oakwood': {
+    name: 'Oakwood',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUOAK'
+  },
+  'old street rail station': {
+    name: 'Old Street Rail Station',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GOLDST'
+  },
+  'old street underground station': {
+    name: 'Old Street Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUODS'
+  },
+  'orpington': {
+    name: 'Orpington',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GORPNGTN'
+  },
+  'osterley': {
+    name: 'Osterley',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUOSY'
+  },
+  'oval': {
+    name: 'Oval',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUOVL'
+  },
+  'oxford circus': {
+    name: 'Oxford Circus',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUOXC'
+  },
+  'paddington (h&c line)-': {
+    name: 'Paddington (H&C Line)-',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUPAH'
+  },
+  'paddington elizabeth line station': {
+    name: 'Paddington Elizabeth line Station',
+    zone: 1,
+    modes: ['elizabeth'],
+    naptanId: '910GPADTLL'
+  },
+  'paddington underground station': {
+    name: 'Paddington Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUPAC'
+  },
+  'palmers green': {
+    name: 'Palmers Green',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GPALMRSG'
+  },
+  'park royal': {
+    name: 'Park Royal',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUPKR'
+  },
+  'parsons green': {
+    name: 'Parsons Green',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUPSG'
+  },
+  'peckham rye': {
+    name: 'Peckham Rye',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GPCKHMRY'
+  },
+  'penge east': {
+    name: 'Penge East',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GPNGEE'
+  },
+  'penge west': {
+    name: 'Penge West',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GPENEW'
+  },
+  'perivale': {
+    name: 'Perivale',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUPVL'
+  },
+  'petts wood': {
+    name: 'Petts Wood',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GPETSWD'
+  },
+  'piccadilly circus': {
+    name: 'Piccadilly Circus',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUPCC'
+  },
+  'pimlico': {
+    name: 'Pimlico',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUPCO'
+  },
+  'pinner': {
+    name: 'Pinner',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUPNR'
+  },
+  'plaistow': {
+    name: 'Plaistow',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUPLW'
+  },
+  'plumstead': {
+    name: 'Plumstead',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GPLMS'
+  },
+  'ponders end': {
+    name: 'Ponders End',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GPNDRSEN'
+  },
+  'pontoon dock': {
+    name: 'Pontoon Dock',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLPDK'
+  },
+  'poplar': {
+    name: 'Poplar',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLPOP'
+  },
+  'preston road': {
+    name: 'Preston Road',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUPRD'
+  },
+  'prince regent': {
+    name: 'Prince Regent',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLPRE'
+  },
+  'pudding mill lane': {
+    name: 'Pudding Mill Lane',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLPUD'
+  },
+  'purley': {
+    name: 'Purley',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GPURLEY'
+  },
+  'purley oaks': {
+    name: 'Purley Oaks',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GPURLEYO'
+  },
+  'putney': {
+    name: 'Putney',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GPUTNEY'
+  },
+  'putney bridge': {
+    name: 'Putney Bridge',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUPYB'
+  },
+  'queen\'s park': {
+    name: 'Queen\'s Park',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUQPS'
+  },
+  'queens park (london)': {
+    name: 'Queens Park (London)',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GQPRK'
+  },
+  'queens road peckham': {
+    name: 'Queens Road Peckham',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GPCKHMQD'
+  },
+  'queensbury': {
+    name: 'Queensbury',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUQBY'
+  },
+  'queenstown road (battersea)': {
+    name: 'Queenstown Road (Battersea)',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GQTRDBAT'
+  },
+  'queensway': {
+    name: 'Queensway',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUQWY'
+  },
+  'radlett': {
+    name: 'Radlett',
+    zone: 0,
+    modes: ['national_rail'],
+    naptanId: '910GRADLETT'
+  },
+  'rainham (london)': {
+    name: 'Rainham (London)',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GRNHAME'
+  },
+  'ravensbourne': {
+    name: 'Ravensbourne',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GRBRN'
+  },
+  'ravenscourt park': {
+    name: 'Ravenscourt Park',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLURVP'
+  },
+  'rayners lane': {
+    name: 'Rayners Lane',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLURYL'
+  },
+  'raynes park': {
+    name: 'Raynes Park',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GRAYNSPK'
+  },
+  'reading': {
+    name: 'Reading',
+    zone: 0,
+    modes: ['national_rail', 'elizabeth'],
+    naptanId: '910GRDNG4AB'
+  },
+  'rectory road': {
+    name: 'Rectory Road',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GRCTRYRD'
+  },
+  'redbridge': {
+    name: 'Redbridge',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLURBG'
+  },
+  'reedham (surrey)': {
+    name: 'Reedham (Surrey)',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GREEDHMS'
+  },
+  'regent\'s park': {
+    name: 'Regent\'s Park',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLURGP'
+  },
+  'richmond': {
+    name: 'Richmond',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLURMD'
+  },
+  'richmond (london)': {
+    name: 'Richmond (London)',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GRICHMND'
+  },
+  'rickmansworth rail station': {
+    name: 'Rickmansworth Rail Station',
+    zone: 7,
+    modes: ['national_rail'],
+    naptanId: '910GRCKMNSW'
+  },
+  'rickmansworth underground station': {
+    name: 'Rickmansworth Underground Station',
+    zone: 7,
+    modes: ['underground'],
+    naptanId: '940GZZLURKW'
+  },
+  'riddlesdown': {
+    name: 'Riddlesdown',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GRDLSDWN'
+  },
+  'roding valley': {
+    name: 'Roding Valley',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLURVY'
+  },
+  'romford': {
+    name: 'Romford',
+    zone: 6,
+    modes: ['elizabeth', 'national_rail', 'overground'],
+    naptanId: '910GROMFORD'
+  },
+  'rotherhithe': {
+    name: 'Rotherhithe',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GRTHERHI'
+  },
+  'royal albert': {
+    name: 'Royal Albert',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLRAL'
+  },
+  'royal oak': {
+    name: 'Royal Oak',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLURYO'
+  },
+  'royal victoria': {
+    name: 'Royal Victoria',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLRVC'
+  },
+  'ruislip': {
+    name: 'Ruislip',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLURSP'
+  },
+  'ruislip gardens': {
+    name: 'Ruislip Gardens',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLURSG'
+  },
+  'ruislip manor': {
+    name: 'Ruislip Manor',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLURSM'
+  },
+  'russell square': {
+    name: 'Russell Square',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLURSQ'
+  },
+  'sanderstead': {
+    name: 'Sanderstead',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GSDSD'
+  },
+  'selhurst': {
+    name: 'Selhurst',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSELHRST'
+  },
+  'seven kings': {
+    name: 'Seven Kings',
+    zone: 4,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GSVNKNGS'
+  },
+  'seven sisters rail station': {
+    name: 'Seven Sisters Rail Station',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GSEVNSIS'
+  },
+  'seven sisters underground station': {
+    name: 'Seven Sisters Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUSVS'
+  },
+  'shadwell dlr station': {
+    name: 'Shadwell DLR Station',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLSHA'
+  },
+  'shadwell rail station': {
+    name: 'Shadwell Rail Station',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GSHADWEL'
+  },
+  'shenfield': {
+    name: 'Shenfield',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GSHENFLD'
+  },
+  'shepherd\'s bush (central)': {
+    name: 'Shepherd\'s Bush (Central)',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUSBC'
+  },
+  'shepherd\'s bush market': {
+    name: 'Shepherd\'s Bush Market',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUSBM'
+  },
+  'shepherds bush': {
+    name: 'Shepherds Bush',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GSHPDSB'
+  },
+  'shoreditch high street': {
+    name: 'Shoreditch High Street',
+    zone: 1,
+    modes: ['overground'],
+    naptanId: '910GSHRDHST'
+  },
+  'shortlands': {
+    name: 'Shortlands',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSHRTLND'
+  },
+  'sidcup': {
+    name: 'Sidcup',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GSIDCUP'
+  },
+  'silver street': {
+    name: 'Silver Street',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GSIVRST'
+  },
+  'slade green': {
+    name: 'Slade Green',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GSLADEGN'
+  },
+  'sloane square': {
+    name: 'Sloane Square',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUSSQ'
+  },
+  'slough': {
+    name: 'Slough',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GSLOUGH'
+  },
+  'snaresbrook': {
+    name: 'Snaresbrook',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUSNB'
+  },
+  'south acton': {
+    name: 'South Acton',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GSACTON'
+  },
+  'south bermondsey': {
+    name: 'South Bermondsey',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GSBRMNDS'
+  },
+  'south croydon': {
+    name: 'South Croydon',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GSCROYDN'
+  },
+  'south ealing': {
+    name: 'South Ealing',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUSEA'
+  },
+  'south greenford': {
+    name: 'South Greenford',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSGFORD'
+  },
+  'south hampstead': {
+    name: 'South Hampstead',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GSHMPSTD'
+  },
+  'south harrow': {
+    name: 'South Harrow',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUSHH'
+  },
+  'south kensington': {
+    name: 'South Kensington',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUSKS'
+  },
+  'south kenton rail station': {
+    name: 'South Kenton Rail Station',
+    zone: 4,
+    modes: ['overground'],
+    naptanId: '910GSKENTON'
+  },
+  'south kenton underground station': {
+    name: 'South Kenton Underground Station',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUSKT'
+  },
+  'south merton': {
+    name: 'South Merton',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSMERTON'
+  },
+  'south quay': {
+    name: 'South Quay',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLSOQ'
+  },
+  'south ruislip rail station': {
+    name: 'South Ruislip Rail Station',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GSRUISLP'
+  },
+  'south ruislip underground station': {
+    name: 'South Ruislip Underground Station',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUSRP'
+  },
+  'south tottenham': {
+    name: 'South Tottenham',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GSTOTNHM'
+  },
+  'south wimbledon': {
+    name: 'South Wimbledon',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUSWN'
+  },
+  'south woodford': {
+    name: 'South Woodford',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUSWF'
+  },
+  'southall': {
+    name: 'Southall',
+    zone: 4,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GSTHALL'
+  },
+  'southbury': {
+    name: 'Southbury',
+    zone: 5,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GSBURY'
+  },
+  'southfields': {
+    name: 'Southfields',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUSFS'
+  },
+  'southgate': {
+    name: 'Southgate',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUSGT'
+  },
+  'southwark': {
+    name: 'Southwark',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUSWK'
+  },
+  'st helier (london)': {
+    name: 'St Helier (London)',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSHLIER'
+  },
+  'st james street (london)': {
+    name: 'St James Street (London)',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GSTJMSST'
+  },
+  'st johns (london)': {
+    name: 'St Johns (London)',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GSTJOHNS'
+  },
+  'st margarets (london)': {
+    name: 'St Margarets (London)',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSTMGTS'
+  },
+  'st mary cray': {
+    name: 'St Mary Cray',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GSTMRYC'
+  },
+  'st. james\'s park': {
+    name: 'St. James\'s Park',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUSJP'
+  },
+  'st. john\'s wood': {
+    name: 'St. John\'s Wood',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUSJW'
+  },
+  'st. paul\'s': {
+    name: 'St. Paul\'s',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUSPU'
+  },
+  'stamford brook': {
+    name: 'Stamford Brook',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUSFB'
+  },
+  'stamford hill': {
+    name: 'Stamford Hill',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GSTMFDHL'
+  },
+  'stanmore': {
+    name: 'Stanmore',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUSTM'
+  },
+  'star lane': {
+    name: 'Star Lane',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLSTL'
+  },
+  'stepney green': {
+    name: 'Stepney Green',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUSGN'
+  },
+  'stockwell': {
+    name: 'Stockwell',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUSKW'
+  },
+  'stoke newington': {
+    name: 'Stoke Newington',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GSTKNWNG'
+  },
+  'stonebridge park rail station': {
+    name: 'Stonebridge Park Rail Station',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GSTNBGPK'
+  },
+  'stonebridge park underground station': {
+    name: 'Stonebridge Park Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUSGP'
+  },
+  'stoneleigh': {
+    name: 'Stoneleigh',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GSTLEIGH'
+  },
+  'stratford (london)': {
+    name: 'Stratford (London)',
+    zone: 2,
+    altZone: 3,
+    modes: ['elizabeth', 'national_rail', 'overground'],
+    naptanId: '910GSTFD'
+  },
+  'stratford dlr station': {
+    name: 'Stratford DLR Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLSTD'
+  },
+  'stratford high street': {
+    name: 'Stratford High Street',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLSHS'
+  },
+  'stratford international dlr station': {
+    name: 'Stratford International DLR Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLSIT'
+  },
+  'stratford international rail station': {
+    name: 'Stratford International Rail Station',
+    zone: 0,
+    modes: ['national_rail'],
+    naptanId: '910GSTFODOM'
+  },
+  'stratford underground station': {
+    name: 'Stratford Underground Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUSTD'
+  },
+  'strawberry hill': {
+    name: 'Strawberry Hill',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GSTRWBYH'
+  },
+  'streatham': {
+    name: 'Streatham',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GSTRETHM'
+  },
+  'streatham common': {
+    name: 'Streatham Common',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GSTRHCOM'
+  },
+  'streatham hill': {
+    name: 'Streatham Hill',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GSTRHILL'
+  },
+  'sudbury & harrow road': {
+    name: 'Sudbury & Harrow Road',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSDBRYHR'
+  },
+  'sudbury hill': {
+    name: 'Sudbury Hill',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUSUH'
+  },
+  'sudbury hill harrow': {
+    name: 'Sudbury Hill Harrow',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSDBRYHH'
+  },
+  'sudbury town': {
+    name: 'Sudbury Town',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUSUT'
+  },
+  'sundridge park': {
+    name: 'Sundridge Park',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSNDP'
+  },
+  'surbiton': {
+    name: 'Surbiton',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GSURBITN'
+  },
+  'surrey quays': {
+    name: 'Surrey Quays',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GSURREYQ'
+  },
+  'sutton (london)': {
+    name: 'Sutton (London)',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GSUTTON'
+  },
+  'sutton common': {
+    name: 'Sutton Common',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSUTTONC'
+  },
+  'swanley': {
+    name: 'Swanley',
+    zone: 8,
+    modes: ['national_rail'],
+    naptanId: '910GSWLY'
+  },
+  'swiss cottage': {
+    name: 'Swiss Cottage',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUSWC'
+  },
+  'sydenham': {
+    name: 'Sydenham',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GSYDENHM'
+  },
+  'sydenham hill': {
+    name: 'Sydenham Hill',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GSYDNHMH'
+  },
+  'syon lane': {
+    name: 'Syon Lane',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GSYONLA'
+  },
+  'tadworth': {
+    name: 'Tadworth',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GTADWTH'
+  },
+  'taplow': {
+    name: 'Taplow',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GTAPLOW'
+  },
+  'tattenham corner': {
+    name: 'Tattenham Corner',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GTATNHMC'
+  },
+  'teddington': {
+    name: 'Teddington',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GTEDNGTN'
+  },
+  'temple': {
+    name: 'Temple',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUTMP'
+  },
+  'thames ditton': {
+    name: 'Thames Ditton',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GTDITTON'
+  },
+  'theobalds grove': {
+    name: 'Theobalds Grove',
+    zone: 7,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GTHBLDSG'
+  },
+  'theydon bois': {
+    name: 'Theydon Bois',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUTHB'
+  },
+  'thornton heath': {
+    name: 'Thornton Heath',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GTHTH'
+  },
+  'tolworth': {
+    name: 'Tolworth',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GTOLWTH'
+  },
+  'tooting': {
+    name: 'Tooting',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GTOOTING'
+  },
+  'tooting bec': {
+    name: 'Tooting Bec',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUTBC'
+  },
+  'tooting broadway': {
+    name: 'Tooting Broadway',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUTBY'
+  },
+  'tottenham court road elizabeth line station': {
+    name: 'Tottenham Court Road Elizabeth line Station',
+    zone: 1,
+    modes: ['elizabeth'],
+    naptanId: '910GTOTCTRD'
+  },
+  'tottenham court road underground station': {
+    name: 'Tottenham Court Road Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUTCR'
+  },
+  'tottenham hale rail station': {
+    name: 'Tottenham Hale Rail Station',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GTTNHMHL'
+  },
+  'tottenham hale underground station': {
+    name: 'Tottenham Hale Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUTMH'
+  },
+  'totteridge & whetstone': {
+    name: 'Totteridge & Whetstone',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUTAW'
+  },
+  'tower gateway': {
+    name: 'Tower Gateway',
+    zone: 1,
+    modes: ['dlr'],
+    naptanId: '940GZZDLTWG'
+  },
+  'tower hill': {
+    name: 'Tower Hill',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUTWH'
+  },
+  'tufnell park': {
+    name: 'Tufnell Park',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUTFP'
+  },
+  'tulse hill': {
+    name: 'Tulse Hill',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GTULSEH'
+  },
+  'turkey street': {
+    name: 'Turkey Street',
+    zone: 6,
+    modes: ['overground', 'national_rail'],
+    naptanId: '910GTURKYST'
+  },
+  'turnham green': {
+    name: 'Turnham Green',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUTNG'
+  },
+  'turnpike lane': {
+    name: 'Turnpike Lane',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUTPN'
+  },
+  'twickenham': {
+    name: 'Twickenham',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GTWCKNHM'
+  },
+  'twyford': {
+    name: 'Twyford',
+    zone: 0,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GTWYFORD'
+  },
+  'upminster bridge': {
+    name: 'Upminster Bridge',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUUPB'
+  },
+  'upminster rail station': {
+    name: 'Upminster Rail Station',
+    zone: 6,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GUPMNSTR'
+  },
+  'upminster underground station': {
+    name: 'Upminster Underground Station',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUUPM'
+  },
+  'upney': {
+    name: 'Upney',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUUPY'
+  },
+  'upper holloway': {
+    name: 'Upper Holloway',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GUPRHLWY'
+  },
+  'upper warlingham': {
+    name: 'Upper Warlingham',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GUWRLNGH'
+  },
+  'upton park': {
+    name: 'Upton Park',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUUPK'
+  },
+  'uxbridge': {
+    name: 'Uxbridge',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUUXB'
+  },
+  'vauxhall rail station': {
+    name: 'Vauxhall Rail Station',
+    zone: 1,
+    modes: ['national_rail'],
+    naptanId: '910GVAUXHLM'
+  },
+  'vauxhall underground station': {
+    name: 'Vauxhall Underground Station',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUVXL'
+  },
+  'victoria': {
+    name: 'Victoria',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUVIC'
+  },
+  'waddon': {
+    name: 'Waddon',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GWADDON'
+  },
+  'wallington': {
+    name: 'Wallington',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GWALNGTN'
+  },
+  'waltham cross': {
+    name: 'Waltham Cross',
+    zone: 7,
+    modes: ['national_rail'],
+    naptanId: '910GWALHAMX'
+  },
+  'walthamstow central rail station': {
+    name: 'Walthamstow Central Rail Station',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GWLTWCEN'
+  },
+  'walthamstow central underground station': {
+    name: 'Walthamstow Central Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUWWL'
+  },
+  'walthamstow queens road': {
+    name: 'Walthamstow Queens Road',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GWLTHQRD'
+  },
+  'wandsworth common': {
+    name: 'Wandsworth Common',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWANDCMN'
+  },
+  'wandsworth road': {
+    name: 'Wandsworth Road',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GWNDSWRD'
+  },
+  'wandsworth town': {
+    name: 'Wandsworth Town',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GWDWTOWN'
+  },
+  'wanstead': {
+    name: 'Wanstead',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUWSD'
+  },
+  'wanstead park': {
+    name: 'Wanstead Park',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GWNSTDPK'
+  },
+  'wapping': {
+    name: 'Wapping',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GWAPPING'
+  },
+  'warren street': {
+    name: 'Warren Street',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUWRR'
+  },
+  'warwick avenue': {
+    name: 'Warwick Avenue',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWKA'
+  },
+  'waterloo': {
+    name: 'Waterloo',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUWLO'
+  },
+  'watford': {
+    name: 'Watford',
+    zone: 7,
+    modes: ['underground'],
+    naptanId: '940GZZLUWAF'
+  },
+  'watford high street': {
+    name: 'Watford High Street',
+    zone: 8,
+    modes: ['overground'],
+    naptanId: '910GWATFDHS'
+  },
+  'watford junction': {
+    name: 'Watford Junction',
+    zone: 0,
+    modes: ['overground', 'national_rail'],
+    naptanId: '910GWATFJDC'
+  },
+  'welling': {
+    name: 'Welling',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GWELLING'
+  },
+  'wembley central rail station': {
+    name: 'Wembley Central Rail Station',
+    zone: 4,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GWMBY'
+  },
+  'wembley central underground station': {
+    name: 'Wembley Central Underground Station',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUWYC'
+  },
+  'wembley park': {
+    name: 'Wembley Park',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUWYP'
+  },
+  'wembley stadium': {
+    name: 'Wembley Stadium',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GWEMBLSM'
+  },
+  'west acton': {
+    name: 'West Acton',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUWTA'
+  },
+  'west brompton rail station': {
+    name: 'West Brompton Rail Station',
+    zone: 2,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GWBRMPTN'
+  },
+  'west brompton underground station': {
+    name: 'West Brompton Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWBN'
+  },
+  'west croydon': {
+    name: 'West Croydon',
+    zone: 5,
+    modes: ['overground', 'national_rail'],
+    naptanId: '910GWCROYDN'
+  },
+  'west drayton': {
+    name: 'West Drayton',
+    zone: 6,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GWDRYTON'
+  },
+  'west dulwich': {
+    name: 'West Dulwich',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWDULWCH'
+  },
+  'west ealing': {
+    name: 'West Ealing',
+    zone: 3,
+    modes: ['elizabeth', 'national_rail'],
+    naptanId: '910GWEALING'
+  },
+  'west finchley': {
+    name: 'West Finchley',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUWFN'
+  },
+  'west ham dlr station': {
+    name: 'West Ham DLR Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLWHM'
+  },
+  'west ham rail station': {
+    name: 'West Ham Rail Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWHAMHL'
+  },
+  'west ham underground station': {
+    name: 'West Ham Underground Station',
+    zone: 2,
+    altZone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUWHM'
+  },
+  'west hampstead rail station': {
+    name: 'West Hampstead Rail Station',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GWHMDSTD'
+  },
+  'west hampstead thameslink': {
+    name: 'West Hampstead Thameslink',
+    zone: 2,
+    modes: ['national_rail'],
+    naptanId: '910GWHMPSTM'
+  },
+  'west hampstead underground station': {
+    name: 'West Hampstead Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWHP'
+  },
+  'west harrow': {
+    name: 'West Harrow',
+    zone: 5,
+    modes: ['underground'],
+    naptanId: '940GZZLUWHW'
+  },
+  'west india quay': {
+    name: 'West India Quay',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLWIQ'
+  },
+  'west kensington': {
+    name: 'West Kensington',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWKN'
+  },
+  'west norwood': {
+    name: 'West Norwood',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWNORWOD'
+  },
+  'west ruislip rail station': {
+    name: 'West Ruislip Rail Station',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GWRUISLP'
+  },
+  'west ruislip underground station': {
+    name: 'West Ruislip Underground Station',
+    zone: 6,
+    modes: ['underground'],
+    naptanId: '940GZZLUWRP'
+  },
+  'west silvertown': {
+    name: 'West Silvertown',
+    zone: 3,
+    modes: ['dlr'],
+    naptanId: '940GZZDLWSV'
+  },
+  'west sutton': {
+    name: 'West Sutton',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GWSUTTON'
+  },
+  'west wickham': {
+    name: 'West Wickham',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GWWICKHM'
+  },
+  'westbourne park': {
+    name: 'Westbourne Park',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWSP'
+  },
+  'westcombe park': {
+    name: 'Westcombe Park',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWCOMBEP'
+  },
+  'westferry': {
+    name: 'Westferry',
+    zone: 2,
+    modes: ['dlr'],
+    naptanId: '940GZZDLWFE'
+  },
+  'westminster': {
+    name: 'Westminster',
+    zone: 1,
+    modes: ['underground'],
+    naptanId: '940GZZLUWSM'
+  },
+  'white city': {
+    name: 'White City',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWCY'
+  },
+  'white hart lane': {
+    name: 'White Hart Lane',
+    zone: 3,
+    modes: ['national_rail', 'overground'],
+    naptanId: '910GWHHRTLA'
+  },
+  'whitechapel elizabeth line station': {
+    name: 'Whitechapel Elizabeth line Station',
+    zone: 2,
+    modes: ['elizabeth'],
+    naptanId: '910GWCHAPXR'
+  },
+  'whitechapel rail station': {
+    name: 'Whitechapel Rail Station',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GWCHAPEL'
+  },
+  'whitechapel underground station': {
+    name: 'Whitechapel Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWPL'
+  },
+  'whitton': {
+    name: 'Whitton',
+    zone: 5,
+    modes: ['national_rail'],
+    naptanId: '910GWHTTON'
+  },
+  'whyteleafe': {
+    name: 'Whyteleafe',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GWHYTELF'
+  },
+  'whyteleafe south': {
+    name: 'Whyteleafe South',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GWHYTLFS'
+  },
+  'willesden green': {
+    name: 'Willesden Green',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWIG'
+  },
+  'willesden junction rail station': {
+    name: 'Willesden Junction Rail Station',
+    zone: 2,
+    modes: ['overground'],
+    naptanId: '910GWLSDJHL'
+  },
+  'willesden junction underground station': {
+    name: 'Willesden Junction Underground Station',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWJN'
+  },
+  'wimbledon chase': {
+    name: 'Wimbledon Chase',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWIMLCHS'
+  },
+  'wimbledon park': {
+    name: 'Wimbledon Park',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUWIP'
+  },
+  'wimbledon rail station': {
+    name: 'Wimbledon Rail Station',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWIMBLDN'
+  },
+  'wimbledon underground station': {
+    name: 'Wimbledon Underground Station',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUWIM'
+  },
+  'winchmore hill': {
+    name: 'Winchmore Hill',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GWNMHILL'
+  },
+  'wood green': {
+    name: 'Wood Green',
+    zone: 3,
+    modes: ['underground'],
+    naptanId: '940GZZLUWOG'
+  },
+  'wood lane': {
+    name: 'Wood Lane',
+    zone: 2,
+    modes: ['underground'],
+    naptanId: '940GZZLUWLA'
+  },
+  'wood street': {
+    name: 'Wood Street',
+    zone: 4,
+    modes: ['overground'],
+    naptanId: '910GWDST'
+  },
+  'woodford': {
+    name: 'Woodford',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUWOF'
+  },
+  'woodgrange park': {
+    name: 'Woodgrange Park',
+    zone: 3,
+    modes: ['overground'],
+    naptanId: '910GWDGRNPK'
+  },
+  'woodmansterne': {
+    name: 'Woodmansterne',
+    zone: 6,
+    modes: ['national_rail'],
+    naptanId: '910GWDMNSTR'
+  },
+  'woodside park': {
+    name: 'Woodside Park',
+    zone: 4,
+    modes: ['underground'],
+    naptanId: '940GZZLUWOP'
+  },
+  'woolwich': {
+    name: 'Woolwich',
+    zone: 4,
+    modes: ['elizabeth'],
+    naptanId: '910GWOLWXR'
+  },
+  'woolwich arsenal dlr station': {
+    name: 'Woolwich Arsenal DLR Station',
+    zone: 4,
+    modes: ['dlr'],
+    naptanId: '940GZZDLWLA'
+  },
+  'woolwich arsenal rail station': {
+    name: 'Woolwich Arsenal Rail Station',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GWOLWCHA'
+  },
+  'woolwich dockyard': {
+    name: 'Woolwich Dockyard',
+    zone: 3,
+    modes: ['national_rail'],
+    naptanId: '910GWOLWCDY'
+  },
+  'worcester park': {
+    name: 'Worcester Park',
+    zone: 4,
+    modes: ['national_rail'],
+    naptanId: '910GWRCSTRP'
+  },
 };

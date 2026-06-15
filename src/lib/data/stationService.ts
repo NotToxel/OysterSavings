@@ -5,7 +5,7 @@ export interface StationInfo {
   name: string;
   zone: number;
   altZone?: number; // stations on zone boundaries
-  modes: ('underground' | 'national_rail' | 'overground' | 'dlr' | 'elizabeth')[];
+  modes: ('underground' | 'national_rail' | 'overground' | 'dlr' | 'elizabeth' | 'tram')[];
   naptanId?: string; // TfL NaPTAN identifier for API fare lookups
 }
 
@@ -25,22 +25,50 @@ export function normalizeStationName(raw: string): string {
 export function getStationInfo(rawName: string): StationInfo | null {
   const normalized = normalizeStationName(rawName);
 
+  // Detect mode qualifier in rawName
+  const lowerRaw = rawName.toLowerCase();
+  let preferredMode: string | null = null;
+  if (lowerRaw.includes('[london underground]') || lowerRaw.includes('underground station') || lowerRaw.includes('tube')) {
+    preferredMode = 'underground';
+  } else if (lowerRaw.includes('[national rail]') || lowerRaw.includes('rail station')) {
+    preferredMode = 'national_rail';
+  } else if (lowerRaw.includes('[dlr]') || lowerRaw.includes('dlr station')) {
+    preferredMode = 'dlr';
+  } else if (lowerRaw.includes('[elizabeth line]') || lowerRaw.includes('elizabeth line station') || lowerRaw.includes('crossrail')) {
+    preferredMode = 'elizabeth';
+  } else if (lowerRaw.includes('[london overground]') || lowerRaw.includes('overground station')) {
+    preferredMode = 'overground';
+  }
+
+  // Helper to check compatibility
+  const isCompatible = (info: StationInfo) => !preferredMode || info.modes.includes(preferredMode as any);
+
   // Direct lookup
-  if (STATIONS[normalized]) {
+  if (STATIONS[normalized] && isCompatible(STATIONS[normalized])) {
     return STATIONS[normalized];
   }
 
   // try fallbacks if direct normalisation fails
   let key = normalized.replace(/\[.*?\]/g, '').trim();
-  if (STATIONS[key]) return STATIONS[key];
+  if (STATIONS[key] && isCompatible(STATIONS[key])) return STATIONS[key];
 
   key = key.replace(/\(.*?\)/g, '').trim();
-  if (STATIONS[key]) return STATIONS[key];
+  if (STATIONS[key] && isCompatible(STATIONS[key])) return STATIONS[key];
 
+  // Collect all matching stations
+  const matches: { key: string; info: StationInfo }[] = [];
   for (const [k, info] of Object.entries(STATIONS)) {
     if (normalized.includes(k) || k.includes(normalized)) {
-      return info;
+      matches.push({ key: k, info });
     }
+  }
+
+  if (matches.length > 0) {
+    if (preferredMode) {
+      const bestMatch = matches.find(m => m.info.modes.includes(preferredMode as any));
+      if (bestMatch) return bestMatch.info;
+    }
+    return matches[0].info;
   }
 
   return null;
@@ -229,9 +257,6 @@ export function searchStations(query: string, limit: number = 10): StationSearch
   return results.slice(0, limit);
 }
 
-/**
- * Get station info by NaPTAN ID (reverse lookup for API responses)
- */
 export function getStationByNaptan(naptanId: string): { key: string; info: StationInfo } | null {
   for (const [key, info] of Object.entries(STATIONS)) {
     if (info.naptanId === naptanId) return { key, info };
