@@ -6,8 +6,23 @@
     capSummary,
     selectedFareType
   } from '$lib/stores/stores';
-  import { FARE_TYPES } from '$lib/data/fareData';
+  import {
+    FARE_TYPES,
+    isUKBankHoliday,
+    TRAVELCARD_WEEKLY,
+    TRAVELCARD_MONTHLY,
+    TRAVELCARD_ANNUAL,
+    STUDENT_TRAVELCARD_WEEKLY,
+    STUDENT_TRAVELCARD_MONTHLY,
+    STUDENT_TRAVELCARD_ANNUAL,
+    BUS_PASS_WEEKLY,
+    STUDENT_BUS_PASS_WEEKLY
+  } from '$lib/data/fareData';
   import { getZoneColor } from '$lib/data/stationService';
+  import { calculateExpectedFare, calculateFareTypeFare } from '$lib/engine/fareCalculator';
+
+  // State for student rates toggle
+  let forceStudentView = $state(false);
 
   // Helper: Parse time string "HH:MM" to minutes of day
   function timeToMinutes(timeStr: string): number {
@@ -30,17 +45,39 @@
     return 'late_night'; // 22:00 - 04:30
   }
 
-  // Traveler Persona Derivation
-  let persona = $derived.by(() => {
+  // University stations list for student comparison checking
+  const UNIVERSITY_STATIONS = [
+    'warren street', 'euston square', 'euston', 'russell square', 'goodge street',
+    'temple', 'covent garden', 'holborn', 'waterloo', 'london bridge',
+    'south kensington', 'gloucester road',
+    'mile end', 'stepney green',
+    'angel', 'barbican', 'farringdon', 'moorgate',
+    'oxford circus', 'regent\'s park', 'great portland street', 'marylebone', 'baker street',
+    'new cross', 'new cross gate',
+    'cutty sark', 'greenwich',
+    'holloway road', 'highbury & islington'
+  ];
+
+  // Traveler Persona Derivation (multiple simultaneously)
+  let personas = $derived.by(() => {
     const j = $classifiedJourneys;
     if (j.length === 0) {
       return {
-        title: 'Mysterious Traveler',
-        desc: 'Upload your Oyster history to discover your commuting persona and unlock travel statistics.',
-        badge: '❓',
-        class: 'persona-mysterious'
+        active: [{
+          title: 'Mysterious Traveler',
+          desc: 'Upload your Oyster history to discover your commuting persona and unlock travel statistics.',
+          badge: '❓',
+          class: 'persona-mysterious'
+        }],
+        timeOfDayTag: ''
       };
     }
+
+    const total = j.length;
+    let weekendCount = 0;
+    let busCount = 0;
+    let railCount = 0;
+    let elizabethCount = 0;
 
     let earlyMorning = 0;
     let peak = 0;
@@ -48,51 +85,320 @@
     let eveningOffpeak = 0;
     let lateNight = 0;
 
+    const uniqueZones = new Set<number>();
+    const activeDays = new Set<string>();
+
     for (const jj of j) {
+      if (jj.isWeekend) weekendCount++;
+      if (jj.isBus) {
+        busCount++;
+      } else {
+        if (jj.mode === 'national_rail' || jj.mode === 'nr_tube') railCount++;
+        if (jj.mode === 'elizabeth') elizabethCount++;
+
+        if (jj.originZone !== null) uniqueZones.add(jj.originZone);
+        if (jj.destinationZone !== null) uniqueZones.add(jj.destinationZone);
+      }
+
       const period = getTimePeriod(jj.raw.startTime);
       if (period === 'early_morning') earlyMorning++;
       else if (period === 'morning_peak' || period === 'evening_peak') peak++;
       else if (period === 'midday') midday++;
       else if (period === 'evening_offpeak') eveningOffpeak++;
       else if (period === 'late_night') lateNight++;
+
+      if (jj.raw.dateStr) {
+        activeDays.add(jj.raw.dateStr);
+      }
     }
 
-    const total = j.length;
-    const peakPct = (peak / total) * 100;
-    const offPeakPct = 100 - peakPct;
+    const activeList = [];
 
+    // 1. Weekend Wanderer
+    if (total >= 3 && (weekendCount / total) > 0.65) {
+      activeList.push({
+        title: 'Weekend Wanderer',
+        desc: `You do most of your exploring on Saturdays and Sundays. With ${Math.round((weekendCount / total) * 100)}% of your journeys on weekends, you enjoy off-peak weekend adventures.`,
+        badge: '🧭',
+        class: 'persona-weekend'
+      });
+    }
+
+    // 2. Bus Commuter
+    if (total >= 3 && (busCount / total) > 0.60) {
+      activeList.push({
+        title: 'Bus Commuter',
+        desc: `You rely heavily on London's red buses and trams. With ${Math.round((busCount / total) * 100)}% of your journeys on the road network, you make excellent use of the Hopper fare.`,
+        badge: '🚌',
+        class: 'persona-bus'
+      });
+    }
+
+    // 3. Rail Rover
+    const nonBusCount = total - busCount;
+    if (railCount >= 3 && nonBusCount > 0 && (railCount / nonBusCount) > 0.40) {
+      activeList.push({
+        title: 'Rail Rover',
+        desc: `You travel frequently on National Rail lines, utilizing suburban routes and commuter trains alongside the London Underground.`,
+        badge: '🚆',
+        class: 'persona-rail'
+      });
+    }
+
+    // 4. Elizabeth Line Regular
+    if (elizabethCount >= 3 && nonBusCount > 0 && (elizabethCount / nonBusCount) > 0.40) {
+      activeList.push({
+        title: 'Elizabeth Line Regular',
+        desc: `You are a frequent rider of the purple line, enjoying fast cross-London travel on the state-of-the-art Elizabeth Line.`,
+        badge: '💜',
+        class: 'persona-elizabeth'
+      });
+    }
+
+    // 5. Zone Explorer
+    if (uniqueZones.size >= 4) {
+      activeList.push({
+        title: 'Zone Explorer',
+        desc: `You don't stick to one place! Your travel history spans ${uniqueZones.size} distinct zones across the London network.`,
+        badge: '🗺️',
+        class: 'persona-zones'
+      });
+    }
+
+    // 6. Frequent Flyer
+    const avgJourneys = activeDays.size > 0 ? total / activeDays.size : 0;
+    if (activeDays.size >= 2 && avgJourneys >= 4.5) {
+      activeList.push({
+        title: 'Frequent Flyer',
+        desc: `You make multiple trips a day on a regular basis. Averaging ${avgJourneys.toFixed(1)} journeys per active travel day, you keep on the move.`,
+        badge: '⚡',
+        class: 'persona-frequent'
+      });
+    }
+
+    // 7. Cap Hunter
+    const totalDays = $dailyCapResults.length;
+    const cappedDaysCount = $dailyCapResults.filter(d => d.capHit).length;
+    if (totalDays >= 3 && (cappedDaysCount / totalDays) > 0.50) {
+      activeList.push({
+        title: 'Cap Hunter',
+        desc: `You know how to get the most value out of your travel. Over ${Math.round((cappedDaysCount / totalDays) * 100)}% of your travel days reached a daily cap, giving you free journeys.`,
+        badge: '🎯',
+        class: 'persona-capper'
+      });
+    }
+
+    // Dominant time of day tag
+    const peakPct = (peak / total) * 100;
     const maxVal = Math.max(earlyMorning, peak, midday, eveningOffpeak + lateNight);
 
+    let timeOfDayTag = '';
+    let timeOfDayPersona = { title: '', desc: '', badge: '', class: '' };
+
     if (maxVal === peak) {
-      return {
+      timeOfDayTag = 'Rush Hour Commuter';
+      timeOfDayPersona = {
         title: 'Rush Hour Commuter',
         desc: `You brave the peak crowds to keep London running. With ${Math.round(peakPct)}% of your journeys during morning or evening peak, your routines strongly mirror the standard 9-to-5 commute.`,
         badge: '🚇',
         class: 'persona-commuter'
       };
-    }
-    if (maxVal === earlyMorning) {
-      return {
+    } else if (maxVal === earlyMorning) {
+      timeOfDayTag = 'Early Bird';
+      timeOfDayPersona = {
         title: 'Early Bird',
         desc: `You are on the platforms before London fully wakes up. With ${earlyMorning} early starts, you benefit from off-peak rates and quiet train services.`,
         badge: '🌅',
         class: 'persona-early'
       };
-    }
-    if (maxVal === midday) {
-      return {
+    } else if (maxVal === midday) {
+      timeOfDayTag = 'Mid-Day Explorer';
+      timeOfDayPersona = {
         title: 'Mid-Day Explorer',
         desc: `You take travel in your stride. With ${midday} daytime off-peak journeys, you enjoy cheaper fares, less crowded carriages, and flexible travel hours.`,
         badge: '🌍',
         class: 'persona-explorer'
       };
+    } else {
+      timeOfDayTag = 'Night Owl';
+      timeOfDayPersona = {
+        title: 'Night Owl',
+        desc: `You navigate London after dark. With ${eveningOffpeak + lateNight} late evening and night journeys, you rely on the Night Tube, buses, and off-peak rail services.`,
+        badge: '🦉',
+        class: 'persona-owl'
+      };
     }
+
+    if (activeList.length === 0) {
+      activeList.push(timeOfDayPersona);
+    }
+
     return {
-      title: 'Night Owl',
-      desc: `You navigate London after dark. With ${eveningOffpeak + lateNight} late evening and night journeys, you rely on the Night Tube, buses, and off-peak rail services.`,
-      badge: '🦉',
-      class: 'persona-owl'
+      active: activeList,
+      timeOfDayTag
     };
+  });
+
+  // Check if they commute to university stations
+  let hasUniversityCommute = $derived.by(() => {
+    const j = $classifiedJourneys;
+    if (j.length === 0) return false;
+    let count = 0;
+    for (const jj of j) {
+      if (jj.isBus || !jj.origin || !jj.destination) continue;
+      const o = jj.origin.toLowerCase();
+      const d = jj.destination.toLowerCase();
+      const originMatch = UNIVERSITY_STATIONS.some(st => o.includes(st));
+      const destMatch = UNIVERSITY_STATIONS.some(st => d.includes(st));
+      if (originMatch || destMatch) {
+        count++;
+      }
+    }
+    return count >= 3;
+  });
+
+  // Derived saving tips
+  let savingTips = $derived.by(() => {
+    const j = $classifiedJourneys;
+    if (j.length === 0) return [];
+
+    const tips = [];
+
+    // 1. Near-peak touch-ins
+    let nearPeakCount = 0;
+    let nearPeakSavings = 0;
+
+    for (const jj of j) {
+      if (jj.isBus || !jj.isPeak || jj.raw.charge <= 0) continue;
+
+      const dayOfWeek = jj.dayOfWeek;
+      const date = jj.raw.date;
+      const startTime = jj.raw.startTime;
+
+      if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isUKBankHoliday(date)) {
+        const mins = timeToMinutes(startTime);
+        const isNearBoundary = (mins >= 390 && mins <= 404) || // 06:30-06:44
+                               (mins >= 556 && mins <= 570) || // 09:16-09:30
+                               (mins >= 960 && mins <= 974) || // 16:00-16:14
+                               (mins >= 1126 && mins <= 1140); // 18:46-19:00
+
+        if (isNearBoundary) {
+          nearPeakCount++;
+          const currentConcession = calculateFareTypeFare(jj, $selectedFareType);
+          const offPeakConcession = calculateFareTypeFare({ ...jj, isPeak: false }, $selectedFareType);
+          const saving = Math.max(0, currentConcession - offPeakConcession);
+          nearPeakSavings += saving;
+        }
+      }
+    }
+
+    if (nearPeakCount > 0 && nearPeakSavings > 0) {
+      tips.push({
+        id: 'near_peak',
+        title: 'Shift Near-Peak Journeys',
+        desc: `You touched in ${nearPeakCount} times within 15 minutes of a peak off-peak boundary. Shifting these journeys by just 15 minutes would have saved you approximately £${nearPeakSavings.toFixed(2)}.`,
+        saving: nearPeakSavings,
+        severity: nearPeakSavings > 15 ? 'high' : (nearPeakSavings > 5 ? 'medium' : 'low'),
+        badge: '⏰'
+      });
+    }
+
+    // 2. Travelcard vs PAYG recommendation
+    const weeks = $weeklyCapResults?.length ?? 0;
+    const totalSpend = j.reduce((s, jj) => s + jj.raw.charge, 0);
+    const profile = travelProfile;
+    const zone = profile ? profile.topZone : 'Z1-2';
+
+    const isStudentRate = $selectedFareType === 'student' || forceStudentView;
+    const weeklyRate = isStudentRate ? (STUDENT_TRAVELCARD_WEEKLY[zone] || 0) : (TRAVELCARD_WEEKLY[zone] || 0);
+    const monthlyRate = isStudentRate ? (STUDENT_TRAVELCARD_MONTHLY[zone] || 0) : (TRAVELCARD_MONTHLY[zone] || 0);
+
+    if (weeks > 0 && weeklyRate > 0) {
+      let totalWeeklyTcCost = 0;
+      let totalPaygSpend = 0;
+
+      for (const w of $weeklyCapResults) {
+        const weekZone = w.maxZoneRange || zone;
+        const rate = isStudentRate ? (STUDENT_TRAVELCARD_WEEKLY[weekZone] || 0) : (TRAVELCARD_WEEKLY[weekZone] || 0);
+        totalWeeklyTcCost += rate;
+        totalPaygSpend += w.totalSpend;
+      }
+
+      const tcSaving = totalPaygSpend - totalWeeklyTcCost;
+      if (tcSaving > 0) {
+        tips.push({
+          id: 'travelcard',
+          title: `Get a Weekly Travelcard (${zone})`,
+          desc: `Your weekly travel patterns are dense enough that a Weekly Travelcard for ${zone} would have saved you £${tcSaving.toFixed(2)} over ${weeks} weeks compared to pay-as-you-go.`,
+          saving: tcSaving,
+          severity: tcSaving > 20 ? 'high' : 'medium',
+          badge: '🎫'
+        });
+      }
+
+      if (weeks >= 4 && monthlyRate > 0) {
+        const months = weeks / 4.33;
+        const totalMonthlyTcCost = monthlyRate * Math.ceil(months);
+        const monthlyTcSaving = totalSpend - totalMonthlyTcCost;
+
+        if (monthlyTcSaving > 0) {
+          tips.push({
+            id: 'travelcard_monthly',
+            title: `Get a Monthly Travelcard (${zone})`,
+            desc: `Based on your ${weeks} weeks of history, buying a Monthly Travelcard for ${zone} would have saved you £${monthlyTcSaving.toFixed(2)} in total.`,
+            saving: monthlyTcSaving,
+            severity: monthlyTcSaving > 30 ? 'high' : 'medium',
+            badge: '💳'
+          });
+        }
+      }
+    }
+
+    // 3. Bus Pass candidate
+    let totalBusSpend = 0;
+    for (const jj of j) {
+      if (jj.isBus) {
+        totalBusSpend += jj.raw.charge;
+      }
+    }
+    const weeklyBusSpend = weeks > 0 ? totalBusSpend / weeks : totalBusSpend;
+    const busPassRate = isStudentRate ? STUDENT_BUS_PASS_WEEKLY : BUS_PASS_WEEKLY;
+
+    if (weeklyBusSpend > busPassRate) {
+      const busSaving = (weeklyBusSpend - busPassRate) * weeks;
+      tips.push({
+        id: 'bus_pass',
+        title: 'Switch to a Bus & Tram Pass',
+        desc: `You spend an average of £${weeklyBusSpend.toFixed(2)} per week on buses. A Weekly Bus & Tram Pass (${isStudentRate ? 'Student rate: ' : ''}£${busPassRate.toFixed(2)}) would save you £${busSaving.toFixed(2)} over your travel period.`,
+        saving: busSaving,
+        severity: busSaving > 10 ? 'high' : 'medium',
+        badge: '🚌'
+      });
+    }
+
+    // 4. Pink Reader Tip
+    let hasOuterRailJourney = false;
+    for (const jj of j) {
+      if (!jj.isBus && (jj.mode === 'national_rail' || jj.mode === 'overground' || jj.mode === 'nr_tube')) {
+        if (jj.originZone !== null && jj.destinationZone !== null && jj.originZone >= 2 && jj.destinationZone >= 2) {
+          hasOuterRailJourney = true;
+          break;
+        }
+      }
+    }
+
+    if (hasOuterRailJourney) {
+      tips.push({
+        id: 'pink_reader',
+        title: 'Use Pink Card Readers',
+        desc: `We noticed you make journeys between outer zones (avoiding Zone 1). Remember to touch the pink card readers when transferring trains at key interchange stations (like Clapham Junction, Stratford, or Canada Water) to pay a significantly cheaper fare!`,
+        saving: 0,
+        severity: 'low',
+        badge: '🔴'
+      });
+    }
+
+    return tips.sort((a, b) => b.saving - a.saving);
   });
 
   // Top 5 Most Common Journeys
@@ -354,15 +660,30 @@
       <div class="column">
         
         <!-- Traveler Persona Card -->
-        <div class="glass-card persona-card {persona.class}">
-          <div class="persona-header">
-            <span class="persona-badge">{persona.badge}</span>
-            <div class="persona-text-col">
-              <span class="persona-tag">Your Persona</span>
-              <h2 class="persona-title">{persona.title}</h2>
+        <div class="glass-card personas-container-card">
+          <div class="personas-header-bar">
+            <div class="p-header-title">
+              <span class="p-header-tag">Commuter Profile</span>
+              <h3 class="card-title" style="margin: 0;">👤 Your Traveler Personas</h3>
             </div>
+            {#if personas.timeOfDayTag}
+              <span class="tag-badge time-tag">{personas.timeOfDayTag}</span>
+            {/if}
           </div>
-          <p class="persona-desc">{persona.desc}</p>
+          
+          <div class="personas-stack">
+            {#each personas.active as p}
+              <div class="persona-item-row {p.class}">
+                <div class="p-badge-col">
+                  <span class="p-item-badge">{p.badge}</span>
+                </div>
+                <div class="p-text-col">
+                  <h4 class="p-item-title">{p.title}</h4>
+                  <p class="p-item-desc">{p.desc}</p>
+                </div>
+              </div>
+            {/each}
+          </div>
         </div>
 
         <!-- Travel Profile Card -->
@@ -421,6 +742,95 @@
               </div>
             {/each}
           </div>
+        </div>
+
+        <!-- Potential Savings Card -->
+        <div class="glass-card savings-tips-card">
+          <h3 class="card-title">💡 Potential Savings</h3>
+          
+          {#if savingTips.length === 0}
+            <div class="no-tips">
+              <span class="tip-success-icon">✨</span>
+              <p>Your travel patterns are already highly optimized! No additional savings found.</p>
+            </div>
+          {:else}
+            <div class="tips-stack">
+              {#each savingTips as tip}
+                <div class="tip-item-row severity-{tip.severity}">
+                  <span class="tip-badge">{tip.badge}</span>
+                  <div class="tip-content">
+                    <h4 class="tip-title">{tip.title}</h4>
+                    <p class="tip-desc">{tip.desc}</p>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+
+          {#if hasUniversityCommute}
+            <div class="student-prompt-section">
+              <div class="student-prompt-header">
+                <span class="student-icon">🎓</span>
+                <div class="student-text">
+                  <span class="student-title">Are you a Student?</span>
+                  <span class="student-sub">We detected regular travel to university campuses.</span>
+                </div>
+                <button class="student-btn {forceStudentView ? 'active' : ''}" onclick={() => forceStudentView = !forceStudentView}>
+                  {forceStudentView ? 'Hide Student Rates' : 'Compare Student Rates'}
+                </button>
+              </div>
+
+              {#if forceStudentView}
+                <div class="student-comparison-table-container">
+                  <table class="student-table">
+                    <thead>
+                      <tr>
+                        <th>Ticket Option ({travelProfile.topZone})</th>
+                        <th>Rate</th>
+                        <th>Simulated Cost</th>
+                        <th>Saving vs PAYG</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Historical PAYG Spend</td>
+                        <td>—</td>
+                        <td>£{travelProfile.totalSpend.toFixed(2)}</td>
+                        <td>—</td>
+                      </tr>
+                      {#if STUDENT_TRAVELCARD_WEEKLY[travelProfile.topZone]}
+                        {@const weeks = travelProfile.weeks || 1}
+                        {@const weeklyCost = STUDENT_TRAVELCARD_WEEKLY[travelProfile.topZone] * weeks}
+                        {@const saving = travelProfile.totalSpend - weeklyCost}
+                        <tr>
+                          <td>Student Weekly Travelcard</td>
+                          <td>£{STUDENT_TRAVELCARD_WEEKLY[travelProfile.topZone].toFixed(2)}/wk</td>
+                          <td>£{weeklyCost.toFixed(2)}</td>
+                          <td class={saving > 0 ? 'text-green' : 'text-red'}>
+                            {saving > 0 ? `Saved £${saving.toFixed(2)}` : `Lost £${Math.abs(saving).toFixed(2)}`}
+                          </td>
+                        </tr>
+                      {/if}
+                      {#if STUDENT_TRAVELCARD_MONTHLY[travelProfile.topZone]}
+                        {@const months = Math.ceil(travelProfile.weeks / 4.33) || 1}
+                        {@const monthlyCost = STUDENT_TRAVELCARD_MONTHLY[travelProfile.topZone] * months}
+                        {@const saving = travelProfile.totalSpend - monthlyCost}
+                        <tr>
+                          <td>Student Monthly Travelcard</td>
+                          <td>£{STUDENT_TRAVELCARD_MONTHLY[travelProfile.topZone].toFixed(2)}/mo</td>
+                          <td>£{monthlyCost.toFixed(2)}</td>
+                          <td class={saving > 0 ? 'text-green' : 'text-red'}>
+                            {saving > 0 ? `Saved £${saving.toFixed(2)}` : `Lost £${Math.abs(saving).toFixed(2)}`}
+                          </td>
+                        </tr>
+                      {/if}
+                    </tbody>
+                  </table>
+                  <p class="student-disclaimer">Prices exclude any Oyster card/photocard application fees. Boundary fares may apply outside {travelProfile.topZone}.</p>
+                </div>
+              {/if}
+            </div>
+          {/if}
         </div>
 
       </div>
@@ -576,83 +986,319 @@
     margin: 0 0 1rem 0;
   }
 
-  /* Persona Card */
-  .persona-card {
+  /* Persona Card Containers and Headers */
+  .personas-container-card {
     padding: 1.5rem;
-    border-radius: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .persona-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .persona-badge {
-    font-size: 2.25rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  .persona-text-col {
     display: flex;
     flex-direction: column;
+    gap: 1.25rem;
   }
-
-  .persona-tag {
+  .personas-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .p-header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .p-header-tag {
     font-size: 0.7rem;
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: var(--color-text-muted);
   }
-
-  .persona-title {
-    font-size: 1.25rem;
-    font-weight: 800;
+  .tag-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.725rem;
+    font-weight: 700;
+  }
+  .time-tag {
+    background: rgba(0, 159, 227, 0.1);
+    border: 1px solid rgba(0, 159, 227, 0.3);
+    color: var(--color-oyster-blue);
+  }
+  .personas-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .persona-item-row {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.01);
+  }
+  .p-badge-col {
+    flex-shrink: 0;
+  }
+  .p-item-badge {
+    font-size: 1.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  .p-text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .p-item-title {
+    font-size: 0.95rem;
+    font-weight: 700;
     margin: 0;
   }
-
-  .persona-desc {
-    font-size: 0.85rem;
-    line-height: 1.6;
+  .p-item-desc {
+    font-size: 0.8rem;
+    line-height: 1.4;
     margin: 0;
     color: var(--color-text-secondary);
   }
 
-  /* Persona Color Variants */
+  /* Persona Background and Color Variants */
   .persona-commuter {
     background: linear-gradient(135deg, rgba(0, 159, 227, 0.12), rgba(0, 159, 227, 0.03));
     border-color: rgba(0, 159, 227, 0.3);
   }
-  .persona-commuter .persona-title { color: var(--color-oyster-blue); }
+  .persona-commuter .p-item-title { color: var(--color-oyster-blue); }
 
   .persona-early {
     background: linear-gradient(135deg, rgba(239, 123, 16, 0.12), rgba(239, 123, 16, 0.03));
     border-color: rgba(239, 123, 16, 0.3);
   }
-  .persona-early .persona-title { color: var(--color-overground-orange); }
+  .persona-early .p-item-title { color: var(--color-overground-orange); }
 
   .persona-explorer {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.03));
     border-color: rgba(16, 185, 129, 0.3);
   }
-  .persona-explorer .persona-title { color: var(--color-success); }
+  .persona-explorer .p-item-title { color: var(--color-success); }
 
   .persona-owl {
     background: linear-gradient(135deg, rgba(105, 80, 161, 0.12), rgba(105, 80, 161, 0.03));
     border-color: rgba(105, 80, 161, 0.3);
   }
-  .persona-owl .persona-title { color: var(--color-elizabeth-light); }
+  .persona-owl .p-item-title { color: var(--color-elizabeth-light); }
+
+  .persona-weekend {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03));
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  .persona-weekend .p-item-title { color: #fbbf24; }
+
+  .persona-bus {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.03));
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  .persona-bus .p-item-title { color: #f87171; }
+
+  .persona-rail {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0.03));
+    border-color: rgba(56, 189, 248, 0.3);
+  }
+  .persona-rail .p-item-title { color: #38bdf8; }
+
+  .persona-elizabeth {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(168, 85, 247, 0.03));
+    border-color: rgba(168, 85, 247, 0.3);
+  }
+  .persona-elizabeth .p-item-title { color: #c084fc; }
+
+  .persona-zones {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.03));
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+  .persona-zones .p-item-title { color: #4ade80; }
+
+  .persona-frequent {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.03));
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+  .persona-frequent .p-item-title { color: #818cf8; }
+
+  .persona-capper {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(234, 179, 8, 0.03));
+    border-color: rgba(234, 179, 8, 0.3);
+  }
+  .persona-capper .p-item-title { color: #facc15; }
+
+  /* Savings Tips Card */
+  .savings-tips-card {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .no-tips {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(16, 185, 129, 0.04);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 12px;
+  }
+  .tip-success-icon {
+    font-size: 1.25rem;
+  }
+  .no-tips p {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+  }
+  .tips-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .tip-item-row {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.875rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.01);
+  }
+  .tip-item-row.severity-high {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.01));
+  }
+  .tip-item-row.severity-medium {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.01));
+  }
+  .tip-item-row.severity-low {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .tip-badge {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .tip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .tip-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  .tip-desc {
+    font-size: 0.775rem;
+    line-height: 1.4;
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+  
+  /* Student Section */
+  .student-prompt-section {
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .student-prompt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .student-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .student-text {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  .student-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .student-sub {
+    font-size: 0.725rem;
+    color: var(--color-text-muted);
+  }
+  .student-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .student-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  .student-btn.active {
+    background: var(--color-oyster-blue);
+    border-color: var(--color-oyster-blue);
+    color: white;
+  }
+  
+  /* Student Comparison Table */
+  .student-comparison-table-container {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .student-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+  }
+  .student-table th {
+    text-align: left;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .student-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .student-table tr:last-child td {
+    border-bottom: none;
+  }
+  .text-green {
+    color: var(--color-success);
+    font-weight: 600;
+  }
+  .text-red {
+    color: var(--color-danger);
+    font-weight: 600;
+  }
+  .student-disclaimer {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.3;
+  }
 
   /* Stats Card */
   .stats-card-large {

@@ -442,6 +442,7 @@ export function detectActiveDiscount(journeys: ClassifiedJourney[]): FareType {
 
   let bestFareType: FareType = 'none';
   let bestMatchRate = 0;
+  const matchRates = new Map<FareType, number>();
 
   for (const fareType of discountFareTypes) {
     const baseFares = calculateAllFares(journeys, fareType);
@@ -471,9 +472,41 @@ export function detectActiveDiscount(journeys: ClassifiedJourney[]): FareType {
 
     if (eligibleJourneysCount > 0 && fareTypeMatches > standardMatches && standardMatches === 0) {
       const matchRate = fareTypeMatches / eligibleJourneysCount;
+      matchRates.set(fareType, matchRate);
       if (matchRate >= 0.90 && matchRate > bestMatchRate) {
         bestMatchRate = matchRate;
         bestFareType = fareType;
+      }
+    }
+  }
+
+  // Disambiguation for Disabled Persons Railcard vs Standard Railcard
+  if (bestFareType === 'disabled') {
+    // 1. Check if they paid standard peak fare on any peak journey
+    let paidStandardPeak = false;
+    const standardFares = calculateAllFares(journeys, 'none');
+    for (const f of standardFares) {
+      if (f.journey.isBus || f.journey.isCapHit || f.actualCharge <= 0 || f.expectedFare <= 0) continue;
+      if (f.journey.origin && f.journey.destination && f.journey.origin === f.journey.destination) continue;
+      if (f.actualCharge === 4.65) continue;
+
+      if (f.journey.isPeak) {
+        if (Math.abs(f.actualCharge - f.expectedFare) < 0.05) {
+          paidStandardPeak = true;
+          break;
+        }
+      }
+    }
+
+    const railcardRate = matchRates.get('railcard') || 0;
+    const disabledRate = matchRates.get('disabled') || 0;
+
+    // 2. If they paid standard peak, or if disabled doesn't beat railcard by at least 5% (0.05)
+    if (paidStandardPeak || (disabledRate - railcardRate < 0.05)) {
+      if (railcardRate >= 0.90) {
+        bestFareType = 'railcard';
+      } else {
+        bestFareType = 'none';
       }
     }
   }
