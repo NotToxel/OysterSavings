@@ -1675,6 +1675,28 @@
     result.setMonth(result.getMonth() + months);
     return result;
   }
+
+  function setPlanningPeriod(preset: '1w' | '1m' | '3m' | '6m' | '1y') {
+    const start = parseLocalDate(planStart) || new Date();
+    let end = new Date(start);
+    if (preset === '1w') {
+      end.setDate(start.getDate() + 6);
+    } else if (preset === '1m') {
+      end = addMonths(start, 1);
+      end.setDate(end.getDate() - 1);
+    } else if (preset === '3m') {
+      end = addMonths(start, 3);
+      end.setDate(end.getDate() - 1);
+    } else if (preset === '6m') {
+      end = addMonths(start, 6);
+      end.setDate(end.getDate() - 1);
+    } else if (preset === '1y') {
+      end = addMonths(start, 12);
+      end.setDate(end.getDate() - 1);
+    }
+    planEnd = formatInputDate(end);
+    clampDates();
+  }
 </script>
 
 {#if showTransition}
@@ -1760,6 +1782,13 @@
             min={minDateStr}
             max={maxDateStr}
           />
+          <div class="preset-buttons">
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1w')}>+1W</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1m')}>+1M</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('3m')}>+3M</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('6m')}>+6M</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1y')}>+1Y</button>
+          </div>
         </div>
       </div>
 
@@ -2149,6 +2178,20 @@
                     {/each}
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Odd-Period Travelcard Explainer -->
+              <div class="odd-period-explainer" style="margin-top: 1.25rem; padding: 0.85rem 1.15rem; background: rgba(180, 83, 9, 0.06); border: 1px solid rgba(180, 83, 9, 0.2); border-radius: 10px; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.5;">
+                <div style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                  <span style="font-size: 1rem; color: #b45309;">ℹ️</span>
+                  <strong style="color: var(--color-text-primary); font-weight: 600;">What is an Odd-Period Travelcard?</strong>
+                </div>
+                <p style="margin: 0;">
+                  TfL allows purchasing Travelcards for any custom duration between 1 month and 1 year (e.g., 1 month + 10 days). It is priced at the standard monthly rate for the whole months, plus a daily rate of 1/30th of the monthly cost for each additional day, rounded up to the nearest 10p.
+                </p>
+                <p style="margin: 0.45rem 0 0 0; font-size: 0.75rem; color: var(--color-text-muted);">
+                  OysterSavings automatically compares this custom odd-period ticket against alternative weekly combinations and PAYG options to ensure you get the absolute cheapest projection.
+                </p>
               </div>
             {/if}
           </div>
@@ -4602,5 +4645,40 @@
       transform: scale(1.05);
       opacity: 0.95;
     }
+  }
+
+  /* Preset Date Buttons */
+  .preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.65rem;
+    width: 100%;
+  }
+
+  .btn-preset {
+    flex: 1 0 calc(20% - 0.35rem);
+    min-width: 42px;
+    padding: 0.35rem 0.25rem;
+    border-radius: 6px;
+    font-size: 0.675rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-preset:hover {
+    color: white;
+    background: rgba(0, 159, 227, 0.1);
+    border-color: rgba(0, 159, 227, 0.4);
+    box-shadow: 0 0 10px rgba(0, 159, 227, 0.15);
+  }
+
+  .btn-preset:active {
+    transform: scale(0.95);
   }
 </style>

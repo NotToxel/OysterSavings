@@ -142,6 +142,20 @@
       `,
     },
     {
+      id: "odd-period-travelcard",
+      category: "capping",
+      question: "What is an Odd-Period Travelcard and how is it priced?",
+      answerHtml: `
+        <p>An <strong>Odd-Period Travelcard</strong> is a ticket valid for any custom duration of your choice between <strong>1 month and 1 year</strong> (for example, 1 month and 12 days, or 3 months and 4 days).</p>
+        <p>TfL prices custom odd-period Travelcards using a specific formula:</p>
+        <ul>
+          <li><strong>Whole Months:</strong> Charged as a multiple of the standard monthly Travelcard rate.</li>
+          <li><strong>Extra Days:</strong> Charged at a pro-rata rate of <strong>1/30th of the monthly Travelcard cost per day</strong>, rounded up to the nearest 10p.</li>
+        </ul>
+        <p><strong>Is it always the best option?</strong> Not necessarily. If you have many extra days (e.g., 26 extra days), it can sometimes be cheaper to buy another full monthly Travelcard or cover the remaining period using weekly Travelcards or Pay-As-You-Go. OysterSavings automatically performs these multi-product combinations in the <strong>Planner</strong> tab to find the absolute cheapest ticket configuration for your exact travel dates.</p>
+      `,
+    },
+    {
       id: "pink-card-readers",
       category: "capping",
       question: "What are Pink Card Readers and when should I tap them?",
