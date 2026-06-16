@@ -16,6 +16,8 @@
   let isDragOver = $state(false);
   let isProcessing = $state(false);
   let filterSummary = $state<ReturnType<typeof getFilterSummary> | null>(null);
+  let progressText = $state('Preparing...');
+  let progressPercent = $state(0);
 
   function handleDragOver(e: DragEvent) {
     e.preventDefault();
@@ -50,12 +52,22 @@
 
     isProcessing = true;
     $fileName = file.name;
+    progressText = 'Reading CSV file...';
+    progressPercent = 10;
 
     try {
       const content = await file.text();
+      progressText = 'Analyzing file structure...';
+      progressPercent = 20;
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       const parseResult = parseCSV(content);
       $rawJourneys = parseResult.journeys;
       $parseErrors = parseResult.errors;
+
+      progressText = 'Filtering invalid and empty rows...';
+      progressPercent = 35;
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Filter
       const filtered = filterJourneys(parseResult.journeys);
@@ -63,12 +75,27 @@
       $excludedJourneys = filtered.excluded;
       filterSummary = getFilterSummary(filtered);
 
+      progressText = 'Classifying routes, stations, and modes...';
+      progressPercent = 50;
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       // Classify
       const classified = classifyAll(filtered.valid);
       $classifiedJourneys = classified;
 
+      progressText = 'Establishing connection to TfL API...';
+      progressPercent = 60;
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Pre-fetch live fares
-      await preFetchLiveFaresForJourneys(classified);
+      await preFetchLiveFaresForJourneys(classified, (current, total) => {
+        progressText = `Fetching live TfL fares: route ${current} of ${total}...`;
+        progressPercent = Math.round(60 + (current / total) * 30);
+      });
+
+      progressText = 'Calculating fares and daily/weekly caps...';
+      progressPercent = 92;
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Calculate fares
       const fares = calculateAllFares(classified);
@@ -81,10 +108,16 @@
       $weeklyCapResults = weeklyCaps;
       $capSummary = getCapSummary(dailyCaps, weeklyCaps);
 
+      progressText = 'Detecting recurring commute patterns...';
+      progressPercent = 98;
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Detect commute patterns
       const patterns = detectCommutePatterns(classified);
       $detectedPatterns = patterns;
 
+      progressText = 'Analysis complete!';
+      progressPercent = 100;
       $fileLoaded = true;
 
       // Auto-navigate to analysis
@@ -120,7 +153,11 @@
   {#if isProcessing}
     <div class="upload-processing">
       <div class="spinner"></div>
-      <p class="upload-text">Processing your travel history...</p>
+      <p class="upload-text">{progressText}</p>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: {progressPercent}%"></div>
+      </div>
+      <span class="progress-percent">{progressPercent}%</span>
     </div>
   {:else}
     <div class="upload-icon">
@@ -252,5 +289,28 @@
     padding: 1rem;
     font-size: 0.85rem;
     color: #f87171;
+  }
+
+  .progress-bar-container {
+    width: 240px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-oyster-blue), #6f4390);
+    border-radius: 9999px;
+    transition: width 0.2s ease-out;
+  }
+
+  .progress-percent {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-family: monospace;
   }
 </style>

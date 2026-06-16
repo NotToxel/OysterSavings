@@ -269,7 +269,7 @@ async function fetchFromTfl(
   fromNaptan: string,
   toNaptan: string
 ): Promise<StationFare | { isError: true; reason: 'offline' | 'timeout' | 'no_route' | 'api_error' }> {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.onLine === false) {
     return { isError: true, reason: 'offline' };
   }
 
@@ -331,7 +331,7 @@ async function fetchFromTfl(
     } catch (err: any) {
       if (err.name === 'AbortError') {
         lastErrorReason = 'timeout';
-      } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      } else if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.onLine === false) {
         lastErrorReason = 'offline';
       } else {
         lastErrorReason = 'api_error';
@@ -467,7 +467,10 @@ export function clearFareCache(): void {
 /**
  * Pre-fetch live fares from the TfL API for all unique journeys resolved in the upload
  */
-export async function preFetchLiveFaresForJourneys(journeys: ClassifiedJourney[]): Promise<void> {
+export async function preFetchLiveFaresForJourneys(
+  journeys: ClassifiedJourney[],
+  onProgress?: (current: number, total: number) => void
+): Promise<void> {
   const uniquePairs = new Map<string, { from: string; to: string; mode: string }>();
 
   for (const j of journeys) {
@@ -479,9 +482,15 @@ export async function preFetchLiveFaresForJourneys(journeys: ClassifiedJourney[]
     }
   }
 
-  if (uniquePairs.size === 0) return;
+  if (uniquePairs.size === 0) {
+    if (onProgress) onProgress(0, 0);
+    return;
+  }
 
   console.log(`Pre-fetching live fares for ${uniquePairs.size} unique journey pairs...`);
+
+  let count = 0;
+  const total = uniquePairs.size;
 
   for (const [, { from, to, mode }] of uniquePairs) {
     try {
@@ -489,6 +498,10 @@ export async function preFetchLiveFaresForJourneys(journeys: ClassifiedJourney[]
       await lookupStationFare(from, to, { peak: 0, offPeak: 0 }, false, mode);
     } catch (e) {
       console.error(`Failed to pre-fetch fare from ${from} to ${to}:`, e);
+    }
+    count++;
+    if (onProgress) {
+      onProgress(count, total);
     }
   }
 }

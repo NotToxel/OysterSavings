@@ -17,6 +17,7 @@ export function normalizeStationName(raw: string): string {
     .replace(/\s*\[.*?\]\s*/g, '') // remove [National Rail], [London Underground], etc.
     .replace(/\s*\(platforms?\s*[\d\-]+\)\s*/gi, '') // remove (platforms 12-19)
     .replace(/\s*\(District,\s*Piccadilly lines?\)\s*/gi, '') // Hammersmith qualifier
+    .replace(/\s*\(Circle,\s*H&C lines?\)\s*/gi, '') // Hammersmith H&C qualifier
     // Heathrow terminal normalisations (e.g., T 2 & 3 or T4 to canonical names)
     .replace(/\b(t|terminal|terminals)\s*(\d)\s*(?:&|and)\s*(\d)\b/gi, 'terminals $2 & $3')
     .replace(/\b(t|terminal)\s*(\d)\b/gi, 'terminal $2')
