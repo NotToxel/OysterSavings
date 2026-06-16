@@ -24,13 +24,14 @@ Instead of exposing immediate upload boxes, the landing page uses a **Generate A
 ![OysterSavings Deep Fare Analysis](static/images/readme/analysis_tab.png)
 
 ### 3. Future Commuter Routine Planner
-- Allows users to model their weekly commutes (origin/destination zones, specific time periods, and transport modes).
+- Allows users to model their weekly commutes (origin/destination zones, specific time periods, and transport modes), synced optionally with overall planning dates.
 - Generates a future travel forecast, recommending whether a weekly or monthly card fits their budget.
+- Integrates client-side TfL API queries to resolve exact advanced routes and station-to-station fares.
 
 ![OysterSavings Commuter Routine Planner](static/images/readme/planner_tab.png)
 
 ### 4. Product Comparison Engine
-- Cross-compares Pay-As-You-Go (PAYG) costs, weekly Caps, and weekly/monthly/annual Travelcards across specific zone ranges to identify exactly where your money goes.
+- Cross-compares Pay-As-You-Go (PAYG) costs, weekly Caps, and weekly/monthly/annual Travelcards across specific zone ranges to identify exactly where your money goes. Supports custom concession profiles (18+ Student, Zip cards, Disabled, Jobcentre Plus) with isolated card fee evaluations and interactive, glowing filter chips.
 
 ![OysterSavings Product Comparison Engine](static/images/readme/compare_tab.png)
 
@@ -38,8 +39,9 @@ Instead of exposing immediate upload boxes, the landing page uses a **Generate A
 
 ## 🔒 Privacy & Data Processing Breakdown
 
-OysterSavings is built with a **100% local, privacy-first architecture**:
-*   **Zero Server Communication**: Your travel history CSV never leaves your browser. All calculations, classification, and visualizations are performed entirely on the client side.
+OysterSavings is built with a client-side, privacy-first architecture:
+*   **TfL API Fare Queries Only**: The application communicates directly with the official Transport for London (TfL) API to fetch live station-to-station fare data. No other servers or external services are contacted.
+*   **Local CSV Processing**: Your travel history CSV is processed entirely locally within your browser. The raw travel data is never uploaded, stored, or sent to TfL or any other server.
 *   **No Tracking or Cookies**: The application does not load tracking scripts, Google Analytics, or external marketing pixels.
 *   **No DB Persistence**: Once you reload or click "New Upload", the parsed state is wiped from memory.
 

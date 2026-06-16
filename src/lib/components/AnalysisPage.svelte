@@ -10,6 +10,8 @@
     includeOysterCost,
     savingsResult,
     detectedDiscount,
+    productComparison,
+    includeStudentPhotocardFee,
   } from "$lib/stores/stores";
   import { calculateFareTypeSavings } from "$lib/engine/savingsEngine";
   import { FARE_TYPES, type FareType } from "$lib/data/fareData";
@@ -17,7 +19,7 @@
   import InsightsPage from "./InsightsPage.svelte";
 
   let activeTab = $state<"journeys" | "insights" | "savings" | "caps">(
-    "journeys",
+    "insights",
   );
   let sortKey = $state<string>("date");
   let sortAsc = $state(false);
@@ -106,6 +108,29 @@
   // Detect fare types with no PAYG discount
   let isNoDiscount = $derived(
     $selectedFareType === "none" || $selectedFareType === "student",
+  );
+
+  // Find top zone range for student travelcard savings comparison
+  let topZone = $derived.by(() => {
+    const j = $classifiedJourneys;
+    if (j.length === 0) return 'Z1-2';
+
+    const zoneCounts = new Map<string, number>();
+    for (const jj of j) {
+      if (jj.zoneRange) {
+        zoneCounts.set(jj.zoneRange, (zoneCounts.get(jj.zoneRange) ?? 0) + 1);
+      }
+    }
+    let top = 'Z1-2';
+    let topCount = 0;
+    for (const [z, c] of zoneCounts) {
+      if (c > topCount) { top = z; topCount = c; }
+    }
+    return top;
+  });
+
+  let topZoneComparison = $derived(
+    $productComparison.find(c => c.zoneRange === topZone)
   );
 
   let filteredJourneys = $derived.by(() => {
@@ -233,17 +258,17 @@
   <div class="tab-nav" style="margin-bottom: 1.5rem;">
     <button
       class="tab-btn"
-      class:active={activeTab === "journeys"}
-      onclick={() => (activeTab = "journeys")}
-    >
-      🚆 Journeys
-    </button>
-    <button
-      class="tab-btn"
       class:active={activeTab === "insights"}
       onclick={() => (activeTab = "insights")}
     >
       💡 Insights
+    </button>
+    <button
+      class="tab-btn"
+      class:active={activeTab === "journeys"}
+      onclick={() => (activeTab = "journeys")}
+    >
+      🚆 Journeys
     </button>
     <button
       class="tab-btn"
@@ -330,7 +355,7 @@
                 class="animate-fade-in"
                 style="animation-delay: {Math.min(i * 20, 500)}ms"
               >
-                <td class="date-cell">{j.raw.dateStr}</td>
+                <td class="date-cell"><span class="day-of-week" style="opacity: 0.8; font-weight: 600; margin-right: 0.25rem;">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][j.dayOfWeek]}</span>{j.raw.dateStr}</td>
                 <td class="time-cell">{j.raw.startTime || "—"}</td>
                 <td class="journey-cell">
                   {#if j.isBus}
@@ -593,6 +618,70 @@
                 >
               </div>
             </div>
+
+            {#if $selectedFareType === "student" && topZoneComparison}
+              {@const weeklySaving = topZoneComparison.weeklyPayg - topZoneComparison.weeklyStudentTravelcard}
+              {@const monthlySaving = topZoneComparison.monthlyPayg - topZoneComparison.monthlyStudentTravelcard}
+              {@const annualSaving = topZoneComparison.annualPayg - topZoneComparison.annualStudentTravelcard}
+              <div
+                class="glass-card savings-hero positive"
+                style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05); margin-bottom: 1.5rem; text-align: left; align-items: flex-start; padding: 1.5rem;"
+              >
+                <div
+                  class="savings-hero-label"
+                  style="color: #34d399; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;"
+                >
+                  🎓 Apprentice / 18+ Student Travelcard Savings
+                </div>
+                <div
+                  class="savings-hero-sub"
+                  style="color: var(--color-text-secondary); margin-bottom: 1.25rem; font-size: 0.875rem; text-align: left; line-height: 1.5;"
+                >
+                  While Apprentice/Student Oyster photocards do not discount standard Pay As You Go single fares, you can save 30% on Travelcards! Based on your travel history, here is how much you would save buying Student Travelcards for your most common zone range (<strong>{topZone}</strong>) compared to standard adult PAYG:
+                </div>
+                
+                <div class="savings-cards" style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 0.5rem;">
+                  <div class="stat-card" style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Weekly Comparison</div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">
+                      Adult PAYG: £{topZoneComparison.weeklyPayg.toFixed(2)}
+                    </div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #34d399;">
+                      Student TC: £{topZoneComparison.weeklyStudentTravelcard.toFixed(2)}
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 600; color: {weeklySaving > 0 ? '#34d399' : '#ef4444'}; margin-top: 0.25rem;">
+                      {weeklySaving > 0 ? `Savings: +£${weeklySaving.toFixed(2)}` : `Cost: £${Math.abs(weeklySaving).toFixed(2)} extra`}
+                    </div>
+                  </div>
+
+                  <div class="stat-card" style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Monthly Comparison</div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">
+                      Adult PAYG: £{topZoneComparison.monthlyPayg.toFixed(2)}
+                    </div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #34d399;">
+                      Student TC: £{topZoneComparison.monthlyStudentTravelcard.toFixed(2)}
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 600; color: {monthlySaving > 0 ? '#34d399' : '#ef4444'}; margin-top: 0.25rem;">
+                      {monthlySaving > 0 ? `Savings: +£${monthlySaving.toFixed(2)}` : `Cost: £${Math.abs(monthlySaving).toFixed(2)} extra`}
+                    </div>
+                  </div>
+
+                  <div class="stat-card" style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Annual Comparison</div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">
+                      Adult PAYG: £{topZoneComparison.annualPayg.toFixed(2)}
+                    </div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #34d399;">
+                      Student TC: £{topZoneComparison.annualStudentTravelcard.toFixed(2)}
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 600; color: {annualSaving > 0 ? '#34d399' : '#ef4444'}; margin-top: 0.25rem;">
+                      {annualSaving > 0 ? `Savings: +£${annualSaving.toFixed(2)}` : `Cost: £${Math.abs(annualSaving).toFixed(2)} extra`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {/if}
 
             {#if $selectedFareType === "none" && $detectedDiscount === "railcard"}
               <div

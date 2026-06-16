@@ -431,6 +431,25 @@
       return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
     };
 
+    const getShiftSuggestion = (mins: number) => {
+      if (mins >= 390 && mins <= 404) {
+        const diff = mins - 389;
+        return `${diff} min${diff > 1 ? 's' : ''} earlier (before 06:30)`;
+      } else if (mins >= 556 && mins <= 570) {
+        const diff = 570 - mins;
+        if (diff === 0) return `at or after 09:30`;
+        return `${diff} min${diff > 1 ? 's' : ''} later (at or after 09:30)`;
+      } else if (mins >= 960 && mins <= 974) {
+        const diff = mins - 959;
+        return `${diff} min${diff > 1 ? 's' : ''} earlier (before 16:00)`;
+      } else if (mins >= 1126 && mins <= 1140) {
+        const diff = 1140 - mins;
+        if (diff === 0) return `at or after 19:00`;
+        return `${diff} min${diff > 1 ? 's' : ''} later (at or after 19:00)`;
+      }
+      return "";
+    };
+
     for (const jj of j) {
       if (jj.isBus || !jj.isPeak || jj.raw.charge <= 0) continue;
 
@@ -458,27 +477,35 @@
           const saving = Math.max(0, currentConcession - offPeakConcession);
 
           if (saving > 0) {
+            const dayResult = $dailyCapResults.find(d => d.date === jj.raw.dateStr);
+            const wasCapHit = dayResult ? dayResult.capHit : false;
+
             nearPeakCount++;
-            nearPeakSavings += saving;
+            if (!wasCapHit) {
+              nearPeakSavings += saving;
+            }
             nearPeakJourneys.push({
               dateStr: jj.raw.dateStr || formatDate(date),
+              dayName: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][jj.dayOfWeek],
               startTime: jj.raw.startTime,
               origin: jj.origin || "Unknown",
               destination: jj.destination || "Unknown",
               saving: saving,
               actualCharge: jj.raw.charge,
               offPeakFare: offPeakConcession,
+              wasCapHit: wasCapHit,
+              shiftSuggestion: getShiftSuggestion(mins),
             });
           }
         }
       }
     }
 
-    if (nearPeakCount > 0 && nearPeakSavings > 0) {
+    if (nearPeakCount > 0) {
       tips.push({
         id: "near_peak",
         title: "Shift Near-Peak Journeys",
-        desc: `You touched in ${nearPeakCount} times within 15 minutes of a peak off-peak boundary. Shifting these journeys by just 15 minutes would have saved you approximately £${nearPeakSavings.toFixed(2)}.`,
+        desc: `You touched in ${nearPeakCount} times within 15 minutes of a peak/off-peak boundary. Shifting these journeys by just 15 minutes would have saved you approximately £${nearPeakSavings.toFixed(2)} (excluding days where you reached the daily cap anyway).`,
         saving: nearPeakSavings,
         severity:
           nearPeakSavings > 15
@@ -888,6 +915,25 @@
     };
   });
 
+  // Detected discount savings info
+  let detectedDiscountInfo = $derived.by(() => {
+    const discount = $detectedDiscount;
+    if (discount === 'none' || discount === 'student' || $classifiedJourneys.length === 0) {
+      return null;
+    }
+    
+    const res = calculateFareTypeSavings($classifiedJourneys, discount, 0, false);
+    const savings = Math.max(0, res.totalExpectedSpend - res.totalActualSpend);
+    
+    return {
+      discount,
+      name: FARE_TYPES[discount]?.name || discount,
+      savings,
+      totalActualSpend: res.totalActualSpend,
+      totalExpectedSpend: res.totalExpectedSpend,
+    };
+  });
+
   function getModeBadgeClass(m: string): string {
     if (m === "bus") return "badge-bus";
     if (m === "underground") return "badge-underground";
@@ -928,6 +974,26 @@
       </p>
     </div>
   {:else}
+    {#if detectedDiscountInfo}
+      <div class="glass-card detected-discount-card animate-slide-up" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05); margin-bottom: 1.5rem; text-align: left; padding: 1.5rem;">
+        <div class="discount-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <span class="discount-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
+            🏷️ Concession Detected
+          </span>
+          <span class="discount-fare-type" style="font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary);">
+            {detectedDiscountInfo.name}
+          </span>
+        </div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0 0 0.5rem 0; color: white;">
+          🎉 You saved <span style="color: #34d399;">£{detectedDiscountInfo.savings.toFixed(2)}</span>
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0; line-height: 1.5;">
+          We analyzed your travel history and detected that your actual fares match the discounted rates of a <strong>{detectedDiscountInfo.name}</strong>.
+          Your actual spend was £{detectedDiscountInfo.totalActualSpend.toFixed(2)} compared to £{detectedDiscountInfo.totalExpectedSpend.toFixed(2)} for a standard Adult PAYG fare.
+        </p>
+      </div>
+    {/if}
+
     <!-- Active Insights Grid -->
     <div class="insights-grid">
       <!-- Column 1: Traveler Profile & Top Journeys -->
@@ -1062,24 +1128,38 @@
                           >
                           <div class="near-peak-items">
                             {#each tip.journeys as npJ}
-                              <div class="near-peak-item">
+                              <div class="near-peak-item" style="border-left: 3px solid {npJ.wasCapHit ? 'var(--color-text-muted)' : 'var(--color-oyster-blue)'};">
                                 <div class="np-time-route">
-                                  <span class="np-date"
-                                    >{npJ.dateStr} @ {npJ.startTime}</span
-                                  >
+                                  <span class="np-date">
+                                    <span class="np-day" style="font-weight: 600; opacity: 0.85; margin-right: 0.25rem;">{npJ.dayName}</span>{npJ.dateStr} @ {npJ.startTime}
+                                  </span>
                                   <span class="np-route"
                                     >{npJ.origin} → {npJ.destination}</span
                                   >
+                                  {#if npJ.shiftSuggestion}
+                                    <span class="np-shift-hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.15rem;">
+                                      ⏱️ Shift: {npJ.shiftSuggestion}
+                                    </span>
+                                  {/if}
                                 </div>
                                 <div class="np-savings">
-                                  <span class="np-saving-val"
-                                    >Save £{npJ.saving.toFixed(2)}</span
-                                  >
-                                  <span class="np-compare"
-                                    >(Paid £{npJ.actualCharge.toFixed(2)} vs £{npJ.offPeakFare.toFixed(
-                                      2,
-                                    )} off-peak)</span
-                                  >
+                                  {#if npJ.wasCapHit}
+                                    <span class="np-saving-val" style="color: var(--color-text-muted); text-decoration: line-through;"
+                                      >Save £{npJ.saving.toFixed(2)}</span
+                                    >
+                                    <span class="np-cap-hit-badge" style="font-size: 0.7rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 0.1rem 0.35rem; border-radius: 4px; color: var(--color-text-muted); display: block; text-align: right; margin-top: 0.15rem;">
+                                      No difference (Capped)
+                                    </span>
+                                  {:else}
+                                    <span class="np-saving-val"
+                                      >Save £{npJ.saving.toFixed(2)}</span
+                                    >
+                                    <span class="np-compare"
+                                      >(Paid £{npJ.actualCharge.toFixed(2)} vs £{npJ.offPeakFare.toFixed(
+                                        2,
+                                      )} off-peak)</span
+                                    >
+                                  {/if}
                                 </div>
                               </div>
                             {/each}

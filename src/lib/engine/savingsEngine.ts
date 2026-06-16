@@ -217,9 +217,10 @@ export function calculateProductComparison(
       cardCost = 16.5;
     } else if (fareType === 'zip_16_17') {
       cardCost = 22;
-    } else if (fareType === 'none' || fareType === 'jobcentre') {
+    } else if (fareType === 'none') {
       cardCost = 0;
     } else {
+      // Jobcentre Plus, Disabled Persons, and National Railcard
       cardCost = 7;
     }
   }
@@ -293,7 +294,7 @@ export function calculateProductComparison(
   const totalRailcardWeeks = railcardWeekly.length || 1;
   const totalRailcardSpend = railcardWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
   const weeklyPaygRailcardRaw = totalRailcardSpend / totalRailcardWeeks;
-  const railcardCardCost = includeStudentPhotocardFee ? 7 : 0;
+  const railcardCardCost = (fareType === 'railcard' && includeStudentPhotocardFee) ? 7 : 0;
   const paygRailcardCostWeekly = round2(weeklyPaygRailcardRaw + railcardCardCost / 52);
   const paygRailcardCostMonthly = round2(weeklyPaygRailcardRaw * 4.33 + railcardCardCost / 12);
   const paygRailcardCostAnnual = round2(weeklyPaygRailcardRaw * 52 + railcardCardCost);
@@ -308,9 +309,9 @@ export function calculateProductComparison(
   const studentUncoveredBusPassSpend = simulateProductSpend(studentBaseFares, 'student', 'bus_pass');
   const weeklyStudentUncoveredBusPassSpend = studentUncoveredBusPassSpend / totalWeeks;
 
-  const weeklyBusPassCost = BUS_PASS_WEEKLY + weeklyUncoveredBusPassSpend + (fareType !== 'student' ? round2(cardCost / 52) : 0);
-  const monthlyBusPassCost = BUS_PASS_MONTHLY + weeklyUncoveredBusPassSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
-  const annualBusPassCost = BUS_PASS_ANNUAL + weeklyUncoveredBusPassSpend * 52 + (fareType !== 'student' ? cardCost : 0);
+  const weeklyBusPassCost = BUS_PASS_WEEKLY + weeklyUncoveredBusPassSpend;
+  const monthlyBusPassCost = BUS_PASS_MONTHLY + weeklyUncoveredBusPassSpend * 4.33;
+  const annualBusPassCost = BUS_PASS_ANNUAL + weeklyUncoveredBusPassSpend * 52;
 
   const weeklyStudentBusPassCost = STUDENT_BUS_PASS_WEEKLY + weeklyStudentUncoveredBusPassSpend + round2(studentCardCost / 52);
   const monthlyStudentBusPassCost = STUDENT_BUS_PASS_MONTHLY + weeklyStudentUncoveredBusPassSpend * 4.33 + round2(studentCardCost / 12);
@@ -335,9 +336,9 @@ export function calculateProductComparison(
     const paygFareTypeCostMonthly = round2(weeklyPaygFareTypeRaw * 4.33 + (effectiveFareTypeCost + cardCost) / 12);
     const paygFareTypeCostAnnual = round2(weeklyPaygFareTypeRaw * 52 + effectiveFareTypeCost + cardCost);
 
-    const weeklyTcWithCard = weeklyTc + weeklyUncoveredSpend + (fareType !== 'student' ? round2(cardCost / 52) : 0);
-    const monthlyTcWithCard = monthlyTc + weeklyUncoveredSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
-    const annualTcWithCard = annualTc + weeklyUncoveredSpend * 52 + (fareType !== 'student' ? cardCost : 0);
+    const weeklyTcWithCard = weeklyTc + weeklyUncoveredSpend + (isZip ? round2(cardCost / 52) : 0);
+    const monthlyTcWithCard = monthlyTc + weeklyUncoveredSpend * 4.33 + (isZip ? round2(cardCost / 12) : 0);
+    const annualTcWithCard = annualTc + weeklyUncoveredSpend * 52 + (isZip ? cardCost : 0);
 
     const studentWeeklyTcWithCard = studentWeeklyTc > 0 ? studentWeeklyTc + weeklyStudentUncoveredSpend + round2(studentCardCost / 52) : 0;
     const studentMonthlyTcWithCard = studentMonthlyTc > 0 ? studentMonthlyTc + weeklyStudentUncoveredSpend * 4.33 + round2(studentCardCost / 12) : 0;

@@ -93,7 +93,7 @@
       </nav>
 
       <div class="nav-badge">
-        <span class="privacy-badge">🔒 100% Private</span>
+        <span class="privacy-badge">🔒 Privacy Protected</span>
       </div>
     </div>
   </header>
@@ -105,7 +105,10 @@
 
   <!-- Footer -->
   <footer class="app-footer">
-    <p>Your data never leaves your browser. All calculations run locally.</p>
+    <p>Privacy protected: the only network requests made by this application are directly to TfL.</p>
+    <p class="footer-disclaimer">
+      Powered by TfL Open Data. This website is not affiliated with Transport for London.
+    </p>
     <p class="fare-data-version">
       Using TfL fare rates from {TFL_FARES_LAST_ROSE} (caps frozen until 2027)
       <span class="footer-version-tag">v{__BUILD_VERSION__}</span>
@@ -475,6 +478,13 @@
     color: var(--color-text-muted);
     font-size: 0.7rem;
     opacity: 0.7;
+  }
+
+  .footer-disclaimer {
+    margin-top: 0.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    opacity: 0.85;
   }
 
   /* Override tooltip properties specifically for build metadata */

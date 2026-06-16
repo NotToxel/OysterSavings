@@ -94,11 +94,25 @@
       category: "privacy",
       question: "Is my travel history data safe on OysterSavings?",
       answerHtml: `
-        <p><strong>Absolutely.</strong> OysterSavings is engineered with a strict privacy-first architecture:</p>
+        <p><strong>Yes, absolutely.</strong> OysterSavings is engineered with a privacy-first approach:</p>
         <ul>
-          <li><strong>100% Client-Side:</strong> All file parsing, fare computations, cap modeling, and recurrence forecasts happen inside your browser using local JavaScript.</li>
-          <li><strong>No Data Exfiltration:</strong> The application does not send your transit logs to any external server, database, or API. It contains no tracking scripts or analytics packages.</li>
-          <li><strong>Local Storage only:</strong> Your configurations (like selected railcard type or custom planner rules) are stored locally on your device via standard local storage.</li>
+          <li><strong>Direct TfL Queries:</strong> To retrieve accurate, real-time fare pricing, the app queries official TfL APIs directly from your browser.</li>
+          <li><strong>No Third-Party Servers:</strong> Your travel history CSV files and transit logs are never sent to our servers, nor are they shared with any third-party tracking, ads, or analytics services.</li>
+          <li><strong>Local Configuration:</strong> Any custom planner routines or settings you save are stored on your device using standard local browser storage.</li>
+        </ul>
+      `,
+    },
+    {
+      id: "tfl-network-requests",
+      category: "privacy",
+      question: "What network requests does OysterSavings make?",
+      answerHtml: `
+        <p>OysterSavings only makes network requests to the official <strong>Transport for London (TfL) API</strong> (specifically <code>api.tfl.gov.uk</code>) to fetch live fare details for the station-to-station journeys detected in your travel history or plan.</p>
+        <p>Specifically:</p>
+        <ul>
+          <li>Only station IDs (NaPTAN codes) are sent to TfL to look up the peak and off-peak fares.</li>
+          <li>Your personal details, card numbers, or full travel logs are <strong>never</strong> transmitted.</li>
+          <li>No other network requests are made, and no tracking scripts, advertising pixels, or third-party analytics are loaded.</li>
         </ul>
       `,
     },
@@ -173,9 +187,10 @@
       question:
         "How does OysterSavings calculate my savings and optimize products?",
       answerHtml: `
-        <p>OysterSavings simulates your exact travel history through several local engines in your browser:</p>
+        <p>OysterSavings simulates your exact travel history by combining advanced fare calculations with live TfL API data:</p>
         <ul>
           <li><strong>Daily/Weekly Cap Engine:</strong> Groups your journeys by day and calendar week, recreating TfL capping boundaries to see where you reached the caps.</li>
+          <li><strong>Live TfL Fare Integration:</strong> Fetches exact, real-time fares for your station pairs from TfL to ensure precise calculations.</li>
           <li><strong>Railcard Simulator:</strong> Re-calculates every single fare and daily cap with a 1/3 discount applied to eligible off-peak journeys, factoring in the cost of buying a Railcard.</li>
           <li><strong>Travelcard Comparator:</strong> Identifies your most travelled zones and checks if buying a weekly, monthly, or annual Travelcard for those zones would have been cheaper than what you paid via PAYG.</li>
         </ul>
@@ -236,7 +251,7 @@
     { id: "capping" as const, label: "Capping & Fares" },
     { id: "peak" as const, label: "Peak / Off-Peak" },
     { id: "discounts" as const, label: "Discounts & Railcards" },
-    { id: "privacy" as const, label: "Privacy & Safety" },
+    { id: "privacy" as const, label: "Privacy & TfL Data" },
   ];
 
   // Svelte 5 Derived state: Filtered FAQ List

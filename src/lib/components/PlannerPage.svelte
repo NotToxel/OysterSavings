@@ -114,6 +114,17 @@
     }
   });
 
+  $effect(() => {
+    if (showRecurrenceModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  });
+
   // Background task to automatically update saved rules with actual TfL API fares if they were estimated/unavailable before
   async function syncRuleFaresWithApi() {
     let updatedAny = false;
@@ -198,6 +209,12 @@
     }
   });
 
+  $effect(() => {
+    if (syncWithPlanStart) {
+      newRuleDate = planStart;
+    }
+  });
+
   // Default fallback values to avoid state_referenced_locally warning and maintain single reference
   const DEFAULT_SETTINGS = {
     originZone: 3,
@@ -233,6 +250,7 @@
   let newRuleDate = $state("");
   let newRuleEndDate = $state("");
   let syncWithPlanEnd = $state(true);
+  let syncWithPlanStart = $state(true);
 
   // Advanced Mode state
   let advancedMode = $state($globalAdvancedMode);
@@ -1396,6 +1414,7 @@
     newRuleDate = formatInputDate(rule.startDate);
     newRuleEndDate = formatInputDate(rule.endDate);
     syncWithPlanEnd = (newRuleEndDate === planEnd);
+    syncWithPlanStart = (newRuleDate === planStart);
     // Restore Advanced Mode state
     advancedMode = rule.isAdvancedMode || false;
     if (
@@ -1615,6 +1634,7 @@
     newRuleDate = planStart;
     newRuleEndDate = planEnd;
     syncWithPlanEnd = true;
+    syncWithPlanStart = true;
     // Reset Advanced Mode
     advancedMode = $globalAdvancedMode;
     originStationResults = [];
@@ -2716,18 +2736,33 @@
           {#if newIntervalType !== "none"}
             <div class="form-row">
               <div class="form-group">
-                <label class="setting-label" for="modal-start-date"
-                  >Start Date</label
-                >
-                <input
-                  type="date"
-                  class="input-field"
-                  id="modal-start-date"
-                  bind:value={newRuleDate}
-                  onblur={handleModalBlur}
-                  min={minDateStr}
-                  max={maxDateStr}
-                />
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
+                  <label class="setting-label" for="modal-start-date" style="margin-bottom: 0;">Start Date</label>
+                  <button
+                    type="button"
+                    class="mini-sync-toggle"
+                    class:active={syncWithPlanStart}
+                    onclick={() => syncWithPlanStart = !syncWithPlanStart}
+                  >
+                    <span class="sync-icon">{syncWithPlanStart ? '🔗' : '🔓'}</span>
+                    {syncWithPlanStart ? 'Synced' : 'Custom'}
+                  </button>
+                </div>
+                {#if syncWithPlanStart}
+                  <div class="input-field-placeholder" style="padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--color-border); color: var(--color-text-muted); font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.35rem; box-sizing: border-box; cursor: not-allowed;">
+                    <span style="opacity: 0.7;">📅</span> {planStart ? new Date(planStart).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} (Synced)
+                  </div>
+                {:else}
+                  <input
+                    type="date"
+                    class="input-field"
+                    id="modal-start-date"
+                    bind:value={newRuleDate}
+                    onblur={handleModalBlur}
+                    min={minDateStr}
+                    max={maxDateStr}
+                  />
+                {/if}
               </div>
               <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">

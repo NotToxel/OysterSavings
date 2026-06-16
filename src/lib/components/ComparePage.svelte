@@ -49,8 +49,14 @@
     return rc.name;
   });
 
+  let concessionName = $derived(
+    ($selectedFareType === 'zip_11_15' || $selectedFareType === 'zip_16_17')
+      ? fareTypeShortName
+      : 'PAYG + ' + fareTypeShortName
+  );
+
   let isNoDiscount = $derived($selectedFareType === 'none' || $selectedFareType === 'student');
-  let hasCardCosts = $derived($selectedFareType !== 'none' && $selectedFareType !== 'jobcentre');
+  let hasCardCosts = $derived($selectedFareType !== 'none');
 
   // Derive discount description badge
   let discountBadge = $derived.by(() => {
@@ -70,6 +76,7 @@
     if ($selectedFareType === 'student') return '£12.00 Student Photocard fee';
     if ($selectedFareType === 'disabled') return '£7.00 Oyster card cost';
     if ($selectedFareType === 'railcard') return '£7.00 Oyster card cost';
+    if ($selectedFareType === 'jobcentre') return '£7.00 Oyster card cost';
     return '';
   });
 
@@ -112,14 +119,14 @@
     const options: [string, number][] = [];
     if (activeSpan === 'weekly') {
       if (visibleProducts.paygStandard) options.push(['PAYG', comp.weeklyPayg]);
-      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push(['PAYG + Concession', comp.weeklyPaygFareType]);
+      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.weeklyPaygFareType]);
       if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.weeklyPaygRailcard]);
       if (visibleProducts.travelcardStandard) options.push(['Travelcard', comp.weeklyTravelcard]);
       if (visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.weeklyStudentTravelcard]);
       if (visibleProducts.busPassStandard) options.push(['Bus & Tram Pass', comp.weeklyBusPass]);
     } else if (activeSpan === 'monthly') {
       if (visibleProducts.paygStandard) options.push(['PAYG', comp.monthlyPayg]);
-      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push(['PAYG + Concession', comp.monthlyPaygFareType]);
+      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.monthlyPaygFareType]);
       if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.monthlyPaygRailcard]);
       if (visibleProducts.travelcardStandard) options.push(['Travelcard', comp.monthlyTravelcard]);
       if (visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.monthlyStudentTravelcard]);
@@ -127,7 +134,7 @@
       if (visibleProducts.busPassStudent) options.push(['Student Bus Pass', comp.monthlyStudentBusPass]);
     } else {
       if (visibleProducts.paygStandard) options.push(['PAYG', comp.annualPayg]);
-      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push(['PAYG + Concession', comp.annualPaygFareType]);
+      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.annualPaygFareType]);
       if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.annualPaygRailcard]);
       if (visibleProducts.travelcardStandard) options.push(['Travelcard', comp.annualTravelcard]);
       if (visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.annualStudentTravelcard]);
@@ -200,9 +207,11 @@
     const getValues = (key: string) => $productComparison.map((c: any) => c[key]);
 
     const paygLabel = 'PAYG (Adult)';
-    const rcLabel = isNoDiscount
-      ? `PAYG + ${fareTypeShortName || 'No Discount'}`
-      : `PAYG + ${fareTypeShortName}`;
+    const rcLabel = ($selectedFareType === 'zip_11_15' || $selectedFareType === 'zip_16_17')
+      ? fareTypeShortName
+      : isNoDiscount
+        ? `PAYG + ${fareTypeShortName || 'No Discount'}`
+        : `PAYG + ${fareTypeShortName}`;
 
     // Build datasets dynamically based on toggles
     const buildDatasets = (
@@ -421,11 +430,20 @@
       </div>
 
       {#if hasCardCosts}
-        <div class="setting-inline card-cost-toggle">
-          <input type="checkbox" id="compare-card-cost" bind:checked={$includeStudentPhotocardFee}
-            style="accent-color: var(--color-oyster-blue); width: 1rem; height: 1rem; cursor: pointer;" />
-          <label for="compare-card-cost" class="card-cost-label">Include {cardCostLabel}</label>
-        </div>
+        <button
+          type="button"
+          class="setting-inline card-cost-toggle"
+          style="background: transparent; border: none; padding: 0; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: inherit; font-family: inherit; font-size: inherit;"
+          onclick={() => ($includeStudentPhotocardFee = !$includeStudentPhotocardFee)}
+          aria-label="Toggle card/Oyster cost"
+        >
+          <div class="toggle" class:active={$includeStudentPhotocardFee}>
+            <span class="toggle-dot"></span>
+          </div>
+          <span class="card-cost-label" style="user-select: none;">
+            Include {cardCostLabel}
+          </span>
+        </button>
       {/if}
     </div>
 
@@ -434,9 +452,11 @@
         <span class="badge-dot" style="background: {isNoDiscount ? '#64748b' : '#009FE3'};"></span>
         <span>{discountBadge}</span>
       </div>
-      <span style="font-size: 0.75rem; color: var(--color-text-muted); opacity: 0.85;">
-        ℹ️ The £30 annual purchase cost of the National Railcard is excluded from comparison calculations.
-      </span>
+      {#if $selectedFareType === 'railcard' || $selectedFareType === 'disabled'}
+        <span style="font-size: 0.75rem; color: var(--color-text-muted); opacity: 0.85;">
+          ℹ️ The cost of the railcard is excluded from the comparison
+        </span>
+      {/if}
     </div>
   </div>
 
@@ -444,37 +464,78 @@
   <div class="glass-card toggles-bar" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
     <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-secondary); display: block; margin-bottom: 0.75rem; letter-spacing: 0.05em;">👁️ Visible Products in Chart & Table</span>
     <div class="toggles-grid">
-      <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.paygStandard} style="accent-color: #009FE3;" />
-        <span class="product-dot" style="background: #009FE3;"></span> PAYG (Adult)
-      </label>
-      <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.paygRailcard} style="accent-color: #8b5cf6;" />
-        <span class="product-dot" style="background: #8b5cf6;"></span> PAYG + Railcard
-      </label>
+      <button 
+        type="button" 
+        class="product-chip payg-standard" 
+        class:active={visibleProducts.paygStandard} 
+        onclick={() => visibleProducts.paygStandard = !visibleProducts.paygStandard}
+      >
+        <span class="product-dot" style="background: #009FE3;"></span>
+        <span>PAYG (Adult)</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="product-chip payg-railcard" 
+        class:active={visibleProducts.paygRailcard} 
+        onclick={() => visibleProducts.paygRailcard = !visibleProducts.paygRailcard}
+      >
+        <span class="product-dot" style="background: #8b5cf6;"></span>
+        <span>PAYG + Railcard</span>
+      </button>
+
       {#if !isNoDiscount && $selectedFareType !== 'railcard'}
-      <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.paygConcession} style="accent-color: #6f4390;" />
-        <span class="product-dot" style="background: #6f4390;"></span> PAYG + Concession
-      </label>
+      <button 
+        type="button" 
+        class="product-chip payg-concession" 
+        class:active={visibleProducts.paygConcession} 
+        onclick={() => visibleProducts.paygConcession = !visibleProducts.paygConcession}
+      >
+        <span class="product-dot" style="background: #6f4390;"></span>
+        <span>{concessionName}</span>
+      </button>
       {/if}
-      <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.travelcardStandard} style="accent-color: #e7710d;" />
-        <span class="product-dot" style="background: #e7710d;"></span> Travelcard
-      </label>
-      <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.travelcardStudent} style="accent-color: #10b981;" />
-        <span class="product-dot" style="background: #10b981;"></span> Student Travelcard
-      </label>
-      <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.busPassStandard} style="accent-color: #DC241F;" />
-        <span class="product-dot" style="background: #DC241F;"></span> Bus & Tram Pass
-      </label>
+
+      <button 
+        type="button" 
+        class="product-chip travelcard-standard" 
+        class:active={visibleProducts.travelcardStandard} 
+        onclick={() => visibleProducts.travelcardStandard = !visibleProducts.travelcardStandard}
+      >
+        <span class="product-dot" style="background: #e7710d;"></span>
+        <span>Travelcard</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="product-chip travelcard-student" 
+        class:active={visibleProducts.travelcardStudent} 
+        onclick={() => visibleProducts.travelcardStudent = !visibleProducts.travelcardStudent}
+      >
+        <span class="product-dot" style="background: #10b981;"></span>
+        <span>Student Travelcard</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="product-chip buspass-standard" 
+        class:active={visibleProducts.busPassStandard} 
+        onclick={() => visibleProducts.busPassStandard = !visibleProducts.busPassStandard}
+      >
+        <span class="product-dot" style="background: #DC241F;"></span>
+        <span>Bus & Tram Pass</span>
+      </button>
+
       {#if activeSpan !== 'weekly'}
-      <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.busPassStudent} style="accent-color: rgba(220, 36, 31, 0.5);" />
-        <span class="product-dot" style="background: #DC241F; opacity: 0.5;"></span> Student Bus Pass
-      </label>
+      <button 
+        type="button" 
+        class="product-chip buspass-student" 
+        class:active={visibleProducts.busPassStudent} 
+        onclick={() => visibleProducts.busPassStudent = !visibleProducts.busPassStudent}
+      >
+        <span class="product-dot" style="background: #DC241F; opacity: 0.5;"></span>
+        <span>Student Bus Pass</span>
+      </button>
       {/if}
     </div>
   </div>
@@ -488,7 +549,6 @@
         <h2 class="banner-title">
           Use {
             bestOption.best === 'PAYG' ? 'Pay As You Go (Adult)' :
-            bestOption.best === 'PAYG + Concession' ? 'PAYG + ' + fareTypeShortName :
             bestOption.best === 'PAYG + Railcard' ? 'PAYG + National Railcard' :
             bestOption.best
           } for {bestOption.zoneRange}
@@ -498,7 +558,6 @@
           the cheapest option for your most common zone range ({travelSummary.topZone}) is 
           <strong>{
             bestOption.best === 'PAYG' ? 'PAYG (Adult)' :
-            bestOption.best === 'PAYG + Concession' ? 'PAYG + ' + fareTypeShortName :
             bestOption.best === 'PAYG + Railcard' ? 'PAYG + National Railcard' :
             bestOption.best
           }</strong>.
@@ -506,7 +565,7 @@
           <strong>
             £{
               bestOption.best === 'PAYG' ? bestOption.payg.toFixed(2) : 
-              bestOption.best === 'PAYG + Concession' ? bestOption.fareType.toFixed(2) : 
+              bestOption.best === concessionName ? bestOption.fareType.toFixed(2) : 
               bestOption.best === 'PAYG + Railcard' ? bestOption.paygRailcard.toFixed(2) :
               bestOption.best === 'Travelcard' ? bestOption.travelcard.toFixed(2) :
               bestOption.best === 'Student Travelcard' ? bestOption.studentTravelcard.toFixed(2) :
@@ -522,7 +581,7 @@
         <span class="action-price">
           £{
             bestOption.best === 'PAYG' ? bestOption.payg.toFixed(2) : 
-            bestOption.best === 'PAYG + Concession' ? bestOption.fareType.toFixed(2) : 
+            bestOption.best === concessionName ? bestOption.fareType.toFixed(2) : 
             bestOption.best === 'PAYG + Railcard' ? bestOption.paygRailcard.toFixed(2) :
             bestOption.best === 'Travelcard' ? bestOption.travelcard.toFixed(2) :
             bestOption.best === 'Student Travelcard' ? bestOption.studentTravelcard.toFixed(2) :
@@ -594,7 +653,7 @@
           {/if}
           {#if visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard'}
             <tr>
-              <td class="product-name"><span class="product-dot" style="background: #6f4390;"></span> PAYG + Concession ({fareTypeShortName})</td>
+              <td class="product-name"><span class="product-dot" style="background: #6f4390;"></span> {concessionName}</td>
               {#each matrixZones as zone}
                 <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyPaygFareType' : activeSpan === 'monthly' ? 'monthlyPaygFareType' : 'annualPaygFareType')}</td>
               {/each}
@@ -814,30 +873,102 @@
   /* Toggles Grid */
   .toggles-grid {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
     align-items: center;
   }
 
-  .toggle-checkbox {
-    display: flex;
+  .product-chip {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-    cursor: pointer;
+    gap: 0.625rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--color-text-secondary);
-    user-select: none;
-    transition: opacity 0.2s ease;
-  }
-
-  .toggle-checkbox:hover {
-    opacity: 0.9;
-  }
-
-  .toggle-checkbox input[type="checkbox"] {
-    width: 1.1rem;
-    height: 1.1rem;
+    font-size: 0.825rem;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+  }
+
+  .product-chip:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+
+  /* Specific color themes for active states */
+  .product-chip.payg-standard.active {
+    background: rgba(0, 159, 227, 0.10);
+    border-color: rgba(0, 159, 227, 0.4);
+    color: #009FE3;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(0, 159, 227, 0.05);
+  }
+
+  .product-chip.payg-railcard.active {
+    background: rgba(139, 92, 246, 0.10);
+    border-color: rgba(139, 92, 246, 0.4);
+    color: #a78bfa;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.05);
+  }
+
+  .product-chip.payg-concession.active {
+    background: rgba(111, 67, 144, 0.10);
+    border-color: rgba(111, 67, 144, 0.4);
+    color: #c084fc;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(111, 67, 144, 0.05);
+  }
+
+  .product-chip.travelcard-standard.active {
+    background: rgba(231, 113, 13, 0.10);
+    border-color: rgba(231, 113, 13, 0.4);
+    color: #e7710d;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(231, 113, 13, 0.05);
+  }
+
+  .product-chip.travelcard-student.active {
+    background: rgba(16, 185, 129, 0.10);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #34d399;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.05);
+  }
+
+  .product-chip.buspass-standard.active {
+    background: rgba(220, 36, 31, 0.10);
+    border-color: rgba(220, 36, 31, 0.4);
+    color: #f87171;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(220, 36, 31, 0.05);
+  }
+
+  .product-chip.buspass-student.active {
+    background: rgba(220, 36, 31, 0.05);
+    border-color: rgba(220, 36, 31, 0.25);
+    color: #f87171;
+    opacity: 0.9;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(220, 36, 31, 0.03);
+  }
+
+  /* Micro-animation for active product dot */
+  .product-chip .product-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s ease;
+  }
+
+  .product-chip.active .product-dot {
+    transform: scale(1.25);
+    filter: drop-shadow(0 0 4px currentColor);
   }
 
   /* Recommendation Banner */

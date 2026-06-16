@@ -9,11 +9,12 @@ When building new features, fixing bugs, or refactoring logic, AI coding agents 
 ## 🔒 1. Core Security & Privacy Principles
 
 > [!CAUTION]
-> OysterSavings is designed as a **100% serverless, client-side application**. User travel history data is highly sensitive (revealing daily routines and exact locations).
+> OysterSavings is designed as a privacy-first application. User travel history data is highly sensitive (revealing daily routines and exact locations).
 
 - **No Data Exfiltration**: Never add any outbound HTTP requests, external logging services, or analytics trackers (e.g., Google Analytics, Mixpanel, Sentry) that export parsed CSV rows or user configurations.
+- **TfL API Requests Only**: The only outbound network requests permitted are to the official Transport for London (TfL) APIs for querying station-to-station fare rates. No other external APIs, servers, or trackers may be contacted.
 - **No Third-Party Scripts**: Do not dynamically inject scripts or dependencies hosted on external CDN links (e.g., in `app.html` or Svelte files). All resources must be bundled locally.
-- **Local Computations Only**: All calculations (fares, daily/weekly caps, routine forecasts, product comparisons) must run locally in Svelte stores or client-side engine scripts.
+- **Local Data Processing**: The travel history CSV parsing, classification, daily/weekly caps analysis, and product comparisons run locally in Svelte stores or client-side engine scripts. Station lookups query the TfL API directly from the client side without intermediate databases or logging.
 
 ---
 

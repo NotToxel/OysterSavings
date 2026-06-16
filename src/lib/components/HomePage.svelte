@@ -157,7 +157,7 @@
       <!-- Hero Section -->
       <section class="hero animate-fade-in">
         <div class="hero-badge">
-          <span>🔒</span> Privacy-First TfL Analytics
+          <span>🔒</span> Privacy Protected TfL Analytics
         </div>
         <h1 class="hero-title">
           Unlock Your
@@ -232,7 +232,7 @@
           <div class="step-card">
             <div class="step-number">2</div>
             <h3>Upload & Analyze</h3>
-            <p>Drop your CSV here — all processing happens in your browser</p>
+            <p>Drop your CSV here — network requests are only made directly to TfL</p>
           </div>
           <div class="step-card">
             <div class="step-number">3</div>
@@ -365,7 +365,7 @@
               <div class="step-pane upload-pane animate-fade-in">
                 <div class="step-desc-centered">
                   <h2>6. Upload and Optimize!</h2>
-                  <p>Drag your downloaded CSV file here or click to browse. OysterSavings calculates your savings 100% locally in your browser.</p>
+                  <p>Drag your downloaded CSV file here or click to browse. Fares are fetched directly from TfL to safely compute your savings.</p>
                 </div>
                 
                 <FileUpload />
