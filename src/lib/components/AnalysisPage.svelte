@@ -28,7 +28,7 @@
   let customCostInput = $state("");
   let isCardCostDisabled = $derived(
     ($selectedFareType === "railcard" && $detectedDiscount === "railcard") ||
-    ($selectedFareType === "disabled" && $detectedDiscount === "disabled")
+      ($selectedFareType === "disabled" && $detectedDiscount === "disabled"),
   );
   let farePrefs = $state<
     Record<string, { include: boolean; override: boolean; cost: number }>
@@ -486,16 +486,16 @@
                   oninput={(e) => {
                     const target = e.target as HTMLInputElement;
                     let valStr = target.value;
-                    if (valStr.includes('-')) {
-                      valStr = valStr.replace(/-/g, '');
+                    if (valStr.includes("-")) {
+                      valStr = valStr.replace(/-/g, "");
                       target.value = valStr;
                     }
                     let val = parseFloat(valStr);
                     if (!isNaN(val)) {
-                      if (val > 1000) {
-                        val = 1000;
-                        valStr = "1000";
-                        target.value = "1000";
+                      if (val > 99) {
+                        val = 99;
+                        valStr = "99";
+                        target.value = "99";
                       }
                       $fareTypeCost = val;
                     } else {
@@ -508,15 +508,15 @@
                     let val = parseFloat(target.value);
                     if (isNaN(val) || val < 0) {
                       val = 0;
-                    } else if (val > 1000) {
-                      val = 1000;
+                    } else if (val > 99) {
+                      val = 99;
                     }
                     $fareTypeCost = val;
                     customCostInput = val.toString();
                     target.value = val.toString();
                   }}
                   min="0"
-                  max="1000"
+                  max="99"
                   step="1"
                   style="margin-top: 0.5rem;"
                 />
