@@ -192,6 +192,12 @@
     }
   });
 
+  $effect(() => {
+    if (syncWithPlanEnd) {
+      newRuleEndDate = planEnd;
+    }
+  });
+
   // Default fallback values to avoid state_referenced_locally warning and maintain single reference
   const DEFAULT_SETTINGS = {
     originZone: 3,
@@ -226,6 +232,7 @@
   let editRuleId = $state<string | null>(null);
   let newRuleDate = $state("");
   let newRuleEndDate = $state("");
+  let syncWithPlanEnd = $state(true);
 
   // Advanced Mode state
   let advancedMode = $state($globalAdvancedMode);
@@ -1388,6 +1395,7 @@
     newIntervalValue = rule.intervalValue;
     newRuleDate = formatInputDate(rule.startDate);
     newRuleEndDate = formatInputDate(rule.endDate);
+    syncWithPlanEnd = (newRuleEndDate === planEnd);
     // Restore Advanced Mode state
     advancedMode = rule.isAdvancedMode || false;
     if (
@@ -1606,6 +1614,7 @@
     newIntervalValue = 1;
     newRuleDate = planStart;
     newRuleEndDate = planEnd;
+    syncWithPlanEnd = true;
     // Reset Advanced Mode
     advancedMode = $globalAdvancedMode;
     originStationResults = [];
@@ -2723,26 +2732,30 @@
               <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.15rem;">
                   <label class="setting-label" for="modal-end-date" style="margin-bottom: 0;">End Date</label>
-                  <button
-                    type="button"
-                    class="modal-sync-btn"
-                    onclick={() => {
-                      newRuleEndDate = planEnd;
-                      clampModalDates();
-                    }}
-                  >
-                    Sync to Planning End
-                  </button>
+                  <label style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem; font-size: 0.725rem; color: var(--color-text-secondary); font-weight: 600; user-select: none;">
+                    <input
+                      type="checkbox"
+                      bind:checked={syncWithPlanEnd}
+                      style="accent-color: var(--color-oyster-blue); cursor: pointer; width: 13px; height: 13px; margin: 0;"
+                    />
+                    Sync to plan end
+                  </label>
                 </div>
-                <input
-                  type="date"
-                  class="input-field"
-                  id="modal-end-date"
-                  bind:value={newRuleEndDate}
-                  onblur={handleModalBlur}
-                  min={minDateStr}
-                  max={maxDateStr}
-                />
+                {#if syncWithPlanEnd}
+                  <div class="input-field-placeholder" style="padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--color-border); color: var(--color-text-muted); font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.35rem; box-sizing: border-box; cursor: not-allowed;">
+                    <span style="opacity: 0.7;">📅</span> {planEnd ? new Date(planEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} (Synced)
+                  </div>
+                {:else}
+                  <input
+                    type="date"
+                    class="input-field"
+                    id="modal-end-date"
+                    bind:value={newRuleEndDate}
+                    onblur={handleModalBlur}
+                    min={minDateStr}
+                    max={maxDateStr}
+                  />
+                {/if}
               </div>
             </div>
           {/if}
