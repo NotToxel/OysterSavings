@@ -110,10 +110,11 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
       }
     }
     
+    // Detect if this is a simulation (meaning the actualCharge values are expected/concession fares, not CSV values)
+    const isSimulated = journeys.some((j) => j.actualCharge !== j.journey.raw.charge);
+
     // Calculate actual spend first to infer cap if needed
-    const railSpend = railJourneys.reduce((sum, j) => sum + j.actualCharge, 0);
-    const busSpend = busJourneys.reduce((sum, j) => sum + j.actualCharge, 0);
-    const totalSpend = railSpend + busSpend;
+    let initialTotalSpend = journeys.reduce((sum, j) => sum + j.actualCharge, 0);
     
     let railcardActive = false;
     
@@ -131,13 +132,13 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
     let dailyCap = lookupDailyCap(maxZoneRange, isPeakDay, railcardType);
     const explicitCapHit = journeys.some((j) => j.journey.isCapHit);
     
-    if (explicitCapHit) {
+    if (explicitCapHit && !isSimulated) {
       // Heuristic 2: Cap inference based on actual spend
       let inferredZone: string | null = null;
       
       // Try finding an exact match in Adult Caps
       for (const [zone, cap] of Object.entries(DAILY_CAPS)) {
-        if (Math.abs(cap - totalSpend) < 0.05) {
+        if (Math.abs(cap - initialTotalSpend) < 0.05) {
           inferredZone = zone;
           break; 
         }
@@ -146,7 +147,7 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
       // Try finding an exact match in Railcard Caps
       if (!inferredZone) {
         for (const [zone, cap] of Object.entries(DAILY_CAPS_OFFPEAK)) {
-          if (Math.abs(cap - totalSpend) < 0.05) {
+          if (Math.abs(cap - initialTotalSpend) < 0.05) {
             inferredZone = zone;
             railcardActive = true; // Strict railcard cap hit
             break; 
@@ -159,8 +160,33 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
       }
       
       // The total spend IS the daily cap
-      dailyCap = totalSpend;
+      dailyCap = initialTotalSpend;
     }
+
+    // Apply capping sequentially to the actualCharges
+    const sortedJourneys = [...journeys].sort((a, b) => (a.journey.raw.startTime || '').localeCompare(b.journey.raw.startTime || ''));
+    let runningSpend = 0;
+    
+    for (const res of sortedJourneys) {
+      const originalCharge = res.actualCharge;
+      let cappedCharge = originalCharge;
+      
+      if (runningSpend >= dailyCap) {
+        cappedCharge = 0;
+      } else if (runningSpend + originalCharge > dailyCap) {
+        cappedCharge = dailyCap - runningSpend;
+        runningSpend = dailyCap;
+      } else {
+        runningSpend += originalCharge;
+      }
+      
+      res.actualCharge = cappedCharge;
+    }
+
+    // Recalculate spends after capping
+    const railSpend = sortedJourneys.filter((j) => !j.journey.isBus).reduce((sum, j) => sum + j.actualCharge, 0);
+    const busSpend = sortedJourneys.filter((j) => j.journey.isBus).reduce((sum, j) => sum + j.actualCharge, 0);
+    const totalSpend = railSpend + busSpend;
 
     // Calculate how much was saved by capping
     const uncappedRailSpend = railJourneys.reduce((sum, j) => sum + j.expectedFare, 0);

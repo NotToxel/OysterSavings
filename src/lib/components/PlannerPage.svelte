@@ -439,6 +439,36 @@
     fetchAdvancedFare();
   }
 
+  function swapStations() {
+    if (advancedMode) {
+      const tempSelected = selectedOriginStation;
+      selectedOriginStation = selectedDestStation;
+      selectedDestStation = tempSelected;
+
+      const tempQuery = originStationQuery;
+      originStationQuery = destStationQuery;
+      destStationQuery = tempQuery;
+
+      const tempResults = originStationResults;
+      originStationResults = destStationResults;
+      destStationResults = tempResults;
+
+      const tempShow = showOriginDropdown;
+      showOriginDropdown = showDestDropdown;
+      showDestDropdown = tempShow;
+
+      const tempZone = newOriginZone;
+      newOriginZone = newDestZone;
+      newDestZone = tempZone;
+
+      fetchAdvancedFare();
+    } else {
+      const tempZone = newOriginZone;
+      newOriginZone = newDestZone;
+      newDestZone = tempZone;
+    }
+  }
+
   async function fetchAdvancedFare() {
     if (
       !selectedOriginStation?.info.naptanId ||
@@ -1795,19 +1825,27 @@
                         .join(",")}
                     </div>
                   </div>
-                  <div
-                    class="rule-actions"
-                    style="display: flex; gap: 0.25rem;"
-                  >
+                  <div class="rule-actions">
                     <button
                       class="rule-edit"
-                      style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;"
-                      onclick={() => editRule(rule)}>✏️</button
+                      onclick={() => editRule(rule)}
+                      title="Edit Routine"
                     >
+                      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
                     <button
                       class="rule-remove"
-                      onclick={() => removeRule(rule.id)}>✕</button
+                      onclick={() => removeRule(rule.id)}
+                      title="Delete Routine"
                     >
+                      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
                   </div>
                 </div>
               {/each}
@@ -1879,16 +1917,27 @@
                       : ""}
                   </div>
                 </div>
-                <div class="rule-actions" style="display: flex; gap: 0.25rem;">
+                <div class="rule-actions">
                   <button
                     class="rule-edit"
-                    style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;"
-                    onclick={() => editRule(rule)}>✏️</button
+                    onclick={() => editRule(rule)}
+                    title="Edit Journey"
                   >
+                    <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
                   <button
                     class="rule-remove"
-                    onclick={() => removeRule(rule.id)}>✕</button
+                    onclick={() => removeRule(rule.id)}
+                    title="Delete Journey"
                   >
+                    <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
             {/each}
@@ -2138,7 +2187,7 @@
 
           <button
             type="button"
-            class="btn-primary"
+            class="btn-primary mobile-layout-add-btn"
             style="font-size: 0.8rem; padding: 0.45rem 0.9rem;"
             onclick={() => {
               resetForm();
@@ -2859,6 +2908,24 @@
                   </ul>
                 {/if}
               </div>
+
+              <div class="swap-stations-container">
+                <button
+                  type="button"
+                  class="swap-stations-btn"
+                  onclick={swapStations}
+                  title="Swap Origin & Destination Stations"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <line x1="3" y1="5" x2="21" y2="5"></line>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <line x1="21" y1="19" x2="3" y2="19"></line>
+                  </svg>
+                  <span>Swap Stations</span>
+                </button>
+              </div>
+
               <div class="form-group station-autocomplete">
                 <label class="setting-label" for="modal-dest-station"
                   >Destination Station</label
@@ -2965,6 +3032,23 @@
                     {/each}
                   </select>
                 </div>
+              </div>
+
+              <div class="swap-stations-container" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                <button
+                  type="button"
+                  class="swap-stations-btn"
+                  onclick={swapStations}
+                  title="Swap Origin & Destination Zones"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <line x1="3" y1="5" x2="21" y2="5"></line>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <line x1="21" y1="19" x2="3" y2="19"></line>
+                  </svg>
+                  <span>Swap Zones</span>
+                </button>
               </div>
             {/if}
           {/if}
@@ -3481,17 +3565,83 @@
     margin-top: 0.125rem;
   }
 
-  .rule-remove {
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 0.25rem;
-    transition: color 0.2s;
+  .rule-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
   }
-  .rule-remove:hover {
+
+  .rule-edit,
+  .rule-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .rule-edit {
+    border: 1px solid rgba(0, 159, 227, 0.3);
+    background: rgba(0, 159, 227, 0.08);
+    color: var(--color-oyster-blue);
+  }
+
+  .rule-edit:hover {
+    background: var(--color-oyster-blue);
+    border-color: var(--color-oyster-blue);
+    color: #ffffff;
+    transform: scale(1.1) translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 159, 227, 0.4);
+  }
+
+  .rule-remove {
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.08);
     color: var(--color-danger);
+  }
+
+  .rule-remove:hover {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: #ffffff;
+    transform: scale(1.1) translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Station Swap Container & Button */
+  .swap-stations-container {
+    display: flex;
+    justify-content: center;
+    margin: -0.25rem 0 0.5rem 0;
+  }
+  .swap-stations-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .swap-stations-btn:hover {
+    background: rgba(0, 159, 227, 0.12);
+    border-color: rgba(0, 159, 227, 0.35);
+    color: var(--color-oyster-blue);
+    transform: translateY(-1px);
+  }
+  .swap-stations-btn svg {
+    transition: transform 0.3s ease;
+  }
+  .swap-stations-btn:hover svg {
+    transform: rotate(180deg);
   }
 
   .pattern-card {
@@ -4231,11 +4381,20 @@
     transform: scale(1.1);
   }
 
+  .mobile-layout-add-btn {
+    display: none !important;
+  }
+
   .mobile-tabs-container {
     display: none;
   }
 
   @media (max-width: 1150px) {
+    .mobile-layout-add-btn {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 0.25rem;
+    }
     .mobile-tabs-container {
       display: flex;
       gap: 0.5rem;

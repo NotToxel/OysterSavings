@@ -199,7 +199,7 @@ export interface DetectedPattern {
 }
 
 export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPattern[] {
-  // Group journeys by route (origin -> destination)
+  // Group journeys by route (origin -> destination or bus route) and specific time period
   const routeMap = new Map<string, {
     journeys: ClassifiedJourney[];
     dayOccurrences: Map<number, number>;
@@ -214,8 +214,8 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
       routeKey = `bus-${j.busRoute || 'any'}|${timePeriod}`;
     } else {
       if (!j.origin || !j.destination) continue;
-      timePeriod = j.isPeak ? '06:30-09:30' : '09:31-15:59';
-      routeKey = `${j.originZone}-${j.destinationZone}|${timePeriod}`;
+      timePeriod = getTimePeriodFromTime(j.raw.startTime);
+      routeKey = `${j.origin.toLowerCase()} to ${j.destination.toLowerCase()}|${timePeriod}`;
     }
 
     if (!routeMap.has(routeKey)) {
@@ -247,8 +247,8 @@ export function detectCommutePatterns(journeys: ClassifiedJourney[]): DetectedPa
     const regularDays: number[] = [];
     for (const [day, count] of data.dayOccurrences) {
       const frequency = count / totalWeeks;
-      if (frequency >= 0.5) {
-        // occurs at least 50% of the weeks
+      if (frequency >= 0.3) {
+        // occurs at least 30% of the weeks (accounts for holidays, sickness, schedule shifts, casual routines)
         regularDays.push(day);
       }
     }

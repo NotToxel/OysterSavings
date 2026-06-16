@@ -120,8 +120,10 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
   if (!isBus) {
     const stations = extractStations(journey.journeyAction);
     if (stations) {
-      origin = stations.origin;
-      destination = stations.destination;
+      const oInfo = getStationInfo(stations.origin);
+      const dInfo = getStationInfo(stations.destination);
+      origin = oInfo ? oInfo.name : stations.origin;
+      destination = dInfo ? dInfo.name : stations.destination;
 
       // Get basic zones first
       const basicOriginZone = getStationZone(stations.origin);
@@ -136,8 +138,6 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
       
       // Refine mode if it's ambiguous
       if (mode === 'unknown' || mode === 'underground' || mode === 'national_rail' || mode === 'overground' || mode === 'elizabeth') {
-        const oInfo = getStationInfo(stations.origin);
-        const dInfo = getStationInfo(stations.destination);
         if (oInfo && dInfo) {
           const TFL_MODES = ['underground', 'dlr', 'elizabeth', 'overground'];
           const oHasTfl = oInfo.modes.some(m => TFL_MODES.includes(m));

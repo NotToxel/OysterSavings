@@ -55,17 +55,20 @@ export interface ProductComparisonResult {
   zoneRange: string;
   weeklyPayg: number;
   weeklyPaygFareType: number;
+  weeklyPaygRailcard: number;
   weeklyTravelcard: number;
   weeklyStudentTravelcard: number;
   weeklyBusPass: number;
   monthlyPayg: number;
   monthlyPaygFareType: number;
+  monthlyPaygRailcard: number;
   monthlyTravelcard: number;
   monthlyStudentTravelcard: number;
   monthlyBusPass: number;
   monthlyStudentBusPass: number;
   annualPayg: number;
   annualPaygFareType: number;
+  annualPaygRailcard: number;
   annualTravelcard: number;
   annualStudentTravelcard: number;
   annualBusPass: number;
@@ -167,12 +170,41 @@ export function calculateFareTypeSavings(
     (a, b) => a.dateObj.getTime() - b.dateObj.getTime()
   );
 
-  // Heuristic to detect if CSV fares already have the selected fareType discount
-  // If actual spend is significantly lower than expected PAYG, and very close to or less than the simulated fareType spend,
-  // it's likely they already have the fareType applied to their history.
+  // Robust journey-level fare matching heuristic to detect if this fareType discount is already active in history
+  let fareTypeMatches = 0;
+  let standardMatches = 0;
+  let eligibleJourneysCount = 0;
+
+  for (const f of baseFares) {
+    if (f.journey.isBus || f.journey.isCapHit || f.actualCharge <= 0 || f.expectedFare <= 0) continue;
+    
+    // Ignore penalty fares / maximum fares (e.g. £4.65, £8.90)
+    if (f.actualCharge === 4.65 || f.actualCharge === 8.90) continue;
+
+    const discountApplies = Math.abs((f.fareTypeFare ?? f.expectedFare) - f.expectedFare) >= 0.05;
+    if (!discountApplies) continue;
+
+    eligibleJourneysCount++;
+    const matchesStandard = Math.abs(f.actualCharge - f.expectedFare) < 0.05;
+    const matchesConcession = Math.abs(f.actualCharge - (f.fareTypeFare ?? f.expectedFare)) < 0.05;
+
+    if (matchesConcession) {
+      fareTypeMatches++;
+    } else if (matchesStandard) {
+      standardMatches++;
+    }
+  }
+
   let hasExistingDiscount = false;
-  if (totalActual < totalExpected * 0.85 && totalActual <= totalFareType * 1.05) {
-    hasExistingDiscount = true;
+  if (eligibleJourneysCount > 0) {
+    if (fareTypeMatches > standardMatches && (fareTypeMatches / eligibleJourneysCount) > 0.75 && standardMatches === 0) {
+      hasExistingDiscount = true;
+    }
+  } else {
+    // Fallback to total spend comparison if no eligible rail journeys exist
+    if (totalActual < totalExpected * 0.85 && totalActual <= totalFareType * 1.05) {
+      hasExistingDiscount = true;
+    }
   }
 
   // Round everything
@@ -203,7 +235,7 @@ export function calculateProductComparison(
   fareTypeCost: number,
   includeStudentPhotocardFee: boolean
 ): ProductComparisonResult[] {
-  const effectiveFareTypeCost = (fareType === 'none' || fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17') ? 0 : fareTypeCost;
+  const effectiveFareTypeCost = (fareType === 'none' || fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17' || fareType === 'railcard') ? 0 : fareTypeCost;
   
   let cardCost = 0;
   if (includeStudentPhotocardFee) {
@@ -219,6 +251,8 @@ export function calculateProductComparison(
       cardCost = 7;
     }
   }
+
+  const studentCardCost = includeStudentPhotocardFee ? STUDENT_PHOTOCARD_FEE : 0;
 
   // Calculate max/min zone traveled in the history (minimum fallback of Zone 2)
   let minZoneTraveled = 9;
@@ -280,17 +314,35 @@ export function calculateProductComparison(
   const weeklyPaygFareTypeRaw = fareType === 'none' ? weeklyPaygRaw : totalFareTypeSpend / totalFareTypeWeeks;
   const weeklyPaygFareType = round2(weeklyPaygFareTypeRaw);
 
+  // 3. Simulate National Railcard PAYG with daily and weekly caps
+  const railcardFares = calculateAllFares(journeys, 'railcard').map(f => ({ ...f, actualCharge: f.fareTypeFare ?? f.expectedFare }));
+  const railcardDaily = calculateDailyCaps(railcardFares, 'railcard');
+  const railcardWeekly = calculateWeeklyCaps(railcardDaily, 'railcard');
+  const totalRailcardWeeks = railcardWeekly.length || 1;
+  const totalRailcardSpend = railcardWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
+  const weeklyPaygRailcardRaw = totalRailcardSpend / totalRailcardWeeks;
+  const railcardCardCost = includeStudentPhotocardFee ? 7 : 0;
+  const paygRailcardCostWeekly = round2(weeklyPaygRailcardRaw + railcardCardCost / 52);
+  const paygRailcardCostMonthly = round2(weeklyPaygRailcardRaw * 4.33 + railcardCardCost / 12);
+  const paygRailcardCostAnnual = round2(weeklyPaygRailcardRaw * 52 + railcardCardCost);
+
   const totalWeeks = fareTypeWeekly.length || 1;
+
+  // Standard and Student Bus Pass simulation
   const uncoveredBusPassSpend = simulateProductSpend(baseFares, fareType, 'bus_pass');
   const weeklyUncoveredBusPassSpend = uncoveredBusPassSpend / totalWeeks;
+
+  const studentBaseFares = fareType === 'student' ? baseFares : calculateAllFares(journeys, 'student');
+  const studentUncoveredBusPassSpend = simulateProductSpend(studentBaseFares, 'student', 'bus_pass');
+  const weeklyStudentUncoveredBusPassSpend = studentUncoveredBusPassSpend / totalWeeks;
 
   const weeklyBusPassCost = BUS_PASS_WEEKLY + weeklyUncoveredBusPassSpend + (fareType !== 'student' ? round2(cardCost / 52) : 0);
   const monthlyBusPassCost = BUS_PASS_MONTHLY + weeklyUncoveredBusPassSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
   const annualBusPassCost = BUS_PASS_ANNUAL + weeklyUncoveredBusPassSpend * 52 + (fareType !== 'student' ? cardCost : 0);
 
-  const weeklyStudentBusPassCost = (fareType === 'student') ? STUDENT_BUS_PASS_WEEKLY + weeklyUncoveredBusPassSpend + round2(cardCost / 52) : 0;
-  const monthlyStudentBusPassCost = (fareType === 'student') ? STUDENT_BUS_PASS_MONTHLY + weeklyUncoveredBusPassSpend * 4.33 + round2(cardCost / 12) : 0;
-  const annualStudentBusPassCost = (fareType === 'student') ? STUDENT_BUS_PASS_ANNUAL + weeklyUncoveredBusPassSpend * 52 + cardCost : 0;
+  const weeklyStudentBusPassCost = STUDENT_BUS_PASS_WEEKLY + weeklyStudentUncoveredBusPassSpend + round2(studentCardCost / 52);
+  const monthlyStudentBusPassCost = STUDENT_BUS_PASS_MONTHLY + weeklyStudentUncoveredBusPassSpend * 4.33 + round2(studentCardCost / 12);
+  const annualStudentBusPassCost = STUDENT_BUS_PASS_ANNUAL + weeklyStudentUncoveredBusPassSpend * 52 + studentCardCost;
 
   for (const zoneRange of zoneRanges) {
     const isZip = fareType === 'zip_11_15' || fareType === 'zip_16_17';
@@ -304,6 +356,9 @@ export function calculateProductComparison(
     const uncoveredSpend = simulateProductSpend(baseFares, fareType, 'travelcard', zoneRange);
     const weeklyUncoveredSpend = uncoveredSpend / totalWeeks;
 
+    const studentUncoveredSpend = simulateProductSpend(studentBaseFares, 'student', 'travelcard', zoneRange);
+    const weeklyStudentUncoveredSpend = studentUncoveredSpend / totalWeeks;
+
     const paygFareTypeCostWeekly = round2(weeklyPaygFareTypeRaw + (effectiveFareTypeCost + cardCost) / 52);
     const paygFareTypeCostMonthly = round2(weeklyPaygFareTypeRaw * 4.33 + (effectiveFareTypeCost + cardCost) / 12);
     const paygFareTypeCostAnnual = round2(weeklyPaygFareTypeRaw * 52 + effectiveFareTypeCost + cardCost);
@@ -312,25 +367,28 @@ export function calculateProductComparison(
     const monthlyTcWithCard = monthlyTc + weeklyUncoveredSpend * 4.33 + (fareType !== 'student' ? round2(cardCost / 12) : 0);
     const annualTcWithCard = annualTc + weeklyUncoveredSpend * 52 + (fareType !== 'student' ? cardCost : 0);
 
-    const studentWeeklyTcWithCard = studentWeeklyTc > 0 ? studentWeeklyTc + weeklyUncoveredSpend + (cardCost / 52) : 0;
-    const studentMonthlyTcWithCard = studentMonthlyTc > 0 ? studentMonthlyTc + weeklyUncoveredSpend * 4.33 + (cardCost / 12) : 0;
-    const studentAnnualTcWithCard = studentAnnualTc > 0 ? studentAnnualTc + weeklyUncoveredSpend * 52 + cardCost : 0;
+    const studentWeeklyTcWithCard = studentWeeklyTc > 0 ? studentWeeklyTc + weeklyStudentUncoveredSpend + round2(studentCardCost / 52) : 0;
+    const studentMonthlyTcWithCard = studentMonthlyTc > 0 ? studentMonthlyTc + weeklyStudentUncoveredSpend * 4.33 + round2(studentCardCost / 12) : 0;
+    const studentAnnualTcWithCard = studentAnnualTc > 0 ? studentAnnualTc + weeklyStudentUncoveredSpend * 52 + studentCardCost : 0;
 
     results.push({
       zoneRange,
       weeklyPayg,
       weeklyPaygFareType: paygFareTypeCostWeekly,
+      weeklyPaygRailcard: paygRailcardCostWeekly,
       weeklyTravelcard: weeklyTcWithCard,
       weeklyStudentTravelcard: studentWeeklyTcWithCard,
       weeklyBusPass: round2(weeklyBusPassCost),
       monthlyPayg: round2(weeklyPaygRaw * 4.33),
       monthlyPaygFareType: paygFareTypeCostMonthly,
+      monthlyPaygRailcard: paygRailcardCostMonthly,
       monthlyTravelcard: monthlyTcWithCard,
       monthlyStudentTravelcard: studentMonthlyTcWithCard,
       monthlyBusPass: round2(monthlyBusPassCost),
       monthlyStudentBusPass: round2(monthlyStudentBusPassCost),
       annualPayg: round2(weeklyPaygRaw * 52),
       annualPaygFareType: paygFareTypeCostAnnual,
+      annualPaygRailcard: paygRailcardCostAnnual,
       annualTravelcard: annualTcWithCard,
       annualStudentTravelcard: studentAnnualTcWithCard,
       annualBusPass: round2(annualBusPassCost),
@@ -338,6 +396,7 @@ export function calculateProductComparison(
       bestWeekly: getBest([
         ['PAYG', weeklyPayg],
         ['PAYG + Fare Type', paygFareTypeCostWeekly],
+        ['PAYG + Railcard', paygRailcardCostWeekly],
         ['Travelcard', weeklyTcWithCard],
         ['Student Travelcard', studentWeeklyTcWithCard],
         ['Bus & Tram Pass', round2(weeklyBusPassCost)],
@@ -345,6 +404,7 @@ export function calculateProductComparison(
       bestMonthly: getBest([
         ['PAYG', round2(weeklyPaygRaw * 4.33)],
         ['PAYG + Fare Type', paygFareTypeCostMonthly],
+        ['PAYG + Railcard', paygRailcardCostMonthly],
         ['Travelcard', monthlyTcWithCard],
         ['Student Travelcard', studentMonthlyTcWithCard],
         ['Bus & Tram Pass', round2(monthlyBusPassCost)],
@@ -353,6 +413,7 @@ export function calculateProductComparison(
       bestAnnual: getBest([
         ['PAYG', round2(weeklyPaygRaw * 52)],
         ['PAYG + Fare Type', paygFareTypeCostAnnual],
+        ['PAYG + Railcard', paygRailcardCostAnnual],
         ['Travelcard', annualTcWithCard],
         ['Student Travelcard', studentAnnualTcWithCard],
         ['Bus & Tram Pass', round2(annualBusPassCost)],
@@ -405,4 +466,41 @@ function simulateProductSpend(
   const dailyCaps = calculateDailyCaps(mockFares, fareType);
   const weeklyCaps = calculateWeeklyCaps(dailyCaps, fareType);
   return weeklyCaps.reduce((sum, w) => sum + w.totalSpend, 0);
+}
+
+export function detectActiveDiscount(journeys: ClassifiedJourney[]): FareType {
+  if (journeys.length === 0) return 'none';
+
+  // Calculate standard fares vs railcard fares
+  const baseFares = calculateAllFares(journeys, 'railcard');
+
+  let fareTypeMatches = 0;
+  let standardMatches = 0;
+  let eligibleJourneysCount = 0;
+
+  for (const f of baseFares) {
+    if (f.journey.isBus || f.journey.isCapHit || f.actualCharge <= 0 || f.expectedFare <= 0) continue;
+    
+    // Ignore penalty fares / maximum fares (e.g. £4.65, £8.90)
+    if (f.actualCharge === 4.65 || f.actualCharge === 8.90) continue;
+
+    const discountApplies = Math.abs((f.fareTypeFare ?? f.expectedFare) - f.expectedFare) >= 0.05;
+    if (!discountApplies) continue;
+
+    eligibleJourneysCount++;
+    const matchesStandard = Math.abs(f.actualCharge - f.expectedFare) < 0.05;
+    const matchesConcession = Math.abs(f.actualCharge - (f.fareTypeFare ?? f.expectedFare)) < 0.05;
+
+    if (matchesConcession) {
+      fareTypeMatches++;
+    } else if (matchesStandard) {
+      standardMatches++;
+    }
+  }
+
+  if (eligibleJourneysCount > 0 && fareTypeMatches > standardMatches && (fareTypeMatches / eligibleJourneysCount) > 0.75 && standardMatches === 0) {
+    return 'railcard';
+  }
+
+  return 'none';
 }

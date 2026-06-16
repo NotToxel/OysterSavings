@@ -2,17 +2,25 @@
   import {
     classifiedJourneys, fareResults, dailyCapResults,
     weeklyCapResults, capSummary, selectedFareType,
-    fareTypeCost, includeOysterCost, savingsResult
+    fareTypeCost, includeOysterCost, savingsResult, detectedDiscount
   } from '$lib/stores/stores';
   import { calculateFareTypeSavings } from '$lib/engine/savingsEngine';
   import { FARE_TYPES, type FareType } from '$lib/data/fareData';
   import { getZoneColor } from '$lib/data/stationService';
+  import InsightsPage from './InsightsPage.svelte';
 
-  let activeTab = $state<'journeys' | 'savings' | 'caps'>('journeys');
+  let activeTab = $state<'journeys' | 'insights' | 'savings' | 'caps'>('journeys');
   let sortKey = $state<string>('date');
   let sortAsc = $state(false);
   let filterMode = $state<string>('all');
   let overrideCost = $state(false);
+  let searchQuery = $state('');
+
+  let avgWeeklySpend = $derived.by(() => {
+    if (!$weeklyCapResults || $weeklyCapResults.length === 0) return 0;
+    const total = $weeklyCapResults.reduce((sum, w) => sum + w.totalSpend, 0);
+    return total / $weeklyCapResults.length;
+  });
 
   // Auto-sync fare type cost when selection changes
   $effect(() => {
@@ -24,12 +32,10 @@
     }
   });
 
-  // Auto-sync includeOysterCost when selection changes
+  // Auto-sync includeOysterCost when selection changes (do not force to true)
   $effect(() => {
     if ($selectedFareType === 'none' || $selectedFareType === 'jobcentre') {
       $includeOysterCost = false;
-    } else {
-      $includeOysterCost = true;
     }
   });
 
@@ -47,7 +53,17 @@
     else if (filterMode === 'tube') list = list.filter(j => j.mode === 'underground');
     else if (filterMode === 'rail') list = list.filter(j => ['national_rail', 'overground', 'elizabeth', 'dlr'].includes(j.mode));
     else if (filterMode === 'nrtube') list = list.filter(j => j.mode === 'nr_tube');
-    else if (filterMode === 'capped') list = list.filter(j => j.isCapHit);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(j => {
+        const action = (j.raw.journeyAction || '').toLowerCase();
+        const origin = (j.origin || '').toLowerCase();
+        const destination = (j.destination || '').toLowerCase();
+        const route = (j.busRoute || '').toLowerCase();
+        const mode = (j.mode || '').toLowerCase();
+        return action.includes(q) || origin.includes(q) || destination.includes(q) || route.includes(q) || mode.includes(q);
+      });
+    }
 
     // Sort
     list.sort((a, b) => {
@@ -122,8 +138,11 @@
     <button class="tab-btn" class:active={activeTab === 'journeys'} onclick={() => activeTab = 'journeys'}>
       🚆 Journeys
     </button>
+    <button class="tab-btn" class:active={activeTab === 'insights'} onclick={() => activeTab = 'insights'}>
+      💡 Insights
+    </button>
     <button class="tab-btn" class:active={activeTab === 'savings'} onclick={() => activeTab = 'savings'}>
-      💰 Fare Type Savings
+      💰 Discounted Fares
     </button>
     <button class="tab-btn" class:active={activeTab === 'caps'} onclick={() => activeTab = 'caps'}>
       📊 Cap Analysis
@@ -151,6 +170,26 @@
           {pill.label} <span class="pill-count">{pill.count}</span>
         </button>
       {/each}
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center; width: 100%;">
+      <span class="search-icon" style="opacity: 0.6; font-size: 0.9rem; margin-left: 0.25rem;">🔍</span>
+      <input
+        type="text"
+        placeholder="Search station, route, or mode..."
+        class="input-field"
+        style="flex: 1; font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); color: var(--color-text);"
+        bind:value={searchQuery}
+      />
+      {#if searchQuery}
+        <button
+          onclick={() => searchQuery = ''}
+          style="background: none; border: none; color: var(--color-text-secondary); cursor: pointer; padding: 0 0.5rem; font-size: 0.85rem;"
+        >
+          Clear
+        </button>
+      {/if}
     </div>
 
     <!-- Journey table -->
@@ -226,6 +265,8 @@
       </div>
     </div>
 
+  {:else if activeTab === 'insights'}
+    <InsightsPage />
   {:else if activeTab === 'savings'}
     <!-- Fare Type Savings Panel -->
     <div class="savings-layout">
@@ -326,11 +367,25 @@
               </div>
             </div>
 
+            {#if $selectedFareType === 'none' && $detectedDiscount === 'railcard'}
+              <div class="glass-card savings-hero positive" style="border-color: rgba(139, 92, 246, 0.4); background: rgba(139, 92, 246, 0.05); margin-bottom: 1.5rem; text-align: left; align-items: flex-start; padding: 1.5rem;">
+                <div class="savings-hero-label" style="color: #c084fc; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  💡 National Railcard Discount Detected!
+                </div>
+                <div class="savings-hero-sub" style="color: var(--color-text-secondary); margin-bottom: 1.25rem; font-size: 0.875rem; text-align: left; line-height: 1.5;">
+                  We analyzed your travel history and detected that your actual fares match the <strong>National Railcard</strong> discount rate (e.g. you paid £1.95 instead of £3.00 on off-peak journeys).
+                </div>
+                <button class="cost-btn" style="background: #8b5cf6; color: white; border: none; font-weight: bold; padding: 0.625rem 1.25rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick={() => { $selectedFareType = 'railcard'; $includeOysterCost = false; }}>
+                  Apply National Railcard in Simulation
+                </button>
+              </div>
+            {/if}
+
             <!-- Potential savings teaser -->
             <div class="glass-card" style="padding: 1.5rem; border-color: rgba(52, 211, 153, 0.2);">
-              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">💡 Potential Savings with a Fare Type</h3>
+              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">💡 Potential Savings with a Discount</h3>
               <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 1rem;">
-                {$selectedFareType === 'student' ? 'The Apprentice / 18+ Student Oyster gives 30% off Travelcards but has no standard PAYG single fare discount. To get 1/3 off PAYG fares, add a National Railcard to your Oyster.' : 'Adult / Contactless has standard fares with no discount. Select a fare type above to see how much you could save.'}
+                {$selectedFareType === 'student' ? 'The Apprentice / 18+ Student Oyster gives 30% off Travelcards but has no standard PAYG single fare discount. To get 1/3 off PAYG fares, add a National Railcard to your Oyster.' : 'Adult / Contactless has standard fares with no discount. Select a discount profile above to see how much you could save.'}
               </p>
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                 <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedFareType = 'railcard'}>
@@ -351,12 +406,12 @@
                 ✅ Discount correctly detected in your travel history!
               </div>
               <div class="savings-hero-value green">
-                You saved £{($savingsResult.totalExpectedSpend - $savingsResult.totalActualSpend).toFixed(2)}
+                You saved £{$savingsResult.totalSaving.toFixed(2)}
               </div>
               <div class="savings-hero-sub">
                 Compared to standard Adult PAYG fares over {$savingsResult.totalJourneys} journeys.
                 <br>
-                <span style="font-size: 0.75rem; opacity: 0.8;">(We detected that your actual spend of £{$savingsResult.totalActualSpend.toFixed(2)} closely matches the {$savingsResult.fareTypeName} rate)</span>
+                <span style="font-size: 0.75rem; opacity: 0.8;">(We detected that your travel history matches the {$savingsResult.fareTypeName} rate. Your actual spend was £{$savingsResult.totalActualSpend.toFixed(2)} vs standard adult £{$savingsResult.totalExpectedSpend.toFixed(2)})</span>
               </div>
             </div>
           {:else}
@@ -471,6 +526,11 @@
             <div class="stat-icon">📊</div>
             <div class="stat-value">£{$capSummary.averageDailySpend.toFixed(2)}</div>
             <div class="stat-label">Avg Daily Spend</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💳</div>
+            <div class="stat-value">£{avgWeeklySpend.toFixed(2)}</div>
+            <div class="stat-label">Avg Weekly Spend</div>
           </div>
         </div>
       {/if}
@@ -746,7 +806,7 @@
   /* Cap analysis */
   .cap-summary-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
     margin-bottom: 1.5rem;
   }

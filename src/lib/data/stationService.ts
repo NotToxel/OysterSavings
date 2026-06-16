@@ -17,8 +17,15 @@ export function normalizeStationName(raw: string): string {
     .replace(/\s*\[.*?\]\s*/g, '') // remove [National Rail], [London Underground], etc.
     .replace(/\s*\(platforms?\s*[\d\-]+\)\s*/gi, '') // remove (platforms 12-19)
     .replace(/\s*\(District,\s*Piccadilly lines?\)\s*/gi, '') // Hammersmith qualifier
+    // Heathrow terminal normalisations (e.g., T 2 & 3 or T4 to canonical names)
+    .replace(/\b(t|terminal|terminals)\s*(\d)\s*(?:&|and)\s*(\d)\b/gi, 'terminals $2 & $3')
+    .replace(/\b(t|terminal)\s*(\d)\b/gi, 'terminal $2')
     .trim()
     .toLowerCase();
+}
+
+function cleanPunctuation(str: string): string {
+  return str.replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 // Get full station info object
@@ -54,6 +61,14 @@ export function getStationInfo(rawName: string): StationInfo | null {
 
   key = key.replace(/\(.*?\)/g, '').trim();
   if (STATIONS[key] && isCompatible(STATIONS[key])) return STATIONS[key];
+
+  // Try cleaned punctuation lookup (e.g. matching "queenstown road battersea" to "queenstown road (battersea)")
+  const cleanNormalized = cleanPunctuation(normalized);
+  for (const [k, info] of Object.entries(STATIONS)) {
+    if (cleanPunctuation(k) === cleanNormalized && isCompatible(info)) {
+      return info;
+    }
+  }
 
   // Collect all matching stations
   const matches: { key: string; info: StationInfo }[] = [];

@@ -6,7 +6,7 @@ import type { ForecastResult } from '../engine/forecastEngine';
 import type { ClassifiedJourney } from '../engine/journeyClassifier';
 import type { ExcludedJourney } from '../engine/journeyFilter';
 import type { DetectedPattern, PlannedJourney, RecurrenceRule } from '../engine/recurrenceEngine';
-import { calculateProductComparison, calculateFareTypeSavings, type ProductComparisonResult, type FareTypeSavingsResult } from '../engine/savingsEngine';
+import { calculateProductComparison, calculateFareTypeSavings, detectActiveDiscount, type ProductComparisonResult, type FareTypeSavingsResult } from '../engine/savingsEngine';
 import type { FareType } from '../data/fareData';
 
 // Journey data store
@@ -53,8 +53,8 @@ if (isBrowser) {
 }
 
 export const fareTypeCost = writable<number>(0);
-export const includeOysterCost = writable<boolean>(true);
-export const includeStudentPhotocardFee = writable<boolean>(true);
+export const includeOysterCost = writable<boolean>(false);
+export const includeStudentPhotocardFee = writable<boolean>(false);
 export const isDemoMode = writable<boolean>(false);
 const initialAdvancedMode = isBrowser && localStorage.getItem('oystersavings_global_advanced_mode') !== 'false';
 export const globalAdvancedMode = writable<boolean>(initialAdvancedMode);
@@ -83,6 +83,14 @@ export const savingsResult = derived(
   ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost]) => {
     if ($classifiedJourneys.length === 0) return null;
     return calculateFareTypeSavings($classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost);
+  }
+);
+
+export const detectedDiscount = derived(
+  classifiedJourneys,
+  ($classifiedJourneys) => {
+    if ($classifiedJourneys.length === 0) return 'none';
+    return detectActiveDiscount($classifiedJourneys);
   }
 );
 
