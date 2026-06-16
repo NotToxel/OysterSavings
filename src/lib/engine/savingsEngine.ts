@@ -96,9 +96,10 @@ export function calculateFareTypeSavings(
     oysterCost = ZIP_11_15_FEE;
   } else if (fareType === 'zip_16_17' && includeOysterCost) {
     oysterCost = ZIP_16_17_FEE;
-  } else if (fareType === 'jobcentre' || fareType === 'none') {
-    oysterCost = 0; // Jobcentre Plus and Adult / Contactless have no Oyster card fee / cost
+  } else if (fareType === 'none') {
+    oysterCost = 0; // Adult / Contactless — no Oyster card fee to include
   }
+  // Jobcentre Plus can now include Oyster card cost when toggled on
 
   const effectiveFareTypeCost = fareType === 'none' ? 0 : fareTypeCost;
 
