@@ -1,7 +1,7 @@
 // Journey Classifier — extracts mode, zones, peak/off-peak from CSV journey strings
 import type { ParsedJourney } from './csvParser';
 import { detectTransportMode, getStationZone, getStationBestZone, getStationInfo, type TransportMode } from '../data/stationService';
-import { getZoneRange, isPeakJourney, isUKBankHoliday } from '../data/fareData';
+import { getZoneRange, isPeakJourney, isUKBankHoliday, lookupFare } from '../data/fareData';
 
 export interface ClassifiedJourney {
   raw: ParsedJourney;
@@ -120,8 +120,115 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
   if (!isBus) {
     const stations = extractStations(journey.journeyAction);
     if (stations) {
-      const oInfo = getStationInfo(stations.origin);
-      const dInfo = getStationInfo(stations.destination);
+      let oInfo = getStationInfo(stations.origin);
+      let dInfo = getStationInfo(stations.destination);
+
+      // Disambiguation logic: assume same mode you started on unless the fare is higher
+      if (oInfo && dInfo) {
+        const constOInfo = oInfo;
+        const constDInfo = dInfo;
+        const sharedModes = constOInfo.modes.filter(m => constDInfo.modes.includes(m));
+        if (sharedModes.length === 0) {
+          // They don't share a mode. Let's see if we can resolve them to share a mode.
+          // 1. Try to change destination to match one of the origin's modes
+          let resolvedD = dInfo;
+          let resolvedO = oInfo;
+          let resolvedDChanged = false;
+
+          for (const oMode of oInfo.modes) {
+            const altD = getStationInfo(stations.destination, oMode);
+            if (altD && altD.name !== dInfo.name) {
+              const zoneRangeSame = getZoneRange(oInfo.zone, altD.zone);
+              const zoneRangeDefault = getZoneRange(oInfo.zone, dInfo.zone);
+              const tempIsPeak = isPeakJourney(journey.date, journey.startTime, oInfo.zone, altD.zone);
+              
+              const sameMode = ['underground', 'overground', 'dlr', 'elizabeth'].includes(oMode) ? 'underground' : oMode;
+              
+              let defaultMode = 'underground';
+              const oHasTfl = oInfo.modes.some(m => ['underground', 'dlr', 'elizabeth', 'overground'].includes(m));
+              const dHasTfl = dInfo.modes.some(m => ['underground', 'dlr', 'elizabeth', 'overground'].includes(m));
+              if (oHasTfl && dHasTfl) {
+                defaultMode = 'underground';
+              } else {
+                const oIsNR = oInfo.modes.includes('national_rail') && !oHasTfl;
+                const dIsNR = dInfo.modes.includes('national_rail') && !dHasTfl;
+                if ((oHasTfl && dIsNR) || (dHasTfl && oIsNR)) {
+                  defaultMode = 'nr_tube';
+                } else if (oIsNR && dIsNR) {
+                  defaultMode = 'national_rail';
+                }
+              }
+
+              const fareSame = lookupFare(zoneRangeSame, tempIsPeak, sameMode);
+              const fareDefault = lookupFare(zoneRangeDefault, tempIsPeak, defaultMode);
+
+              if (fareDefault > fareSame) {
+                // Check if CSV charge is closer to fareDefault than fareSame under potential discount multipliers
+                const distSame = Math.min(...[1.0, 0.666, 0.5].map(m => Math.abs(Math.floor(fareSame * m * 20) / 20 - journey.charge)));
+                const distDefault = Math.min(...[1.0, 0.666, 0.5].map(m => Math.abs(Math.floor(fareDefault * m * 20) / 20 - journey.charge)));
+                if (distSame < distDefault) {
+                  resolvedD = altD;
+                  resolvedDChanged = true;
+                  break;
+                }
+              } else {
+                // If fare is not higher, assume same mode
+                resolvedD = altD;
+                resolvedDChanged = true;
+                break;
+              }
+            }
+          }
+
+          // 2. If destination was not changed, try to change origin to match one of the destination's modes
+          if (!resolvedDChanged) {
+            for (const dMode of dInfo.modes) {
+              const altO = getStationInfo(stations.origin, dMode);
+              if (altO && altO.name !== oInfo.name) {
+                const zoneRangeSame = getZoneRange(altO.zone, dInfo.zone);
+                const zoneRangeDefault = getZoneRange(oInfo.zone, dInfo.zone);
+                const tempIsPeak = isPeakJourney(journey.date, journey.startTime, altO.zone, dInfo.zone);
+                
+                const sameMode = ['underground', 'overground', 'dlr', 'elizabeth'].includes(dMode) ? 'underground' : dMode;
+                
+                let defaultMode = 'underground';
+                const oHasTfl = oInfo.modes.some(m => ['underground', 'dlr', 'elizabeth', 'overground'].includes(m));
+                const dHasTfl = dInfo.modes.some(m => ['underground', 'dlr', 'elizabeth', 'overground'].includes(m));
+                if (oHasTfl && dHasTfl) {
+                  defaultMode = 'underground';
+                } else {
+                  const oIsNR = oInfo.modes.includes('national_rail') && !oHasTfl;
+                  const dIsNR = dInfo.modes.includes('national_rail') && !dHasTfl;
+                  if ((oHasTfl && dIsNR) || (dHasTfl && oIsNR)) {
+                    defaultMode = 'nr_tube';
+                  } else if (oIsNR && dIsNR) {
+                    defaultMode = 'national_rail';
+                  }
+                }
+
+                const fareSame = lookupFare(zoneRangeSame, tempIsPeak, sameMode);
+                const fareDefault = lookupFare(zoneRangeDefault, tempIsPeak, defaultMode);
+
+                if (fareDefault > fareSame) {
+                  const distSame = Math.min(...[1.0, 0.666, 0.5].map(m => Math.abs(Math.floor(fareSame * m * 20) / 20 - journey.charge)));
+                  const distDefault = Math.min(...[1.0, 0.666, 0.5].map(m => Math.abs(Math.floor(fareDefault * m * 20) / 20 - journey.charge)));
+                  if (distSame < distDefault) {
+                    resolvedO = altO;
+                    break;
+                  }
+                } else {
+                  resolvedO = altO;
+                  break;
+                }
+              }
+            }
+          }
+
+          oInfo = resolvedO;
+          dInfo = resolvedD;
+        }
+      }
+
       origin = oInfo ? oInfo.name : stations.origin;
       destination = dInfo ? dInfo.name : stations.destination;
 

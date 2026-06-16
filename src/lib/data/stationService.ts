@@ -54,7 +54,7 @@ function isContiguousSubarray(sub: string[], main: string[]): boolean {
 }
 
 // Get full station info object
-export function getStationInfo(rawName: string): StationInfo | null {
+export function getStationInfo(rawName: string, preferredModeOverride?: string | null): StationInfo | null {
   const normalized = normalizeStationName(rawName);
 
   // Detect mode qualifier in rawName
@@ -70,6 +70,8 @@ export function getStationInfo(rawName: string): StationInfo | null {
     preferredMode = 'elizabeth';
   } else if (lowerRaw.includes('[london overground]') || lowerRaw.includes('overground station')) {
     preferredMode = 'overground';
+  } else if (preferredModeOverride) {
+    preferredMode = preferredModeOverride;
   }
 
   // Helper to check compatibility

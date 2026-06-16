@@ -102,6 +102,28 @@ export const productComparison = derived(
   }
 );
 
+export const analysisPeriodText = derived(
+  classifiedJourneys,
+  ($classifiedJourneys) => {
+    if ($classifiedJourneys.length === 0) return '';
+    let minDate = new Date($classifiedJourneys[0].raw.date);
+    let maxDate = new Date($classifiedJourneys[0].raw.date);
+
+    for (const j of $classifiedJourneys) {
+      const d = new Date(j.raw.date);
+      if (d < minDate) minDate = d;
+      if (d > maxDate) maxDate = d;
+    }
+
+    const formatDate = (date: Date) => {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    };
+
+    return `${formatDate(minDate)} to ${formatDate(maxDate)}`;
+  }
+);
+
 // Planner
 function parseStoredRules(jsonStr: string): RecurrenceRule[] {
   try {

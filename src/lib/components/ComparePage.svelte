@@ -237,14 +237,14 @@
       if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') {
         ds.push({
           label: rcLabel, data: getValues(rcKey),
-          backgroundColor: 'rgba(105, 80, 161, 0.7)', borderColor: '#6950A1', borderWidth: 1
+          backgroundColor: 'rgba(111, 67, 144, 0.7)', borderColor: '#6f4390', borderWidth: 1
         });
       }
 
       if (visibleProducts.travelcardStandard) {
         ds.push({
           label: tcLabel, data: getValues(tcKey),
-          backgroundColor: 'rgba(239, 123, 16, 0.7)', borderColor: '#EF7B10', borderWidth: 1
+          backgroundColor: 'rgba(231, 113, 13, 0.7)', borderColor: '#e7710d', borderWidth: 1
         });
       }
 
@@ -454,13 +454,13 @@
       </label>
       {#if !isNoDiscount && $selectedFareType !== 'railcard'}
       <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.paygConcession} style="accent-color: #6950A1;" />
-        <span class="product-dot" style="background: #6950A1;"></span> PAYG + Concession
+        <input type="checkbox" bind:checked={visibleProducts.paygConcession} style="accent-color: #6f4390;" />
+        <span class="product-dot" style="background: #6f4390;"></span> PAYG + Concession
       </label>
       {/if}
       <label class="toggle-checkbox">
-        <input type="checkbox" bind:checked={visibleProducts.travelcardStandard} style="accent-color: #EF7B10;" />
-        <span class="product-dot" style="background: #EF7B10;"></span> Travelcard
+        <input type="checkbox" bind:checked={visibleProducts.travelcardStandard} style="accent-color: #e7710d;" />
+        <span class="product-dot" style="background: #e7710d;"></span> Travelcard
       </label>
       <label class="toggle-checkbox">
         <input type="checkbox" bind:checked={visibleProducts.travelcardStudent} style="accent-color: #10b981;" />
@@ -594,7 +594,7 @@
           {/if}
           {#if visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard'}
             <tr>
-              <td class="product-name"><span class="product-dot" style="background: #6950A1;"></span> PAYG + Concession ({fareTypeShortName})</td>
+              <td class="product-name"><span class="product-dot" style="background: #6f4390;"></span> PAYG + Concession ({fareTypeShortName})</td>
               {#each matrixZones as zone}
                 <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyPaygFareType' : activeSpan === 'monthly' ? 'monthlyPaygFareType' : 'annualPaygFareType')}</td>
               {/each}
@@ -602,7 +602,7 @@
           {/if}
           {#if visibleProducts.travelcardStandard}
           <tr>
-            <td class="product-name"><span class="product-dot" style="background: #EF7B10;"></span> Travelcard</td>
+            <td class="product-name"><span class="product-dot" style="background: #e7710d;"></span> Travelcard</td>
             {#each matrixZones as zone}
               <td class="price-cell">{getCostForZone(zone, activeSpan === 'weekly' ? 'weeklyTravelcard' : activeSpan === 'monthly' ? 'monthlyTravelcard' : 'annualTravelcard')}</td>
             {/each}
@@ -660,13 +660,13 @@
         </thead>
         <tbody>
           <tr>
-            <td class="product-name"><span class="product-dot" style="background: #EF7B10;"></span> Weekly Travelcard</td>
+            <td class="product-name"><span class="product-dot" style="background: #e7710d;"></span> Weekly Travelcard</td>
             {#each matrixZones as zone}
               <td class="price-cell">{getProductPrice(zone, 'Weekly TC')}</td>
             {/each}
           </tr>
           <tr>
-            <td class="product-name"><span class="product-dot" style="background: #EF7B10;"></span> Monthly Travelcard</td>
+            <td class="product-name"><span class="product-dot" style="background: #e7710d;"></span> Monthly Travelcard</td>
             {#each matrixZones as zone}
               <td class="price-cell">{getProductPrice(zone, 'Monthly TC')}</td>
             {/each}

@@ -101,6 +101,9 @@
     if (m === 'national_rail') return 'badge-rail';
     if (m === 'nr_tube') return 'badge-rail';
     if (m === 'overground') return 'badge-overground';
+    if (m === 'elizabeth') return 'badge-elizabeth';
+    if (m === 'dlr') return 'badge-dlr';
+    if (m === 'tram') return 'badge-tram';
     return 'badge-rail';
   }
 

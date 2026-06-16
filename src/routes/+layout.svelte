@@ -165,7 +165,7 @@
   .orb-2 {
     width: 500px;
     height: 500px;
-    background: #6950A1;
+    background: #6f4390;
     bottom: -150px;
     left: -100px;
     animation: float 25s ease-in-out infinite reverse;
@@ -174,7 +174,7 @@
   .orb-3 {
     width: 300px;
     height: 300px;
-    background: #EF7B10;
+    background: #e7710d;
     top: 50%;
     left: 50%;
     animation: float 30s ease-in-out infinite;
@@ -230,7 +230,7 @@
   }
 
   .logo-accent {
-    background: linear-gradient(135deg, #009FE3, #6950A1);
+    background: linear-gradient(135deg, #009FE3, #6f4390);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -338,7 +338,7 @@
 
   /* Demo banner */
   .demo-banner {
-    background: linear-gradient(90deg, rgba(0, 159, 227, 0.95) 0%, rgba(105, 80, 161, 0.95) 100%);
+    background: linear-gradient(90deg, rgba(0, 159, 227, 0.95) 0%, rgba(111, 67, 144, 0.95) 100%);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     color: white;

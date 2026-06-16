@@ -10,6 +10,7 @@
     dailyCapResults,
     capSummary,
     currentPage,
+    analysisPeriodText,
   } from "$lib/stores/stores";
   import { loadDemoData } from "$lib/data/demoDataGenerator";
 
@@ -77,7 +78,7 @@
       zones: "Zone 1-6",
       description:
         "4-day Surbiton ↔ Waterloo National Rail commute, connecting via local buses. Features Kingston local travel and weekend rail trips.",
-      color: "#EF7B10",
+      color: "#e7710d",
     },
     {
       id: "marcus",
@@ -97,7 +98,7 @@
       zones: "Zone 1-4",
       description:
         "2-day Richmond ↔ Bank mixed National Rail + Tube hybrid schedule. Showcases mixed fare calculation and off-peak travel.",
-      color: "#6950A1",
+      color: "#6f4390",
     },
   ];
 </script>
@@ -438,7 +439,7 @@
         <div>
           <h1 class="dashboard-title">Dashboard</h1>
           <p class="dashboard-subtitle">
-            Analyzing <strong>{$fileName}</strong>
+            Analyzing <strong>{$fileName}</strong>{#if $analysisPeriodText} <span class="analysis-period" style="color: var(--color-text-muted); font-weight: normal; margin-left: 0.25rem;">({$analysisPeriodText})</span>{/if}
           </p>
         </div>
         <button
@@ -549,7 +550,7 @@
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #009fe3 0%, #6950a1 50%, #ef7b10 100%);
+    background: linear-gradient(135deg, #009fe3 0%, #6f4390 50%, #e7710d 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -622,7 +623,7 @@
     width: 32px;
     height: 32px;
     margin: 0 auto 0.75rem;
-    background: linear-gradient(135deg, #009fe3, #6950a1);
+    background: linear-gradient(135deg, #009fe3, #6f4390);
     border-radius: 50%;
     display: flex;
     align-items: center;

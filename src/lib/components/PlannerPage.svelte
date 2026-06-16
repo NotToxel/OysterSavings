@@ -841,7 +841,7 @@
       label: "National Railcard PAYG",
       monthlyRate: null,
       periodCost: railcardPeriodCost,
-      color: "#6950A1",
+      color: "#6f4390",
       strikeThroughRate: null,
       isPass: false,
     });
@@ -893,7 +893,7 @@
           monthlyRate: studWeekly,
           strikeThroughRate: stdWeekly,
           periodCost: weeklyTcPeriodCost,
-          color: "#EF7B10",
+          color: "#e7710d",
           isPass: true,
           isWeeklyRate: true,
           category: 'travelcard_weekly'
@@ -907,7 +907,7 @@
           monthlyRate: studMonthly,
           strikeThroughRate: stdMonthly,
           periodCost: monthlyTcPeriodCost,
-          color: "#EF7B10",
+          color: "#e7710d",
           isPass: true,
           category: 'travelcard_monthly'
         });
@@ -936,7 +936,7 @@
           monthlyRate: studMonthly,
           strikeThroughRate: stdMonthly,
           periodCost: tcPeriodCost,
-          color: "#EF7B10",
+          color: "#e7710d",
           isPass: true,
           category: 'travelcard_monthly'
         });

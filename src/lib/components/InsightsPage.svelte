@@ -267,6 +267,12 @@
     // 1. Near-peak touch-ins
     let nearPeakCount = 0;
     let nearPeakSavings = 0;
+    const nearPeakJourneys: any[] = [];
+
+    const formatDate = (date: Date) => {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    };
 
     for (const jj of j) {
       if (jj.isBus || !jj.isPeak || jj.raw.charge <= 0) continue;
@@ -283,11 +289,23 @@
                                (mins >= 1126 && mins <= 1140); // 18:46-19:00
 
         if (isNearBoundary) {
-          nearPeakCount++;
           const currentConcession = calculateFareTypeFare(jj, $selectedFareType);
           const offPeakConcession = calculateFareTypeFare({ ...jj, isPeak: false }, $selectedFareType);
           const saving = Math.max(0, currentConcession - offPeakConcession);
-          nearPeakSavings += saving;
+          
+          if (saving > 0) {
+            nearPeakCount++;
+            nearPeakSavings += saving;
+            nearPeakJourneys.push({
+              dateStr: jj.raw.dateStr || formatDate(date),
+              startTime: jj.raw.startTime,
+              origin: jj.origin || 'Unknown',
+              destination: jj.destination || 'Unknown',
+              saving: saving,
+              actualCharge: jj.raw.charge,
+              offPeakFare: offPeakConcession
+            });
+          }
         }
       }
     }
@@ -299,7 +317,8 @@
         desc: `You touched in ${nearPeakCount} times within 15 minutes of a peak off-peak boundary. Shifting these journeys by just 15 minutes would have saved you approximately £${nearPeakSavings.toFixed(2)}.`,
         saving: nearPeakSavings,
         severity: nearPeakSavings > 15 ? 'high' : (nearPeakSavings > 5 ? 'medium' : 'low'),
-        badge: '⏰'
+        badge: '⏰',
+        journeys: nearPeakJourneys
       });
     }
 
@@ -626,6 +645,8 @@
     if (m === 'underground') return 'badge-underground';
     if (m === 'overground') return 'badge-overground';
     if (m === 'elizabeth') return 'badge-elizabeth';
+    if (m === 'dlr') return 'badge-dlr';
+    if (m === 'tram') return 'badge-tram';
     return 'badge-rail';
   }
 
@@ -761,6 +782,28 @@
                   <div class="tip-content">
                     <h4 class="tip-title">{tip.title}</h4>
                     <p class="tip-desc">{tip.desc}</p>
+                    
+                    {#if tip.id === 'near_peak' && tip.journeys && tip.journeys.length > 0}
+                      <div class="near-peak-list-wrapper">
+                        <details class="near-peak-details">
+                          <summary class="near-peak-summary">🔍 View {tip.journeys.length} near-peak journeys</summary>
+                          <div class="near-peak-items">
+                            {#each tip.journeys as npJ}
+                              <div class="near-peak-item">
+                                <div class="np-time-route">
+                                  <span class="np-date">{npJ.dateStr} @ {npJ.startTime}</span>
+                                  <span class="np-route">{npJ.origin} → {npJ.destination}</span>
+                                </div>
+                                <div class="np-savings">
+                                  <span class="np-saving-val">Save £{npJ.saving.toFixed(2)}</span>
+                                  <span class="np-compare">(Paid £{npJ.actualCharge.toFixed(2)} vs £{npJ.offPeakFare.toFixed(2)} off-peak)</span>
+                                </div>
+                              </div>
+                            {/each}
+                          </div>
+                        </details>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               {/each}
@@ -1565,6 +1608,97 @@
     color: var(--color-danger);
     font-family: monospace;
     font-size: 0.85rem;
+  }
+
+  .near-peak-list-wrapper {
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+  
+  .near-peak-details {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .near-peak-summary {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+  }
+  
+  .near-peak-summary:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--color-text-primary);
+  }
+  
+  .near-peak-items {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 250px;
+    overflow-y: auto;
+  }
+  
+  .near-peak-item {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: 6px;
+    padding: 0.625rem 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .near-peak-item:hover {
+    transform: translateY(-1px);
+    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.09);
+  }
+  
+  .np-time-route {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    text-align: left;
+  }
+  
+  .np-date {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #f59e0b;
+  }
+  
+  .np-route {
+    font-size: 0.8rem;
+    color: var(--color-text-primary);
+  }
+  
+  .np-savings {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+  }
+  
+  .np-saving-val {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #10b981;
+  }
+  
+  .np-compare {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
   }
 
   @media (max-width: 768px) {
