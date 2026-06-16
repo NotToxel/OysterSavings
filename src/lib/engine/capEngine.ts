@@ -171,17 +171,25 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
       const originalCharge = res.actualCharge;
       let cappedCharge = originalCharge;
       
-      if (runningSpend >= dailyCap) {
-        cappedCharge = 0;
-      } else if (runningSpend + originalCharge > dailyCap) {
-        cappedCharge = dailyCap - runningSpend;
-        runningSpend = dailyCap;
+      const isPenalty = !!(res.journey.origin && res.journey.destination && res.journey.origin === res.journey.destination);
+      
+      if (isPenalty) {
+        // Penalty fares / same-station exits do not count towards the daily cap and cannot be capped
+        cappedCharge = originalCharge;
       } else {
-        runningSpend += originalCharge;
+        if (runningSpend >= dailyCap) {
+          cappedCharge = 0;
+        } else if (runningSpend + originalCharge > dailyCap) {
+          cappedCharge = dailyCap - runningSpend;
+          runningSpend = dailyCap;
+        } else {
+          runningSpend += originalCharge;
+        }
       }
       
       res.actualCharge = cappedCharge;
     }
+
 
     // Recalculate spends after capping
     const railSpend = sortedJourneys.filter((j) => !j.journey.isBus).reduce((sum, j) => sum + j.actualCharge, 0);

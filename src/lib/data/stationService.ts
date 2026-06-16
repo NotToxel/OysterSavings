@@ -28,6 +28,31 @@ function cleanPunctuation(str: string): string {
   return str.replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function getWords(str: string): string[] {
+  return str
+    .toLowerCase()
+    .replace(/['’\.]/g, '') // remove apostrophes/dots
+    .replace(/[^a-z0-9]/g, ' ') // non-alphanumeric to spaces
+    .trim()
+    .split(/\s+/);
+}
+
+function isContiguousSubarray(sub: string[], main: string[]): boolean {
+  if (sub.length === 0) return false;
+  if (sub.length > main.length) return false;
+  for (let i = 0; i <= main.length - sub.length; i++) {
+    let match = true;
+    for (let j = 0; j < sub.length; j++) {
+      if (main[i + j] !== sub[j]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) return true;
+  }
+  return false;
+}
+
 // Get full station info object
 export function getStationInfo(rawName: string): StationInfo | null {
   const normalized = normalizeStationName(rawName);
@@ -70,24 +95,39 @@ export function getStationInfo(rawName: string): StationInfo | null {
     }
   }
 
-  // Collect all matching stations
+  // Word-token based contiguous sub-array matching
+  const queryWords = getWords(normalized);
   const matches: { key: string; info: StationInfo }[] = [];
+
   for (const [k, info] of Object.entries(STATIONS)) {
-    if (normalized.includes(k) || k.includes(normalized)) {
-      matches.push({ key: k, info });
+    const keyWords = getWords(k);
+    if (isContiguousSubarray(queryWords, keyWords) || isContiguousSubarray(keyWords, queryWords)) {
+      if (isCompatible(info)) {
+        matches.push({ key: k, info });
+      }
     }
   }
 
   if (matches.length > 0) {
-    if (preferredMode) {
-      const bestMatch = matches.find(m => m.info.modes.includes(preferredMode as any));
-      if (bestMatch) return bestMatch.info;
-    }
+    const queryWordCount = queryWords.length;
+    matches.sort((a, b) => {
+      const aWordCount = getWords(a.key).length;
+      const bWordCount = getWords(b.key).length;
+      const aDiff = Math.abs(aWordCount - queryWordCount);
+      const bDiff = Math.abs(bWordCount - queryWordCount);
+      
+      if (aDiff !== bDiff) {
+        return aDiff - bDiff;
+      }
+      return a.key.localeCompare(b.key);
+    });
+
     return matches[0].info;
   }
 
   return null;
 }
+
 
 // Look up a station's zone from its name as it appears in the CSV
 export function getStationZone(rawName: string): number | null {
@@ -119,6 +159,10 @@ export function detectTransportMode(journeyAction: string): TransportMode {
   if (lower.includes('bus journey')) return 'bus';
   if (lower.includes('tram')) return 'tram';
 
+  if (lower.includes('[elizabeth line]')) return 'elizabeth';
+  if (lower.includes('[london overground]')) return 'overground';
+  if (lower.includes('[dlr]')) return 'dlr';
+
   const hasNR = lower.includes('[national rail]');
   const hasLU = lower.includes('[london underground]') || (!hasNR && lower.includes(' to '));
 
@@ -128,6 +172,7 @@ export function detectTransportMode(journeyAction: string): TransportMode {
 
   return 'unknown';
 }
+
 
 export interface StationSearchResult {
   key: string;

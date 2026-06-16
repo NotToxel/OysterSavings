@@ -170,42 +170,9 @@ export function calculateFareTypeSavings(
     (a, b) => a.dateObj.getTime() - b.dateObj.getTime()
   );
 
-  // Robust journey-level fare matching heuristic to detect if this fareType discount is already active in history
-  let fareTypeMatches = 0;
-  let standardMatches = 0;
-  let eligibleJourneysCount = 0;
+  const detected = detectActiveDiscount(journeys);
+  const hasExistingDiscount = detected === fareType && detected !== 'none';
 
-  for (const f of baseFares) {
-    if (f.journey.isBus || f.journey.isCapHit || f.actualCharge <= 0 || f.expectedFare <= 0) continue;
-    
-    // Ignore penalty fares / maximum fares (e.g. £4.65, £8.90)
-    if (f.actualCharge === 4.65 || f.actualCharge === 8.90) continue;
-
-    const discountApplies = Math.abs((f.fareTypeFare ?? f.expectedFare) - f.expectedFare) >= 0.05;
-    if (!discountApplies) continue;
-
-    eligibleJourneysCount++;
-    const matchesStandard = Math.abs(f.actualCharge - f.expectedFare) < 0.05;
-    const matchesConcession = Math.abs(f.actualCharge - (f.fareTypeFare ?? f.expectedFare)) < 0.05;
-
-    if (matchesConcession) {
-      fareTypeMatches++;
-    } else if (matchesStandard) {
-      standardMatches++;
-    }
-  }
-
-  let hasExistingDiscount = false;
-  if (eligibleJourneysCount > 0) {
-    if (fareTypeMatches > standardMatches && (fareTypeMatches / eligibleJourneysCount) > 0.75 && standardMatches === 0) {
-      hasExistingDiscount = true;
-    }
-  } else {
-    // Fallback to total spend comparison if no eligible rail journeys exist
-    if (totalActual < totalExpected * 0.85 && totalActual <= totalFareType * 1.05) {
-      hasExistingDiscount = true;
-    }
-  }
 
   // Round everything
   return {
@@ -471,36 +438,46 @@ function simulateProductSpend(
 export function detectActiveDiscount(journeys: ClassifiedJourney[]): FareType {
   if (journeys.length === 0) return 'none';
 
-  // Calculate standard fares vs railcard fares
-  const baseFares = calculateAllFares(journeys, 'railcard');
+  const discountFareTypes: FareType[] = ['railcard', 'disabled', 'jobcentre', 'zip_16_17', 'zip_11_15'];
 
-  let fareTypeMatches = 0;
-  let standardMatches = 0;
-  let eligibleJourneysCount = 0;
+  let bestFareType: FareType = 'none';
+  let bestMatchRate = 0;
 
-  for (const f of baseFares) {
-    if (f.journey.isBus || f.journey.isCapHit || f.actualCharge <= 0 || f.expectedFare <= 0) continue;
-    
-    // Ignore penalty fares / maximum fares (e.g. £4.65, £8.90)
-    if (f.actualCharge === 4.65 || f.actualCharge === 8.90) continue;
+  for (const fareType of discountFareTypes) {
+    const baseFares = calculateAllFares(journeys, fareType);
 
-    const discountApplies = Math.abs((f.fareTypeFare ?? f.expectedFare) - f.expectedFare) >= 0.05;
-    if (!discountApplies) continue;
+    let fareTypeMatches = 0;
+    let standardMatches = 0;
+    let eligibleJourneysCount = 0;
 
-    eligibleJourneysCount++;
-    const matchesStandard = Math.abs(f.actualCharge - f.expectedFare) < 0.05;
-    const matchesConcession = Math.abs(f.actualCharge - (f.fareTypeFare ?? f.expectedFare)) < 0.05;
+    for (const f of baseFares) {
+      if (f.journey.isBus || f.journey.isCapHit || f.actualCharge <= 0 || f.expectedFare <= 0) continue;
+      if (f.journey.origin && f.journey.destination && f.journey.origin === f.journey.destination) continue;
+      if (f.actualCharge === 4.65) continue;
 
-    if (matchesConcession) {
-      fareTypeMatches++;
-    } else if (matchesStandard) {
-      standardMatches++;
+      const discountApplies = Math.abs((f.fareTypeFare ?? f.expectedFare) - f.expectedFare) >= 0.05;
+      if (!discountApplies) continue;
+
+      eligibleJourneysCount++;
+      const matchesStandard = Math.abs(f.actualCharge - f.expectedFare) < 0.05;
+      const matchesConcession = Math.abs(f.actualCharge - (f.fareTypeFare ?? f.expectedFare)) < 0.05;
+
+      if (matchesConcession) {
+        fareTypeMatches++;
+      } else if (matchesStandard) {
+        standardMatches++;
+      }
+    }
+
+    if (eligibleJourneysCount > 0 && fareTypeMatches > standardMatches && standardMatches === 0) {
+      const matchRate = fareTypeMatches / eligibleJourneysCount;
+      if (matchRate >= 0.90 && matchRate > bestMatchRate) {
+        bestMatchRate = matchRate;
+        bestFareType = fareType;
+      }
     }
   }
 
-  if (eligibleJourneysCount > 0 && fareTypeMatches > standardMatches && (fareTypeMatches / eligibleJourneysCount) > 0.75 && standardMatches === 0) {
-    return 'railcard';
-  }
-
-  return 'none';
+  return bestFareType;
 }
+

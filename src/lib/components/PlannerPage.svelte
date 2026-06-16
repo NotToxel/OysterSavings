@@ -4062,19 +4062,26 @@
   }
 
   .modal-sync-btn {
-    font-size: 0.7rem;
-    color: var(--color-oyster-blue);
-    background: none;
-    border: none;
-    padding: 0;
+    font-size: 0.65rem;
+    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
     cursor: pointer;
     font-weight: 600;
-    text-decoration: underline;
-    transition: color 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .modal-sync-btn:hover {
-    color: #38bdf8;
+    color: white;
+    background: rgba(0, 159, 227, 0.1);
+    border-color: rgba(0, 159, 227, 0.4);
+    box-shadow: 0 0 8px rgba(0, 159, 227, 0.15);
+  }
+
+  .modal-sync-btn:active {
+    transform: scale(0.95);
   }
 
   /* Custom premium fare hovercard tooltip */

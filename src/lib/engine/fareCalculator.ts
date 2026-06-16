@@ -21,6 +21,23 @@ export interface FareResult {
 
 // Calculate the expected fare for a single journey
 export function calculateExpectedFare(journey: ClassifiedJourney): number {
+  // Same-station exits
+  if (journey.origin && journey.destination && journey.origin === journey.destination) {
+    return journey.raw.charge;
+  }
+
+  // Heathrow Elizabeth line premium fare
+  const originLower = (journey.origin || '').toLowerCase();
+  const destLower = (journey.destination || '').toLowerCase();
+  const isElizabeth = journey.mode === 'elizabeth' || 
+                      originLower.includes('[elizabeth line]') || 
+                      destLower.includes('[elizabeth line]');
+  const isHeathrow = originLower.includes('heathrow') || destLower.includes('heathrow');
+  
+  if (isElizabeth && isHeathrow) {
+    return journey.isPeak ? 14.30 : 12.20;
+  }
+
   // Bus/tram: flat fare
   if (journey.isBus) {
     if (journey.isHopperFree) return 0;
@@ -36,12 +53,19 @@ export function calculateExpectedFare(journey: ClassifiedJourney): number {
   return journey.raw.charge;
 }
 
+
 // Calculate fare with fare type discount
 export function calculateFareTypeFare(
   journey: ClassifiedJourney,
   fareType: FareType
 ): number {
   if (journey.isBus && journey.isHopperFree) return 0;
+
+  // Same-station exits do not get any concession discount
+  if (journey.origin && journey.destination && journey.origin === journey.destination) {
+    return journey.raw.charge;
+  }
+
   const baseFare = calculateExpectedFare(journey);
   return calculateDiscountedFare(
     baseFare,
@@ -53,6 +77,8 @@ export function calculateFareTypeFare(
     journey.mode
   );
 }
+
+
 
 // Process hopper fare logic for a day's bus journeys
 // Hopper: unlimited bus/tram connections within 60 minutes of first tap

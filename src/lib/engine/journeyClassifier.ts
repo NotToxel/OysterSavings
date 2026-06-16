@@ -136,8 +136,15 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
         zoneRange = getZoneRange(originZone, destinationZone);
       }
       
-      // Refine mode if it's ambiguous
-      if (mode === 'unknown' || mode === 'underground' || mode === 'national_rail' || mode === 'overground' || mode === 'elizabeth') {
+      // Refine mode if it's ambiguous (only override if detectTransportMode gave 'underground' or 'unknown')
+      // Do not override precisely detected modes (elizabeth, overground, dlr, national_rail)
+      const detectedModeIsAmbiguous = mode === 'unknown' || mode === 'underground';
+      const isHeathrowJourney = stations.origin.toLowerCase().includes('heathrow') || stations.destination.toLowerCase().includes('heathrow');
+      
+      // Preserve elizabeth mode explicitly when Heathrow is involved (premium fare)
+      if (isHeathrowJourney && (mode === 'elizabeth' || stations.destination.toLowerCase().includes('[elizabeth line]') || stations.origin.toLowerCase().includes('[elizabeth line]'))) {
+        mode = 'elizabeth';
+      } else if (detectedModeIsAmbiguous) {
         if (oInfo && dInfo) {
           const TFL_MODES = ['underground', 'dlr', 'elizabeth', 'overground'];
           const oHasTfl = oInfo.modes.some(m => TFL_MODES.includes(m));
@@ -159,7 +166,7 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
               mode = 'national_rail';
             }
             // Fallback: try to infer from individual station modes
-            else if (mode === 'unknown' || mode === 'overground' || mode === 'elizabeth') {
+            else if (mode === 'unknown') {
               if (oInfo.modes.includes('elizabeth') || dInfo.modes.includes('elizabeth')) mode = 'underground';
               else if (oInfo.modes.includes('overground') || dInfo.modes.includes('overground')) mode = 'underground';
               else if (oInfo.modes.includes('underground') || dInfo.modes.includes('underground')) mode = 'underground';
