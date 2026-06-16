@@ -2730,16 +2730,17 @@
                 />
               </div>
               <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.15rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
                   <label class="setting-label" for="modal-end-date" style="margin-bottom: 0;">End Date</label>
-                  <label style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem; font-size: 0.725rem; color: var(--color-text-secondary); font-weight: 600; user-select: none;">
-                    <input
-                      type="checkbox"
-                      bind:checked={syncWithPlanEnd}
-                      style="accent-color: var(--color-oyster-blue); cursor: pointer; width: 13px; height: 13px; margin: 0;"
-                    />
-                    Sync to plan end
-                  </label>
+                  <button
+                    type="button"
+                    class="mini-sync-toggle"
+                    class:active={syncWithPlanEnd}
+                    onclick={() => syncWithPlanEnd = !syncWithPlanEnd}
+                  >
+                    <span class="sync-icon">{syncWithPlanEnd ? '🔗' : '🔓'}</span>
+                    {syncWithPlanEnd ? 'Synced' : 'Custom'}
+                  </button>
                 </div>
                 {#if syncWithPlanEnd}
                   <div class="input-field-placeholder" style="padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--color-border); color: var(--color-text-muted); font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.35rem; box-sizing: border-box; cursor: not-allowed;">
@@ -4074,26 +4075,45 @@
     height: 14px;
   }
 
-  .modal-sync-btn {
+  .mini-sync-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
     font-size: 0.65rem;
-    color: var(--color-text-secondary);
+    font-weight: 700;
+    cursor: pointer;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--color-border);
-    border-radius: 4px;
-    padding: 0.15rem 0.45rem;
-    cursor: pointer;
-    font-weight: 600;
+    color: var(--color-text-secondary);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .modal-sync-btn:hover {
+  .mini-sync-toggle:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--color-border-accent);
     color: white;
-    background: rgba(0, 159, 227, 0.1);
-    border-color: rgba(0, 159, 227, 0.4);
+  }
+
+  .mini-sync-toggle.active {
+    background: rgba(0, 159, 227, 0.12);
+    border-color: rgba(0, 159, 227, 0.35);
+    color: var(--color-oyster-blue);
+  }
+
+  .mini-sync-toggle.active:hover {
+    background: rgba(0, 159, 227, 0.2);
+    border-color: rgba(0, 159, 227, 0.5);
+    color: #38bdf8;
     box-shadow: 0 0 8px rgba(0, 159, 227, 0.15);
   }
 
-  .modal-sync-btn:active {
+  .mini-sync-toggle .sync-icon {
+    font-size: 0.65rem;
+  }
+
+  .mini-sync-toggle:active {
     transform: scale(0.95);
   }
 
