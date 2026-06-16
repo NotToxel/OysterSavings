@@ -2972,14 +2972,14 @@
                   class="swap-stations-btn"
                   onclick={swapStations}
                   title="Swap Origin & Destination Stations"
+                  aria-label="Swap Origin & Destination Stations"
                 >
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="17 1 21 5 17 9"></polyline>
                     <line x1="3" y1="5" x2="21" y2="5"></line>
                     <polyline points="7 23 3 19 7 15"></polyline>
                     <line x1="21" y1="19" x2="3" y2="19"></line>
                   </svg>
-                  <span>Swap Stations</span>
                 </button>
               </div>
 
@@ -3097,14 +3097,14 @@
                   class="swap-stations-btn"
                   onclick={swapStations}
                   title="Swap Origin & Destination Zones"
+                  aria-label="Swap Origin & Destination Zones"
                 >
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="17 1 21 5 17 9"></polyline>
                     <line x1="3" y1="5" x2="21" y2="5"></line>
                     <polyline points="7 23 3 19 7 15"></polyline>
                     <line x1="21" y1="19" x2="3" y2="19"></line>
                   </svg>
-                  <span>Swap Zones</span>
                 </button>
               </div>
             {/if}
@@ -3672,19 +3672,20 @@
   .swap-stations-container {
     display: flex;
     justify-content: center;
-    margin: -0.25rem 0 0.5rem 0;
+    margin: -0.4rem 0 -0.4rem 0;
+    position: relative;
+    z-index: 2;
   }
   .swap-stations-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.04);
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
-    font-size: 0.7rem;
-    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
   }
@@ -3692,7 +3693,7 @@
     background: rgba(0, 159, 227, 0.12);
     border-color: rgba(0, 159, 227, 0.35);
     color: var(--color-oyster-blue);
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.05);
   }
   .swap-stations-btn svg {
     transition: transform 0.3s ease;

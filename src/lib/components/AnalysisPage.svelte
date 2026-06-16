@@ -13,6 +13,7 @@
   let sortKey = $state<string>('date');
   let sortAsc = $state(false);
   let filterMode = $state<string>('all');
+  let includeCardCost = $state(false);
   let overrideCost = $state(false);
   let searchQuery = $state('');
 
@@ -22,13 +23,20 @@
     return total / $weeklyCapResults.length;
   });
 
-  // Auto-sync fare type cost when selection changes
+  // Auto-sync fare type cost when selection changes — always reset to £0 so the
+  // fresh simulation shows fares-only cost. User can opt-in via 'Include card cost'.
   $effect(() => {
     const rc = FARE_TYPES[$selectedFareType];
     if (rc.cost1Year === 0) {
       $fareTypeCost = 0;
-    } else if (!overrideCost) {
-      $fareTypeCost = rc.cost1Year;
+      includeCardCost = false;
+      overrideCost = false;
+    } else {
+      // Reset card cost to £0 on fare-type change so default view is fares-only
+      if (!overrideCost) {
+        $fareTypeCost = 0;
+      }
+      includeCardCost = false;
     }
   });
 
@@ -288,24 +296,47 @@
 
         {#if $selectedFareType === 'railcard' || $selectedFareType === 'disabled'}
         <div class="setting-group">
-          <label class="setting-label" for="fare-type-cost">Fare Type Cost (£)</label>
-          <div class="toggle-row" style="margin-bottom: 0.75rem;">
-            <input type="checkbox" id="override-cost" bind:checked={overrideCost} style="accent-color: var(--color-oyster-blue);" />
-            <label for="override-cost" style="font-size: 0.8rem; color: var(--color-text-secondary); cursor: pointer;">Override standard cost</label>
+          <span class="setting-label">Include card cost in simulation</span>
+          <div class="toggle-row">
+            <button
+              class="toggle"
+              class:active={includeCardCost}
+              onclick={() => {
+                includeCardCost = !includeCardCost;
+                overrideCost = false;
+                $fareTypeCost = includeCardCost ? FARE_TYPES[$selectedFareType].cost1Year : 0;
+              }}
+              aria-label="Toggle card cost inclusion"
+            >
+              <span class="toggle-dot"></span>
+            </button>
+            <span class="toggle-label">
+              {#if !includeCardCost}
+                Not included (fares only)
+              {:else if overrideCost}
+                +£{$fareTypeCost.toFixed(2)} (custom)
+              {:else}
+                +£{$fareTypeCost.toFixed(2)}
+              {/if}
+            </span>
           </div>
-          {#if overrideCost}
-            <input type="number" class="input-field" id="fare-type-cost" bind:value={$fareTypeCost} min="0" step="1" />
-          {:else}
-            <div class="cost-buttons">
-              <button class="cost-btn" class:active={$fareTypeCost === FARE_TYPES[$selectedFareType].cost1Year} onclick={() => $fareTypeCost = FARE_TYPES[$selectedFareType].cost1Year}>
+          {#if includeCardCost}
+            <div class="cost-buttons" style="margin-top: 0.5rem;">
+              <button class="cost-btn" class:active={!overrideCost && $fareTypeCost === FARE_TYPES[$selectedFareType].cost1Year} onclick={() => { overrideCost = false; $fareTypeCost = FARE_TYPES[$selectedFareType].cost1Year; }}>
                 £{FARE_TYPES[$selectedFareType].cost1Year} (1yr)
               </button>
               {#if FARE_TYPES[$selectedFareType].cost3Year > 0}
-              <button class="cost-btn" class:active={$fareTypeCost === FARE_TYPES[$selectedFareType].cost3Year} onclick={() => $fareTypeCost = FARE_TYPES[$selectedFareType].cost3Year}>
+              <button class="cost-btn" class:active={!overrideCost && $fareTypeCost === FARE_TYPES[$selectedFareType].cost3Year} onclick={() => { overrideCost = false; $fareTypeCost = FARE_TYPES[$selectedFareType].cost3Year; }}>
                 £{FARE_TYPES[$selectedFareType].cost3Year} (3yr)
               </button>
               {/if}
+              <button class="cost-btn" class:active={overrideCost} onclick={() => overrideCost = !overrideCost}>
+                Custom
+              </button>
             </div>
+            {#if overrideCost}
+              <input type="number" class="input-field" id="fare-type-cost" bind:value={$fareTypeCost} min="0" step="1" style="margin-top: 0.5rem;" />
+            {/if}
           {/if}
         </div>
         {/if}
@@ -450,7 +481,10 @@
                 <div class="stat-value" style="color: #34d399;">
                   £{($savingsResult.totalFareTypeSpend + $savingsResult.fareTypeCost + $savingsResult.oysterCost).toFixed(2)}
                 </div>
-                <div class="stat-label">Simulated Fare Type (Total Cost)</div>
+                <div class="stat-label">
+                  Simulated Fare Type
+                  {$savingsResult.fareTypeCost === 0 && $savingsResult.oysterCost === 0 ? '(fares only)' : '(Total Cost)'}
+                </div>
               </div>
               <div class="stat-card">
                 <div class="stat-value" style="color: #60a5fa;">£{$savingsResult.totalActualSpend.toFixed(2)}</div>
