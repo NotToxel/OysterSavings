@@ -4,6 +4,7 @@
   import { classifyAll } from '$lib/engine/journeyClassifier';
   import { calculateAllFares } from '$lib/engine/fareCalculator';
   import { calculateDailyCaps, calculateWeeklyCaps, getCapSummary } from '$lib/engine/capEngine';
+  import { preFetchLiveFaresForJourneys } from '$lib/engine/tflApi';
   import { detectCommutePatterns } from '$lib/engine/recurrenceEngine';
   import {
     rawJourneys, validJourneys, excludedJourneys,
@@ -65,6 +66,9 @@
       // Classify
       const classified = classifyAll(filtered.valid);
       $classifiedJourneys = classified;
+
+      // Pre-fetch live fares
+      await preFetchLiveFaresForJourneys(classified);
 
       // Calculate fares
       const fares = calculateAllFares(classified);

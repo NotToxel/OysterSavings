@@ -1,5 +1,6 @@
 // Fare Calculator — computes expected fares, fare type discounts, hopper logic
 import type { ClassifiedJourney } from './journeyClassifier';
+import { getCachedFare } from './tflApi';
 import {
   lookupFare,
   BUS_SINGLE_FARE,
@@ -20,10 +21,19 @@ export interface FareResult {
 }
 
 // Calculate the expected fare for a single journey
-export function calculateExpectedFare(journey: ClassifiedJourney): number {
+// Calculate the expected fare for a single journey
+export function calculateExpectedFare(journey: ClassifiedJourney, useAlternativeFares: boolean = false): number {
   // Same-station exits
   if (journey.origin && journey.destination && journey.origin === journey.destination) {
     return journey.raw.charge;
+  }
+
+  // Check if live fare is cached
+  if (journey.originNaptan && journey.destinationNaptan) {
+    const cached = getCachedFare(journey.originNaptan, journey.destinationNaptan, useAlternativeFares);
+    if (cached) {
+      return journey.isPeak ? cached.peak : cached.offPeak;
+    }
   }
 
   // Heathrow Elizabeth line premium fare
@@ -57,7 +67,8 @@ export function calculateExpectedFare(journey: ClassifiedJourney): number {
 // Calculate fare with fare type discount
 export function calculateFareTypeFare(
   journey: ClassifiedJourney,
-  fareType: FareType
+  fareType: FareType,
+  useAlternativeFares: boolean = false
 ): number {
   if (journey.isBus && journey.isHopperFree) return 0;
 
@@ -66,7 +77,7 @@ export function calculateFareTypeFare(
     return journey.raw.charge;
   }
 
-  const baseFare = calculateExpectedFare(journey);
+  const baseFare = calculateExpectedFare(journey, useAlternativeFares);
   return calculateDiscountedFare(
     baseFare,
     fareType,
@@ -129,17 +140,18 @@ function timeToMinutes(time: string): number {
 // Calculate fares for all journeys
 export function calculateAllFares(
   journeys: ClassifiedJourney[],
-  fareType?: FareType
+  fareType?: FareType,
+  useAlternativeFares: boolean = false
 ): FareResult[] {
   return journeys.map((journey) => {
-    const expectedFare = calculateExpectedFare(journey);
+    const expectedFare = calculateExpectedFare(journey, useAlternativeFares);
     const actualCharge = journey.raw.charge;
 
     let fareTypeFare: number | null = null;
     let fareTypeSaving = 0;
 
     if (fareType) {
-      fareTypeFare = calculateFareTypeFare(journey, fareType);
+      fareTypeFare = calculateFareTypeFare(journey, fareType, useAlternativeFares);
       fareTypeSaving = Math.max(0, expectedFare - fareTypeFare);
     }
 

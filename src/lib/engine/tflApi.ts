@@ -1,4 +1,5 @@
 import { getStationByNaptan } from '../data/stationService';
+import type { ClassifiedJourney } from './journeyClassifier';
 
 const CACHE_KEY = 'oystersavings_station_fare_cache';
 const MAX_CACHE_ENTRIES = 500;
@@ -87,7 +88,7 @@ function isCacheValid(fare: StationFare): boolean {
 }
 
 // Look up fare from cache layers (session → localStorage)
-function getCachedFare(fromNaptan: string, toNaptan: string, useAlternativeFares: boolean = false): StationFare | null {
+export function getCachedFare(fromNaptan: string, toNaptan: string, useAlternativeFares: boolean = false): StationFare | null {
   const key = getCacheKey(fromNaptan, toNaptan);
 
   // Layer 1: Session cache (fastest)
@@ -460,5 +461,34 @@ export function clearFareCache(): void {
   sessionCache.clear();
   if (typeof window !== 'undefined') {
     localStorage.removeItem(CACHE_KEY);
+  }
+}
+
+/**
+ * Pre-fetch live fares from the TfL API for all unique journeys resolved in the upload
+ */
+export async function preFetchLiveFaresForJourneys(journeys: ClassifiedJourney[]): Promise<void> {
+  const uniquePairs = new Map<string, { from: string; to: string; mode: string }>();
+
+  for (const j of journeys) {
+    if (j.isBus || !j.originNaptan || !j.destinationNaptan) continue;
+    if (j.originNaptan === j.destinationNaptan) continue;
+    const key = `${j.originNaptan}-${j.destinationNaptan}`;
+    if (!uniquePairs.has(key)) {
+      uniquePairs.set(key, { from: j.originNaptan, to: j.destinationNaptan, mode: j.mode });
+    }
+  }
+
+  if (uniquePairs.size === 0) return;
+
+  console.log(`Pre-fetching live fares for ${uniquePairs.size} unique journey pairs...`);
+
+  for (const [, { from, to, mode }] of uniquePairs) {
+    try {
+      // Bypasses network request if already cached, otherwise fetches and caches
+      await lookupStationFare(from, to, { peak: 0, offPeak: 0 }, false, mode);
+    } catch (e) {
+      console.error(`Failed to pre-fetch fare from ${from} to ${to}:`, e);
+    }
   }
 }

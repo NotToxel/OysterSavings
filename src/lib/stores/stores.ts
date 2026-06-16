@@ -79,26 +79,26 @@ if (isBrowser) {
 
 // Savings results
 export const savingsResult = derived(
-  [classifiedJourneys, selectedFareType, fareTypeCost, includeOysterCost],
-  ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost]) => {
+  [classifiedJourneys, selectedFareType, fareTypeCost, includeOysterCost, useAlternativeFares],
+  ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost, $useAlternativeFares]) => {
     if ($classifiedJourneys.length === 0) return null;
-    return calculateFareTypeSavings($classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost);
+    return calculateFareTypeSavings($classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost, $useAlternativeFares);
   }
 );
 
 export const detectedDiscount = derived(
-  classifiedJourneys,
-  ($classifiedJourneys) => {
+  [classifiedJourneys, useAlternativeFares],
+  ([$classifiedJourneys, $useAlternativeFares]) => {
     if ($classifiedJourneys.length === 0) return 'none';
-    return detectActiveDiscount($classifiedJourneys);
+    return detectActiveDiscount($classifiedJourneys, $useAlternativeFares);
   }
 );
 
 export const productComparison = derived(
-  [classifiedJourneys, selectedFareType, fareTypeCost, includeStudentPhotocardFee],
-  ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeStudentPhotocardFee]) => {
+  [classifiedJourneys, selectedFareType, fareTypeCost, includeStudentPhotocardFee, useAlternativeFares],
+  ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeStudentPhotocardFee, $useAlternativeFares]) => {
     if ($classifiedJourneys.length === 0) return [];
-    return calculateProductComparison($classifiedJourneys, $selectedFareType, $fareTypeCost, $includeStudentPhotocardFee);
+    return calculateProductComparison($classifiedJourneys, $selectedFareType, $fareTypeCost, $includeStudentPhotocardFee, $useAlternativeFares);
   }
 );
 

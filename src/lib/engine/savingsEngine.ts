@@ -83,7 +83,8 @@ export function calculateFareTypeSavings(
   journeys: ClassifiedJourney[],
   fareType: FareType,
   fareTypeCost: number,
-  includeOysterCost: boolean
+  includeOysterCost: boolean,
+  useAlternativeFares: boolean = false
 ): FareTypeSavingsResult {
   const fareTypeInfo = FARE_TYPES[fareType];
   const ZIP_11_15_FEE = 16.5;
@@ -102,7 +103,7 @@ export function calculateFareTypeSavings(
   const effectiveFareTypeCost = fareType === 'none' ? 0 : fareTypeCost;
 
   // Generate base FareResults
-  const baseFares = calculateAllFares(journeys, fareType);
+  const baseFares = calculateAllFares(journeys, fareType, useAlternativeFares);
 
   // 1. Actual Scenario (what the CSV says)
   const actualCaps = calculateDailyCaps(baseFares);
@@ -170,7 +171,7 @@ export function calculateFareTypeSavings(
     (a, b) => a.dateObj.getTime() - b.dateObj.getTime()
   );
 
-  const detected = detectActiveDiscount(journeys);
+  const detected = detectActiveDiscount(journeys, useAlternativeFares);
   const hasExistingDiscount = detected === fareType && detected !== 'none';
 
 
@@ -200,7 +201,8 @@ export function calculateProductComparison(
   journeys: ClassifiedJourney[],
   fareType: FareType,
   fareTypeCost: number,
-  includeStudentPhotocardFee: boolean
+  includeStudentPhotocardFee: boolean,
+  useAlternativeFares: boolean = false
 ): ProductComparisonResult[] {
   const effectiveFareTypeCost = (fareType === 'none' || fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17' || fareType === 'railcard') ? 0 : fareTypeCost;
   
@@ -261,7 +263,7 @@ export function calculateProductComparison(
   const results: ProductComparisonResult[] = [];
 
   // Generate base FareResults
-  const baseFares = calculateAllFares(journeys, fareType);
+  const baseFares = calculateAllFares(journeys, fareType, useAlternativeFares);
 
   // 1. Simulate Standard PAYG (Adult) with daily and weekly caps
   const standardFares = baseFares.map(f => ({ ...f, actualCharge: f.expectedFare }));
@@ -282,7 +284,7 @@ export function calculateProductComparison(
   const weeklyPaygFareType = round2(weeklyPaygFareTypeRaw);
 
   // 3. Simulate National Railcard PAYG with daily and weekly caps
-  const railcardFares = calculateAllFares(journeys, 'railcard').map(f => ({ ...f, actualCharge: f.fareTypeFare ?? f.expectedFare }));
+  const railcardFares = calculateAllFares(journeys, 'railcard', useAlternativeFares).map(f => ({ ...f, actualCharge: f.fareTypeFare ?? f.expectedFare }));
   const railcardDaily = calculateDailyCaps(railcardFares, 'railcard');
   const railcardWeekly = calculateWeeklyCaps(railcardDaily, 'railcard');
   const totalRailcardWeeks = railcardWeekly.length || 1;
@@ -299,7 +301,7 @@ export function calculateProductComparison(
   const uncoveredBusPassSpend = simulateProductSpend(baseFares, fareType, 'bus_pass');
   const weeklyUncoveredBusPassSpend = uncoveredBusPassSpend / totalWeeks;
 
-  const studentBaseFares = fareType === 'student' ? baseFares : calculateAllFares(journeys, 'student');
+  const studentBaseFares = fareType === 'student' ? baseFares : calculateAllFares(journeys, 'student', useAlternativeFares);
   const studentUncoveredBusPassSpend = simulateProductSpend(studentBaseFares, 'student', 'bus_pass');
   const weeklyStudentUncoveredBusPassSpend = studentUncoveredBusPassSpend / totalWeeks;
 
@@ -435,7 +437,7 @@ function simulateProductSpend(
   return weeklyCaps.reduce((sum, w) => sum + w.totalSpend, 0);
 }
 
-export function detectActiveDiscount(journeys: ClassifiedJourney[]): FareType {
+export function detectActiveDiscount(journeys: ClassifiedJourney[], useAlternativeFares: boolean = false): FareType {
   if (journeys.length === 0) return 'none';
 
   const discountFareTypes: FareType[] = ['railcard', 'disabled', 'jobcentre', 'zip_16_17', 'zip_11_15'];
@@ -445,7 +447,7 @@ export function detectActiveDiscount(journeys: ClassifiedJourney[]): FareType {
   const matchRates = new Map<FareType, number>();
 
   for (const fareType of discountFareTypes) {
-    const baseFares = calculateAllFares(journeys, fareType);
+    const baseFares = calculateAllFares(journeys, fareType, useAlternativeFares);
 
     let fareTypeMatches = 0;
     let standardMatches = 0;

@@ -19,6 +19,8 @@ export interface ClassifiedJourney {
   isWeekend: boolean;
   isCapHit: boolean;
   isHopperFree: boolean;
+  originNaptan: string | null;
+  destinationNaptan: string | null;
 }
 
 // Parse time string "HH:MM" to hours and minutes
@@ -116,6 +118,8 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
   let originZone: number | null = null;
   let destinationZone: number | null = null;
   let zoneRange: string | null = null;
+  let originNaptan: string | null = null;
+  let destinationNaptan: string | null = null;
 
   if (!isBus) {
     const stations = extractStations(journey.journeyAction);
@@ -231,6 +235,8 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
 
       origin = oInfo ? oInfo.name : stations.origin;
       destination = dInfo ? dInfo.name : stations.destination;
+      originNaptan = oInfo?.naptanId || null;
+      destinationNaptan = dInfo?.naptanId || null;
 
       // Get basic zones first
       const basicOriginZone = getStationZone(stations.origin);
@@ -328,6 +334,8 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
     isWeekend,
     isCapHit,
     isHopperFree,
+    originNaptan,
+    destinationNaptan,
   };
 }
 

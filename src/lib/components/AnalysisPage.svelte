@@ -397,9 +397,11 @@
                 <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedFareType = 'jobcentre'}>
                   Try Jobcentre Plus
                 </button>
-                <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedFareType = 'disabled'}>
-                  Try Disabled Persons
-                </button>
+                {#if $detectedDiscount !== 'railcard' && $selectedFareType !== 'railcard'}
+                  <button class="cost-btn" style="flex: none; padding: 0.5rem 1rem;" onclick={() => $selectedFareType = 'disabled'}>
+                    Try Disabled Persons
+                  </button>
+                {/if}
               </div>
             </div>
           {:else if $savingsResult.hasExistingDiscount}
