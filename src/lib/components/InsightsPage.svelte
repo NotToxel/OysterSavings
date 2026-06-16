@@ -350,7 +350,7 @@
     }
   });
 
-  // Check if any student travelcard or bus pass options save money vs the detected PAYG spend
+  // Check if any student travelcard options save money vs the detected PAYG spend
   let hasStudentSavings = $derived.by(() => {
     if (!travelProfile || !analysisDates) return false;
     const baseline = detectedPaygSpend;
@@ -376,16 +376,10 @@
     );
     const oddPeriodCost = oddPeriodResult.cost > 0 ? oddPeriodResult.cost : Infinity;
 
-    // Student Bus Pass
-    const weeklyBusCost = STUDENT_BUS_PASS_WEEKLY * weeks;
-    const monthlyBusCost = STUDENT_BUS_PASS_MONTHLY * months;
-
     return (
       weeklyCost < baseline ||
       monthlyCost < baseline ||
-      oddPeriodCost < baseline ||
-      weeklyBusCost < baseline ||
-      monthlyBusCost < baseline
+      oddPeriodCost < baseline
     );
   });
 

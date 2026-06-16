@@ -147,7 +147,12 @@ export function calculateFareTypeSavings(
   }
 
   const totalSaving = Math.max(0, totalExpected - totalFareType);
-  const netSaving = totalSaving - effectiveFareTypeCost - oysterCost;
+  const detected = detectActiveDiscount(journeys, useAlternativeFares);
+  const hasExistingDiscount = detected === fareType && detected !== 'none';
+  
+  const netSaving = hasExistingDiscount
+    ? (totalSaving - effectiveFareTypeCost - oysterCost)
+    : (totalActual - (totalFareType + effectiveFareTypeCost + oysterCost));
 
   // Break-even calculation
   const avgSavingPerJourney = eligibleCount > 0 ? totalSaving / eligibleCount : 0;
@@ -170,9 +175,6 @@ export function calculateFareTypeSavings(
   const dailyBreakdown = Array.from(dailyMap.values()).sort(
     (a, b) => a.dateObj.getTime() - b.dateObj.getTime()
   );
-
-  const detected = detectActiveDiscount(journeys, useAlternativeFares);
-  const hasExistingDiscount = detected === fareType && detected !== 'none';
 
 
   // Round everything
