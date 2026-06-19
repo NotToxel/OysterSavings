@@ -118,6 +118,8 @@
     x: number;
     y: number;
     text: string;
+    title?: string;
+    type?: 'concession-disabled';
   } | null>(null);
 
   // Weekly cap details tooltip state
@@ -144,13 +146,20 @@
     return $apiRetryStatus[keys[0]];
   }
 
-  function showWarningTooltip(target: HTMLElement, text: string) {
+  function showWarningTooltip(
+    target: HTMLElement,
+    text: string,
+    title?: string,
+    type?: 'concession-disabled'
+  ) {
     const rect = target.getBoundingClientRect();
     warningTooltipData = {
       visible: true,
       x: rect.left + rect.width / 2,
       y: rect.top,
       text,
+      title,
+      type,
     };
   }
 
@@ -2138,7 +2147,12 @@
                           class="disabled-status-badge"
                           style="cursor: help;"
                           role="status"
-                          onmouseenter={(e) => showWarningTooltip(e.currentTarget, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
+                          onmouseenter={(e) => showWarningTooltip(
+                            e.currentTarget,
+                            "This route includes contactless-only stations that do not support concession or discount fares.",
+                            "Concession Disabled",
+                            "concession-disabled"
+                          )}
                           onmouseleave={hideWarningTooltip}
                         >
                           🚫 Concession Disabled
@@ -2286,7 +2300,12 @@
                           class="disabled-status-badge"
                           style="cursor: help;"
                           role="status"
-                          onmouseenter={(e) => showWarningTooltip(e.currentTarget, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
+                          onmouseenter={(e) => showWarningTooltip(
+                            e.currentTarget,
+                            "This route includes contactless-only stations that do not support concession or discount fares.",
+                            "Concession Disabled",
+                            "concession-disabled"
+                          )}
                           onmouseleave={hideWarningTooltip}
                         >
                           🚫 Concession Disabled
@@ -3955,9 +3974,27 @@
     class="warning-hovercard"
     style="position: fixed; left: {warningTooltipData.x}px; top: {warningTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
   >
-    <div style="font-size: 0.72rem; line-height: 1.35; color: #fff; font-weight: 500; font-family: var(--font-sans);">
-      {@html warningTooltipData.text}
-    </div>
+    {#if warningTooltipData.type === 'concession-disabled'}
+      <div class="warning-header">
+        <span class="warning-title-wrapper">
+          <span class="warning-icon">🚫</span>
+          <span class="warning-title">{warningTooltipData.title || "Concession Disabled"}</span>
+        </span>
+        <span class="warning-tag">Restriction</span>
+      </div>
+      <div class="hovercard-divider warning-divider"></div>
+      <div class="warning-body">
+        <p class="warning-desc">{warningTooltipData.text}</p>
+        <div class="warning-notice-box">
+          <span class="notice-bullet">💡</span>
+          <span class="notice-text">TfL concession rates do not apply on contactless-only station terminals. Switch to <strong>Adult</strong> to enable.</span>
+        </div>
+      </div>
+    {:else}
+      <div style="font-size: 0.72rem; line-height: 1.35; color: #fff; font-weight: 500; font-family: var(--font-sans);">
+        {@html warningTooltipData.text}
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -4882,16 +4919,96 @@
   }
 
   .warning-hovercard {
-    background: linear-gradient(135deg, rgba(220, 38, 38, 0.98), rgba(185, 28, 28, 0.98)); /* Red warning theme */
-    border: 1px solid rgba(220, 38, 38, 0.3);
-    border-radius: 8px;
-    padding: 0.6rem 0.85rem;
-    max-width: 250px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: linear-gradient(135deg, rgba(30, 10, 10, 0.99), rgba(17, 24, 39, 0.99));
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-top: 3px solid #ef4444; /* Red warning accent */
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    width: 300px;
+    max-width: 350px;
+    box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     pointer-events: none;
     transition: opacity 0.15s ease, transform 0.15s ease;
+    font-family: var(--font-sans);
+    color: #fff;
+  }
+
+  .warning-hovercard::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(17, 24, 39, 0.99) transparent transparent transparent;
+  }
+
+  .warning-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+  }
+  .warning-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .warning-icon {
+    font-size: 0.85rem;
+  }
+  .warning-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #f87171;
+  }
+  .warning-tag {
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    text-transform: uppercase;
+  }
+
+  .warning-divider {
+    background: rgba(239, 68, 68, 0.15) !important;
+    margin: 0.5rem 0 !important;
+  }
+
+  .warning-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .warning-desc {
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+  }
+  .warning-notice-box {
+    display: flex;
+    gap: 0.35rem;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.12);
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+  }
+  .notice-bullet {
+    font-size: 0.7rem;
+  }
+  .notice-text {
+    font-size: 0.65rem;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.75);
   }
 
   .rule-card.disabled {
