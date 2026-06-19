@@ -260,7 +260,7 @@
 <div class="analysis-page">
   <h1 class="page-title">Journey Analysis</h1>
 
-  <CardSelector onAddCard={() => (showAddDialog = true)} />
+  <CardSelector onAddData={() => (showAddDialog = true)} />
 
   <!-- Tab navigation -->
   <div class="tab-nav" style="margin-bottom: 1.5rem;">

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { cards, activeCardId } from '$lib/stores/stores';
+  import { cards, activeCardId, isDemoMode } from '$lib/stores/stores';
 
-  let { onAddCard }: { onAddCard?: () => void } = $props();
+  let { onAddData }: { onAddData?: () => void } = $props();
 
   let showSelector = $derived($cards.length > 1);
   let showAddButton = $derived($cards.length >= 1 && $cards.length < 3);
@@ -40,14 +40,15 @@
     {#if showAddButton}
       <button
         class="add-card-btn"
-        onclick={() => onAddCard?.()}
-        title="Upload another CSV file"
+        disabled={$isDemoMode}
+        onclick={() => onAddData?.()}
+        title={$isDemoMode ? "Cannot add data in Demo Mode. Exit Demo Mode to upload more data." : "Upload another CSV file"}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        Add Card
+        Add Data
       </button>
     {/if}
   </div>
@@ -137,10 +138,17 @@
     white-space: nowrap;
   }
 
-  .add-card-btn:hover {
+  .add-card-btn:hover:not(:disabled) {
     color: var(--color-oyster-blue);
     border-color: rgba(0, 159, 227, 0.3);
     background: rgba(0, 159, 227, 0.05);
+  }
+
+  .add-card-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-muted);
   }
 
   @media (max-width: 768px) {

@@ -421,7 +421,7 @@
 <div class="compare-page">
   <h1 class="page-title">Product Comparison</h1>
 
-  <CardSelector onAddCard={() => (showAddDialog = true)} />
+  <CardSelector onAddData={() => (showAddDialog = true)} />
 
   <p class="page-subtitle">See how PAYG, Travelcards, and concession discounts compare based on your actual travel patterns</p>
 

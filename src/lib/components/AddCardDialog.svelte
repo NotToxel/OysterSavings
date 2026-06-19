@@ -194,7 +194,7 @@
       };
 
       addCard(card);
-      progressText = 'Card added!';
+      progressText = 'Data added!';
       progressPercent = 100;
 
       setTimeout(() => closeDialog(), 600);
@@ -211,7 +211,7 @@
     <div class="dialog-card glass-card" onclick={(e) => e.stopPropagation()}>
       <div class="dialog-header">
         <h3 class="dialog-title">
-          {#if step === 'upload'}📂 Add Card / CSV
+          {#if step === 'upload'}📂 Add Data / CSV
           {:else if step === 'decide'}📋 File Preview
           {:else if step === 'processing'}⚙️ Processing...
           {:else if step === 'merged'}✅ Merged Successfully
