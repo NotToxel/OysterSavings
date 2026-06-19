@@ -3921,7 +3921,9 @@
         {:else}
           <div class="info-row">
             <span class="info-label">Active Zones:</span>
-            <span class="info-value">🚇 {week.maxRange ? week.maxRange.replace('Z', 'Zone ').replace('Z', '') : 'Bus Only'}</span>
+            <span class="info-value" style="color: {week.maxRange ? getZoneColor(week.maxRange) : 'var(--color-text-secondary)'};">
+              🚇 {week.maxRange ? 'Zone ' + week.maxRange.replaceAll('Z', '') : 'Bus Only'}
+            </span>
           </div>
         {/if}
       </div>
