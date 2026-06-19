@@ -38,6 +38,8 @@
   // Merge state
   let selectedMergeCardId = $state('');
   let mergeResult = $state<{ newJourneys: number; duplicates: number } | null>(null);
+  let addMode = $state<'merge' | 'new'>('merge');
+  let showAllConflicts = $state(false);
 
   const discountLabels: Record<FareType, string> = {
     none: 'Standard adult fares',
@@ -64,6 +66,8 @@
     progressPercent = 0;
     selectedMergeCardId = '';
     mergeResult = null;
+    addMode = 'merge';
+    showAllConflicts = false;
   }
 
   function closeDialog() {
@@ -132,8 +136,176 @@
     step = 'decide';
     if ($cards.length > 0) {
       selectedMergeCardId = $cards[0].id;
+      // Pre-select addMode based on conflict detection
+      const firstCardClash = detectMergeClash(classified, parseResult.journeys, $cards[0]);
+      if (firstCardClash) {
+        addMode = 'new';
+      } else {
+        addMode = 'merge';
+      }
+    } else {
+      addMode = 'new';
     }
   }
+
+  function hasEligibleJourneysForDiscount(classified: ClassifiedJourney[]): boolean {
+    const baseFares = calculateAllFares(classified, 'railcard');
+    for (const f of baseFares) {
+      if (f.journey.isBus || f.journey.isCapHit || f.actualCharge <= 0 || f.expectedFare <= 0) continue;
+      if (f.journey.origin && f.journey.destination && f.journey.origin === f.journey.destination) continue;
+      if (f.actualCharge === 4.65) continue;
+      const discountApplies = Math.abs((f.fareTypeFare ?? f.expectedFare) - f.expectedFare) >= 0.05;
+      if (discountApplies) return true;
+    }
+    return false;
+  }
+
+  interface ClashResult {
+    hasClash: boolean;
+    type: 'overlap' | 'discount';
+    reason: string;
+    missingInTargetCount: number;
+    missingInNewCount: number;
+    overlapRange?: string;
+    clashes: Array<{
+      source: 'target' | 'new';
+      label: string;
+      journey: ParsedJourney;
+    }>;
+  }
+
+  function detectMergeClash(
+    newClassified: ClassifiedJourney[],
+    newRaw: ParsedJourney[],
+    targetCard: CardState
+  ): ClashResult | null {
+    // 1. Check for overlapping date range mismatch
+    const newDates = newRaw.map(j => new Date(j.date).getTime());
+    const targetDates = targetCard.rawJourneys.map(j => new Date(j.date).getTime());
+
+    if (newDates.length > 0 && targetDates.length > 0) {
+      const getStartOfDay = (time: number) => {
+        const d = new Date(time);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      };
+
+      const newMinDay = getStartOfDay(Math.min(...newDates));
+      const newMaxDay = getStartOfDay(Math.max(...newDates));
+      const targetMinDay = getStartOfDay(Math.min(...targetDates));
+      const targetMaxDay = getStartOfDay(Math.max(...targetDates));
+
+      const overlapStartDay = Math.max(newMinDay, targetMinDay);
+      const overlapEndDay = Math.min(newMaxDay, targetMaxDay);
+
+      if (overlapStartDay <= overlapEndDay) {
+        const overlapStart = overlapStartDay;
+        const overlapEnd = overlapEndDay + 24 * 60 * 60 * 1000 - 1;
+
+        const keyOf = (j: ParsedJourney) => `${j.dateStr}|${j.startTime}|${j.journeyAction}|${j.charge}`;
+
+        const targetOverlapMap = new Map<string, ParsedJourney>();
+        targetCard.rawJourneys.forEach(j => {
+          const t = new Date(j.date).getTime();
+          if (t >= overlapStart && t <= overlapEnd) {
+            targetOverlapMap.set(keyOf(j), j);
+          }
+        });
+
+        const newOverlapMap = new Map<string, ParsedJourney>();
+        newRaw.forEach(j => {
+          const t = new Date(j.date).getTime();
+          if (t >= overlapStart && t <= overlapEnd) {
+            newOverlapMap.set(keyOf(j), j);
+          }
+        });
+
+        const missingInNew: ParsedJourney[] = [];
+        for (const [key, j] of targetOverlapMap.entries()) {
+          if (!newOverlapMap.has(key)) {
+            missingInNew.push(j);
+          }
+        }
+
+        const missingInTarget: ParsedJourney[] = [];
+        for (const [key, j] of newOverlapMap.entries()) {
+          if (!targetOverlapMap.has(key)) {
+            missingInTarget.push(j);
+          }
+        }
+
+        const isMismatch = missingInNew.length > 0 || missingInTarget.length > 0;
+
+        if (isMismatch) {
+          const sortedClashes = [
+            ...missingInNew.map(j => ({ source: 'target' as const, label: `Only on ${targetCard.name}`, journey: j })),
+            ...missingInTarget.map(j => ({ source: 'new' as const, label: 'Only in Upload', journey: j }))
+          ].sort((a, b) => {
+            const timeA = new Date(a.journey.date).getTime();
+            const timeB = new Date(b.journey.date).getTime();
+            if (timeA !== timeB) return timeA - timeB;
+            return (a.journey.startTime || '').localeCompare(b.journey.startTime || '');
+          });
+
+          const formatDate = (time: number) => {
+            const d = new Date(time);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+          };
+          const overlapRangeText = `${formatDate(overlapStartDay)} – ${formatDate(overlapEndDay)}`;
+
+          return {
+            hasClash: true,
+            type: 'overlap',
+            reason: 'Overlapping travel period contains different journeys. A single card would have identical journeys on the same days.',
+            missingInTargetCount: missingInTarget.length,
+            missingInNewCount: missingInNew.length,
+            overlapRange: overlapRangeText,
+            clashes: sortedClashes
+          };
+        }
+      }
+    }
+
+    // 2. Check for discount mismatch (only if both have eligible journeys)
+    const targetDiscount = targetCard.detectedDiscount;
+    const newDiscount = detectActiveDiscount(newClassified);
+
+    if (targetDiscount !== newDiscount) {
+      const newHasEligible = hasEligibleJourneysForDiscount(newClassified);
+      const targetHasEligible = hasEligibleJourneysForDiscount(targetCard.classifiedJourneys);
+
+      if (newHasEligible && targetHasEligible) {
+        const discountLabels: Record<string, string> = {
+          none: 'Standard Adult',
+          railcard: 'National Railcard',
+          disabled: 'Disabled Persons Railcard',
+          student: 'Student Discount',
+          jobcentre: 'Jobcentre Plus',
+          zip_11_15: '11-15 Zip',
+          zip_16_17: '16+ Zip',
+        };
+        const label1 = discountLabels[targetDiscount] || targetDiscount;
+        const label2 = discountLabels[newDiscount] || newDiscount;
+        return {
+          hasClash: true,
+          type: 'discount',
+          reason: `Mismatched card discount types. Target card has '${label1}' discount, but uploaded file has '${label2}'.`,
+          missingInTargetCount: 0,
+          missingInNewCount: 0,
+          clashes: []
+        };
+      }
+    }
+
+    return null;
+  }
+
+  let mergeClash = $derived.by<ClashResult | null>(() => {
+    if (step !== 'decide' || !selectedMergeCardId) return null;
+    const targetCard = $cards.find(c => c.id === selectedMergeCardId);
+    if (!targetCard) return null;
+    return detectMergeClash(classifiedPreview, parsedJourneys, targetCard);
+  });
 
   function handleSameCard() {
     if (!selectedMergeCardId) return;
@@ -208,7 +380,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="dialog-overlay" onclick={closeDialog} onkeydown={(e) => { if (e.key === 'Escape') closeDialog(); }}>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="dialog-card glass-card" onclick={(e) => e.stopPropagation()}>
+    <div class="dialog-card glass-card" class:wide-dialog={step === 'decide' && addMode === 'merge' && mergeClash} onclick={(e) => e.stopPropagation()}>
       <div class="dialog-header">
         <h3 class="dialog-title">
           {#if step === 'upload'}📂 Add Data / CSV
@@ -272,34 +444,143 @@
             </div>
           </div>
 
-          <!-- Decision buttons -->
+          <!-- Decision section -->
           <div class="decision-section">
-            <p class="decision-question">Is this from the same card or a different card?</p>
+            <p class="decision-question">How would you like to add this data?</p>
 
-            <div class="decision-buttons">
-              <div class="decision-option">
-                <button class="decision-btn same-card" onclick={handleSameCard}>
-                  📄 Same Card (Extend Dates)
-                </button>
-                {#if $cards.length > 1}
-                  <select class="merge-select" bind:value={selectedMergeCardId}>
-                    {#each $cards as card}
-                      <option value={card.id}>{card.name}</option>
-                    {/each}
-                  </select>
-                {:else if $cards.length === 1}
-                  <span class="merge-target">Merge into: {$cards[0].name}</span>
-                {/if}
+            <div class="mode-selector">
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div
+                class="mode-card"
+                class:active={addMode === 'merge'}
+                onclick={() => addMode = 'merge'}
+                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') addMode = 'merge'; }}
+                role="button"
+                tabindex="0"
+              >
+                <div class="mode-card-icon">📄</div>
+                <div class="mode-card-info">
+                  <span class="mode-card-title">Extend Existing Card</span>
+                  <span class="mode-card-desc">Merge travel history into a card you already added.</span>
+                </div>
               </div>
 
-              {#if $cards.length < MAX_CARDS}
-                <button class="decision-btn different-card" onclick={handleDifferentCard}>
-                  💳 Different Card
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div
+                class="mode-card"
+                class:active={addMode === 'new'}
+                onclick={() => addMode = 'new'}
+                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') addMode = 'new'; }}
+                role="button"
+                tabindex="0"
+              >
+                <div class="mode-card-icon">💳</div>
+                <div class="mode-card-info">
+                  <span class="mode-card-title">Add as New Card</span>
+                  <span class="mode-card-desc">Keep this data separate as a new physical card.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mode-content-panel">
+              {#if addMode === 'merge'}
+                <div class="merge-panel-config">
+                  <span class="config-label">Select Card to Merge Into</span>
+                  {#if $cards.length > 1}
+                    <select class="merge-select" bind:value={selectedMergeCardId}>
+                      {#each $cards as card}
+                        <option value={card.id}>{card.name}</option>
+                      {/each}
+                    </select>
+                  {:else if $cards.length === 1}
+                    <span class="merge-target">Merging into: <strong>{$cards[0].name}</strong></span>
+                  {/if}
+
+                  {#if mergeClash}
+                    <div class="clash-warning-box">
+                      <div class="clash-warning-header">
+                        <span class="clash-warning-icon">⚠️</span>
+                        <span class="clash-warning-title">Potential Card Conflict</span>
+                      </div>
+                      <div class="clash-warning-content">
+                        <p class="clash-warning-text">{mergeClash.reason}</p>
+
+                        {#if mergeClash.type === 'overlap'}
+                          {#if mergeClash.overlapRange}
+                            <p class="clash-warning-text clash-overlap-range">
+                              <strong>Date Overlap:</strong> {mergeClash.overlapRange}
+                            </p>
+                          {/if}
+
+                          <div class="clash-stats-grid">
+                            <div class="clash-stat-card target-missing">
+                              <span class="clash-stat-label">Missing on {$cards.find(c => c.id === selectedMergeCardId)?.name || 'Card'}</span>
+                              <span class="clash-stat-val">{mergeClash.missingInTargetCount} journeys</span>
+                            </div>
+                            <div class="clash-stat-card upload-missing">
+                              <span class="clash-stat-label">Missing in Upload</span>
+                              <span class="clash-stat-val">{mergeClash.missingInNewCount} journeys</span>
+                            </div>
+                          </div>
+
+                          {#if mergeClash.clashes.length > 0}
+                            <div class="clash-list-container">
+                              <span class="clash-list-title">Mismatched Journeys:</span>
+                              <div class="clash-list">
+                                {#each (showAllConflicts ? mergeClash.clashes : mergeClash.clashes.slice(0, 5)) as clash}
+                                  <div class="clash-item {clash.source}">
+                                    <div class="clash-item-row-1">
+                                      <span class="clash-source-tag">{clash.label}</span>
+                                      <span class="clash-amount">£{clash.journey.charge.toFixed(2)}</span>
+                                    </div>
+                                    <div class="clash-item-row-2">
+                                      <span class="clash-time">
+                                        {clash.journey.dateStr} {clash.journey.startTime}
+                                      </span>
+                                      <span class="clash-item-bullet">•</span>
+                                      <span class="clash-item-desc">
+                                        {clash.journey.journeyAction}
+                                      </span>
+                                    </div>
+                                  </div>
+                                {/each}
+                                {#if mergeClash.clashes.length > 5}
+                                  {#if !showAllConflicts}
+                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <div class="clash-more clickable" onclick={() => showAllConflicts = true} role="button" tabindex="0">
+                                      ...and {mergeClash.clashes.length - 5} more conflicts (click to expand)
+                                    </div>
+                                  {:else}
+                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <div class="clash-more clickable" onclick={() => showAllConflicts = false} role="button" tabindex="0">
+                                      Show less conflicts
+                                    </div>
+                                  {/if}
+                                {/if}
+                              </div>
+                            </div>
+                          {/if}
+                        {/if}
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+
+                <button class="decision-btn same-card primary-action" onclick={handleSameCard}>
+                  📄 Confirm & Merge Data
                 </button>
               {:else}
-                <button class="decision-btn different-card" disabled title="Maximum {MAX_CARDS} cards reached">
-                  💳 Different Card (Max {MAX_CARDS} reached)
-                </button>
+                {#if $cards.length < MAX_CARDS}
+                  <button class="decision-btn different-card primary-action" onclick={handleDifferentCard}>
+                    💳 Confirm & Add as New Card
+                  </button>
+                {:else}
+                  <button class="decision-btn different-card primary-action" disabled title="Maximum {MAX_CARDS} cards reached">
+                    💳 Add as New Card (Max {MAX_CARDS} reached)
+                  </button>
+                {/if}
               {/if}
             </div>
           </div>
@@ -359,6 +640,11 @@
     overflow-y: auto;
     padding: 0;
     animation: slideUp 0.3s ease;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dialog-card.wide-dialog {
+    width: 580px;
   }
 
   @keyframes slideUp {
@@ -625,5 +911,299 @@
 
   .btn-dismiss:hover {
     background: #0078ab;
+  }
+
+  /* Overhauled Clash warnings styles */
+  .clash-warning-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.04);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    margin-top: 0.75rem;
+    animation: fadeIn 0.2s ease;
+    text-align: left;
+  }
+
+  .clash-warning-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .clash-warning-icon {
+    font-size: 1.1rem;
+    line-height: 1.2;
+    flex-shrink: 0;
+  }
+
+  .clash-warning-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #f59e0b;
+  }
+
+  .clash-warning-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .clash-warning-text {
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .clash-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .clash-stat-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    border-top: 2px solid transparent;
+  }
+
+  .clash-stat-card.target-missing {
+    border-top-color: var(--color-oyster-blue);
+  }
+
+  .clash-stat-card.upload-missing {
+    border-top-color: var(--color-overground-orange);
+  }
+
+  .clash-stat-label {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .clash-stat-val {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-top: 0.15rem;
+  }
+
+  .clash-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+  }
+
+  .clash-list-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .clash-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-height: 160px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    padding: 0.4rem;
+  }
+
+  .clash-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid transparent;
+  }
+
+  .clash-item.target {
+    border-left-color: var(--color-oyster-blue);
+  }
+
+  .clash-item.new {
+    border-left-color: var(--color-overground-orange);
+  }
+
+  .clash-item-row-1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .clash-item-row-2 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+  }
+
+  .clash-item-bullet {
+    color: var(--color-text-muted);
+    font-weight: bold;
+  }
+
+  .clash-item-desc {
+    color: var(--color-text-primary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .clash-source-tag {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+  }
+
+  .clash-item.target .clash-source-tag {
+    color: var(--color-oyster-blue-light);
+    background: rgba(0, 159, 227, 0.1);
+  }
+
+  .clash-item.new .clash-source-tag {
+    color: var(--color-overground-orange);
+    background: rgba(231, 113, 13, 0.15);
+  }
+
+  .clash-time {
+    color: var(--color-text-muted);
+    font-family: monospace;
+    white-space: nowrap;
+  }
+
+  .clash-amount {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    font-family: monospace;
+  }
+
+  .clash-more {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 0.25rem 0;
+    font-style: italic;
+  }
+
+  /* Mode selector elements */
+  .mode-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .mode-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.85rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: left;
+  }
+
+  .mode-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .mode-card.active {
+    background: rgba(0, 159, 227, 0.05);
+    border-color: var(--color-oyster-blue);
+    box-shadow: 0 0 15px rgba(0, 159, 227, 0.1);
+  }
+
+  .mode-card-icon {
+    font-size: 1.3rem;
+  }
+
+  .mode-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .mode-card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .mode-card-desc {
+    font-size: 0.68rem;
+    color: var(--color-text-secondary);
+    line-height: 1.3;
+  }
+
+  .mode-content-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .merge-panel-config {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+  }
+
+  .config-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .decision-btn.primary-action {
+    margin-top: 0.5rem;
+  }
+
+  .clash-overlap-range {
+    margin-top: 0.15rem;
+    font-size: 0.76rem;
+    color: var(--color-warning);
+  }
+
+  .clash-more.clickable {
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s;
+  }
+
+  .clash-more.clickable:hover {
+    color: var(--color-text-primary);
   }
 </style>

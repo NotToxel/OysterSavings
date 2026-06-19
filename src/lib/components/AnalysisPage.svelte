@@ -15,6 +15,7 @@
     cards,
     activeCardId,
     type MultiCardClassifiedJourney,
+    combinedSimulation,
   } from "$lib/stores/stores";
   import { calculateFareTypeSavings } from "$lib/engine/savingsEngine";
   import { FARE_TYPES, type FareType } from "$lib/data/fareData";
@@ -343,7 +344,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              {#if $cards.length > 1}
+              {#if $activeCardId === 'combined' && $cards.length > 1}
                 <th>Card</th>
               {/if}
               <th class="sortable" onclick={() => toggleSort("date")}>
@@ -366,7 +367,7 @@
                 class="animate-fade-in"
                 style="animation-delay: {Math.min(i * 20, 500)}ms"
               >
-                {#if $cards.length > 1}
+                {#if $activeCardId === 'combined' && $cards.length > 1}
                   <td>
                     <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}">
                       <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
@@ -972,6 +973,129 @@
   {:else if activeTab === "caps"}
     <!-- Cap Analysis -->
     <div class="cap-layout">
+      {#if $activeCardId === 'combined' && $cards.length > 1 && $combinedSimulation}
+        <div class="glass-card consolidation-simulation-card animate-fade-in">
+          <div class="consolidation-glow"></div>
+          
+          <div style="position: relative; z-index: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+              <div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; color: #fff;">
+                  ✨ Single-Card Consolidation Simulation
+                </h3>
+                <p style="font-size: 0.825rem; color: var(--color-text-secondary); margin: 0;">
+                  What if all journeys were made using a single physical card with your best discount: <strong>{$combinedSimulation.bestDiscountName}</strong>?
+                </p>
+              </div>
+              {#if $combinedSimulation.netDifference > 0}
+                <div class="badge-saving">
+                  🎉 Potential Saving: £{$combinedSimulation.netDifference.toFixed(2)}
+                </div>
+              {:else}
+                <div class="badge-saving neutral">
+                  🔄 Fully Optimized
+                </div>
+              {/if}
+            </div>
+
+            <!-- Breakdown comparison grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+              <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem;">
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.05em;">Actual Combined Spend</div>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #fff; margin-top: 0.25rem;">£{$combinedSimulation.actualTotalSpend.toFixed(2)}</div>
+                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">Split across {$cards.length} separate cards</div>
+              </div>
+
+              <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; border-color: rgba(52, 211, 153, 0.15);">
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: #34d399; font-weight: 600; letter-spacing: 0.05em;">Simulated Consolidated Spend</div>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #34d399; margin-top: 0.25rem;">£{$combinedSimulation.simulatedTotalSpend.toFixed(2)}</div>
+                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">One card ({$combinedSimulation.bestDiscountName})</div>
+              </div>
+
+              <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem;">
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.05em;">Simulated Capping Hits</div>
+                <div style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 0.25rem;">
+                  { $combinedSimulation.simulatedCapSummary.daysCapHit } Days <span style="font-size: 0.8rem; font-weight: 500; color: var(--color-text-muted);">/ { $combinedSimulation.simulatedCapSummary.weeksCapHit } Weeks</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">
+                  vs { $capSummary?.daysCapHit ?? 0 } Days / { $capSummary?.weeksCapHit ?? 0 } Weeks actual
+                </div>
+              </div>
+            </div>
+
+            <!-- Savings components details -->
+            {#if $combinedSimulation.netDifference > 0}
+              <div style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; font-size: 0.825rem; line-height: 1.5; color: var(--color-text-secondary);">
+                <div style="font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+                  🔍 Why would you save £{$combinedSimulation.netDifference.toFixed(2)}?
+                </div>
+                <ul style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                  {#if $combinedSimulation.consolidationBenefit > 0}
+                    <li>
+                      <strong>Capping Consolidation Benefit:</strong> Combining travel onto a single card pool saves you <strong>£{$combinedSimulation.consolidationBenefit.toFixed(2)}</strong> by hitting daily or weekly caps earlier instead of split spend.
+                    </li>
+                  {/if}
+                  {#if $combinedSimulation.discountUpgradeBenefit > 0}
+                    <li>
+                      <strong>Discount Upgrade Benefit:</strong> Upgrading journeys on adult cards to the best available <strong>{$combinedSimulation.bestDiscountName}</strong> discount saves you <strong>£{$combinedSimulation.discountUpgradeBenefit.toFixed(2)}</strong> on single fares.
+                    </li>
+                  {/if}
+                </ul>
+              </div>
+            {/if}
+
+            <!-- Missed Caps Section -->
+            {#if $combinedSimulation.missedDailyCaps.length > 0 || $combinedSimulation.missedWeeklyCaps.length > 0}
+              <div style="margin-top: 1rem;">
+                <button
+                  class="cost-btn"
+                  style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); border-radius: 8px; color: var(--color-text-primary); font-size: 0.85rem; font-weight: 600;"
+                  onclick={() => {
+                    const el = document.getElementById('missed-caps-details');
+                    if (el) {
+                      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                    }
+                  }}
+                >
+                  <span>📋 Show Missed Capping Opportunities ({$combinedSimulation.missedDailyCaps.length + $combinedSimulation.missedWeeklyCaps.length})</span>
+                  <span>▼</span>
+                </button>
+                
+                <div id="missed-caps-details" style="display: none; margin-top: 0.75rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); max-height: 250px; overflow-y: auto;">
+                  {#if $combinedSimulation.missedWeeklyCaps.length > 0}
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.5rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;">Missed Weekly Caps</div>
+                    {#each $combinedSimulation.missedWeeklyCaps as w}
+                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);">
+                        <span style="color: var(--color-text-secondary);">
+                          Week of {w.weekStart.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ({w.zoneRange})
+                        </span>
+                        <span style="font-weight: 600; color: #34d399;">
+                          Spent £{w.actualSpend.toFixed(2)} (cap: £{w.capLimit.toFixed(2)}) → Saved £{w.saving.toFixed(2)}
+                        </span>
+                      </div>
+                    {/each}
+                  {/if}
+
+                  {#if $combinedSimulation.missedDailyCaps.length > 0}
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.75rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;">Missed Daily Caps</div>
+                    {#each $combinedSimulation.missedDailyCaps as d}
+                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);">
+                        <span style="color: var(--color-text-secondary);">
+                          {d.date} ({d.zoneRange})
+                        </span>
+                        <span style="font-weight: 600; color: #34d399;">
+                          Spent £{d.actualSpend.toFixed(2)} (cap: £{d.capLimit.toFixed(2)}) → Saved £{d.saving.toFixed(2)}
+                        </span>
+                      </div>
+                    {/each}
+                  {/if}
+                </div>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
       {#if $activeCardId === 'combined' && $cards.length > 1}
         <div class="glass-card combined-caps-breakdown">
           <h4 class="breakdown-title">
@@ -1182,6 +1306,42 @@
   .badge-text {
     opacity: 0.95;
     letter-spacing: -0.01em;
+  }
+
+  /* Consolidation Simulation Card */
+  .consolidation-simulation-card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(52, 211, 153, 0.2);
+  }
+
+  .consolidation-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.05), transparent 70%);
+    z-index: 0;
+  }
+
+  .badge-saving {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .badge-saving.neutral {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-secondary);
   }
 
   /* Per-card cap breakdown in combined view */

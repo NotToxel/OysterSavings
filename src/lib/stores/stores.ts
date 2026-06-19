@@ -432,6 +432,155 @@ export const savingsResult = derived(
   }
 );
 
+export const combinedSimulation = derived(
+  [cards, dailyCapResults, weeklyCapResults, useAlternativeFares],
+  ([$cards, $dailyCapResults, $weeklyCapResults, $useAlternativeFares]) => {
+    if ($cards.length <= 1) return null;
+
+    // 1. Determine best discount in order of priority:
+    // zip_11_15 -> zip_16_17 -> jobcentre -> disabled -> railcard -> none
+    const DISCOUNT_PRIORITY: FareType[] = ['zip_11_15', 'zip_16_17', 'jobcentre', 'disabled', 'railcard', 'none'];
+    let bestDiscount: FareType = 'none';
+    for (const discount of DISCOUNT_PRIORITY) {
+      if ($cards.some(c => c.detectedDiscount === discount || c.selectedFareType === discount)) {
+        bestDiscount = discount;
+        break;
+      }
+    }
+
+    const discountNames: Record<FareType, string> = {
+      none: 'Adult PAYG',
+      student: 'Student Photocard',
+      zip_11_15: '11-15 Zip',
+      zip_16_17: '16+ Zip',
+      jobcentre: 'Jobcentre Plus',
+      disabled: 'Disabled Persons',
+      railcard: 'National Railcard',
+    };
+    const bestDiscountName = discountNames[bestDiscount] || 'Adult PAYG';
+
+    // 2. Combine and sort all valid journeys chronologically
+    const allValid = $cards.flatMap(c => c.validJourneys);
+    const sortedValid = [...allValid].sort((a, b) => {
+      const cmp = a.date.getTime() - b.date.getTime();
+      if (cmp !== 0) return cmp;
+      return (a.startTime || '').localeCompare(b.startTime || '');
+    });
+
+    const classified = classifyAll(sortedValid);
+
+    // 3. Calculate simulated standard (Adult) split spend
+    let standardSplitSpend = 0;
+    for (const card of $cards) {
+      const stdFares = calculateAllFares(card.classifiedJourneys, 'none', $useAlternativeFares);
+      const stdFaresForCap = stdFares.map(f => ({ ...f, actualCharge: f.expectedFare }));
+      const stdCaps = calculateDailyCaps(stdFaresForCap, 'none');
+      const stdWeekly = calculateWeeklyCaps(stdCaps, 'none');
+      standardSplitSpend += stdWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
+    }
+
+    // 4. Calculate simulated standard (Adult) combined spend
+    const stdFaresCombined = calculateAllFares(classified, 'none', $useAlternativeFares);
+    const stdFaresCombinedForCap = stdFaresCombined.map(f => ({ ...f, actualCharge: f.expectedFare }));
+    const stdCapsCombined = calculateDailyCaps(stdFaresCombinedForCap, 'none');
+    const stdWeeklyCombined = calculateWeeklyCaps(stdCapsCombined, 'none');
+    const standardCombinedSpend = stdWeeklyCombined.reduce((sum, w) => sum + w.totalSpend, 0);
+
+    // 5. Calculate simulated best discount combined spend
+    const bestFaresCombined = calculateAllFares(classified, bestDiscount, $useAlternativeFares);
+    const bestFaresCombinedForCap = bestFaresCombined.map(f => ({ ...f, actualCharge: f.fareTypeFare ?? f.expectedFare }));
+    const bestCapsCombined = calculateDailyCaps(bestFaresCombinedForCap, bestDiscount);
+    const bestWeeklyCombined = calculateWeeklyCaps(bestCapsCombined, bestDiscount);
+    
+    const simulatedTotalSpend = bestWeeklyCombined.reduce((sum, w) => sum + w.totalSpend, 0);
+    const actualTotalSpend = $weeklyCapResults.reduce((sum, w) => sum + w.totalSpend, 0);
+    const netDifference = Math.max(0, Math.round((actualTotalSpend - simulatedTotalSpend) * 100) / 100);
+
+    const consolidationBenefit = Math.max(0, Math.round((standardSplitSpend - standardCombinedSpend) * 100) / 100);
+    const discountUpgradeBenefit = Math.max(0, Math.round((standardCombinedSpend - simulatedTotalSpend) * 100) / 100);
+
+    const simulatedCapSummary = getCapSummary(bestCapsCombined, bestWeeklyCombined);
+
+    // 6. Find missed daily caps
+    const missedDailyCaps: Array<{
+      date: string;
+      dateObj: Date;
+      simulatedSpend: number;
+      actualSpend: number;
+      capLimit: number;
+      zoneRange: string;
+      saving: number;
+    }> = [];
+
+    for (const simDay of bestCapsCombined) {
+      if (simDay.capHit) {
+        const actualDay = $dailyCapResults.find(d => d.date === simDay.date);
+        if (actualDay && !actualDay.capHit) {
+          const saving = Math.round((actualDay.totalSpend - simDay.totalSpend) * 100) / 100;
+          if (saving > 0) {
+            missedDailyCaps.push({
+              date: simDay.date,
+              dateObj: simDay.dateObj,
+              simulatedSpend: simDay.totalSpend,
+              actualSpend: actualDay.totalSpend,
+              capLimit: simDay.dailyCap,
+              zoneRange: simDay.maxZoneRange,
+              saving,
+            });
+          }
+        }
+      }
+    }
+
+    // 7. Find missed weekly caps
+    const missedWeeklyCaps: Array<{
+      weekStart: Date;
+      weekEnd: Date;
+      simulatedSpend: number;
+      actualSpend: number;
+      capLimit: number;
+      zoneRange: string;
+      saving: number;
+    }> = [];
+
+    for (const simWeek of bestWeeklyCombined) {
+      if (simWeek.capHit) {
+        const actualWeek = $weeklyCapResults.find(w => w.weekStart.getTime() === simWeek.weekStart.getTime());
+        if (actualWeek && !actualWeek.capHit) {
+          const saving = Math.round((actualWeek.totalSpend - simWeek.totalSpend) * 100) / 100;
+          if (saving > 0) {
+            missedWeeklyCaps.push({
+              weekStart: simWeek.weekStart,
+              weekEnd: simWeek.weekEnd,
+              simulatedSpend: simWeek.totalSpend,
+              actualSpend: actualWeek.totalSpend,
+              capLimit: simWeek.weeklyCap,
+              zoneRange: simWeek.maxZoneRange,
+              saving,
+            });
+          }
+        }
+      }
+    }
+
+    return {
+      bestDiscount,
+      bestDiscountName,
+      simulatedDailyCaps: bestCapsCombined,
+      simulatedWeeklyCaps: bestWeeklyCombined,
+      simulatedCapSummary,
+      simulatedTotalSpend: Math.round(simulatedTotalSpend * 100) / 100,
+      actualTotalSpend: Math.round(actualTotalSpend * 100) / 100,
+      netDifference,
+      consolidationBenefit,
+      discountUpgradeBenefit,
+      missedDailyCaps,
+      missedWeeklyCaps,
+    };
+  }
+);
+
+
 export const detectedDiscount = derived(
   [cards, activeCard, classifiedJourneys, useAlternativeFares],
   ([$cards, $activeCard, $classifiedJourneys, $useAlternativeFares]) => {

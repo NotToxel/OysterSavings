@@ -691,16 +691,29 @@
       }));
   });
 
+  function formatSpend(val: number): string {
+    if (val < 0) {
+      return `-£${Math.abs(val).toFixed(2)}`;
+    }
+    return `£${val.toFixed(2)}`;
+  }
+
   // Mode Share Statistics
   let modeShareStats = $derived.by(() => {
     const j = $classifiedJourneys;
     const counts = new Map<string, number>();
+    const spends = new Map<string, number>();
+    let totalSpend = 0;
     for (const jj of j) {
       let m = jj.mode as string;
       if (jj.isBus) m = "bus";
       counts.set(m, (counts.get(m) ?? 0) + 1);
+      const charge = jj.raw.charge;
+      spends.set(m, (spends.get(m) ?? 0) + charge);
+      totalSpend += charge;
     }
     const total = j.length || 1;
+    const effectiveTotalSpend = totalSpend || 1;
     return Array.from(counts.entries())
       .map(([mode, c]) => {
         let label = mode;
@@ -728,12 +741,15 @@
           emoji = "🔄";
         }
 
+        const modeSpend = spends.get(mode) ?? 0;
         return {
           mode,
           label,
           emoji,
           count: c,
+          spend: modeSpend,
           percentage: (c / total) * 100,
+          spendPercentage: (modeSpend / effectiveTotalSpend) * 100,
         };
       })
       .sort((a, b) => b.count - a.count);
@@ -1266,7 +1282,12 @@
                         {@const saving = travelProfile.totalSpend - oddPeriodCost}
                         {#if oddPeriodCost > 0}
                           <tr>
-                            <td>Student Odd-Period Travelcard ({oddPeriodResult.label})</td>
+                            <td>
+                              Student Odd-Period Travelcard ({oddPeriodResult.label})
+                              <div style="font-size: 0.72rem; color: var(--color-text-muted); margin-top: 0.15rem; font-weight: 500;">
+                                Valid: {analysisDates.minDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} – {analysisDates.maxDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                              </div>
+                            </td>
                             <td>—</td>
                             <td>£{oddPeriodCost.toFixed(2)}</td>
                             <td class={saving > 0 ? "text-green" : "text-red"}>
@@ -1293,21 +1314,41 @@
       <!-- Column 2: Heatmaps, Mode Shares, & Anomalies -->
       <div class="column">
         <!-- Network Mode Share -->
-        <div class="glass-card share-card">
-          <h3 class="card-title">🚇 Network Mode Share</h3>
+        <div class="glass-card share-card animate-fade-in">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 class="card-title" style="margin: 0;">🚇 Network Mode Share</h3>
+            <div class="legend-container" style="display: flex; gap: 0.75rem; font-size: 0.72rem; font-weight: 600; color: var(--color-text-secondary);">
+              <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                <span style="width: 8px; height: 8px; border-radius: 2px; background: var(--color-oyster-blue);"></span> Trips
+              </span>
+              <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                <span style="width: 8px; height: 8px; border-radius: 2px; background: #10b981;"></span> Spend
+              </span>
+            </div>
+          </div>
           <div class="bar-chart-list">
             {#each modeShareStats as stat}
-              <div class="bar-row">
-                <div class="bar-labels">
+              <div class="bar-row" style="margin-bottom: 1rem;">
+                <div class="bar-labels" style="margin-bottom: 0.35rem;">
                   <span>{stat.emoji} {stat.label}</span>
-                  <span class="bar-val"
-                    >{stat.count} ({Math.round(stat.percentage)}%)</span
-                  >
+                  <span class="bar-val" style="font-size: 0.75rem;">
+                    {stat.count} {stat.count === 1 ? 'trip' : 'trips'} ({Math.round(stat.percentage)}%)
+                    <span style="color: var(--color-text-muted); margin: 0 0.25rem;">•</span>
+                    <span style="color: #34d399; font-weight: 600;">{formatSpend(stat.spend)}</span> ({Math.round(stat.spendPercentage)}%)
+                  </span>
                 </div>
-                <div class="progress-bar-container">
+                <!-- Trip share bar -->
+                <div class="progress-bar-container" style="margin-bottom: 4px; height: 6px;">
                   <div
                     class="progress-bar-fill"
-                    style="width: {stat.percentage}%; background: var(--color-oyster-blue);"
+                    style="width: {stat.percentage}%; background: var(--color-oyster-blue); height: 100%;"
+                  ></div>
+                </div>
+                <!-- Spend share bar -->
+                <div class="progress-bar-container" style="height: 6px;">
+                  <div
+                    class="progress-bar-fill"
+                    style="width: {stat.spendPercentage}%; background: #10b981; height: 100%;"
                   ></div>
                 </div>
               </div>
