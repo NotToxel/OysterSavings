@@ -120,6 +120,14 @@
     text: string;
   } | null>(null);
 
+  // Weekly cap details tooltip state
+  let weeklyCapTooltipData = $state<{
+    visible: boolean;
+    x: number;
+    y: number;
+    week: any;
+  } | null>(null);
+
   const activeRetryInfo = $derived.by(() => {
     if (!selectedOriginStation?.info?.naptanId || !selectedDestStation?.info?.naptanId) return null;
     const fromNaptan = selectedOriginStation.info.naptanId;
@@ -217,58 +225,28 @@
       return;
     }
 
-    const zonesStr = week.maxRange ? week.maxRange.replace('Z', 'Zone ').replace('Z', '') : 'Bus Only';
-    
-    // Highlight outside zone stations in yellow
-    const stationsStr = week.stationsVisited && week.stationsVisited.length > 0
-      ? week.stationsVisited.map((name: string) => {
-          const isOz = week.outsideZoneStations?.includes(name);
-          return isOz ? `<span style="color: #fbbf24; font-weight: 600;">${name} (Outside Zone)</span>` : name;
-        }).join(', ')
-      : 'None';
-      
-    const capVal = week.fareTypeWeeklyCap || week.weeklyCap;
-    const hitText = week.capHit ? '<span style="color: #34d399; font-weight: 600;">(Capped ✓)</span>' : '';
-
-    const basisHtml = week.widestCapStation
-      ? `<div style="font-size: 0.7rem;"><strong>Determining Station:</strong> <span style="color: #fbbf24; font-weight: 600;">${week.widestCapStation}</span> <span style="color: var(--color-text-muted); font-size: 0.65rem;">(Outside Zone)</span></div>`
-      : `<div style="font-size: 0.7rem;"><strong>Zones:</strong> ${zonesStr}</div>`;
-
-    const htmlContent = `
-      <div style="text-align: left; font-family: var(--font-sans); min-width: 170px;">
-        <div style="font-weight: 700; margin-bottom: 0.35rem; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 0.2rem; display: flex; justify-content: space-between;">
-          <span>Weekly Cap Details</span>
-          ${hitText}
-        </div>
-        <div style="margin-top: 0.25rem; font-size: 0.7rem;"><strong>Cap Limit:</strong> £${capVal.toFixed(2)}</div>
-        ${basisHtml}
-        <div style="margin-top: 0.35rem; max-height: 120px; overflow-y: auto; font-size: 0.68rem; color: rgba(255,255,255,0.85); line-height: 1.35;">
-          <strong>Stations Visited:</strong><br/>
-          ${stationsStr}
-        </div>
-      </div>
-    `;
-    
     const rect = target.getBoundingClientRect();
-    warningTooltipData = {
+    weeklyCapTooltipData = {
       visible: true,
       x: rect.left + rect.width / 2,
       y: rect.top,
-      text: htmlContent,
+      week,
     };
   }
 
-  function hideWeeklyCapTooltip(event: MouseEvent) {
+  function hideWeeklyCapTooltip(event?: MouseEvent) {
     // Bypassing synthetic mouseleave on touch/mobile devices to prevent click race conditions
-    if (event.type === 'mouseleave' && !window.matchMedia('(hover: hover)').matches) {
+    if (event && event.type === 'mouseleave' && !window.matchMedia('(hover: hover)').matches) {
       return;
     }
-    hideWarningTooltip();
+    if (weeklyCapTooltipData) {
+      weeklyCapTooltipData.visible = false;
+    }
   }
 
   function handleWeeklyCapClick(target: HTMLElement, week: any) {
-    if (warningTooltipData && warningTooltipData.visible) {
-      hideWarningTooltip();
+    if (weeklyCapTooltipData && weeklyCapTooltipData.visible) {
+      hideWeeklyCapTooltip();
     } else {
       showWeeklyCapTooltip(target, week, false);
     }
@@ -294,6 +272,7 @@
       untrack(() => {
         hideFareTooltip();
         hideWarningTooltip();
+        hideWeeklyCapTooltip();
       });
     }
   });
@@ -3891,7 +3870,83 @@
   </div>
 {/if}
 
-<svelte:window onclick={hideWarningTooltip} />
+<svelte:window onclick={() => { hideWarningTooltip(); hideWeeklyCapTooltip(); }} />
+
+{#if weeklyCapTooltipData && weeklyCapTooltipData.visible}
+  {@const week = weeklyCapTooltipData.week}
+  {@const progress = Math.min(week.totalFareFareType / (week.fareTypeWeeklyCap || week.weeklyCap), 1)}
+  <div
+    class="weekly-cap-hovercard"
+    style="position: fixed; left: {weeklyCapTooltipData.x}px; top: {weeklyCapTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
+  >
+    <div class="hovercard-header">
+      <span class="hovercard-title">Weekly Cap Details</span>
+      {#if week.capHit}
+        <span class="hovercard-status-badge capped">Capped ✓</span>
+      {:else}
+        <span class="hovercard-status-badge progress">In Progress</span>
+      {/if}
+    </div>
+    
+    <div class="hovercard-divider"></div>
+    
+    <div class="hovercard-body">
+      <div class="weekly-metric-row">
+        <div class="weekly-metric">
+          <span class="metric-label">Cap Limit</span>
+          <span class="metric-value">£{(week.fareTypeWeeklyCap || week.weeklyCap).toFixed(2)}</span>
+        </div>
+        <div class="weekly-metric">
+          <span class="metric-label">Current Spend</span>
+          <span class="metric-value text-highlight">£{week.totalFareFareType.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div class="progress-track-wrapper">
+        <div class="progress-track-bar">
+          <div 
+            class="progress-track-fill" 
+            style="width: {progress * 100}%; background: {week.capHit ? 'var(--color-success)' : progress >= 0.7 ? 'var(--color-warning)' : 'var(--color-oyster-blue)'};"
+          ></div>
+        </div>
+        <span class="progress-percentage">{Math.round(progress * 100)}%</span>
+      </div>
+
+      <div class="hovercard-info-section">
+        {#if week.widestCapStation}
+          <div class="info-row">
+            <span class="info-label">Determining Station:</span>
+            <span class="info-value oz-station">📍 {week.widestCapStation} (Outside Zone)</span>
+          </div>
+        {:else}
+          <div class="info-row">
+            <span class="info-label">Active Zones:</span>
+            <span class="info-value">🚇 {week.maxRange ? week.maxRange.replace('Z', 'Zone ').replace('Z', '') : 'Bus Only'}</span>
+          </div>
+        {/if}
+      </div>
+
+      <div class="stations-visited-section">
+        <span class="section-title">Stations Visited</span>
+        <div class="stations-pills-list">
+          {#if week.stationsVisited && week.stationsVisited.length > 0}
+            {#each week.stationsVisited as name}
+              {@const isOz = week.outsideZoneStations?.includes(name)}
+              <span class="station-pill" class:outside-zone={isOz}>
+                {name}
+                {#if isOz}
+                  <span class="oz-badge">OZ</span>
+                {/if}
+              </span>
+            {/each}
+          {:else}
+            <span class="no-stations">No rail stations visited</span>
+          {/if}
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if warningTooltipData && warningTooltipData.visible}
   <div
@@ -3905,6 +3960,176 @@
 {/if}
 
 <style>
+  /* Weekly cap premium hovercard */
+  .weekly-cap-hovercard {
+    background: linear-gradient(135deg, rgba(10, 14, 26, 0.99), rgba(17, 24, 39, 0.99));
+    border: 1px solid var(--color-border);
+    border-top: 3px solid var(--color-oyster-blue);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    width: 320px;
+    max-width: 380px;
+    box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    font-family: var(--font-sans);
+    color: #fff;
+  }
+
+  .weekly-cap-hovercard::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(17, 24, 39, 0.99) transparent transparent transparent;
+  }
+
+  .hovercard-status-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .hovercard-status-badge.capped {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+  }
+  .hovercard-status-badge.progress {
+    background: rgba(0, 159, 227, 0.15);
+    border: 1px solid rgba(0, 159, 227, 0.3);
+    color: #009FE3;
+  }
+
+  .weekly-metric-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.8rem 0;
+  }
+  .weekly-metric {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .metric-label {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.15rem;
+  }
+  .metric-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+
+  .progress-track-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .progress-track-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-track-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+  .progress-percentage {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .hovercard-info-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    margin-bottom: 0.8rem;
+  }
+  .info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .info-label {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+  }
+  .info-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .info-value.oz-station {
+    color: #fbbf24;
+  }
+
+  .stations-visited-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .stations-visited-section .section-title {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .stations-pills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    max-height: 95px;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+  }
+  .station-pill {
+    font-size: 0.68rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.15rem 0.4rem;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .station-pill.outside-zone {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(245, 158, 11, 0.05);
+    color: #fbbf24;
+  }
+  .oz-badge {
+    font-size: 0.5rem;
+    font-weight: 800;
+    background: #f59e0b;
+    color: #000;
+    padding: 0 0.2rem;
+    border-radius: 3px;
+  }
+  .no-stations {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
   /* Student Oyster Comparison Styles */
   .student-comparison-card {
     border: 1px dashed rgba(0, 159, 227, 0.3);
