@@ -1366,7 +1366,6 @@
     height: 100%;
     background: linear-gradient(90deg, #009fe3, #6950a1);
     border-radius: 999px;
-    transition: width 1s ease;
   }
   .be-progress-labels {
     display: flex;

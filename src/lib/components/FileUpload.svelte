@@ -305,7 +305,6 @@
     height: 100%;
     background: linear-gradient(90deg, var(--color-oyster-blue), #6f4390);
     border-radius: 9999px;
-    transition: width 0.2s ease-out;
   }
 
   .progress-percent {

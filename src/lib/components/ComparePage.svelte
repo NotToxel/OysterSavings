@@ -963,7 +963,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.2s ease;
   }
 
   .product-chip.active .product-dot {

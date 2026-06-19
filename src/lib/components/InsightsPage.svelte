@@ -1128,7 +1128,7 @@
                           >
                           <div class="near-peak-items">
                             {#each tip.journeys as npJ}
-                              <div class="near-peak-item" style="border-left: 3px solid {npJ.wasCapHit ? 'var(--color-text-muted)' : 'var(--color-oyster-blue)'};">
+                              <div class="near-peak-item" style="background: {npJ.wasCapHit ? 'rgba(255,255,255,0.02)' : 'rgba(0, 159, 227, 0.04)'};">
                                 <div class="np-time-route">
                                   <span class="np-date">
                                     <span class="np-day" style="font-weight: 600; opacity: 0.85; margin-right: 0.25rem;">{npJ.dayName}</span>{npJ.dateStr} @ {npJ.startTime}
@@ -2026,7 +2026,6 @@
   .progress-bar-fill {
     height: 100%;
     border-radius: 99px;
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Penalty / Anomalies */

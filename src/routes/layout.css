@@ -178,7 +178,6 @@ select option {
 .cap-progress-bar {
   height: 100%;
   border-radius: 999px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Badge */

@@ -2696,14 +2696,14 @@
                     {#if forecast.busProgressFareType && forecast.busProgressFareType > 0}
                       <div
                         class="mini-cap-fill-bus"
-                        style="width: {forecast.busProgressFareType * 100}%; background: {forecast.isBusCapHitFareType || forecast.capHitFareType ? '#10b981' : '#e0311a'}; height: 100%; transition: width 0.3s ease;"
+                        style="width: {forecast.busProgressFareType * 100}%; background: {forecast.isBusCapHitFareType || forecast.capHitFareType ? '#10b981' : '#e0311a'}; height: 100%;"
                         title="Bus Spend: £{forecast.cappedBusFareFareType?.toFixed(2)}"
                       ></div>
                     {/if}
                     {#if forecast.railProgressFareType && forecast.railProgressFareType > 0}
                       <div
                         class="mini-cap-fill-rail"
-                        style="width: {forecast.railProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)}; height: 100%; transition: width 0.3s ease;"
+                        style="width: {forecast.railProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)}; height: 100%;"
                         title="Rail/Tube Spend: £{forecast.cappedRailFareFareType?.toFixed(2)}"
                       ></div>
                     {/if}
@@ -4003,7 +4003,6 @@
   .weekly-cap-hovercard {
     background: linear-gradient(135deg, rgba(10, 14, 26, 0.99), rgba(17, 24, 39, 0.99));
     border: 1px solid var(--color-border);
-    border-top: 3px solid var(--color-oyster-blue);
     border-radius: 12px;
     padding: 1rem 1.2rem;
     width: 320px;
@@ -4086,7 +4085,7 @@
   .progress-track-fill {
     height: 100%;
     border-radius: 3px;
-    transition: width 0.3s ease;
+
   }
   .progress-percentage {
     font-size: 0.7rem;
@@ -4270,7 +4269,7 @@
   }
 
   .cheapest-highlight {
-    border-left: 3px solid #10b981;
+    background: rgba(16, 185, 129, 0.06);
   }
 
   .best-value-badge {
@@ -4593,7 +4592,7 @@
   .mini-cap-fill {
     height: 100%;
     border-radius: 2px;
-    transition: width 0.5s ease;
+
   }
 
   .cap-hit-label {
@@ -4921,7 +4920,6 @@
   .warning-hovercard {
     background: linear-gradient(135deg, rgba(30, 10, 10, 0.99), rgba(17, 24, 39, 0.99));
     border: 1px solid rgba(239, 68, 68, 0.25);
-    border-top: 3px solid #ef4444; /* Red warning accent */
     border-radius: 12px;
     padding: 0.9rem 1.1rem;
     width: 300px;
@@ -5147,7 +5145,7 @@
   .weekly-progress-fill {
     width: 100%;
     border-radius: 3px;
-    transition: height 0.3s ease;
+
   }
 
   .weekly-cap-hit-tag {
@@ -5669,7 +5667,7 @@
     box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
     max-width: 320px;
     width: 85%;
-    animation: zoomIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: zoomIn 0.25s cubic-bezier(0.25, 1, 0.5, 1);
   }
 
   .transition-title {
