@@ -11,6 +11,7 @@
     globalAdvancedMode,
     useAlternativeFares,
     apiRetryStatus,
+    cards,
   } from "$lib/stores/stores";
   import {
     type RecurrenceRule,
@@ -69,6 +70,19 @@
 
   // Calendar state
   let calendarDate = $state(new Date());
+  let plannerCardId = $state<string>('');
+  
+  $effect(() => {
+    if ($cards.length > 0) {
+      if (!plannerCardId || !$cards.some(c => c.id === plannerCardId)) {
+        plannerCardId = $cards[0].id;
+      }
+    }
+  });
+
+  let plannerCard = $derived($cards.find(c => c.id === plannerCardId) || $cards[0]);
+  let currentDetectedPatterns = $derived(plannerCard ? plannerCard.detectedPatterns : []);
+
   let showRecurrenceModal = $state(false);
   let showActiveRoutines = $state(true);
   let showOneOffJourneys = $state(true);
@@ -982,7 +996,7 @@
 
   // Filter detected patterns to show only those not yet imported
   let visiblePatterns = $derived.by(() => {
-    return $detectedPatterns.filter((pattern) => {
+    return currentDetectedPatterns.filter((pattern) => {
       return !$recurrenceRules.some((rule) => {
         return (
           rule.originZone === pattern.originZone &&
@@ -2501,8 +2515,24 @@
 {/if}
 
 <div class="planner-page">
-  <div class="planner-header">
-    <h1 class="page-title">Journey Planner</h1>
+  <div class="planner-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <h1 class="page-title" style="margin-bottom: 0;">Journey Planner</h1>
+    
+    {#if $cards.length > 1}
+      <div class="planner-card-selector" style="display: flex; align-items: center; gap: 0.5rem;">
+        <label for="planner-card-select" style="font-size: 0.85rem; font-weight: 500; color: var(--color-text-secondary);">Select Card:</label>
+        <select
+          id="planner-card-select"
+          class="input-field"
+          style="padding: 0.4rem 0.75rem; font-size: 0.85rem; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); color: var(--color-text-primary); cursor: pointer;"
+          bind:value={plannerCardId}
+        >
+          {#each $cards as card}
+            <option value={card.id}>{card.name}</option>
+          {/each}
+        </select>
+      </div>
+    {/if}
   </div>
 
   <!-- Mobile Tab Switcher -->

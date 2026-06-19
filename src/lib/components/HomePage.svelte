@@ -100,6 +100,16 @@
         "2-day Richmond ↔ Bank mixed National Rail + Tube hybrid schedule. Showcases mixed fare calculation and off-peak travel.",
       color: "#6f4390",
     },
+    {
+      id: "alex",
+      name: "Alex",
+      avatar: "🧑‍💼",
+      badge: "Multi-Card",
+      zones: "Zone 1",
+      description:
+        "Uses both an Oyster (with Railcard) for commuting and Contactless for spontaneous trips. Demonstrates multi-card analysis and consolidation insights.",
+      color: "#34d399",
+    },
   ];
 </script>
 

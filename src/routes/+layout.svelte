@@ -1,6 +1,6 @@
 <script lang="ts">
   import './layout.css';
-  import { currentPage, hasData, isDemoMode, resetData, reportGeneratedAt } from '$lib/stores/stores';
+  import { currentPage, hasData, isDemoMode, resetData, reportGeneratedAt, cards } from '$lib/stores/stores';
   import { TFL_FARES_LAST_ROSE } from '$lib/data/fareData';
 
   let { children } = $props();
@@ -64,7 +64,13 @@
       <div class="demo-banner animate-fade-in">
         <div class="demo-banner-content">
           <span class="demo-flash">⚡</span>
-          <span>Running in <strong>Demo Mode</strong> with a pre-configured 5-week travel routine.</span>
+          <span>
+            {#if $cards.length > 1}
+              Running in <strong>Demo Mode</strong> with Alex's multi-card travel profile (2 cards loaded).
+            {:else}
+              Running in <strong>Demo Mode</strong> with a pre-configured 5-week travel routine.
+            {/if}
+          </span>
         </div>
         <button class="btn-demo-exit" onclick={handleExitDemo}>
           ✕ Exit Demo

@@ -8,26 +8,158 @@ import type { ExcludedJourney } from '../engine/journeyFilter';
 import type { DetectedPattern, PlannedJourney, RecurrenceRule } from '../engine/recurrenceEngine';
 import { calculateProductComparison, calculateFareTypeSavings, detectActiveDiscount, type ProductComparisonResult, type FareTypeSavingsResult } from '../engine/savingsEngine';
 import type { FareType } from '../data/fareData';
+import type { CardState, MultiCardClassifiedJourney } from './cardTypes';
+import { CARD_COLORS, MAX_CARDS, generateCardId, generateCardName } from './cardTypes';
+import { filterJourneys, getFilterSummary } from '../engine/journeyFilter';
+import { classifyAll } from '../engine/journeyClassifier';
+import { calculateAllFares } from '../engine/fareCalculator';
+import { calculateDailyCaps, calculateWeeklyCaps, getCapSummary } from '../engine/capEngine';
+import { detectCommutePatterns } from '../engine/recurrenceEngine';
 
-// Journey data store
-export const rawJourneys = writable<ParsedJourney[]>([]);
-export const validJourneys = writable<ParsedJourney[]>([]);
-export const excludedJourneys = writable<ExcludedJourney[]>([]);
-export const classifiedJourneys = writable<ClassifiedJourney[]>([]);
-export const fareResults = writable<FareResult[]>([]);
+// ──────────────────────────────────────────────────────────────
+// Multi-card core stores
+// ──────────────────────────────────────────────────────────────
+
+/** All loaded cards */
+export const cards = writable<CardState[]>([]);
+
+/** Active card ID — 'combined' shows aggregated data */
+export const activeCardId = writable<string>('combined');
+
+/** "What-If" fare type override for Combined view */
+export const combinedFareTypeOverride = writable<FareType>('none');
+
+/** Re-export multi-card types and constants */
+export { CARD_COLORS, MAX_CARDS, generateCardId, generateCardName };
+export type { CardState, MultiCardClassifiedJourney };
+
+// ──────────────────────────────────────────────────────────────
+// Card CRUD helpers
+// ──────────────────────────────────────────────────────────────
+
+/** Add a new card to the deck */
+export function addCard(card: CardState): void {
+  cards.update(c => [...c, card]);
+  activeCardId.set(card.id);
+}
+
+/** Remove a card by ID */
+export function removeCard(cardId: string): void {
+  cards.update(c => {
+    const filtered = c.filter(card => card.id !== cardId);
+    return filtered;
+  });
+  // If the removed card was active, switch to combined or first remaining
+  const currentActive = get(activeCardId);
+  if (currentActive === cardId) {
+    const remaining = get(cards);
+    if (remaining.length === 0) {
+      activeCardId.set('combined');
+    } else if (remaining.length === 1) {
+      activeCardId.set(remaining[0].id);
+    } else {
+      activeCardId.set('combined');
+    }
+  }
+}
+
+/** Update a specific card's properties */
+export function updateCard(cardId: string, updates: Partial<CardState>): void {
+  cards.update(c => c.map(card =>
+    card.id === cardId ? { ...card, ...updates } : card
+  ));
+}
+
+/** Merge new journeys into an existing card, deduplicate, and re-run the pipeline.
+ *  Returns the number of duplicates removed. */
+export function mergeIntoCard(cardId: string, newRawJourneys: ParsedJourney[]): number {
+  const allCards = get(cards);
+  const card = allCards.find(c => c.id === cardId);
+  if (!card) return 0;
+
+  // Combine old + new raw journeys
+  const combined = [...card.rawJourneys, ...newRawJourneys];
+
+  // Deduplicate: same date string, start time, journey/action, and charge
+  const seen = new Set<string>();
+  const deduped: ParsedJourney[] = [];
+  for (const j of combined) {
+    const key = `${j.dateStr}|${j.startTime}|${j.journeyAction}|${j.charge}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(j);
+    }
+  }
+  const duplicatesRemoved = combined.length - deduped.length;
+
+  // Re-run filter → classify → fares → caps pipeline
+  const filtered = filterJourneys(deduped);
+  const classified = classifyAll(filtered.valid);
+  const fares = calculateAllFares(classified);
+  const dailyCaps = calculateDailyCaps(fares);
+  const weeklyCaps = calculateWeeklyCaps(dailyCaps);
+  const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
+  const patterns = detectCommutePatterns(classified);
+  const detectedDiscount = detectActiveDiscount(classified);
+
+  updateCard(cardId, {
+    rawJourneys: deduped,
+    validJourneys: filtered.valid,
+    excludedJourneys: filtered.excluded,
+    classifiedJourneys: classified,
+    fareResults: fares,
+    dailyCapResults: dailyCaps,
+    weeklyCapResults: weeklyCaps,
+    capSummary: capSummaryResult,
+    detectedPatterns: patterns,
+    detectedDiscount,
+    duplicatesRemoved: card.duplicatesRemoved + duplicatesRemoved,
+  });
+
+  return duplicatesRemoved;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Derived stores — dual-mode (per-card or combined)
+// ──────────────────────────────────────────────────────────────
+
+/** Helper: get the active card object, or null if combined */
+const activeCard = derived(
+  [cards, activeCardId],
+  ([$cards, $activeCardId]) => {
+    if ($activeCardId === 'combined') return null;
+    return $cards.find(c => c.id === $activeCardId) ?? null;
+  }
+);
 
 // File info
-export const fileName = writable<string>('');
-export const fileLoaded = writable<boolean>(false);
-export const parseErrors = writable<string[]>([]);
+export const fileName = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($cards.length === 0) return '';
+    if ($activeCard) return $activeCard.fileName;
+    if ($cards.length === 1) return $cards[0].fileName;
+    return `${$cards.length} cards loaded`;
+  }
+);
+
+export const fileLoaded = derived(cards, ($cards) => $cards.length > 0);
+
+export const parseErrors = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.parseErrors;
+    // Combined: merge all errors
+    return $cards.flatMap(c => c.parseErrors);
+  }
+);
+
+export const isDemoMode = derived(cards, ($cards) =>
+  $cards.length > 0 && $cards.some(c => c.isDemoCard)
+);
+
 export const reportGeneratedAt = writable<string>('');
 
-// Cap analysis
-export const dailyCapResults = writable<DayCapResult[]>([]);
-export const weeklyCapResults = writable<WeekCapResult[]>([]);
-export const capSummary = writable<CapSummary | null>(null);
-
-// Settings
 const isBrowser = typeof window !== 'undefined';
 
 if (isBrowser) {
@@ -40,22 +172,223 @@ if (isBrowser) {
   });
 }
 
+// Journey data — dual-mode
+export const rawJourneys = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.rawJourneys;
+    return $cards.flatMap(c => c.rawJourneys);
+  }
+);
+
+export const validJourneys = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.validJourneys;
+    return $cards.flatMap(c => c.validJourneys);
+  }
+);
+
+export const excludedJourneys = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.excludedJourneys;
+    return $cards.flatMap(c => c.excludedJourneys);
+  }
+);
+
+/** Classified journeys — in combined mode, attaches card metadata to each journey */
+export const classifiedJourneys = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]): ClassifiedJourney[] => {
+    if ($activeCard) return $activeCard.classifiedJourneys;
+    // Combined: merge all cards' journeys with card metadata, sort chronologically
+    const all: MultiCardClassifiedJourney[] = [];
+    for (const card of $cards) {
+      for (const j of card.classifiedJourneys) {
+        all.push({
+          ...j,
+          cardId: card.id,
+          cardName: card.name,
+          cardColor: card.color,
+        });
+      }
+    }
+    all.sort((a, b) => a.raw.date.getTime() - b.raw.date.getTime());
+    return all;
+  }
+);
+
+export const fareResults = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.fareResults;
+    return $cards.flatMap(c => c.fareResults);
+  }
+);
+
+// Cap analysis — in combined mode, sum per-card independent caps by date
+export const dailyCapResults = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.dailyCapResults;
+    if ($cards.length === 0) return [];
+    if ($cards.length === 1) return $cards[0].dailyCapResults;
+
+    // Merge by date — sum totalSpend and savedByCap across cards
+    const dayMap = new Map<string, DayCapResult>();
+    for (const card of $cards) {
+      for (const day of card.dailyCapResults) {
+        const existing = dayMap.get(day.date);
+        if (existing) {
+          dayMap.set(day.date, {
+            ...existing,
+            journeys: [...existing.journeys, ...day.journeys],
+            totalSpend: existing.totalSpend + day.totalSpend,
+            railJourneySpend: existing.railJourneySpend + day.railJourneySpend,
+            busSpend: existing.busSpend + day.busSpend,
+            capHit: existing.capHit || day.capHit,
+            savedByCap: existing.savedByCap + day.savedByCap,
+            capProgress: Math.max(existing.capProgress, day.capProgress),
+          });
+        } else {
+          dayMap.set(day.date, { ...day, journeys: [...day.journeys] });
+        }
+      }
+    }
+    return Array.from(dayMap.values()).sort(
+      (a, b) => a.dateObj.getTime() - b.dateObj.getTime()
+    );
+  }
+);
+
+export const weeklyCapResults = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.weeklyCapResults;
+    if ($cards.length === 0) return [];
+    if ($cards.length === 1) return $cards[0].weeklyCapResults;
+
+    // Merge by week start — sum across cards
+    const weekMap = new Map<number, WeekCapResult>();
+    for (const card of $cards) {
+      for (const week of card.weeklyCapResults) {
+        const key = week.weekStart.getTime();
+        const existing = weekMap.get(key);
+        if (existing) {
+          weekMap.set(key, {
+            ...existing,
+            days: [...existing.days, ...week.days],
+            totalSpend: existing.totalSpend + week.totalSpend,
+            capHit: existing.capHit || week.capHit,
+            savedByCap: existing.savedByCap + week.savedByCap,
+            capProgress: Math.max(existing.capProgress, week.capProgress),
+          });
+        } else {
+          weekMap.set(key, { ...week, days: [...week.days] });
+        }
+      }
+    }
+    return Array.from(weekMap.values()).sort(
+      (a, b) => a.weekStart.getTime() - b.weekStart.getTime()
+    );
+  }
+);
+
+export const capSummary = derived(
+  [cards, activeCard],
+  ([$cards, $activeCard]) => {
+    if ($activeCard) return $activeCard.capSummary;
+    if ($cards.length === 0) return null;
+    if ($cards.length === 1) return $cards[0].capSummary;
+
+    // Aggregate cap summaries
+    let totalSavedByDailyCap = 0;
+    let totalSavedByWeeklyCap = 0;
+    let daysCapHit = 0;
+    let weeksCapHit = 0;
+    let totalDays = 0;
+    let totalWeeks = 0;
+    for (const card of $cards) {
+      if (card.capSummary) {
+        totalSavedByDailyCap += card.capSummary.totalSavedByDailyCap;
+        totalSavedByWeeklyCap += card.capSummary.totalSavedByWeeklyCap;
+        daysCapHit += card.capSummary.daysCapHit;
+        weeksCapHit += card.capSummary.weeksCapHit;
+        totalDays = Math.max(totalDays, card.capSummary.totalDays);
+        totalWeeks = Math.max(totalWeeks, card.capSummary.totalWeeks);
+      }
+    }
+    return {
+      totalSavedByDailyCap,
+      totalSavedByWeeklyCap,
+      daysCapHit,
+      weeksCapHit,
+      totalDays,
+      totalWeeks,
+    } as CapSummary;
+  }
+);
+
+// Detected patterns
+export const detectedPatterns = derived(
+  [cards, activeCard, classifiedJourneys],
+  ([$cards, $activeCard, $classifiedJourneys]) => {
+    if ($activeCard) return $activeCard.detectedPatterns;
+    if ($cards.length === 0) return [];
+    // Combined: re-detect patterns on merged journey set
+    return detectCommutePatterns($classifiedJourneys);
+  }
+);
+
+// ──────────────────────────────────────────────────────────────
+// Fare type — dual-mode: per-card or "What-If" override
+// ──────────────────────────────────────────────────────────────
+
 const initialFareType = isBrowser && localStorage.getItem('oystersavings_selected_fare_type')
   ? localStorage.getItem('oystersavings_selected_fare_type') as FareType
   : 'none';
 
-export const selectedFareType = writable<FareType>(initialFareType);
+// Internal writable for combined mode override
+combinedFareTypeOverride.set(initialFareType);
 
-if (isBrowser) {
-  selectedFareType.subscribe(value => {
-    localStorage.setItem('oystersavings_selected_fare_type', value);
-  });
-}
+/** The selected fare type — reads/writes per-card or combined override */
+export const selectedFareType = {
+  subscribe: derived(
+    [activeCard, combinedFareTypeOverride],
+    ([$activeCard, $override]) => {
+      if ($activeCard) return $activeCard.selectedFareType;
+      return $override;
+    }
+  ).subscribe,
+
+  set(value: FareType) {
+    const currentActiveCard = get(activeCard);
+    if (currentActiveCard) {
+      updateCard(currentActiveCard.id, { selectedFareType: value });
+    } else {
+      combinedFareTypeOverride.set(value);
+    }
+    if (isBrowser) {
+      localStorage.setItem('oystersavings_selected_fare_type', value);
+    }
+  },
+
+  update(fn: (value: FareType) => FareType) {
+    const currentActiveCard = get(activeCard);
+    if (currentActiveCard) {
+      const newVal = fn(currentActiveCard.selectedFareType);
+      updateCard(currentActiveCard.id, { selectedFareType: newVal });
+    } else {
+      combinedFareTypeOverride.update(fn);
+    }
+  }
+};
 
 export const fareTypeCost = writable<number>(0);
 export const includeOysterCost = writable<boolean>(false);
 export const includeStudentPhotocardFee = writable<boolean>(false);
-export const isDemoMode = writable<boolean>(false);
+
 const initialAdvancedMode = isBrowser && localStorage.getItem('oystersavings_global_advanced_mode') !== 'false';
 export const globalAdvancedMode = writable<boolean>(initialAdvancedMode);
 if (isBrowser) {
@@ -76,8 +409,10 @@ if (isBrowser) {
   });
 }
 
+// ──────────────────────────────────────────────────────────────
+// Savings & comparison — derived
+// ──────────────────────────────────────────────────────────────
 
-// Savings results
 export const savingsResult = derived(
   [classifiedJourneys, selectedFareType, fareTypeCost, includeOysterCost, useAlternativeFares],
   ([$classifiedJourneys, $selectedFareType, $fareTypeCost, $includeOysterCost, $useAlternativeFares]) => {
@@ -87,10 +422,13 @@ export const savingsResult = derived(
 );
 
 export const detectedDiscount = derived(
-  [classifiedJourneys, useAlternativeFares],
-  ([$classifiedJourneys, $useAlternativeFares]) => {
+  [cards, activeCard, classifiedJourneys, useAlternativeFares],
+  ([$cards, $activeCard, $classifiedJourneys, $useAlternativeFares]) => {
+    if ($activeCard) return $activeCard.detectedDiscount;
+    if ($cards.length === 0) return 'none';
     if ($classifiedJourneys.length === 0) return 'none';
-    return detectActiveDiscount($classifiedJourneys, $useAlternativeFares);
+    // Combined mode: return 'none' since different cards may have different discounts
+    return 'none' as FareType;
   }
 );
 
@@ -124,7 +462,10 @@ export const analysisPeriodText = derived(
   }
 );
 
-// Planner
+// ──────────────────────────────────────────────────────────────
+// Planner stores (unchanged — single-card with card selector)
+// ──────────────────────────────────────────────────────────────
+
 function parseStoredRules(jsonStr: string): RecurrenceRule[] {
   try {
     const rules = JSON.parse(jsonStr) as RecurrenceRule[];
@@ -190,7 +531,6 @@ if (isBrowser) {
 }
 
 export const plannedJourneys = writable<PlannedJourney[]>([]);
-export const detectedPatterns = writable<DetectedPattern[]>([]);
 export const forecastResult = writable<ForecastResult | null>(null);
 
 export interface ApiRetryInfo {
@@ -200,41 +540,39 @@ export interface ApiRetryInfo {
 }
 export const apiRetryStatus = writable<Record<string, ApiRetryInfo>>({});
 
-
+// ──────────────────────────────────────────────────────────────
 // Navigation
+// ──────────────────────────────────────────────────────────────
+
 export const currentPage = writable<'home' | 'analysis' | 'planner' | 'compare' | 'faq'>('home');
 
-// Derived: has data loaded
+// ──────────────────────────────────────────────────────────────
+// Derived convenience stores
+// ──────────────────────────────────────────────────────────────
+
 export const hasData = derived(fileLoaded, ($fileLoaded) => $fileLoaded);
 
-// Derived: total spend
 export const totalSpend = derived(fareResults, ($fareResults) =>
   Math.round($fareResults.reduce((sum, r) => sum + r.actualCharge, 0) * 100) / 100
 );
 
-// Derived: total journeys
 export const totalJourneys = derived(classifiedJourneys, ($j) => $j.length);
 
-// Reset all data
+// ──────────────────────────────────────────────────────────────
+// Reset
+// ──────────────────────────────────────────────────────────────
+
 export function resetData() {
-  rawJourneys.set([]);
-  validJourneys.set([]);
-  excludedJourneys.set([]);
-  classifiedJourneys.set([]);
-  fareResults.set([]);
-  fileName.set('');
-  fileLoaded.set(false);
-  parseErrors.set([]);
-  dailyCapResults.set([]);
-  weeklyCapResults.set([]);
-  capSummary.set(null);
+  cards.set([]);
+  activeCardId.set('combined');
+  combinedFareTypeOverride.set('none');
+  fareTypeCost.set(0);
+  includeOysterCost.set(false);
   simpleRecurrenceRules.set([]);
   advancedRecurrenceRules.set([]);
   recurrenceRules.set([]);
   plannedJourneys.set([]);
-  detectedPatterns.set([]);
   forecastResult.set(null);
-  isDemoMode.set(false);
   reportGeneratedAt.set('');
   currentPage.set('home');
 }

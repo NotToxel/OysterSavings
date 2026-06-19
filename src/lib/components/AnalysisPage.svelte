@@ -12,15 +12,21 @@
     detectedDiscount,
     productComparison,
     includeStudentPhotocardFee,
+    cards,
+    activeCardId,
+    type MultiCardClassifiedJourney,
   } from "$lib/stores/stores";
   import { calculateFareTypeSavings } from "$lib/engine/savingsEngine";
   import { FARE_TYPES, type FareType } from "$lib/data/fareData";
   import { getZoneColor } from "$lib/data/stationService";
   import InsightsPage from "./InsightsPage.svelte";
+  import CardSelector from "./CardSelector.svelte";
+  import AddCardDialog from "./AddCardDialog.svelte";
 
   let activeTab = $state<"journeys" | "insights" | "savings" | "caps">(
     "insights",
   );
+  let showAddDialog = $state(false);
   let sortKey = $state<string>("date");
   let sortAsc = $state(false);
   let filterMode = $state<string>("all");
@@ -134,7 +140,7 @@
   );
 
   let filteredJourneys = $derived.by(() => {
-    let list = [...$classifiedJourneys];
+    let list = [...$classifiedJourneys] as MultiCardClassifiedJourney[];
 
     if (filterMode === "peak") list = list.filter((j) => j.isPeak);
     else if (filterMode === "offpeak") list = list.filter((j) => !j.isPeak);
@@ -254,6 +260,8 @@
 <div class="analysis-page">
   <h1 class="page-title">Journey Analysis</h1>
 
+  <CardSelector onAddCard={() => (showAddDialog = true)} />
+
   <!-- Tab navigation -->
   <div class="tab-nav" style="margin-bottom: 1.5rem;">
     <button
@@ -335,6 +343,9 @@
         <table class="data-table">
           <thead>
             <tr>
+              {#if $cards.length > 1}
+                <th>Card</th>
+              {/if}
               <th class="sortable" onclick={() => toggleSort("date")}>
                 Date {sortKey === "date" ? (sortAsc ? "↑" : "↓") : ""}
               </th>
@@ -355,6 +366,16 @@
                 class="animate-fade-in"
                 style="animation-delay: {Math.min(i * 20, 500)}ms"
               >
+                {#if $cards.length > 1}
+                  <td>
+                    <span
+                      class="badge"
+                      style="background: {j.cardColor || 'rgba(255,255,255,0.1)'}; color: white; border: 1px solid rgba(255,255,255,0.15); font-size: 0.72rem; padding: 0.2rem 0.4rem;"
+                    >
+                      {j.cardName || 'Card'}
+                    </span>
+                  </td>
+                {/if}
                 <td class="date-cell"><span class="day-of-week" style="opacity: 0.8; font-weight: 600; margin-right: 0.25rem;">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][j.dayOfWeek]}</span>{j.raw.dateStr}</td>
                 <td class="time-cell">{j.raw.startTime || "—"}</td>
                 <td class="journey-cell">
@@ -953,6 +974,29 @@
   {:else if activeTab === "caps"}
     <!-- Cap Analysis -->
     <div class="cap-layout">
+      {#if $activeCardId === 'combined' && $cards.length > 1}
+        <div class="glass-card combined-caps-breakdown" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); display: flex; align-items: center; gap: 0.35rem;">
+            💳 Per-Card Cap Breakdown
+          </h4>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            {#each $cards as card}
+              <div class="card-breakdown-item" style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); padding: 0.6rem 0.85rem; border-radius: 8px;">
+                <span class="card-indicator-dot" style="width: 10px; height: 10px; border-radius: 50%; background: {card.color}; flex-shrink: 0;"></span>
+                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                  <span style="font-weight: 600; font-size: 0.82rem; color: var(--color-text-primary);">{card.name}</span>
+                  <span style="font-size: 0.75rem; color: var(--color-text-muted);">
+                    {card.capSummary?.daysCapHit ?? 0} cap days hit
+                    {#if card.capSummary && card.capSummary.totalSavedByDailyCap > 0}
+                      (saved £{card.capSummary.totalSavedByDailyCap.toFixed(2)})
+                    {/if}
+                  </span>
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
       {#if $capSummary}
         <!-- Summary cards -->
         <div class="cap-summary-grid">
@@ -1093,6 +1137,8 @@
       </div>
     </div>
   {/if}
+
+  <AddCardDialog bind:open={showAddDialog} />
 </div>
 
 <style>

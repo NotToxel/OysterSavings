@@ -2,8 +2,13 @@
   import {
     productComparison, classifiedJourneys,
     includeStudentPhotocardFee, selectedFareType,
-    fareTypeCost, capSummary, weeklyCapResults
+    fareTypeCost, capSummary, weeklyCapResults,
+    cards
   } from '$lib/stores/stores';
+  import CardSelector from './CardSelector.svelte';
+  import AddCardDialog from './AddCardDialog.svelte';
+
+  let showAddDialog = $state(false);
   import {
     FARE_TYPES, TRAVELCARD_WEEKLY, TRAVELCARD_MONTHLY,
     TRAVELCARD_ANNUAL, STUDENT_TRAVELCARD_WEEKLY, STUDENT_TRAVELCARD_MONTHLY, STUDENT_TRAVELCARD_ANNUAL,
@@ -415,6 +420,9 @@
 
 <div class="compare-page">
   <h1 class="page-title">Product Comparison</h1>
+
+  <CardSelector onAddCard={() => (showAddDialog = true)} />
+
   <p class="page-subtitle">See how PAYG, Travelcards, and concession discounts compare based on your actual travel patterns</p>
 
   <!-- Settings bar -->
@@ -788,6 +796,8 @@
       </table>
     </div>
   </div>
+
+  <AddCardDialog bind:open={showAddDialog} />
 </div>
 
 <style>

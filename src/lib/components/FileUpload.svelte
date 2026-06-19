@@ -6,18 +6,19 @@
   import { calculateDailyCaps, calculateWeeklyCaps, getCapSummary } from '$lib/engine/capEngine';
   import { preFetchLiveFaresForJourneys } from '$lib/engine/tflApi';
   import { detectCommutePatterns } from '$lib/engine/recurrenceEngine';
+  import { detectActiveDiscount } from '$lib/engine/savingsEngine';
   import {
-    rawJourneys, validJourneys, excludedJourneys,
-    classifiedJourneys, fareResults, fileName, fileLoaded,
-    parseErrors, dailyCapResults, weeklyCapResults, capSummary,
-    detectedPatterns, currentPage
+    addCard, cards, currentPage, parseErrors as parseErrorsStore
   } from '$lib/stores/stores';
+  import { generateCardId, generateCardName, CARD_COLORS, MAX_CARDS } from '$lib/stores/cardTypes';
+  import type { CardState } from '$lib/stores/cardTypes';
 
   let isDragOver = $state(false);
   let isProcessing = $state(false);
   let filterSummary = $state<ReturnType<typeof getFilterSummary> | null>(null);
   let progressText = $state('Preparing...');
   let progressPercent = $state(0);
+  let localParseErrors = $state<string[]>([]);
 
   function handleDragOver(e: DragEvent) {
     e.preventDefault();
@@ -46,12 +47,11 @@
 
   async function processFile(file: File) {
     if (!file.name.endsWith('.csv')) {
-      $parseErrors = ['Please upload a CSV file'];
+      localParseErrors = ['Please upload a CSV file'];
       return;
     }
 
     isProcessing = true;
-    $fileName = file.name;
     progressText = 'Reading CSV file...';
     progressPercent = 10;
 
@@ -62,8 +62,6 @@
       await new Promise(resolve => setTimeout(resolve, 150));
 
       const parseResult = parseCSV(content);
-      $rawJourneys = parseResult.journeys;
-      $parseErrors = parseResult.errors;
 
       progressText = 'Filtering invalid and empty rows...';
       progressPercent = 35;
@@ -71,8 +69,6 @@
 
       // Filter
       const filtered = filterJourneys(parseResult.journeys);
-      $validJourneys = filtered.valid;
-      $excludedJourneys = filtered.excluded;
       filterSummary = getFilterSummary(filtered);
 
       progressText = 'Classifying routes, stations, and modes...';
@@ -81,7 +77,6 @@
 
       // Classify
       const classified = classifyAll(filtered.valid);
-      $classifiedJourneys = classified;
 
       progressText = 'Establishing connection to TfL API...';
       progressPercent = 60;
@@ -99,14 +94,11 @@
 
       // Calculate fares
       const fares = calculateAllFares(classified);
-      $fareResults = fares;
 
       // Cap analysis
       const dailyCaps = calculateDailyCaps(fares);
-      $dailyCapResults = dailyCaps;
       const weeklyCaps = calculateWeeklyCaps(dailyCaps);
-      $weeklyCapResults = weeklyCaps;
-      $capSummary = getCapSummary(dailyCaps, weeklyCaps);
+      const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
 
       progressText = 'Detecting recurring commute patterns...';
       progressPercent = 98;
@@ -114,16 +106,48 @@
 
       // Detect commute patterns
       const patterns = detectCommutePatterns(classified);
-      $detectedPatterns = patterns;
+
+      // Detect active discount on this card
+      const discount = detectActiveDiscount(classified);
+
+      // Determine card index based on existing cards
+      const existingCards = $cards;
+      const cardIndex = existingCards.length;
+      const cardColor = CARD_COLORS[cardIndex % CARD_COLORS.length];
+
+      // Build CardState
+      const card: CardState = {
+        id: generateCardId(),
+        name: generateCardName(cardIndex, discount),
+        color: cardColor,
+        fileName: file.name,
+        isDemoCard: false,
+        rawJourneys: parseResult.journeys,
+        validJourneys: filtered.valid,
+        excludedJourneys: filtered.excluded,
+        classifiedJourneys: classified,
+        fareResults: fares,
+        dailyCapResults: dailyCaps,
+        weeklyCapResults: weeklyCaps,
+        capSummary: capSummaryResult,
+        detectedPatterns: patterns,
+        parseErrors: parseResult.errors,
+        selectedFareType: discount !== 'none' ? discount : 'none',
+        fareTypeCost: 0,
+        includeOysterCost: false,
+        detectedDiscount: discount,
+        duplicatesRemoved: 0,
+      };
+
+      addCard(card);
 
       progressText = 'Analysis complete!';
       progressPercent = 100;
-      $fileLoaded = true;
 
       // Auto-navigate to analysis
       setTimeout(() => { $currentPage = 'analysis'; }, 600);
     } catch (err) {
-      $parseErrors = [`Error processing file: ${err}`];
+      localParseErrors = [`Error processing file: ${err}`];
     } finally {
       isProcessing = false;
     }
@@ -196,9 +220,9 @@
   </div>
 {/if}
 
-{#if $parseErrors.length > 0}
+{#if localParseErrors.length > 0}
   <div class="error-box" style="margin-top: 1rem;">
-    {#each $parseErrors as error}
+    {#each localParseErrors as error}
       <p>⚠️ {error}</p>
     {/each}
   </div>

@@ -1,15 +1,17 @@
+import { get } from 'svelte/store';
 import { parseCSV } from '../engine/csvParser';
 import { filterJourneys } from '../engine/journeyFilter';
 import { classifyAll } from '../engine/journeyClassifier';
 import { calculateAllFares } from '../engine/fareCalculator';
 import { calculateDailyCaps, calculateWeeklyCaps, getCapSummary } from '../engine/capEngine';
 import { detectCommutePatterns } from '../engine/recurrenceEngine';
+import { detectActiveDiscount } from '../engine/savingsEngine';
 import {
-  rawJourneys, validJourneys, excludedJourneys,
-  classifiedJourneys, fareResults, fileName, fileLoaded,
-  parseErrors, dailyCapResults, weeklyCapResults, capSummary,
-  detectedPatterns, currentPage, isDemoMode
+  addCard, cards, currentPage
 } from '../stores/stores';
+import { generateCardId, generateCardName, CARD_COLORS } from '../stores/cardTypes';
+import type { CardState } from '../stores/cardTypes';
+
 
 interface SimJourney {
   startTime: string;
@@ -471,9 +473,121 @@ export function generateDemoCSV(profileId: string = 'sarah'): string {
 
       processDayJourneys(dateStr, dayJourneys, currentBalance, rows);
     }
+    else if (profileId === 'alex_oyster') {
+      const dayJourneys: SimJourney[] = [];
+      
+      // Sick week (Week 4)
+      if (weekNum === 4) {
+        if (dayVal === 6) {
+          dayJourneys.push({ startTime: "11:30", endTime: "11:50", journeyAction: "Battersea Power Station to Westminster", baseCharge: 1.80, isBus: false, zones: [1], note: "" });
+          dayJourneys.push({ startTime: "16:30", endTime: "16:50", journeyAction: "Westminster to Battersea Power Station", baseCharge: 1.80, isBus: false, zones: [1], note: "" });
+        }
+      }
+      // Leave week (Week 11)
+      else if (weekNum === 11) {
+        // No travel
+      }
+      // Regular weeks
+      else {
+        // Commute Mon, Tue, Thu
+        if (dayVal === 1 || dayVal === 2 || dayVal === 4) {
+          dayJourneys.push({ startTime: "08:30", endTime: "08:50", journeyAction: "Battersea Power Station to Bank", baseCharge: 2.80, isBus: false, zones: [1], note: "" });
+          dayJourneys.push({ startTime: "19:15", endTime: "19:35", journeyAction: "Bank to Battersea Power Station", baseCharge: 1.80, isBus: false, zones: [1], note: "" });
+        }
+        // Saturday leisure
+        else if (dayVal === 6) {
+          dayJourneys.push({ startTime: "11:30", endTime: "11:50", journeyAction: "Battersea Power Station to Westminster", baseCharge: 1.80, isBus: false, zones: [1], note: "" });
+          dayJourneys.push({ startTime: "16:30", endTime: "16:50", journeyAction: "Westminster to Battersea Power Station", baseCharge: 1.80, isBus: false, zones: [1], note: "" });
+        }
+      }
+
+      processDayJourneys(dateStr, dayJourneys, currentBalance, rows);
+    }
+    else if (profileId === 'alex_contactless') {
+      const dayJourneys: SimJourney[] = [];
+
+      // Leave week (Week 11)
+      if (weekNum === 11) {
+        // No travel
+      }
+      // Regular weeks
+      else {
+        // Wednesday evening
+        if (dayVal === 3) {
+          dayJourneys.push({ startTime: "18:30", endTime: "18:50", journeyAction: "Battersea Power Station to Leicester Square", baseCharge: 2.80, isBus: false, zones: [1], note: "" });
+          dayJourneys.push({ startTime: "22:30", endTime: "22:50", journeyAction: "Leicester Square to Battersea Power Station", baseCharge: 2.70, isBus: false, zones: [1], note: "" });
+        }
+        // Friday evening
+        else if (dayVal === 5) {
+          dayJourneys.push({ startTime: "19:15", endTime: "19:35", journeyAction: "Battersea Power Station to London Bridge", baseCharge: 2.70, isBus: false, zones: [1], note: "" });
+          dayJourneys.push({ startTime: "23:45", endTime: "00:05", journeyAction: "London Bridge to Battersea Power Station", baseCharge: 2.70, isBus: false, zones: [1], note: "" });
+        }
+        // Sunday bus
+        else if (dayVal === 0) {
+          dayJourneys.push({ startTime: "12:00", endTime: "12:15", journeyAction: "Bus journey, route 344", baseCharge: 1.75, isBus: true, zones: [], note: "" });
+          dayJourneys.push({ startTime: "15:00", endTime: "15:15", journeyAction: "Bus journey, route 344", baseCharge: 1.75, isBus: true, zones: [], note: "" });
+        }
+      }
+
+      processDayJourneys(dateStr, dayJourneys, currentBalance, rows);
+    }
   }
   
   return rows.join('\n');
+}
+
+/**
+ * Processes a single demo CSV string into a CardState and adds it.
+ */
+function processDemoCard(csvContent: string, profileId: string, cardIndex: number, isDemoCard: boolean = true): void {
+  const parseResult = parseCSV(csvContent);
+
+  // Filter
+  const filtered = filterJourneys(parseResult.journeys);
+
+  // Classify
+  const classified = classifyAll(filtered.valid);
+
+  // Calculate Fares
+  const fares = calculateAllFares(classified);
+
+  // Cap Analysis
+  const dailyCaps = calculateDailyCaps(fares);
+  const weeklyCaps = calculateWeeklyCaps(dailyCaps);
+  const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
+
+  // Detect Commuting Patterns
+  const patterns = detectCommutePatterns(classified);
+
+  // Detect discount
+  const discount = detectActiveDiscount(classified);
+
+  const cardColor = CARD_COLORS[cardIndex % CARD_COLORS.length];
+
+  const card: CardState = {
+    id: generateCardId(),
+    name: generateCardName(cardIndex, discount),
+    color: cardColor,
+    fileName: `demo_${profileId}_history.csv`,
+    isDemoCard,
+    rawJourneys: parseResult.journeys,
+    validJourneys: filtered.valid,
+    excludedJourneys: filtered.excluded,
+    classifiedJourneys: classified,
+    fareResults: fares,
+    dailyCapResults: dailyCaps,
+    weeklyCapResults: weeklyCaps,
+    capSummary: capSummaryResult,
+    detectedPatterns: patterns,
+    parseErrors: parseResult.errors,
+    selectedFareType: discount !== 'none' ? discount : 'none',
+    fareTypeCost: 0,
+    includeOysterCost: false,
+    detectedDiscount: discount,
+    duplicatesRemoved: 0,
+  };
+
+  addCard(card);
 }
 
 /**
@@ -481,44 +595,22 @@ export function generateDemoCSV(profileId: string = 'sarah'): string {
  */
 export function loadDemoData(profileId: string = 'sarah'): void {
   try {
-    const csvContent = generateDemoCSV(profileId);
-    const parseResult = parseCSV(csvContent);
-    
-    rawJourneys.set(parseResult.journeys);
-    parseErrors.set(parseResult.errors);
-
-    // Filter
-    const filtered = filterJourneys(parseResult.journeys);
-    validJourneys.set(filtered.valid);
-    excludedJourneys.set(filtered.excluded);
-
-    // Classify
-    const classified = classifyAll(filtered.valid);
-    classifiedJourneys.set(classified);
-
-    // Calculate Fares
-    const fares = calculateAllFares(classified);
-    fareResults.set(fares);
-
-    // Cap Analysis
-    const dailyCaps = calculateDailyCaps(fares);
-    dailyCapResults.set(dailyCaps);
-    const weeklyCaps = calculateWeeklyCaps(dailyCaps);
-    weeklyCapResults.set(weeklyCaps);
-    capSummary.set(getCapSummary(dailyCaps, weeklyCaps));
-
-    // Detect Commuting Patterns
-    const patterns = detectCommutePatterns(classified);
-    detectedPatterns.set(patterns);
-
-    // Set demo details
-    fileName.set(`demo_${profileId}_history.csv`);
-    isDemoMode.set(true);
-    fileLoaded.set(true);
+    if (profileId === 'alex') {
+      const csvOyster = generateDemoCSV('alex_oyster');
+      const csvContactless = generateDemoCSV('alex_contactless');
+      processDemoCard(csvOyster, 'alex_oyster', 0);
+      processDemoCard(csvContactless, 'alex_contactless', 1);
+    } else {
+      const csvContent = generateDemoCSV(profileId);
+      const existingCards = get(cards);
+      const cardIndex = existingCards.length;
+      processDemoCard(csvContent, profileId, cardIndex);
+    }
 
     // Auto navigate to analysis
     currentPage.set('analysis');
   } catch (err) {
-    parseErrors.set([`Failed to load demo travel history: ${err}`]);
+    console.error(`Failed to load demo travel history: ${err}`);
   }
 }
+
