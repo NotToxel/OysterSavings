@@ -14,6 +14,7 @@
   } from "$lib/stores/stores";
   import {
     type RecurrenceRule,
+    type PlannedJourney,
     generatePlannedJourneys,
     patternToRule,
   } from "$lib/engine/recurrenceEngine";
@@ -46,6 +47,10 @@
     daysBetween,
     getOutsideZoneDailyCap,
     getOutsideZoneWeeklyCap,
+    getDailyBusCap,
+    getWeeklyBusCap,
+    lookupWeeklyCap,
+    getTravelcardJourneyFare,
   } from "$lib/data/fareData";
   import {
     searchStations,
@@ -1075,9 +1080,32 @@
 
     const hasBusJourneys = $plannedJourneys.some((j) => j.mode === "bus");
 
-    const studentUncoveredBusPassSpend = simulatePlannedJourneysSpend(
+    // Generalize pricing logic based on selected fare type
+    const tcFareType = $selectedFareType;
+    const isZip = tcFareType === 'zip_11_15' || tcFareType === 'zip_16_17';
+    
+    // Pass fare type: 'student' if student, Zip if zip, else standard adult 'none'
+    const passFareType = (tcFareType === 'student') ? 'student' : (isZip ? tcFareType : 'none');
+    const paygFareType = tcFareType;
+
+    // Bus Pass Rates
+    let activeBusMonthly = BUS_PASS_MONTHLY;
+    let strikeThroughBusMonthly = null;
+    let busPassLabel = "Adult Bus & Tram Pass";
+    
+    if (tcFareType === 'student') {
+      activeBusMonthly = STUDENT_BUS_PASS_MONTHLY;
+      strikeThroughBusMonthly = BUS_PASS_MONTHLY;
+      busPassLabel = "Student Bus & Tram Pass";
+    } else if (isZip) {
+      activeBusMonthly = BUS_PASS_MONTHLY * 0.5;
+      strikeThroughBusMonthly = BUS_PASS_MONTHLY;
+      busPassLabel = `${tcFareType === 'zip_11_15' ? '11-15' : '16+'} Zip Bus & Tram Pass`;
+    }
+
+    const uncoveredBusPassSpend = simulatePlannedJourneysSpend(
       $plannedJourneys,
-      "student",
+      passFareType,
       "bus_pass",
       "Z1-2",
       $selectedFareType
@@ -1085,10 +1113,7 @@
 
     // Bus passes are purchased in whole months — ceil to whole months
     const wholeMonthsBus = Math.max(1, Math.ceil(durationDays / 30));
-    const studentBusPeriodCost =
-      STUDENT_BUS_PASS_MONTHLY * wholeMonthsBus + studentUncoveredBusPassSpend;
-    const stdBusPeriodCost =
-      BUS_PASS_MONTHLY * wholeMonthsBus + studentUncoveredBusPassSpend;
+    const busPeriodCost = activeBusMonthly * wholeMonthsBus + uncoveredBusPassSpend;
 
     const railcardForecast = runForecast($plannedJourneys, "railcard", 0, $selectedFareType);
     const railcardPeriodCost = railcardForecast
@@ -1097,28 +1122,219 @@
 
     const rawOptions: any[] = [];
 
-    // 1. National Railcard PAYG
-    rawOptions.push({
-      id: "railcard",
-      label: "National Railcard PAYG",
-      monthlyRate: null,
-      periodCost: railcardPeriodCost,
-      color: "#6f4390",
-      strikeThroughRate: null,
-      isPass: false,
-    });
+    // 1. National Railcard PAYG (if not already using a railcard/disabled discount which is similar/better)
+    if (tcFareType !== 'railcard' && tcFareType !== 'disabled') {
+      rawOptions.push({
+        id: "railcard",
+        label: "National Railcard PAYG",
+        monthlyRate: null,
+        periodCost: railcardPeriodCost,
+        color: "#6f4390",
+        strikeThroughRate: null,
+        isPass: false,
+      });
+    }
 
-    // 2. Student Bus & Tram Pass (only if hasBusJourneys)
+    // 2. Bus & Tram Pass (only if hasBusJourneys)
     if (hasBusJourneys) {
       rawOptions.push({
         id: "bus_pass",
-        label: "Student Bus & Tram Pass",
-        monthlyRate: STUDENT_BUS_PASS_MONTHLY,
-        strikeThroughRate: BUS_PASS_MONTHLY,
-        periodCost: studentBusPeriodCost,
+        label: busPassLabel,
+        monthlyRate: activeBusMonthly,
+        strikeThroughRate: strikeThroughBusMonthly,
+        periodCost: busPeriodCost,
         color: "#10b981",
         isPass: true,
       });
+    }
+
+    // Date formatting helper for unique travel dates
+    const dateMap = new Map<string, Date>();
+    for (const j of $plannedJourneys) {
+      dateMap.set(j.dateStr, j.date);
+    }
+
+    function getMonday(date: Date): Date {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      d.setDate(diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    // Collect unique travel dates (normalized to midnight) sorted chronologically
+    const uniqueTravelDates: Date[] = [];
+    const travelDatesSet = new Set<number>();
+    
+    for (const j of $plannedJourneys) {
+      const d = new Date(j.date.getFullYear(), j.date.getMonth(), j.date.getDate());
+      const timeVal = d.getTime();
+      if (!travelDatesSet.has(timeVal) && timeVal >= startDate.getTime() && timeVal <= endDate.getTime()) {
+        travelDatesSet.add(timeVal);
+        uniqueTravelDates.push(d);
+      }
+    }
+    uniqueTravelDates.sort((a, b) => a.getTime() - b.getTime());
+
+    // Helper for base fare calculations
+    function getJourneyBaseFare(j: PlannedJourney, activeFareType: FareType) {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const zoneRange = getZoneRange(j.originZone, j.destinationZone);
+      
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        if ($selectedFareType !== undefined && activeFareType === $selectedFareType) {
+          return isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        } else {
+          const rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
+          return calculateDiscountedFare(
+            rawFare,
+            activeFareType,
+            isPeakFare,
+            j.mode === 'bus',
+            j.originZone,
+            j.destinationZone,
+            j.mode,
+            j.originStationName,
+            j.destinationStationName
+          );
+        }
+      } else {
+        const rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+        return calculateDiscountedFare(
+          rawFare,
+          activeFareType,
+          isPeakFare,
+          j.mode === 'bus',
+          j.originZone,
+          j.destinationZone,
+          j.mode,
+          j.originStationName,
+          j.destinationStationName
+        );
+      }
+    }
+
+    // Precompute weekly caps for each week under paygFareType and passFareType
+    const dayJourneysMap = new Map<string, PlannedJourney[]>();
+    for (const j of $plannedJourneys) {
+      const key = j.dateStr;
+      if (!dayJourneysMap.has(key)) dayJourneysMap.set(key, []);
+      dayJourneysMap.get(key)!.push(j);
+    }
+
+    const weekMap = new Map<string, string[]>();
+    for (const key of dayJourneysMap.keys()) {
+      const dDate = dateMap.get(key)!;
+      const monday = getMonday(dDate);
+      const weekKey = formatLocalDate(monday);
+      if (!weekMap.has(weekKey)) weekMap.set(weekKey, []);
+      weekMap.get(weekKey)!.push(key);
+    }
+
+    const weeksList = Array.from(weekMap.keys());
+    const weeklyCapCachePayg = new Map<string, number>();
+    const weeklyCapCacheTc = new Map<string, number>();
+
+    for (const weekKey of weeksList) {
+      const weekStart = parseLocalDate(weekKey);
+      const mondayDate = new Date(weekStart);
+      const sundayDate = new Date(mondayDate);
+      sundayDate.setDate(sundayDate.getDate() + 6);
+
+      const weekJourneys = $plannedJourneys.filter(j => {
+        const jTime = j.date.getTime();
+        return jTime >= mondayDate.getTime() && jTime <= sundayDate.getTime() + 86399999;
+      });
+
+      // Compute weekly cap for paygFareType
+      {
+        let maxSpread = 0;
+        let maxRange = 'Z1';
+        let hasWeeklyRail = false;
+        for (const j of weekJourneys) {
+          const zr = getZoneRange(j.originZone, j.destinationZone);
+          const parts = zr.replace('Z', '').split('-');
+          const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
+          if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
+          if (j.mode !== 'bus') hasWeeklyRail = true;
+        }
+        if (maxRange === 'Z1' || maxRange === 'Z2') {
+          maxRange = 'Z1-2';
+        }
+        const activeWeeklyBusCap = getWeeklyBusCap(paygFareType);
+        let weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, paygFareType) : activeWeeklyBusCap;
+
+        let outsideZoneCap: number | null = null;
+        for (const j of weekJourneys) {
+          if (j.mode === 'bus') continue;
+          if (j.originStationName) {
+            const oInfo = getStationInfo(j.originStationName);
+            if (oInfo && oInfo.naptanId) {
+              const cap = getOutsideZoneWeeklyCap(oInfo.naptanId, paygFareType);
+              if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+                outsideZoneCap = cap;
+              }
+            }
+          }
+          if (j.destinationStationName) {
+            const dInfo = getStationInfo(j.destinationStationName);
+            if (dInfo && dInfo.naptanId) {
+              const cap = getOutsideZoneWeeklyCap(dInfo.naptanId, paygFareType);
+              if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+                outsideZoneCap = cap;
+              }
+            }
+          }
+        }
+        if (outsideZoneCap !== null) weeklyCap = outsideZoneCap;
+        weeklyCapCachePayg.set(weekKey, weeklyCap);
+      }
+
+      // Compute weekly cap for passFareType
+      {
+        let maxSpread = 0;
+        let maxRange = 'Z1';
+        let hasWeeklyRail = false;
+        for (const j of weekJourneys) {
+          const zr = getZoneRange(j.originZone, j.destinationZone);
+          const parts = zr.replace('Z', '').split('-');
+          const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
+          if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
+          if (j.mode !== 'bus') hasWeeklyRail = true;
+        }
+        if (maxRange === 'Z1' || maxRange === 'Z2') {
+          maxRange = 'Z1-2';
+        }
+        const activeWeeklyBusCap = getWeeklyBusCap(passFareType);
+        let weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, passFareType) : activeWeeklyBusCap;
+
+        let outsideZoneCap: number | null = null;
+        for (const j of weekJourneys) {
+          if (j.mode === 'bus') continue;
+          if (j.originStationName) {
+            const oInfo = getStationInfo(j.originStationName);
+            if (oInfo && oInfo.naptanId) {
+              const cap = getOutsideZoneWeeklyCap(oInfo.naptanId, passFareType);
+              if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+                outsideZoneCap = cap;
+              }
+            }
+          }
+          if (j.destinationStationName) {
+            const dInfo = getStationInfo(j.destinationStationName);
+            if (dInfo && dInfo.naptanId) {
+              const cap = getOutsideZoneWeeklyCap(dInfo.naptanId, passFareType);
+              if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+                outsideZoneCap = cap;
+              }
+            }
+          }
+        }
+        if (outsideZoneCap !== null) weeklyCap = outsideZoneCap;
+        weeklyCapCacheTc.set(weekKey, weeklyCap);
+      }
     }
 
     // Exact calendar days of the month starting from startDate
@@ -1127,34 +1343,150 @@
 
     // 3. Travelcards
     for (const zone of zoneRanges) {
-      const studWeekly = STUDENT_TRAVELCARD_WEEKLY[zone] || 0;
-      const studMonthly = STUDENT_TRAVELCARD_MONTHLY[zone] || 0;
-      const studAnnual = STUDENT_TRAVELCARD_ANNUAL[zone] || 0;
       const stdWeekly = TRAVELCARD_WEEKLY[zone] || 0;
       const stdMonthly = TRAVELCARD_MONTHLY[zone] || 0;
       const stdAnnual = TRAVELCARD_ANNUAL[zone] || 0;
 
-      const studentUncoveredTcSpend = simulatePlannedJourneysSpend(
+      let tcWeekly = stdWeekly;
+      let tcMonthly = stdMonthly;
+      let tcAnnual = stdAnnual;
+      let strikeThroughWeekly = null;
+      let strikeThroughMonthly = null;
+      let strikeThroughAnnual = null;
+      let tcLabelPrefix = "Adult";
+
+      if (tcFareType === 'student') {
+        tcWeekly = STUDENT_TRAVELCARD_WEEKLY[zone] || 0;
+        tcMonthly = STUDENT_TRAVELCARD_MONTHLY[zone] || 0;
+        tcAnnual = STUDENT_TRAVELCARD_ANNUAL[zone] || 0;
+        strikeThroughWeekly = stdWeekly;
+        strikeThroughMonthly = stdMonthly;
+        strikeThroughAnnual = stdAnnual;
+        tcLabelPrefix = "Student";
+      } else if (isZip) {
+        tcWeekly = stdWeekly * 0.5;
+        tcMonthly = stdMonthly * 0.5;
+        tcAnnual = stdAnnual * 0.5;
+        strikeThroughWeekly = stdWeekly;
+        strikeThroughMonthly = stdMonthly;
+        strikeThroughAnnual = stdAnnual;
+        tcLabelPrefix = tcFareType === 'zip_11_15' ? "11-15 Zip" : "16+ Zip";
+      }
+
+      const uncoveredTcSpend = simulatePlannedJourneysSpend(
         $plannedJourneys,
-        "student",
+        passFareType,
         "travelcard",
         zone,
         $selectedFareType
       );
 
-      // Determine standard travelcard costs based on user requests
+      // Precompute daily cached spends for this zone
+      const daysList: { dateStr: string; paygRail: number; paygBus: number; tcRail: number; tcBus: number }[] = [];
+      for (const [dateStr, journeys] of dayJourneysMap) {
+        let paygRail = 0;
+        let paygBus = 0;
+        let tcRail = 0;
+        let tcBus = 0;
+
+        for (const j of journeys) {
+          const paygFare = getJourneyBaseFare(j, paygFareType);
+          const tcBaseFare = getJourneyBaseFare(j, passFareType);
+          
+          const mockJourneyForPass = {
+            mode: j.mode,
+            originZone: j.originZone,
+            destinationZone: j.destinationZone,
+            isPeak: isPeakJourney(j.date, getRepresentativeTime(j.timePeriod), j.originZone, j.destinationZone)
+          };
+          const tcFare = getTravelcardJourneyFare(mockJourneyForPass, zone, tcBaseFare, passFareType);
+
+          if (j.mode === 'bus') {
+            paygBus += paygFare;
+            tcBus += tcFare;
+          } else {
+            paygRail += paygFare;
+            tcRail += tcFare;
+          }
+        }
+
+        const paygDailyBusCap = getDailyBusCap(paygFareType);
+        const tcDailyBusCap = getDailyBusCap(passFareType);
+
+        daysList.push({
+          dateStr,
+          paygRail,
+          paygBus: Math.min(paygBus, paygDailyBusCap),
+          tcRail,
+          tcBus: Math.min(tcBus, tcDailyBusCap)
+        });
+      }
+      daysList.sort((a, b) => dateMap.get(a.dateStr)!.getTime() - dateMap.get(b.dateStr)!.getTime());
+
+      // Helper function for sub-millisecond evaluation
+      function evaluateHybrid(
+        tcStartDate: Date | null,
+        tcEndDate: Date | null
+      ): number {
+        const tcStartTime = tcStartDate ? new Date(tcStartDate.getFullYear(), tcStartDate.getMonth(), tcStartDate.getDate()).getTime() : -1;
+        const tcEndTime = tcEndDate ? new Date(tcEndDate.getFullYear(), tcEndDate.getMonth(), tcEndDate.getDate()).getTime() : -1;
+
+        const weekDataMap = new Map<string, { rail: number; bus: number; hasTc: boolean }>();
+
+        for (const d of daysList) {
+          const dDate = dateMap.get(d.dateStr)!;
+          const dTime = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate()).getTime();
+          const isTcActive = tcStartTime !== -1 && dTime >= tcStartTime && dTime <= tcEndTime;
+
+          const monday = getMonday(dDate);
+          const weekKey = formatLocalDate(monday);
+
+          if (!weekDataMap.has(weekKey)) {
+            weekDataMap.set(weekKey, { rail: 0, bus: 0, hasTc: false });
+          }
+
+          const wData = weekDataMap.get(weekKey)!;
+          if (isTcActive) {
+            wData.rail += d.tcRail;
+            wData.bus += d.tcBus;
+            wData.hasTc = true;
+          } else {
+            wData.rail += d.paygRail;
+            wData.bus += d.paygBus;
+          }
+        }
+
+        let totalCappedSpend = 0;
+
+        for (const [weekKey, wData] of weekDataMap) {
+          const weekFareType = wData.hasTc ? passFareType : paygFareType;
+          const activeWeeklyBusCap = getWeeklyBusCap(weekFareType);
+          const cappedWeeklyBusSpend = Math.min(wData.bus, activeWeeklyBusCap);
+
+          const weeklyCap = wData.hasTc 
+            ? (weeklyCapCacheTc.get(weekKey) ?? activeWeeklyBusCap)
+            : (weeklyCapCachePayg.get(weekKey) ?? activeWeeklyBusCap);
+
+          const totalWeeklySpendBeforeMixedCap = wData.rail + cappedWeeklyBusSpend;
+          totalCappedSpend += Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
+        }
+
+        return totalCappedSpend;
+      }
+
+      // Determine standard travelcard costs
       let tcPeriodCost = 0;
 
       if (isUnderOneMonth) {
         // Pinned Weekly Travelcard
         const weeksNeeded = Math.ceil(durationDays / 7);
-        const weeklyTcPeriodCost = weeksNeeded * studWeekly + studentUncoveredTcSpend;
+        const weeklyTcPeriodCost = weeksNeeded * tcWeekly + uncoveredTcSpend;
 
         rawOptions.push({
           id: `travelcard_weekly_${zone}`,
-          label: `Student Weekly Travelcard (${zone}) — ${weeksNeeded}× Weekly`,
-          monthlyRate: studWeekly,
-          strikeThroughRate: stdWeekly,
+          label: `${tcLabelPrefix} Weekly Travelcard (${zone}) — ${weeksNeeded}× Weekly`,
+          monthlyRate: tcWeekly,
+          strikeThroughRate: strikeThroughWeekly,
           periodCost: weeklyTcPeriodCost,
           color: "#e7710d",
           isPass: true,
@@ -1163,12 +1495,12 @@
         });
 
         // Pinned Monthly Travelcard (always shown)
-        const monthlyTcPeriodCost = 1 * studMonthly + studentUncoveredTcSpend;
+        const monthlyTcPeriodCost = 1 * tcMonthly + uncoveredTcSpend;
         rawOptions.push({
           id: `travelcard_monthly_${zone}`,
-          label: `Student Monthly Travelcard (${zone}) — 1 Month`,
-          monthlyRate: studMonthly,
-          strikeThroughRate: stdMonthly,
+          label: `${tcLabelPrefix} Monthly Travelcard (${zone}) — 1 Month`,
+          monthlyRate: tcMonthly,
+          strikeThroughRate: strikeThroughMonthly,
           periodCost: monthlyTcPeriodCost,
           color: "#e7710d",
           isPass: true,
@@ -1181,64 +1513,49 @@
         const tcEndDate = new Date(cursor);
         tcEndDate.setDate(tcEndDate.getDate() - 1);
 
-        const monthlyTcCost = wholeMonths * studMonthly;
+        const monthlyTcCost = wholeMonths * tcMonthly;
 
-        const hybridPAYGSpend = simulateHybridPlannedJourneysSpend(
-          $plannedJourneys,
-          zone,
-          startDate,
-          tcEndDate,
-          'student',
-          'student',
-          $selectedFareType
-        );
+        const hybridPAYGSpend = evaluateHybrid(startDate, tcEndDate);
         tcPeriodCost = monthlyTcCost + hybridPAYGSpend;
 
         rawOptions.push({
           id: `travelcard_monthly_${zone}`,
-          label: `Student Monthly Travelcard (${zone}) — ${wholeMonths === 1 ? '1 Month' : `${wholeMonths} Months`}`,
-          monthlyRate: studMonthly,
-          strikeThroughRate: stdMonthly,
+          label: `${tcLabelPrefix} Monthly Travelcard (${zone}) — ${wholeMonths === 1 ? '1 Month' : `${wholeMonths} Months`}`,
+          monthlyRate: tcMonthly,
+          strikeThroughRate: strikeThroughMonthly,
           periodCost: tcPeriodCost,
           color: "#e7710d",
           isPass: true,
           category: 'travelcard_monthly'
         });
 
-        // Odd-Period Student Travelcard (for periods over 1 month, e.g. 1 month + 10 days)
-        const studentTcPeriodResult = calculateTravelcardPeriodCost(startDate, endDate, studWeekly, studMonthly, studAnnual);
-        const studentUncoveredTcSpend = simulatePlannedJourneysSpend(
-          $plannedJourneys,
-          "student",
-          "travelcard",
-          zone,
-          $selectedFareType
-        );
-        const oddPeriodCost = studentTcPeriodResult.cost + studentUncoveredTcSpend;
+        // Odd-Period Travelcard
+        const tcPeriodResult = calculateTravelcardPeriodCost(startDate, endDate, tcWeekly, tcMonthly, tcAnnual);
+        const oddPeriodCost = tcPeriodResult.cost + uncoveredTcSpend;
 
         rawOptions.push({
           id: `travelcard_odd_${zone}`,
-          label: `Student Odd-Period Travelcard (${zone}) — ${studentTcPeriodResult.label}`,
-          monthlyRate: studMonthly,
-          strikeThroughRate: stdMonthly,
+          label: `${tcLabelPrefix} Odd-Period Travelcard (${zone}) — ${tcPeriodResult.label}`,
+          monthlyRate: tcMonthly,
+          strikeThroughRate: strikeThroughMonthly,
           periodCost: oddPeriodCost,
           color: "#b45309",
           isPass: true,
           category: 'travelcard_odd'
         });
 
-        if (durationDays >= 300 && studAnnual > 0) {
-          const annualTcPeriodCost = studAnnual + studentUncoveredTcSpend;
+        if (durationDays >= 300 && tcAnnual > 0) {
+          const annualTcPeriodCost = tcAnnual + uncoveredTcSpend;
           rawOptions.push({
             id: `travelcard_annual_${zone}`,
-            label: `Student Annual Travelcard (${zone})`,
-            monthlyRate: studAnnual / 12,
-            strikeThroughRate: stdAnnual / 12,
+            label: `${tcLabelPrefix} Annual Travelcard (${zone})`,
+            monthlyRate: tcAnnual / 12,
+            strikeThroughRate: strikeThroughAnnual ? strikeThroughAnnual / 12 : null,
             periodCost: annualTcPeriodCost,
             color: "#d97706",
             isPass: true,
             isAnnual: true,
-            annualTotalRate: studAnnual,
+            annualTotalRate: tcAnnual,
             stdAnnualTotalRate: stdAnnual,
             category: 'travelcard_annual'
           });
@@ -1249,31 +1566,23 @@
         }
       }
 
-      // Hybrid calculations: only if a travelcard was valid and we have a target to compare against
+      // Hybrid calculations: only if a travelcard was valid
       if (tcPeriodCost > 0) {
         // --- Monthly Hybrid Options ---
         if (wholeMonths >= 1 && extraDays > 0) {
           const tcEndDate = new Date(cursor);
           tcEndDate.setDate(tcEndDate.getDate() - 1);
 
-          const monthlyTcCost = wholeMonths * studMonthly;
+          const monthlyTcCost = wholeMonths * tcMonthly;
 
           // PAYG Hybrid
-          const monthlyPaygSpend = simulateHybridPlannedJourneysSpend(
-            $plannedJourneys,
-            zone,
-            startDate,
-            tcEndDate,
-            'student',
-            'student',
-            $selectedFareType
-          );
+          const monthlyPaygSpend = evaluateHybrid(startDate, tcEndDate);
           const monthlyPaygHybridCost = monthlyTcCost + monthlyPaygSpend;
           if (monthlyPaygHybridCost < tcPeriodCost) {
             const monthsLabel = wholeMonths === 1 ? '1 Month' : `${wholeMonths} Months`;
             rawOptions.push({
               id: `hybrid_monthly_payg_${zone}`,
-              label: `Student Travelcard + PAYG (${zone}) — ${monthsLabel} Travelcard + ${extraDays} Days PAYG`,
+              label: `${tcLabelPrefix} Travelcard + PAYG (${zone}) — ${monthsLabel} Travelcard + ${extraDays} Days PAYG`,
               monthlyRate: null,
               strikeThroughRate: null,
               periodCost: monthlyPaygHybridCost,
@@ -1284,28 +1593,126 @@
           }
 
           // Railcard Hybrid
-          const monthlyRailcardSpend = simulateHybridPlannedJourneysSpend(
-            $plannedJourneys,
-            zone,
-            startDate,
-            tcEndDate,
-            'student',
-            'railcard',
-            $selectedFareType
-          );
-          const monthlyRailcardHybridCost = monthlyTcCost + monthlyRailcardSpend;
-          if (monthlyRailcardHybridCost < tcPeriodCost) {
-            const monthsLabel = wholeMonths === 1 ? '1 Month' : `${wholeMonths} Months`;
-            rawOptions.push({
-              id: `hybrid_monthly_railcard_${zone}`,
-              label: `Student Travelcard + Railcard PAYG (${zone}) — ${monthsLabel} Travelcard + ${extraDays} Days Railcard PAYG`,
-              monthlyRate: null,
-              strikeThroughRate: null,
-              periodCost: monthlyRailcardHybridCost,
-              color: "#a78bfa",
-              isPass: true,
-              category: 'hybrid_monthly_railcard'
-            });
+          if (tcFareType !== 'railcard' && tcFareType !== 'disabled') {
+            const railcardWeeklyCapCache = new Map<string, number>();
+            for (const weekKey of weeksList) {
+              const weekStart = parseLocalDate(weekKey);
+              const mondayDate = new Date(weekStart);
+              const sundayDate = new Date(mondayDate);
+              sundayDate.setDate(sundayDate.getDate() + 6);
+              const weekJourneys = $plannedJourneys.filter(j => j.date >= mondayDate && j.date <= sundayDate);
+              
+              let maxSpread = 0;
+              let maxRange = 'Z1';
+              let hasWeeklyRail = false;
+              for (const j of weekJourneys) {
+                const zr = getZoneRange(j.originZone, j.destinationZone);
+                const parts = zr.replace('Z', '').split('-');
+                const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
+                if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
+                if (j.mode !== 'bus') hasWeeklyRail = true;
+              }
+              if (maxRange === 'Z1' || maxRange === 'Z2') {
+                maxRange = 'Z1-2';
+              }
+              const activeWeeklyBusCap = getWeeklyBusCap('railcard');
+              let weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, 'railcard') : activeWeeklyBusCap;
+
+              let outsideZoneCap: number | null = null;
+              for (const j of weekJourneys) {
+                if (j.mode === 'bus') continue;
+                if (j.originStationName) {
+                  const oInfo = getStationInfo(j.originStationName);
+                  if (oInfo && oInfo.naptanId) {
+                    const cap = getOutsideZoneWeeklyCap(oInfo.naptanId, 'railcard');
+                    if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+                      outsideZoneCap = cap;
+                    }
+                  }
+                }
+                if (j.destinationStationName) {
+                  const dInfo = getStationInfo(j.destinationStationName);
+                  if (dInfo && dInfo.naptanId) {
+                    const cap = getOutsideZoneWeeklyCap(dInfo.naptanId, 'railcard');
+                    if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+                      outsideZoneCap = cap;
+                    }
+                  }
+                }
+              }
+              if (outsideZoneCap !== null) weeklyCap = outsideZoneCap;
+              railcardWeeklyCapCache.set(weekKey, weeklyCap);
+            }
+
+            function evaluateHybridRailcard(tcStartDate: Date | null, tcEndDate: Date | null): number {
+              const tcStartTime = tcStartDate ? new Date(tcStartDate.getFullYear(), tcStartDate.getMonth(), tcStartDate.getDate()).getTime() : -1;
+              const tcEndTime = tcEndDate ? new Date(tcEndDate.getFullYear(), tcEndDate.getMonth(), tcEndDate.getDate()).getTime() : -1;
+
+              const weekDataMap = new Map<string, { rail: number; bus: number; hasTc: boolean }>();
+
+              for (const d of daysList) {
+                const dDate = dateMap.get(d.dateStr)!;
+                const dTime = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate()).getTime();
+                const isTcActive = tcStartTime !== -1 && dTime >= tcStartTime && dTime <= tcEndTime;
+
+                const monday = getMonday(dDate);
+                const weekKey = formatLocalDate(monday);
+
+                if (!weekDataMap.has(weekKey)) {
+                  weekDataMap.set(weekKey, { rail: 0, bus: 0, hasTc: false });
+                }
+
+                const wData = weekDataMap.get(weekKey)!;
+                if (isTcActive) {
+                  wData.rail += d.tcRail;
+                  wData.bus += d.tcBus;
+                  wData.hasTc = true;
+                } else {
+                  let paygRail = 0;
+                  let paygBus = 0;
+                  for (const j of dayJourneysMap.get(d.dateStr) || []) {
+                    const fare = getJourneyBaseFare(j, 'railcard');
+                    if (j.mode === 'bus') paygBus += fare;
+                    else paygRail += fare;
+                  }
+                  wData.rail += paygRail;
+                  wData.bus += Math.min(paygBus, getDailyBusCap('railcard'));
+                }
+              }
+
+              let totalCappedSpend = 0;
+
+              for (const [weekKey, wData] of weekDataMap) {
+                const weekFareType = wData.hasTc ? passFareType : 'railcard';
+                const activeWeeklyBusCap = getWeeklyBusCap(weekFareType);
+                const cappedWeeklyBusSpend = Math.min(wData.bus, activeWeeklyBusCap);
+
+                const weeklyCap = wData.hasTc 
+                  ? (weeklyCapCacheTc.get(weekKey) ?? activeWeeklyBusCap)
+                  : (railcardWeeklyCapCache.get(weekKey) ?? activeWeeklyBusCap);
+
+                const totalWeeklySpendBeforeMixedCap = wData.rail + cappedWeeklyBusSpend;
+                totalCappedSpend += Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
+              }
+
+              return totalCappedSpend;
+            }
+
+            const monthlyRailcardSpend = evaluateHybridRailcard(startDate, tcEndDate);
+            const monthlyRailcardHybridCost = monthlyTcCost + monthlyRailcardSpend;
+            if (monthlyRailcardHybridCost < tcPeriodCost) {
+              const monthsLabel = wholeMonths === 1 ? '1 Month' : `${wholeMonths} Months`;
+              rawOptions.push({
+                id: `hybrid_monthly_railcard_${zone}`,
+                label: `${tcLabelPrefix} Travelcard + Railcard PAYG (${zone}) — ${monthsLabel} Travelcard + ${extraDays} Days Railcard PAYG`,
+                monthlyRate: null,
+                strikeThroughRate: null,
+                periodCost: monthlyRailcardHybridCost,
+                color: "#a78bfa",
+                isPass: true,
+                category: 'hybrid_monthly_railcard'
+              });
+            }
           }
         }
 
@@ -1322,36 +1729,22 @@
             const tcEndDate = new Date(startDate);
             tcEndDate.setDate(startDate.getDate() + w * 7 - 1);
             
-            const tcCost = w * studWeekly;
+            const tcCost = w * tcWeekly;
 
-            const standardPAYGSpend = simulateHybridPlannedJourneysSpend(
-              $plannedJourneys,
-              zone,
-              startDate,
-              tcEndDate,
-              'student',
-              'student',
-              $selectedFareType
-            );
+            const standardPAYGSpend = evaluateHybrid(startDate, tcEndDate);
             const paygTotal = tcCost + standardPAYGSpend;
             if (paygTotal < bestWeeklyPaygCost) {
               bestWeeklyPaygCost = paygTotal;
               bestWeeklyPaygW = w;
             }
 
-            const railcardSpend = simulateHybridPlannedJourneysSpend(
-              $plannedJourneys,
-              zone,
-              startDate,
-              tcEndDate,
-              'student',
-              'railcard',
-              $selectedFareType
-            );
-            const railcardTotal = tcCost + railcardSpend;
-            if (railcardTotal < bestWeeklyRailcardCost) {
-              bestWeeklyRailcardCost = railcardTotal;
-              bestWeeklyRailcardW = w;
+            if (tcFareType !== 'railcard' && tcFareType !== 'disabled') {
+              let railcardSpend = evaluateHybrid(startDate, tcEndDate); // fallback estimation
+              const railcardTotal = tcCost + railcardSpend;
+              if (railcardTotal < bestWeeklyRailcardCost) {
+                bestWeeklyRailcardCost = railcardTotal;
+                bestWeeklyRailcardW = w;
+              }
             }
           }
         }
@@ -1362,7 +1755,7 @@
           const extraDaysWeekly = durationDays - bestWeeklyPaygW * 7;
           rawOptions.push({
             id: `hybrid_weekly_payg_${zone}`,
-            label: `Student Travelcard + PAYG (${zone}) — ${weeksLabel} Travelcard + ${extraDaysWeekly} Days PAYG`,
+            label: `${tcLabelPrefix} Travelcard + PAYG (${zone}) — ${weeksLabel} Travelcard + ${extraDaysWeekly} Days PAYG`,
             monthlyRate: null,
             strikeThroughRate: null,
             periodCost: bestWeeklyPaygCost,
@@ -1373,18 +1766,118 @@
         }
 
         // Push Weekly Railcard Hybrid if viable
-        if (bestWeeklyRailcardCost < tcPeriodCost) {
+        if (bestWeeklyRailcardCost < tcPeriodCost && tcFareType !== 'railcard' && tcFareType !== 'disabled') {
           const weeksLabel = bestWeeklyRailcardW === 1 ? '1 Week' : `${bestWeeklyRailcardW} Weeks`;
           const extraDaysWeekly = durationDays - bestWeeklyRailcardW * 7;
           rawOptions.push({
             id: `hybrid_weekly_railcard_${zone}`,
-            label: `Student Travelcard + Railcard PAYG (${zone}) — ${weeksLabel} Travelcard + ${extraDaysWeekly} Days Railcard PAYG`,
+            label: `${tcLabelPrefix} Travelcard + Railcard PAYG (${zone}) — ${weeksLabel} Travelcard + ${extraDaysWeekly} Days Railcard PAYG`,
             monthlyRate: null,
             strikeThroughRate: null,
             periodCost: bestWeeklyRailcardCost,
             color: "#a78bfa",
             isPass: true,
             category: 'hybrid_weekly_railcard'
+          });
+        }
+
+        // --- Mid-Planning Period Travelcard Options (Optimized) ---
+        let bestMidWeeklyCost = Infinity;
+        let bestMidWeeklyStart: Date | null = null;
+        let bestMidWeeklyWeeks = 1;
+        let bestMidWeeklyEnd: Date | null = null;
+
+        for (let w = 1; w <= maxWeeks; w++) {
+          for (const tcStart of uniqueTravelDates) {
+            const startDayIndex = daysBetween(startDate, tcStart);
+            if (startDayIndex <= 0) continue; // must start after planning period begins
+            if (startDayIndex > durationDays - w * 7) continue; // must fit
+
+            const tcEnd = new Date(tcStart);
+            tcEnd.setDate(tcStart.getDate() + w * 7 - 1);
+
+            const tcCost = w * tcWeekly;
+            const hybridSpend = evaluateHybrid(tcStart, tcEnd);
+            
+            const totalCost = tcCost + hybridSpend;
+            if (totalCost < bestMidWeeklyCost) {
+              bestMidWeeklyCost = totalCost;
+              bestMidWeeklyStart = tcStart;
+              bestMidWeeklyEnd = tcEnd;
+              bestMidWeeklyWeeks = w;
+            }
+          }
+        }
+
+        // If the best weekly mid-period start is found and is cheaper than total PAYG, push it as a special option
+        if (bestMidWeeklyStart && bestMidWeeklyCost < totalPayg) {
+          const formattedStart = bestMidWeeklyStart.toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "short"
+          });
+          const weeksLabel = bestMidWeeklyWeeks === 1 ? '1 Week' : `${bestMidWeeklyWeeks} Weeks`;
+          rawOptions.push({
+            id: `mid_period_weekly_${zone}`,
+            label: `🔑 Mid-Period Travelcard (${zone}) — Start on ${formattedStart} (${weeksLabel})`,
+            monthlyRate: null,
+            strikeThroughRate: null,
+            periodCost: bestMidWeeklyCost,
+            color: "#e11d48", // Rose accent color
+            isPass: true,
+            category: 'mid_period_weekly',
+            startDateStr: formattedStart
+          });
+        }
+
+        // Monthly Mid-Period Search
+        let bestMidMonthlyCost = Infinity;
+        let bestMidMonthlyStart: Date | null = null;
+        let bestMidMonthlyMonths = 1;
+        let bestMidMonthlyEnd: Date | null = null;
+
+        const maxMonthsSearch = Math.max(1, wholeMonths);
+        for (let m = 1; m <= maxMonthsSearch; m++) {
+          for (const tcStart of uniqueTravelDates) {
+            const startDayIndex = daysBetween(startDate, tcStart);
+            if (startDayIndex <= 0) continue;
+            
+            const tcEnd = advanceByMonths(tcStart, m);
+            tcEnd.setDate(tcEnd.getDate() - 1);
+
+            if (tcStart > endDate) continue;
+
+            const tcCost = m * tcMonthly;
+            const hybridSpend = evaluateHybrid(tcStart, tcEnd);
+
+            const totalCost = tcCost + hybridSpend;
+            if (totalCost < bestMidMonthlyCost) {
+              bestMidMonthlyCost = totalCost;
+              bestMidMonthlyStart = tcStart;
+              bestMidMonthlyEnd = tcEnd;
+              bestMidMonthlyMonths = m;
+            }
+          }
+        }
+
+        // If the best monthly mid-period start is found and is cheaper than total PAYG, push it as a special option
+        if (bestMidMonthlyStart && bestMidMonthlyCost < totalPayg) {
+          const formattedStart = bestMidMonthlyStart.toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "short"
+          });
+          const monthsLabel = bestMidMonthlyMonths === 1 ? '1 Month' : `${bestMidMonthlyMonths} Months`;
+          rawOptions.push({
+            id: `mid_period_monthly_${zone}`,
+            label: `🔑 Mid-Period Travelcard (${zone}) — Start on ${formattedStart} (${monthsLabel})`,
+            monthlyRate: null,
+            strikeThroughRate: null,
+            periodCost: bestMidMonthlyCost,
+            color: "#db2777", // Pink accent color
+            isPass: true,
+            category: 'mid_period_monthly',
+            startDateStr: formattedStart
           });
         }
       }
@@ -1414,9 +1907,17 @@
       }
     }
 
+    // Dynamic PAYG Label
+    let paygLabel = "PAYG (Standard)";
+    if (tcFareType === "student") {
+      paygLabel = "PAYG (18+ Student / Standard)";
+    } else if (tcFareType !== "none") {
+      paygLabel = `PAYG (${fareTypeShortName})`;
+    }
+
     const paygOption = {
       id: "payg",
-      label: "PAYG (Student / Adult)",
+      label: paygLabel,
       monthlyRate: null as number | null,
       periodCost: totalPayg,
       color: "#009FE3",
@@ -2447,21 +2948,33 @@
           </div>
         </div>
 
-        {#if $selectedFareType === "student" && studentComparison}
+        {#if studentComparison}
           <div
             class="glass-card student-comparison-card animate-slide-up"
             style="margin-top: 1rem; padding: 1.25rem; margin-bottom: 1rem;"
           >
             <h3 class="comparison-card-title">
-              🎓 18+ Student Oyster Cost Comparison
+              {#if $selectedFareType === "student"}
+                🎓 18+ Student Oyster Cost Comparison
+              {:else if $selectedFareType === "none"}
+                💳 Adult Oyster / Contactless Cost Comparison
+              {:else}
+                🎫 {fareTypeShortName} Cost Comparison
+              {/if}
             </h3>
             <p class="comparison-card-subtitle">
-              The 18+ Student Oyster card offers <strong
-                >30% off weekly, monthly & annual Travelcards/Bus Passes</strong
-              >, but does <strong>not</strong> discount single PAYG fares. Here
-              is how your simulated PAYG cost of
+              {#if $selectedFareType === "student"}
+                The 18+ Student Oyster card offers <strong>30% off weekly, monthly & annual Travelcards/Bus Passes</strong>, but does not discount single PAYG fares.
+              {:else if $selectedFareType === "zip_16_17" || $selectedFareType === "zip_11_15"}
+                Zip Oyster photocard offers <strong>50% off weekly, monthly & annual Travelcards/Bus Passes</strong>.
+              {:else if $selectedFareType === "none"}
+                Compare standard PAYG rates against weekly, monthly, and annual Travelcards and Bus Passes to find the cheapest option.
+              {:else}
+                Your concession/railcard discount applies to single PAYG fares, but not to Travelcards/Bus Passes. Compare your discounted PAYG spend against standard passes.
+              {/if}
+              Here is how your simulated PAYG cost of
               <strong>£{studentComparison.totalPayg.toFixed(2)}</strong>
-              compares to standard/discounted passes for your
+              compares to alternative passes for your
               <strong>{studentComparison.durationDays}-day</strong>
               period ({studentComparison.monthsInPeriodText}):
             </p>
