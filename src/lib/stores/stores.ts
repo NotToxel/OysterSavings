@@ -296,8 +296,8 @@ export const weeklyCapResults = derived(
 );
 
 export const capSummary = derived(
-  [cards, activeCard],
-  ([$cards, $activeCard]) => {
+  [cards, activeCard, dailyCapResults, weeklyCapResults],
+  ([$cards, $activeCard, $dailyCapResults, $weeklyCapResults]) => {
     if ($activeCard) return $activeCard.capSummary;
     if ($cards.length === 0) return null;
     if ($cards.length === 1) return $cards[0].capSummary;
@@ -319,6 +319,15 @@ export const capSummary = derived(
         totalWeeks = Math.max(totalWeeks, card.capSummary.totalWeeks);
       }
     }
+
+    const averageDailySpend = $dailyCapResults.length > 0
+      ? Math.round(($dailyCapResults.reduce((sum, d) => sum + d.totalSpend, 0) / $dailyCapResults.length) * 100) / 100
+      : 0;
+
+    const averageWeeklySpend = $weeklyCapResults.length > 0
+      ? Math.round(($weeklyCapResults.reduce((sum, w) => sum + w.totalSpend, 0) / $weeklyCapResults.length) * 100) / 100
+      : 0;
+
     return {
       totalSavedByDailyCap,
       totalSavedByWeeklyCap,
@@ -326,6 +335,8 @@ export const capSummary = derived(
       weeksCapHit,
       totalDays,
       totalWeeks,
+      averageDailySpend,
+      averageWeeklySpend,
     } as CapSummary;
   }
 );

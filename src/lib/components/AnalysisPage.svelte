@@ -368,12 +368,10 @@
               >
                 {#if $cards.length > 1}
                   <td>
-                    <span
-                      class="badge"
-                      style="background: {j.cardColor || 'rgba(255,255,255,0.1)'}; color: white; border: 1px solid rgba(255,255,255,0.15); font-size: 0.72rem; padding: 0.2rem 0.4rem;"
-                    >
-                      {j.cardName || 'Card'}
-                    </span>
+                    <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}">
+                      <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
+                      <span class="badge-text">{j.cardName || 'Card'}</span>
+                    </div>
                   </td>
                 {/if}
                 <td class="date-cell"><span class="day-of-week" style="opacity: 0.8; font-weight: 600; margin-right: 0.25rem;">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][j.dayOfWeek]}</span>{j.raw.dateStr}</td>
@@ -975,22 +973,27 @@
     <!-- Cap Analysis -->
     <div class="cap-layout">
       {#if $activeCardId === 'combined' && $cards.length > 1}
-        <div class="glass-card combined-caps-breakdown" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
-          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); display: flex; align-items: center; gap: 0.35rem;">
+        <div class="glass-card combined-caps-breakdown">
+          <h4 class="breakdown-title">
             💳 Per-Card Cap Breakdown
           </h4>
-          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <div class="breakdown-grid">
             {#each $cards as card}
-              <div class="card-breakdown-item" style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); padding: 0.6rem 0.85rem; border-radius: 8px;">
-                <span class="card-indicator-dot" style="width: 10px; height: 10px; border-radius: 50%; background: {card.color}; flex-shrink: 0;"></span>
-                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                  <span style="font-weight: 600; font-size: 0.82rem; color: var(--color-text-primary);">{card.name}</span>
-                  <span style="font-size: 0.75rem; color: var(--color-text-muted);">
-                    {card.capSummary?.daysCapHit ?? 0} cap days hit
-                    {#if card.capSummary && card.capSummary.totalSavedByDailyCap > 0}
-                      (saved £{card.capSummary.totalSavedByDailyCap.toFixed(2)})
-                    {/if}
-                  </span>
+              <div class="breakdown-card" style="--card-theme: {card.color}">
+                <div class="breakdown-card-glow" style="background: radial-gradient(circle at 100% 0%, {card.color}15, transparent 60%);"></div>
+                <div class="breakdown-card-header">
+                  <span class="breakdown-card-dot" style="background: {card.color}"></span>
+                  <span class="breakdown-card-name">{card.name}</span>
+                </div>
+                <div class="breakdown-card-stats">
+                  <div class="breakdown-stat">
+                    <span class="stat-num">{card.capSummary?.daysCapHit ?? 0}</span>
+                    <span class="stat-desc">Cap Days Hit</span>
+                  </div>
+                  <div class="breakdown-stat highlighted">
+                    <span class="stat-num" style="color: {card.color}">£{(card.capSummary?.totalSavedByDailyCap ?? 0).toFixed(2)}</span>
+                    <span class="stat-desc">Daily Cap Savings</span>
+                  </div>
                 </div>
               </div>
             {/each}
@@ -1145,6 +1148,138 @@
   .analysis-page {
     max-width: 1100px;
     margin: 0 auto;
+  }
+
+  /* Table Card Badge */
+  .table-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+
+  .table-card-badge:hover {
+    border-color: var(--badge-color);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-primary);
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .badge-text {
+    opacity: 0.95;
+    letter-spacing: -0.01em;
+  }
+
+  /* Per-card cap breakdown in combined view */
+  .combined-caps-breakdown {
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .breakdown-title {
+    margin: 0 0 1rem 0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .breakdown-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .breakdown-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--card-theme);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .breakdown-card-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .breakdown-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .breakdown-card-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px var(--card-theme);
+  }
+
+  .breakdown-card-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-text-primary);
+  }
+
+  .breakdown-card-stats {
+    display: flex;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .breakdown-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .breakdown-stat .stat-num {
+    font-size: 1.1rem;
+    font-weight: 800;
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+  }
+
+  .breakdown-stat .stat-desc {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
   }
 
   .toggle:disabled {
