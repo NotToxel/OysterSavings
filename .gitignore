@@ -20,6 +20,7 @@ Thumbs.db
 
 # IDE / Editors
 .vscode/
+.cursor/
 
 # Vite
 vite.config.js.timestamp-*

@@ -22,6 +22,8 @@ import {
   parseLocalDate,
   getTravelcardJourneyFare,
   getBusPassJourneyFare,
+  getDailyBusCap,
+  getWeeklyBusCap,
 } from '../data/fareData';
 
 export interface ForecastDay {
@@ -37,6 +39,10 @@ export interface ForecastDay {
   capProgress: number;
   capHitFareType: boolean;
   capProgressFareType: number;
+  cappedBusFare?: number;
+  cappedBusFareFareType?: number;
+  cappedRailFare?: number;
+  cappedRailFareFareType?: number;
 }
 
 export interface ForecastResult {
@@ -135,13 +141,107 @@ export function runForecast(
       maxZoneRange = 'Z1-2';
     }
     
-    const dailyCap = lookupDailyCap(maxZoneRange, isPeakDay, 'none');
-    const fareTypeDailyCap = lookupDailyCap(maxZoneRange, isPeakDay, fareType);
-    const cappedFare = Math.min(totalFare, dailyCap);
-    const cappedFareFareType = Math.min(totalFareFareType, fareTypeDailyCap);
-    const capHit = totalFare >= dailyCap;
-    const capHitFareType = totalFareFareType >= fareTypeDailyCap;
-    const capProgressFareType = fareTypeDailyCap > 0 ? Math.min(1, totalFareFareType / fareTypeDailyCap) : 0;
+    const dailyBusCap = getDailyBusCap('none');
+    const fareTypeDailyBusCap = getDailyBusCap(fareType);
+
+    const hasRail = journeys.some(j => j.mode !== 'bus');
+    const dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, 'none') : dailyBusCap;
+    const fareTypeDailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : fareTypeDailyBusCap;
+
+    // Apply daily capping sequentially to the planned journeys of the day
+    const sortedJourneys = [...journeys].sort((a, b) => (a.timePeriod || '').localeCompare(b.timePeriod || ''));
+    let runningSpend = 0;
+    let runningSpendFareType = 0;
+    let runningBusSpend = 0;
+    let runningBusSpendFareType = 0;
+
+    let dayCappedBus = 0;
+    let dayCappedBusFareType = 0;
+    let dayCappedRail = 0;
+    let dayCappedRailFareType = 0;
+
+    for (const j of sortedJourneys) {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+
+      const zoneRange = getZoneRange(j.originZone, j.destinationZone);
+      let fare: number;
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        fare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+      } else {
+        fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      }
+      
+      let fareTypeFare = calculateDiscountedFare(fare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
+
+      // Standard adult capping
+      let finalFare = fare;
+      if (j.mode === 'bus') {
+        let busPart = fare;
+        if (runningBusSpend >= dailyBusCap) {
+          busPart = 0;
+        } else if (runningBusSpend + fare > dailyBusCap) {
+          busPart = dailyBusCap - runningBusSpend;
+        }
+
+        if (runningSpend >= dailyCap) {
+          finalFare = 0;
+        } else if (runningSpend + busPart > dailyCap) {
+          finalFare = dailyCap - runningSpend;
+        } else {
+          finalFare = busPart;
+        }
+        runningBusSpend += finalFare;
+        runningSpend += finalFare;
+        dayCappedBus += finalFare;
+      } else {
+        if (runningSpend >= dailyCap) {
+          finalFare = 0;
+        } else if (runningSpend + fare > dailyCap) {
+          finalFare = dailyCap - runningSpend;
+        } else {
+          finalFare = fare;
+        }
+        runningSpend += finalFare;
+        dayCappedRail += finalFare;
+      }
+
+      // Concession capping
+      let finalFareFareType = fareTypeFare;
+      if (j.mode === 'bus') {
+        let busPart = fareTypeFare;
+        if (runningBusSpendFareType >= fareTypeDailyBusCap) {
+          busPart = 0;
+        } else if (runningBusSpendFareType + fareTypeFare > fareTypeDailyBusCap) {
+          busPart = fareTypeDailyBusCap - runningBusSpendFareType;
+        }
+
+        if (runningSpendFareType >= fareTypeDailyCap) {
+          finalFareFareType = 0;
+        } else if (runningSpendFareType + busPart > fareTypeDailyCap) {
+          finalFareFareType = fareTypeDailyCap - runningSpendFareType;
+        } else {
+          finalFareFareType = busPart;
+        }
+        runningBusSpendFareType += finalFareFareType;
+        runningSpendFareType += finalFareFareType;
+        dayCappedBusFareType += finalFareFareType;
+      } else {
+        if (runningSpendFareType >= fareTypeDailyCap) {
+          finalFareFareType = 0;
+        } else if (runningSpendFareType + fareTypeFare > fareTypeDailyCap) {
+          finalFareFareType = fareTypeDailyCap - runningSpendFareType;
+        } else {
+          finalFareFareType = fareTypeFare;
+        }
+        runningSpendFareType += finalFareFareType;
+        dayCappedRailFareType += finalFareFareType;
+      }
+    }
+
+    const capHit = runningSpend >= dailyCap || runningBusSpend >= dailyBusCap;
+    const capHitFareType = runningSpendFareType >= fareTypeDailyCap || runningBusSpendFareType >= fareTypeDailyBusCap;
+    const capProgressFareType = fareTypeDailyCap > 0 ? Math.min(1, runningSpendFareType / fareTypeDailyCap) : 0;
 
     days.push({
       date: journeys[0].date,
@@ -150,12 +250,16 @@ export function runForecast(
       totalFare: round2(totalFare),
       totalFareFareType: round2(totalFareFareType),
       dailyCap,
-      cappedFare: round2(cappedFare),
-      cappedFareFareType: round2(cappedFareFareType),
+      cappedFare: round2(runningSpend),
+      cappedFareFareType: round2(runningSpendFareType),
       capHit,
-      capProgress: Math.min(1, totalFare / dailyCap),
+      capProgress: Math.min(1, runningSpend / dailyCap),
       capHitFareType,
       capProgressFareType,
+      cappedBusFare: round2(dayCappedBus),
+      cappedBusFareFareType: round2(dayCappedBusFareType),
+      cappedRailFare: round2(dayCappedRail),
+      cappedRailFareFareType: round2(dayCappedRailFareType),
     });
   }
 
@@ -176,9 +280,6 @@ export function runForecast(
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
 
-    const totalFare = weekDays.reduce((s, d) => s + d.cappedFare, 0);
-    const totalFareFareType = weekDays.reduce((s, d) => s + d.cappedFareFareType, 0);
-
     // Determine weekly cap zone range
     const allJourneys = weekDays.flatMap((d) => d.journeys);
     let maxSpread = 0;
@@ -190,36 +291,64 @@ export function runForecast(
       if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
     }
 
-    const weeklyCap = lookupWeeklyCap(maxRange, 'none');
-    const fareTypeWeeklyCap = lookupWeeklyCap(maxRange, fareType);
+    const weeklyBusCap = getWeeklyBusCap('none');
+    const fareTypeWeeklyBusCap = getWeeklyBusCap(fareType);
 
-    // Apply weekly cap to total if needed
-    const cappedTotalFare = Math.min(totalFare, weeklyCap);
-    const cappedTotalFareFareType = Math.min(totalFareFareType, fareTypeWeeklyCap);
+    const hasRail = allJourneys.some(j => j.mode !== 'bus');
+    const weeklyCap = hasRail ? lookupWeeklyCap(maxRange, 'none') : weeklyBusCap;
+    const fareTypeWeeklyCap = hasRail ? lookupWeeklyCap(maxRange, fareType) : fareTypeWeeklyBusCap;
+
+    const weeklyBusSpend = weekDays.reduce((s, d) => s + (d.cappedBusFare ?? 0), 0);
+    const weeklyBusSpendFareType = weekDays.reduce((s, d) => s + (d.cappedBusFareFareType ?? 0), 0);
+    const weeklyRailSpend = weekDays.reduce((s, d) => s + (d.cappedRailFare ?? 0), 0);
+    const weeklyRailSpendFareType = weekDays.reduce((s, d) => s + (d.cappedRailFareFareType ?? 0), 0);
+
+    const cappedWeeklyBus = Math.min(weeklyBusSpend, weeklyBusCap);
+    const cappedWeeklyBusFareType = Math.min(weeklyBusSpendFareType, fareTypeWeeklyBusCap);
+
+    // Apply weekly mixed cap
+    const cappedTotalFare = Math.min(weeklyRailSpend + cappedWeeklyBus, weeklyCap);
+    const cappedTotalFareFareType = Math.min(weeklyRailSpendFareType + cappedWeeklyBusFareType, fareTypeWeeklyCap);
 
     // Distribute the weekly caps chronologically across daily spend boxes
     weekDays.sort((a, b) => a.date.getTime() - b.date.getTime());
-    let runningWeekTotal = 0;
-    let runningWeekTotalFareType = 0;
+    let runningBusSpendOfWeek = 0;
+    let runningBusSpendOfWeekFareType = 0;
+    let runningTotalSpendOfWeek = 0;
+    let runningTotalSpendOfWeekFareType = 0;
+
     for (const d of weekDays) {
-      const remainingWeeklyCap = Math.max(0, weeklyCap - runningWeekTotal);
-      const remainingWeeklyCapFareType = Math.max(0, fareTypeWeeklyCap - runningWeekTotalFareType);
+      const remainingWeeklyBusCap = Math.max(0, weeklyBusCap - runningBusSpendOfWeek);
+      const remainingWeeklyBusCapFareType = Math.max(0, fareTypeWeeklyBusCap - runningBusSpendOfWeekFareType);
+
+      const remainingWeeklyCap = Math.max(0, weeklyCap - runningTotalSpendOfWeek);
+      const remainingWeeklyCapFareType = Math.max(0, fareTypeWeeklyCap - runningTotalSpendOfWeekFareType);
 
       const oldCappedFare = d.cappedFare;
       const oldCappedFareFareType = d.cappedFareFareType;
 
-      d.cappedFare = round2(Math.min(oldCappedFare, remainingWeeklyCap));
-      d.cappedFareFareType = round2(Math.min(oldCappedFareFareType, remainingWeeklyCapFareType));
+      const dCappedBus = d.cappedBusFare ?? 0;
+      const dCappedBusFareType = d.cappedBusFareFareType ?? 0;
+      const dCappedRail = d.cappedRailFare ?? 0;
+      const dCappedRailFareType = d.cappedRailFareFareType ?? 0;
 
-      runningWeekTotal += d.cappedFare;
-      runningWeekTotalFareType += d.cappedFareFareType;
+      const allowedBus = Math.min(dCappedBus, remainingWeeklyBusCap);
+      const allowedBusFareType = Math.min(dCappedBusFareType, remainingWeeklyBusCapFareType);
+
+      d.cappedFare = round2(Math.min(dCappedRail + allowedBus, remainingWeeklyCap));
+      d.cappedFareFareType = round2(Math.min(dCappedRailFareType + allowedBusFareType, remainingWeeklyCapFareType));
+
+      runningBusSpendOfWeek += allowedBus;
+      runningBusSpendOfWeekFareType += allowedBusFareType;
+      runningTotalSpendOfWeek += d.cappedFare;
+      runningTotalSpendOfWeekFareType += d.cappedFareFareType;
 
       // Mark cap hit and progress as complete if daily cap OR weekly cap is hit
-      if (oldCappedFareFareType > d.cappedFareFareType || runningWeekTotalFareType >= fareTypeWeeklyCap) {
+      if (oldCappedFareFareType > d.cappedFareFareType || runningTotalSpendOfWeekFareType >= fareTypeWeeklyCap || runningBusSpendOfWeekFareType >= fareTypeWeeklyBusCap) {
         d.capHitFareType = true;
         d.capProgressFareType = 1.0;
       }
-      if (oldCappedFare > d.cappedFare || runningWeekTotal >= weeklyCap) {
+      if (oldCappedFare > d.cappedFare || runningTotalSpendOfWeek >= weeklyCap || runningBusSpendOfWeek >= weeklyBusCap) {
         d.capHit = true;
         d.capProgress = 1.0;
       }
@@ -232,8 +361,8 @@ export function runForecast(
       totalFare: round2(cappedTotalFare),
       totalFareFareType: round2(cappedTotalFareFareType),
       weeklyCap,
-      capHit: totalFare >= weeklyCap,
-      capProgress: Math.min(1, totalFare / weeklyCap),
+      capHit: (weeklyBusSpend >= weeklyBusCap) || (weeklyRailSpend + cappedWeeklyBus >= weeklyCap),
+      capProgress: Math.min(1, (weeklyRailSpend + cappedWeeklyBus) / weeklyCap),
     });
   }
 
@@ -321,12 +450,15 @@ export function simulatePlannedJourneysSpend(
     dayMap.get(key)!.push(j);
   }
 
-  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean }[] = [];
+  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean }[] = [];
 
   for (const [dateStr, journeys] of dayMap) {
     let totalFare = 0;
+    let totalRailFare = 0;
+    let totalBusFare = 0;
     let maxZoneSpread = 0;
     let maxZoneRange = 'Z1';
+    let hasRail = false;
 
     for (const j of journeys) {
       const repTime = getRepresentativeTime(j.timePeriod);
@@ -355,6 +487,13 @@ export function simulatePlannedJourneysSpend(
         passFare = getTravelcardJourneyFare(mockJourneyForPass, tcZoneRange, baseFare, fareType);
       }
 
+      if (j.mode === 'bus') {
+        totalBusFare += passFare;
+      } else {
+        totalRailFare += passFare;
+        hasRail = true;
+      }
+
       totalFare += passFare;
 
       const parts = zoneRange.replace('Z', '').split('-');
@@ -374,12 +513,19 @@ export function simulatePlannedJourneysSpend(
       maxZoneRange = 'Z1-2';
     }
 
+    const dailyBusCap = getDailyBusCap(fareType);
+    const cappedBus = Math.min(totalBusFare, dailyBusCap);
+    const dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : dailyBusCap;
+
     days.push({
       date: journeys[0].date,
       dateStr,
-      totalFare,
+      totalFare: totalRailFare + cappedBus,
       maxZoneRange,
-      isPeakDay
+      isPeakDay,
+      cappedBusFare: cappedBus,
+      cappedRailFare: totalRailFare,
+      hasRail
     });
   }
 
@@ -396,8 +542,15 @@ export function simulatePlannedJourneysSpend(
   let totalCappedSpend = 0;
 
   for (const [weekKey, weekDays] of weekMap) {
+    const weeklyBusCap = getWeeklyBusCap(fareType);
+    const weeklyBusSpend = weekDays.reduce((s, d) => s + (d.cappedBusFare ?? 0), 0);
+    const weeklyRailSpend = weekDays.reduce((s, d) => s + (d.cappedRailFare ?? 0), 0);
+
+    const cappedWeeklyBusSpend = Math.min(weeklyBusSpend, weeklyBusCap);
+
     for (const d of weekDays) {
-      const dailyCap = lookupDailyCap(d.maxZoneRange, d.isPeakDay, fareType);
+      const dailyBusCap = getDailyBusCap(fareType);
+      const dailyCap = d.hasRail ? lookupDailyCap(d.maxZoneRange, d.isPeakDay, fareType) : dailyBusCap;
       d.totalFare = Math.min(d.totalFare, dailyCap);
     }
 
@@ -407,19 +560,22 @@ export function simulatePlannedJourneysSpend(
     const weekJourneys = weekDays.flatMap(d => dayMap.get(d.dateStr) || []);
     let maxSpread = 0;
     let maxRange = 'Z1';
+    let hasWeeklyRail = false;
     for (const j of weekJourneys) {
       const zr = getZoneRange(j.originZone, j.destinationZone);
       const parts = zr.replace('Z', '').split('-');
       const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
       if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
+      if (j.mode !== 'bus') hasWeeklyRail = true;
     }
 
     if (maxRange === 'Z1' || maxRange === 'Z2') {
       maxRange = 'Z1-2';
     }
 
-    const weeklyCap = lookupWeeklyCap(maxRange, fareType);
-    totalCappedSpend += Math.min(totalWeekFare, weeklyCap);
+    const weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, fareType) : weeklyBusCap;
+    const totalWeeklySpendBeforeMixedCap = weeklyRailSpend + cappedWeeklyBusSpend;
+    totalCappedSpend += Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
   }
 
   return totalCappedSpend;
@@ -444,12 +600,15 @@ export function simulateHybridPlannedJourneysSpend(
     dayMap.get(key)!.push(j);
   }
 
-  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; isTcActive: boolean }[] = [];
+  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; isTcActive: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean }[] = [];
 
   for (const [dateStr, journeys] of dayMap) {
     let totalFare = 0;
+    let totalRailFare = 0;
+    let totalBusFare = 0;
     let maxZoneSpread = 0;
     let maxZoneRange = 'Z1';
+    let hasRail = false;
 
     const firstJourneyDate = journeys[0].date;
     // Normalize date parts to compare dates (ignoring time)
@@ -490,6 +649,13 @@ export function simulateHybridPlannedJourneysSpend(
         fare = getTravelcardJourneyFare(mockJourneyForPass, tcZoneRange, baseFare, activeFareType);
       }
 
+      if (j.mode === 'bus') {
+        totalBusFare += fare;
+      } else {
+        totalRailFare += fare;
+        hasRail = true;
+      }
+
       totalFare += fare;
 
       const parts = zoneRange.replace('Z', '').split('-');
@@ -509,13 +675,20 @@ export function simulateHybridPlannedJourneysSpend(
       maxZoneRange = 'Z1-2';
     }
 
+    const activeDailyBusCap = getDailyBusCap(activeFareType);
+    const cappedBus = Math.min(totalBusFare, activeDailyBusCap);
+    const dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, activeFareType) : activeDailyBusCap;
+
     days.push({
       date: firstJourneyDate,
       dateStr,
-      totalFare,
+      totalFare: totalRailFare + cappedBus,
       maxZoneRange,
       isPeakDay,
-      isTcActive
+      isTcActive,
+      cappedBusFare: cappedBus,
+      cappedRailFare: totalRailFare,
+      hasRail
     });
   }
 
@@ -538,8 +711,15 @@ export function simulateHybridPlannedJourneysSpend(
     const weekHasTc = weekDays.some(d => d.isTcActive);
     const weekFareType = weekHasTc ? tcFareType : paygFareType;
 
+    const activeWeeklyBusCap = getWeeklyBusCap(weekFareType);
+    const weeklyBusSpend = weekDays.reduce((s, d) => s + (d.cappedBusFare ?? 0), 0);
+    const weeklyRailSpend = weekDays.reduce((s, d) => s + (d.cappedRailFare ?? 0), 0);
+
+    const cappedWeeklyBusSpend = Math.min(weeklyBusSpend, activeWeeklyBusCap);
+
     for (const d of weekDays) {
-      const dailyCap = lookupDailyCap(d.maxZoneRange, d.isPeakDay, d.isTcActive ? tcFareType : paygFareType);
+      const activeDailyBusCap = getDailyBusCap(d.isTcActive ? tcFareType : paygFareType);
+      const dailyCap = d.hasRail ? lookupDailyCap(d.maxZoneRange, d.isPeakDay, d.isTcActive ? tcFareType : paygFareType) : activeDailyBusCap;
       d.totalFare = Math.min(d.totalFare, dailyCap);
     }
 
@@ -549,19 +729,22 @@ export function simulateHybridPlannedJourneysSpend(
     const weekJourneys = weekDays.flatMap(d => dayMap.get(d.dateStr) || []);
     let maxSpread = 0;
     let maxRange = 'Z1';
+    let hasWeeklyRail = false;
     for (const j of weekJourneys) {
       const zr = getZoneRange(j.originZone, j.destinationZone);
       const parts = zr.replace('Z', '').split('-');
       const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
       if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
+      if (j.mode !== 'bus') hasWeeklyRail = true;
     }
 
     if (maxRange === 'Z1' || maxRange === 'Z2') {
       maxRange = 'Z1-2';
     }
 
-    const weeklyCap = lookupWeeklyCap(maxRange, weekFareType);
-    totalCappedSpend += Math.min(totalWeekFare, weeklyCap);
+    const weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, weekFareType) : activeWeeklyBusCap;
+    const totalWeeklySpendBeforeMixedCap = weeklyRailSpend + cappedWeeklyBusSpend;
+    totalCappedSpend += Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
   }
 
   return totalCappedSpend;

@@ -2910,7 +2910,7 @@ export const STATIONS: Record<string, StationInfo> = {
     name: 'Reading',
     zone: 0,
     modes: ['national_rail', 'elizabeth'],
-    naptanId: '910GRDNG4AB'
+    naptanId: '910GRDNGSTN'
   },
   'rectory road': {
     name: 'Rectory Road',

@@ -180,6 +180,22 @@ export function lookupExactFare(originId: string, destId: string, isPeak: boolea
   return null;
 }
 
+// Get daily bus and tram cap (Jobcentre Plus and others get same cap as adult)
+export function getDailyBusCap(fareType: FareType): number {
+  if (fareType === 'zip_11_15' || fareType === 'zip_16_17') {
+    return 0.00;
+  }
+  return BUS_DAILY_CAP; // £5.25
+}
+
+// Get weekly bus and tram cap (Jobcentre Plus and others get same cap as adult)
+export function getWeeklyBusCap(fareType: FareType): number {
+  if (fareType === 'zip_11_15' || fareType === 'zip_16_17') {
+    return 0.00;
+  }
+  return BUS_PASS_WEEKLY; // £24.70
+}
+
 // Lookup daily cap for a given zone range
 export function lookupDailyCap(zoneRange: string, isPeak: boolean = true, fareType: FareType = 'none'): number {
   const adultCap = DAILY_CAPS[zoneRange] ?? 16.30;

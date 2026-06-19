@@ -3360,7 +3360,7 @@
           <button
             class="btn-primary"
             onclick={saveRule}
-            disabled={(newIntervalType !== "none" && newDays.length === 0) || (advancedMode && (!selectedOriginStation || !selectedDestStation || selectedOriginStation.info.naptanId === selectedDestStation.info.naptanId))}
+            disabled={(newIntervalType !== "none" && newDays.length === 0) || (advancedMode && newMode !== "bus" && (!selectedOriginStation || !selectedDestStation || selectedOriginStation.info.naptanId === selectedDestStation.info.naptanId))}
             >{editRuleId ? "Save Routine" : "Add Routine"}</button
           >
         </div>
