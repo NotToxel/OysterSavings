@@ -63,12 +63,12 @@ To maintain a consistent and visible build release sequence, you must adhere to 
 Before finishing any execution step, you must execute:
 1. **Typechecks & Diagnostics**: Run Svelte Kit check diagnostics:
    ```bash
-   cmd.exe /c npm run check
+   cmd.exe /c "npm run check"
    ```
    *Ensure there are zero compile errors and no new warnings introduced.*
 2. **Production Compilation**: Verify bundling and build outputs compile successfully:
    ```bash
-   cmd.exe /c npm run build
+   cmd.exe /c "npm run build"
    ```
 3. **Vite Local Dev**: Keep the local development server running to verify layout changes render cleanly on different responsive viewports.
 
