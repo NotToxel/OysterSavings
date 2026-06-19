@@ -127,11 +127,6 @@ export function getCachedFare(
 
   // Layer 1: Session cache (fastest)
   let sessionHit = sessionCache.get(key);
-  if (!sessionHit) {
-    // Also try the old key for backwards compatibility
-    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}-${fareType}`;
-    sessionHit = sessionCache.get(oldKey);
-  }
   if (sessionHit && isCacheValid(sessionHit)) {
     return sessionHit;
   }
@@ -139,10 +134,6 @@ export function getCachedFare(
   // Layer 2: localStorage persistent cache
   const persistentCache = loadPersistentCache();
   let persistentHit = persistentCache.entries[key];
-  if (!persistentHit) {
-    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}-${fareType}`;
-    persistentHit = persistentCache.entries[oldKey];
-  }
   if (persistentHit && isCacheValid(persistentHit)) {
     // Promote to session cache
     sessionCache.set(key, persistentHit);

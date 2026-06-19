@@ -15,6 +15,7 @@ import {
   getWeeklyBusCap,
   getOutsideZoneDailyCap,
   getOutsideZoneWeeklyCap,
+  isStPancrasToStratford,
 } from '../data/fareData';
 
 export interface DayCapResult {
@@ -69,6 +70,15 @@ function getMaxZoneRange(journeys: FareResult[]): string {
 
   for (const j of journeys) {
     if (j.journey.isBus) continue;
+    // Exclude St Pancras-Stratford exception from zone capping ranges
+    if (isStPancrasToStratford(
+      j.journey.originNaptan,
+      j.journey.destinationNaptan,
+      j.journey.origin,
+      j.journey.destination
+    )) {
+      continue;
+    }
     const range = j.journey.zoneRange;
     if (!range) continue;
 
@@ -98,6 +108,12 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
   for (const [dateStr, journeys] of dayGroups) {
     const railJourneys = journeys.filter((j) => !j.journey.isBus);
     const busJourneys = journeys.filter((j) => j.journey.isBus);
+    const nonExceptionRailJourneys = railJourneys.filter((j) => !isStPancrasToStratford(
+      j.journey.originNaptan,
+      j.journey.destinationNaptan,
+      j.journey.origin,
+      j.journey.destination
+    ));
 
     let maxZoneRange = getMaxZoneRange(journeys);
 
@@ -117,8 +133,14 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
     // Detect if this is a simulation (meaning the actualCharge values are expected/concession fares, not CSV values)
     const isSimulated = journeys.some((j) => j.actualCharge !== j.journey.raw.charge);
 
-    // Calculate actual spend first to infer cap if needed
-    let initialTotalSpend = journeys.reduce((sum, j) => sum + j.actualCharge, 0);
+    // Calculate spend on normal (non-exception) journeys
+    const normalJourneys = journeys.filter(j => !isStPancrasToStratford(
+      j.journey.originNaptan,
+      j.journey.destinationNaptan,
+      j.journey.origin,
+      j.journey.destination
+    ));
+    const normalTotalSpend = normalJourneys.reduce((sum, j) => sum + j.actualCharge, 0);
     
     let railcardActive = false;
     
@@ -134,11 +156,11 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
     }
 
     const dailyBusCap = getDailyBusCap(railcardType);
-    const hasRail = railJourneys.length > 0;
+    const hasRail = nonExceptionRailJourneys.length > 0;
     let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, railcardType) : dailyBusCap;
 
     let outsideZoneCap: number | null = null;
-    for (const res of railJourneys) {
+    for (const res of nonExceptionRailJourneys) {
       const oNaptan = res.journey.originNaptan;
       const dNaptan = res.journey.destinationNaptan;
       if (oNaptan) {
@@ -161,12 +183,12 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
     const explicitCapHit = journeys.some((j) => j.journey.isCapHit);
     
     if (explicitCapHit && !isSimulated) {
-      // Heuristic 2: Cap inference based on actual spend
+      // Heuristic 2: Cap inference based on actual spend of normal journeys
       let inferredZone: string | null = null;
       
       // Try finding an exact match in Adult Caps
       for (const [zone, cap] of Object.entries(DAILY_CAPS)) {
-        if (Math.abs(cap - initialTotalSpend) < 0.05) {
+        if (Math.abs(cap - normalTotalSpend) < 0.05) {
           inferredZone = zone;
           break; 
         }
@@ -175,7 +197,7 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
       // Try finding an exact match in Railcard Caps
       if (!inferredZone) {
         for (const [zone, cap] of Object.entries(DAILY_CAPS_OFFPEAK)) {
-          if (Math.abs(cap - initialTotalSpend) < 0.05) {
+          if (Math.abs(cap - normalTotalSpend) < 0.05) {
             inferredZone = zone;
             railcardActive = true; // Strict railcard cap hit
             break; 
@@ -187,8 +209,8 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
         maxZoneRange = inferredZone;
       }
       
-      // The total spend IS the daily cap
-      dailyCap = initialTotalSpend;
+      // The daily cap is the normal total spend
+      dailyCap = normalTotalSpend;
     }
 
     // Apply capping sequentially to the actualCharges
@@ -201,9 +223,15 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
       let cappedCharge = originalCharge;
       
       const isPenalty = !!(res.journey.origin && res.journey.destination && res.journey.origin === res.journey.destination);
+      const isException = isStPancrasToStratford(
+        res.journey.originNaptan,
+        res.journey.destinationNaptan,
+        res.journey.origin,
+        res.journey.destination
+      );
       
-      if (isPenalty) {
-        // Penalty fares / same-station exits do not count towards the daily cap and cannot be capped
+      if (isPenalty || isException) {
+        // Penalty fares / exception fares do not count towards the daily cap and cannot be capped
         cappedCharge = originalCharge;
       } else {
         if (res.journey.isBus) {
@@ -316,7 +344,12 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
     // Widest zone range across the week
     const allJourneys = days.flatMap((d) => d.journeys);
     const maxZoneRange = getMaxZoneRange(allJourneys);
-    const hasRail = allJourneys.some((j) => !j.journey.isBus);
+    const hasRail = allJourneys.some((j) => !j.journey.isBus && !isStPancrasToStratford(
+      j.journey.originNaptan,
+      j.journey.destinationNaptan,
+      j.journey.origin,
+      j.journey.destination
+    ));
     
     const weeklyBusCap = getWeeklyBusCap(railcardType);
     let weeklyCap = hasRail ? lookupWeeklyCap(maxZoneRange, railcardType) : weeklyBusCap;
@@ -324,6 +357,14 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
     let outsideZoneCap: number | null = null;
     for (const res of allJourneys) {
       if (res.journey.isBus) continue;
+      if (isStPancrasToStratford(
+        res.journey.originNaptan,
+        res.journey.destinationNaptan,
+        res.journey.origin,
+        res.journey.destination
+      )) {
+        continue;
+      }
       const oNaptan = res.journey.originNaptan;
       const dNaptan = res.journey.destinationNaptan;
       if (oNaptan) {
@@ -346,14 +387,31 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
     const weeklyBusSpend = days.reduce((sum, d) => sum + d.busSpend, 0);
     const weeklyRailSpend = days.reduce((sum, d) => sum + d.railJourneySpend, 0);
 
+    // Calculate weekly exception spend (St Pancras-Stratford)
+    let weeklyExceptionSpend = 0;
+    for (const d of days) {
+      for (const j of d.journeys) {
+        if (isStPancrasToStratford(
+          j.journey.originNaptan,
+          j.journey.destinationNaptan,
+          j.journey.origin,
+          j.journey.destination
+        )) {
+          weeklyExceptionSpend += j.actualCharge;
+        }
+      }
+    }
+
+    const weeklyNormalRailSpend = weeklyRailSpend - weeklyExceptionSpend;
+
     // Capped weekly bus spend
     const cappedWeeklyBusSpend = Math.min(weeklyBusSpend, weeklyBusCap);
 
     // Total spend before weekly mixed cap
-    const totalWeeklySpendBeforeMixedCap = weeklyRailSpend + cappedWeeklyBusSpend;
+    const totalWeeklySpendBeforeMixedCap = weeklyNormalRailSpend + cappedWeeklyBusSpend;
 
     // Final weekly spend capped at weekly mixed cap
-    const finalWeeklySpend = Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
+    const finalWeeklySpend = Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap) + weeklyExceptionSpend;
 
     const totalSpendWithoutWeeklyCapping = days.reduce((sum, d) => sum + d.totalSpend, 0);
     const capHit = (weeklyBusCap > 0 && weeklyBusSpend >= weeklyBusCap) || (weeklyCap > 0 && totalWeeklySpendBeforeMixedCap >= weeklyCap);

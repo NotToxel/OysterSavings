@@ -1,7 +1,7 @@
 {
 	"name": "oystersavings",
 	"private": true,
-	"version": "1.15.0",
+	"version": "1.16.0",
 	"license": "AGPL-3.0-only",
 	"type": "module",
 	"scripts": {
@@ -16,7 +16,7 @@
 		"stations:update": "node scripts/fetchStations.cjs && node scripts/buildDatabase.cjs"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.57.0",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@tailwindcss/vite": "^4.2.2",

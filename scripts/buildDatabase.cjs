@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const comprehensivePath = path.resolve(__dirname, 'comprehensive_stations.json');
-const outputPath = path.resolve(__dirname, '../src/lib/data/stationData.ts');
+const outputPath = path.resolve(__dirname, '../src/lib/data/stationData.json');
 
 if (!fs.existsSync(comprehensivePath)) {
   console.error(`Error: Cached comprehensive database not found at ${comprehensivePath}`);
@@ -155,26 +155,29 @@ for (const [lowerBase, groupList] of Object.entries(groups)) {
   }
 }
 
-// Format STATIONS object code
-let code = `import type { StationInfo } from './stationService';\n\n`;
-code += `export const STATIONS: Record<string, StationInfo> = {\n`;
+// Apply manual overrides to ensure correct NaPTAN IDs and special zone configurations are preserved upon rebuilds
+const overrides = {
+  "chalfont & latimer underground station": { naptanId: "910GCHLFNAL" },
+  "edgware road (bakerloo)": { naptanId: "940GZZLUERC" },
+  "greenford underground station": { naptanId: "910GGFORD" },
+  "walthamstow central rail station": { naptanId: "940GZZLUWWL" },
+  "clapham junction": { naptanId: "910GCLPHMJC" },
+  "reading": { naptanId: "910GRDNGSTN", zone: 0, outsideZone: true, contactlessOnly: true },
+  "stratford international rail station": { zone: 2, altZone: 3 }
+};
 
+for (const [key, val] of Object.entries(overrides)) {
+  if (STATIONS[key]) {
+    STATIONS[key] = { ...STATIONS[key], ...val };
+  }
+}
+
+// Format STATIONS object code as clean sorted JSON
+const sortedSTATIONS = {};
 const sortedKeys = Object.keys(STATIONS).sort();
 for (const k of sortedKeys) {
-  const item = STATIONS[k];
-  const escapedKey = k.replace(/'/g, "\\'");
-  const escapedName = item.name.replace(/'/g, "\\'");
-  code += `  '${escapedKey}': {\n`;
-  code += `    name: '${escapedName}',\n`;
-  code += `    zone: ${item.zone},\n`;
-  if (item.altZone !== undefined && item.altZone !== null) {
-    code += `    altZone: ${item.altZone},\n`;
-  }
-  code += `    modes: [${item.modes.map(m => `'${m}'`).join(', ')}],\n`;
-  code += `    naptanId: '${item.naptanId}'\n`;
-  code += `  },\n`;
+  sortedSTATIONS[k] = STATIONS[k];
 }
-code += `};\n`;
 
-fs.writeFileSync(outputPath, code, 'utf-8');
+fs.writeFileSync(outputPath, JSON.stringify(sortedSTATIONS, null, 2), 'utf-8');
 console.log(`Successfully compiled and wrote ${sortedKeys.length} split stations to: ${outputPath}`);

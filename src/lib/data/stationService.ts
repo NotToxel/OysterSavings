@@ -4,15 +4,15 @@
 export interface StationInfo {
   name: string;
   zone: number;
-  altZone?: number; // stations on zone boundaries
+  altZone?: number | null; // stations on zone boundaries
   modes: ('underground' | 'national_rail' | 'overground' | 'dlr' | 'elizabeth' | 'tram')[];
   naptanId?: string; // TfL NaPTAN identifier for API fare lookups
   outsideZone?: boolean; // station is outside standard fare zones 1-9
   contactlessOnly?: boolean; // station only accepts contactless payment (no Oyster)
 }
 
-// Map of canonical station names (lowercase) to their zone info
-import { STATIONS } from './stationData';
+import STATIONS_JSON from './stationData.json';
+export const STATIONS = STATIONS_JSON as Record<string, StationInfo>;
 
 export function normalizeStationName(raw: string): string {
   return raw
@@ -146,7 +146,7 @@ export function getStationBestZone(rawName: string, otherZone: number): number |
   if (!station) return null;
 
   // If station has an alt zone, pick the one closer to the other station's zone (cheaper fare)
-  if (station.altZone !== undefined) {
+  if (station.altZone !== undefined && station.altZone !== null) {
     const distPrimary = Math.abs(station.zone - otherZone);
     const distAlt = Math.abs(station.altZone - otherZone);
     return distAlt < distPrimary ? station.altZone : station.zone;
@@ -204,7 +204,7 @@ export function getModeBadges(modes: StationInfo['modes']): string[] {
  * Format a zone display string (e.g., "Zone 2/3" for altZone stations)
  */
 export function formatZoneDisplay(info: StationInfo): string {
-  if (info.altZone !== undefined) {
+  if (info.altZone !== undefined && info.altZone !== null) {
     return `Zone ${info.zone}/${info.altZone}`;
   }
   return `Zone ${info.zone}`;

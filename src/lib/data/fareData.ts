@@ -420,14 +420,58 @@ export function travelcardIncludesTrams(minZone: number, maxZone: number): boole
   return false;
 }
 
+export function isStPancrasToStratford(
+  oNaptan: string | null | undefined,
+  dNaptan: string | null | undefined,
+  oName: string | null | undefined,
+  dName: string | null | undefined
+): boolean {
+  const on = oNaptan || '';
+  const dn = dNaptan || '';
+  const oNameLower = (oName || '').toLowerCase();
+  const dNameLower = (dName || '').toLowerCase();
+
+  const isStPancrasLL = (naptan: string, name: string) => {
+    return naptan === '910GSTPXBOX' || 
+           (name.includes('st pancras') && name.includes('ll')) ||
+           (name.includes('st. pancras') && name.includes('ll'));
+  };
+
+  const isStratfordIntl = (naptan: string, name: string) => {
+    return naptan === '910GSTFODOM' || 
+           (name.includes('stratford international') && !name.includes('dlr'));
+  };
+
+  const isStPancrasOrig = isStPancrasLL(on, oNameLower);
+  const isStratfordDest = isStratfordIntl(dn, dNameLower);
+  const isStPancrasDest = isStPancrasLL(dn, dNameLower);
+  const isStratfordOrig = isStratfordIntl(on, oNameLower);
+
+  return (isStPancrasOrig && isStratfordDest) || (isStPancrasDest && isStratfordOrig);
+}
+
 export function getTravelcardJourneyFare(
-  journey: { mode: string; originZone: number | null; destinationZone: number | null; isPeak: boolean },
+  journey: {
+    mode: string;
+    originZone: number | null;
+    destinationZone: number | null;
+    isPeak: boolean;
+    originNaptan?: string | null;
+    destinationNaptan?: string | null;
+    origin?: string | null;
+    destination?: string | null;
+  },
   tcZoneRange: string,
   baseFare: number,
   fareType: FareType
 ): number {
-  if (journey.mode === 'bus') {
-    return 0; // all travelcards include buses by default
+  if (isStPancrasToStratford(
+    journey.originNaptan,
+    journey.destinationNaptan,
+    journey.origin,
+    journey.destination
+  )) {
+    return baseFare;
   }
 
   const { min: minTc, max: maxTc } = parseZoneRange(tcZoneRange);

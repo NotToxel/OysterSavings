@@ -4,22 +4,23 @@ const path = require('path');
 async function run() {
   const naptanIds = new Set();
 
-  const originalPath = path.resolve(__dirname, '../src/lib/data/stationData.ts');
+  const originalPath = path.resolve(__dirname, '../src/lib/data/stationData.json');
   console.log(`Reading starting list of NaPTANs from: ${originalPath}`);
   if (fs.existsSync(originalPath)) {
     try {
       const content = fs.readFileSync(originalPath, 'utf-8');
-      const regex = /naptanId:\s*'([^']+)'/g;
-      let match;
-      while ((match = regex.exec(content)) !== null) {
-        naptanIds.add(match[1]);
+      const data = JSON.parse(content);
+      for (const key in data) {
+        if (data[key] && data[key].naptanId) {
+          naptanIds.add(data[key].naptanId);
+        }
       }
-      console.log(`Extracted ${naptanIds.size} starting unique NaPTAN IDs from stationData.ts`);
+      console.log(`Extracted ${naptanIds.size} starting unique NaPTAN IDs from stationData.json`);
     } catch (e) {
-      console.error('Failed to read starting stationData.ts:', e.message);
+      console.error('Failed to read starting stationData.json:', e.message);
     }
   } else {
-    console.log('No existing stationData.ts found, starting with clean TfL modes seed.');
+    console.log('No existing stationData.json found, starting with clean TfL modes seed.');
   }
 
   // Helper function with robust retry and rate-limiting backoff

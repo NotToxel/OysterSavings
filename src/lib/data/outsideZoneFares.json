@@ -1,0 +1,842 @@
+[
+  {
+    "stationKeys": [
+      "broxbourne",
+      "hertford east",
+      "ware",
+      "st. margarets",
+      "rye house"
+    ],
+    "naptanIds": [
+      "910GBROXBRN",
+      "910GHERTFDE",
+      "910GWARE",
+      "910GSMARGRT",
+      "910GRYEHOUS"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 32.3,
+        "offPeak": 24.5
+      },
+      "zip_16_17": {
+        "peak": 16.15,
+        "offPeak": 12.25
+      },
+      "jobcentre": {
+        "peak": 16.15,
+        "offPeak": 12.25
+      },
+      "railcard": {
+        "peak": 32.3,
+        "offPeak": 16.3
+      },
+      "disabled": {
+        "peak": 21.5,
+        "offPeak": 16.3
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-8",
+          "weeklyCap": 122,
+          "travelcard": {
+            "weekly": 122,
+            "monthly": 468.5,
+            "annual": 4880
+          }
+        },
+        {
+          "zoneRange": "Z2-8",
+          "weeklyCap": 95.8,
+          "travelcard": {
+            "weekly": 95.8,
+            "monthly": 367.9,
+            "annual": 3832
+          }
+        }
+      ],
+      "zip_16_17": [
+        {
+          "zoneRange": "Z1-8",
+          "weeklyCap": 61,
+          "travelcard": {
+            "weekly": 61,
+            "monthly": 234.3,
+            "annual": 2440
+          }
+        },
+        {
+          "zoneRange": "Z2-8",
+          "weeklyCap": 47.9,
+          "travelcard": {
+            "weekly": 47.9,
+            "monthly": 184,
+            "annual": 1916
+          }
+        }
+      ],
+      "jobcentre": [
+        {
+          "zoneRange": "Z1-8",
+          "weeklyCap": 61,
+          "travelcard": {
+            "weekly": 61,
+            "monthly": 234.3
+          }
+        },
+        {
+          "zoneRange": "Z2-8",
+          "weeklyCap": 47.9,
+          "travelcard": {
+            "weekly": 47.9,
+            "monthly": 184
+          }
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "watford junction"
+    ],
+    "naptanIds": [
+      "910GWATFJDC"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 32.3,
+        "offPeak": 24.1
+      },
+      "zip_16_17": {
+        "peak": 16.15,
+        "offPeak": 12.05
+      },
+      "jobcentre": {
+        "peak": 16.15,
+        "offPeak": 12.05
+      },
+      "railcard": {
+        "peak": 32.3,
+        "offPeak": 16.05
+      },
+      "disabled": {
+        "peak": 21.5,
+        "offPeak": 16.05
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-8",
+          "weeklyCap": 117,
+          "travelcard": {
+            "weekly": 117,
+            "monthly": 449.3,
+            "annual": 4680
+          }
+        }
+      ],
+      "zip_16_17": [
+        {
+          "zoneRange": "Z1-8",
+          "weeklyCap": 58.5,
+          "travelcard": {
+            "weekly": 58.5,
+            "monthly": 224.7,
+            "annual": 2340
+          }
+        }
+      ],
+      "jobcentre": [
+        {
+          "zoneRange": "Z1-8",
+          "weeklyCap": 58.5,
+          "travelcard": {
+            "weekly": 58.5,
+            "monthly": 224.7
+          }
+        },
+        {
+          "zoneRange": "Z2-8",
+          "weeklyCap": 39.5,
+          "travelcard": {
+            "weekly": 39.5,
+            "monthly": 151.7
+          }
+        },
+        {
+          "zoneRange": "Z4-8",
+          "weeklyCap": 35.4,
+          "travelcard": {
+            "weekly": 35.4,
+            "monthly": 136
+          }
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "shenfield"
+    ],
+    "naptanIds": [
+      "910GSHENFLD"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 40,
+        "offPeak": 26.8
+      },
+      "zip_16_17": {
+        "peak": 20,
+        "offPeak": 13.4
+      },
+      "jobcentre": {
+        "peak": 20,
+        "offPeak": 13.4
+      },
+      "railcard": {
+        "peak": 40,
+        "offPeak": 17.8
+      },
+      "disabled": {
+        "peak": 26.6,
+        "offPeak": 17.8
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-9",
+          "weeklyCap": 138.9,
+          "travelcard": {
+            "weekly": 138.9,
+            "monthly": 533.4,
+            "annual": 5556
+          }
+        }
+      ],
+      "zip_16_17": [
+        {
+          "zoneRange": "Z1-9",
+          "weeklyCap": 69.5,
+          "travelcard": {
+            "weekly": 69.5,
+            "monthly": 266.9,
+            "annual": 2778
+          }
+        }
+      ],
+      "jobcentre": [
+        {
+          "zoneRange": "Z1-9",
+          "weeklyCap": 69.5,
+          "travelcard": {
+            "weekly": 69.5,
+            "monthly": 266.9
+          }
+        },
+        {
+          "zoneRange": "Z2-9",
+          "weeklyCap": 52.6,
+          "travelcard": {
+            "weekly": 52.6,
+            "monthly": 202
+          }
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "gatwick airport"
+    ],
+    "naptanIds": [
+      "910GGTWK"
+    ],
+    "contactlessOnly": false,
+    "notes": "Excludes Gatwick Express",
+    "dailyCaps": {
+      "none": {
+        "peak": 40.8,
+        "offPeak": 24.1
+      },
+      "zip_16_17": {
+        "peak": 20.4,
+        "offPeak": 12.05
+      },
+      "jobcentre": {
+        "peak": 20.4,
+        "offPeak": 12.05
+      },
+      "railcard": {
+        "peak": 40.8,
+        "offPeak": 16.05
+      },
+      "disabled": {
+        "peak": 27.15,
+        "offPeak": 16.05
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 129.4
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "horley",
+      "salfords",
+      "earlswood",
+      "redhill"
+    ],
+    "naptanIds": [
+      "910GHORLEY",
+      "910GSALFDS",
+      "910GEARLSWD",
+      "910GREDHILL"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 36,
+        "offPeak": 20
+      },
+      "zip_16_17": {
+        "peak": 18,
+        "offPeak": 10
+      },
+      "jobcentre": {
+        "peak": 18,
+        "offPeak": 10
+      },
+      "railcard": {
+        "peak": 36,
+        "offPeak": 13.3
+      },
+      "disabled": {
+        "peak": 23.95,
+        "offPeak": 13.3
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 113.4
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "cuffley"
+    ],
+    "naptanIds": [
+      "910GCUFFLEY"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 26.2,
+        "offPeak": 19.3
+      },
+      "zip_16_17": {
+        "peak": 13.1,
+        "offPeak": 9.65
+      },
+      "jobcentre": {
+        "peak": 13.1,
+        "offPeak": 9.65
+      },
+      "railcard": {
+        "peak": 26.2,
+        "offPeak": 12.85
+      },
+      "disabled": {
+        "peak": 17.4,
+        "offPeak": 12.85
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 100.8
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "hertford north"
+    ],
+    "naptanIds": [
+      "910GHFDN"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 31,
+        "offPeak": 23.9
+      },
+      "zip_16_17": {
+        "peak": 15.5,
+        "offPeak": 11.95
+      },
+      "jobcentre": {
+        "peak": 15.5,
+        "offPeak": 11.95
+      },
+      "railcard": {
+        "peak": 31,
+        "offPeak": 15.9
+      },
+      "disabled": {
+        "peak": 20.6,
+        "offPeak": 15.9
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 124.2
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "bayford"
+    ],
+    "naptanIds": [
+      "910GBAYFORD"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 29.7,
+        "offPeak": 23.5
+      },
+      "zip_16_17": {
+        "peak": 14.85,
+        "offPeak": 11.75
+      },
+      "jobcentre": {
+        "peak": 14.85,
+        "offPeak": 11.75
+      },
+      "railcard": {
+        "peak": 29.7,
+        "offPeak": 15.65
+      },
+      "disabled": {
+        "peak": 19.75,
+        "offPeak": 15.65
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 113.2
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "epsom"
+    ],
+    "naptanIds": [
+      "910GEPSM"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 27.8,
+        "offPeak": 18
+      },
+      "zip_16_17": {
+        "peak": 13.9,
+        "offPeak": 9
+      },
+      "jobcentre": {
+        "peak": 13.9,
+        "offPeak": 9
+      },
+      "railcard": {
+        "peak": 27.8,
+        "offPeak": 11.95
+      },
+      "disabled": {
+        "peak": 18.5,
+        "offPeak": 11.95
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 92.6
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "merstham"
+    ],
+    "naptanIds": [
+      "910GMERSTHM"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 35.9,
+        "offPeak": 20
+      },
+      "zip_16_17": {
+        "peak": 17.95,
+        "offPeak": 10
+      },
+      "jobcentre": {
+        "peak": 17.95,
+        "offPeak": 10
+      },
+      "railcard": {
+        "peak": 35.9,
+        "offPeak": 13.3
+      },
+      "disabled": {
+        "peak": 23.9,
+        "offPeak": 13.3
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 106.2
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "potters bar"
+    ],
+    "naptanIds": [
+      "910GPOTRSBR"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 30.8,
+        "offPeak": 19.4
+      },
+      "zip_16_17": {
+        "peak": 15.1,
+        "offPeak": 9.7
+      },
+      "jobcentre": {
+        "peak": 15.1,
+        "offPeak": 9.7
+      },
+      "railcard": {
+        "peak": 30.8,
+        "offPeak": 12.9
+      },
+      "disabled": {
+        "peak": 20.5,
+        "offPeak": 12.9
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 102.4
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "radlett"
+    ],
+    "naptanIds": [
+      "910GRADLETT"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 31.9,
+        "offPeak": 20.9
+      },
+      "zip_16_17": {
+        "peak": 15.95,
+        "offPeak": 10.45
+      },
+      "jobcentre": {
+        "peak": 15.95,
+        "offPeak": 10.45
+      },
+      "railcard": {
+        "peak": 31.9,
+        "offPeak": 13.9
+      },
+      "disabled": {
+        "peak": 21.2,
+        "offPeak": 13.9
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 109.8
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "ockendon",
+      "chafford hundred",
+      "purfleet",
+      "grays"
+    ],
+    "naptanIds": [
+      "910GOCKENDN",
+      "910GCHADHDD",
+      "910GPURFLET",
+      "910GGRAYS"
+    ],
+    "contactlessOnly": false,
+    "dailyCaps": {
+      "none": {
+        "peak": 32.3,
+        "offPeak": 24.1
+      },
+      "zip_16_17": {
+        "peak": 16.15,
+        "offPeak": 12.05
+      },
+      "jobcentre": {
+        "peak": 16.15,
+        "offPeak": 12.05
+      },
+      "railcard": {
+        "peak": 32.3,
+        "offPeak": 16.05
+      },
+      "disabled": {
+        "peak": 21.5,
+        "offPeak": 16.05
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 117
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "taplow"
+    ],
+    "naptanIds": [
+      "910GTAPLOW"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 37.7,
+        "offPeak": 24.9
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 125
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "burnham"
+    ],
+    "naptanIds": [
+      "910GBNHAM"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 34.5,
+        "offPeak": 23.5
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 119.1
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "slough"
+    ],
+    "naptanIds": [
+      "910GSLOUGH"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 31.2,
+        "offPeak": 22.4
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 113.4
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "langley"
+    ],
+    "naptanIds": [
+      "910GLANGLEY"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 30.2,
+        "offPeak": 21.7
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 97.9
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "iver"
+    ],
+    "naptanIds": [
+      "910GIVER"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 27.1,
+        "offPeak": 20.4
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 91.5
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "reading"
+    ],
+    "naptanIds": [
+      "910GRDNGSTN"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 71.3,
+        "offPeak": 37.2
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 177.8
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "twyford"
+    ],
+    "naptanIds": [
+      "910GTWYFORD"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 46.2,
+        "offPeak": 30.3
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 146.3
+        }
+      ]
+    }
+  },
+  {
+    "stationKeys": [
+      "maidenhead"
+    ],
+    "naptanIds": [
+      "910GMDNHEAD"
+    ],
+    "contactlessOnly": true,
+    "dailyCaps": {
+      "none": {
+        "peak": 39.5,
+        "offPeak": 25.6
+      }
+    },
+    "zoneRanges": {
+      "none": [
+        {
+          "zoneRange": "Z1-6",
+          "weeklyCap": 128.8
+        }
+      ]
+    }
+  }
+]

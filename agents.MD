@@ -71,3 +71,27 @@ Before finishing any execution step, you must execute:
    cmd.exe /c npm run build
    ```
 3. **Vite Local Dev**: Keep the local development server running to verify layout changes render cleanly on different responsive viewports.
+
+---
+
+## 📦 6. Station Database Regeneration & Special Exceptions
+
+### Station List Rebuilding & Overrides
+When regenerating the core station list using the utility scripts (`fetchStations.cjs` and `buildDatabase.cjs`), several manual overrides and updates must be maintained to ensure proper fare calculations:
+
+1. **NaPTAN ID Corrections**:
+   - **Gatwick Airport**: Use `910GGTWK` instead of standard TfL parent ID `920GLGW0`.
+   - **Clapham Junction**: Use `910GCLPHMJC` instead of `910GCLPHMJ1`.
+   - **Reading**: Use `910GRDNGSTN` (referencing [Outside 1-9 Stations.js](file:///c:/Development/OysterSavings/reference/Outside%201-9%20Stations.js)).
+   - **Chalfont & Latimer Underground Station**: Map `naptanId` to `910GCHLFNAL` (the rail station ID) so it fetches fares successfully.
+   - **Edgware Road (Bakerloo)**: Map to `940GZZLUERC`.
+   - **Greenford Underground Station**: Map to `910GGFORD` (the rail station ID).
+   - **Walthamstow Central Rail Station**: Map `naptanId` to `940GZZLUWWL` (instead of Wembley Central or another incorrect auto-resolved station).
+
+2. **Special Zone Overrides**:
+   - **Stratford International**: Must be fixed to `zone: 2` and `altZone: 3` (it defaults to `zone: 0` in TfL's direct API, which is a special case).
+
+3. **Special Exception Rules (St Pancras LL to Stratford)**:
+   - Fares from **London St Pancras International LL (`910GSTPXBOX`)** are valid, but journeys from `910GSTPXBOX` to **Stratford** do *not* count towards caps and travelcards in the calculation engine because this specific route is high-speed only (Southeastern High Speed) and sits outside standard Oyster capping/travelcard rules.
+
+These overrides are hardcoded into [buildDatabase.cjs](file:///c:/Development/OysterSavings/scripts/buildDatabase.cjs) to prevent regression during station database updates.
