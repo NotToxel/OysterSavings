@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import {
     classifiedJourneys,
     detectedPatterns,
@@ -67,6 +68,7 @@
   let showActiveRoutines = $state(true);
   let showOneOffJourneys = $state(true);
   let showStudentComparisonTable = $state(false);
+  let showWeeklyCapColumn = $state(true);
   let activeMobileTab = $state("calendar");
 
   // Tooltip hover state for advanced fares
@@ -83,14 +85,13 @@
   } | null>(null);
 
   function showFareTooltip(
-    event: MouseEvent,
+    target: HTMLElement,
     isApi: boolean,
     peakBase: number,
     peakDiscounted: number,
     offPeakBase: number,
     offPeakDiscounted: number,
   ) {
-    const target = event.currentTarget as HTMLElement;
     const rect = target.getBoundingClientRect();
     fareTooltipData = {
       visible: true,
@@ -135,8 +136,7 @@
     return $apiRetryStatus[keys[0]];
   }
 
-  function showWarningTooltip(event: MouseEvent, text: string) {
-    const target = event.currentTarget as HTMLElement;
+  function showWarningTooltip(target: HTMLElement, text: string) {
     const rect = target.getBoundingClientRect();
     warningTooltipData = {
       visible: true,
@@ -168,8 +168,55 @@
     return $forecastResult.weeklyBreakdown.find(w => formatLocalDate(w.weekStart) === key);
   }
 
-  function showWeeklyCapTooltip(event: MouseEvent | KeyboardEvent, week: any) {
+  function getRuleFares(rule: RecurrenceRule) {
+    if (rule.mode === 'bus') {
+      const baseBus = BUS_SINGLE_FARE;
+      const discBus = calculateDiscountedFare(baseBus, $selectedFareType, false, true);
+      return {
+        peakBase: baseBus,
+        peakDiscounted: discBus,
+        offPeakBase: baseBus,
+        offPeakDiscounted: discBus,
+      };
+    }
+    
+    // For Tube/Rail
+    if (rule.isAdvancedMode && rule.exactFarePeak !== undefined && rule.exactFareOffPeak !== undefined) {
+      // It is a live fare
+      const peakBase = rule.exactBaseFarePeak ?? rule.exactFarePeak;
+      const peakDiscounted = rule.exactFarePeak;
+      const offPeakBase = rule.exactBaseFareOffPeak ?? rule.exactFareOffPeak;
+      const offPeakDiscounted = rule.exactFareOffPeak;
+      return {
+        peakBase,
+        peakDiscounted,
+        offPeakBase,
+        offPeakDiscounted,
+      };
+    } else {
+      // It is an estimate (zone-based fallback)
+      const zoneRange = getZoneRange(rule.originZone, rule.destinationZone);
+      const peakBase = lookupFare(zoneRange, true, rule.mode);
+      const peakDiscounted = calculateDiscountedFare(peakBase, $selectedFareType, true, false, rule.originZone, rule.destinationZone, rule.mode, rule.originStation, rule.destinationStation);
+      const offPeakBase = lookupFare(zoneRange, false, rule.mode);
+      const offPeakDiscounted = calculateDiscountedFare(offPeakBase, $selectedFareType, false, false, rule.originZone, rule.destinationZone, rule.mode, rule.originStation, rule.destinationStation);
+      return {
+        peakBase,
+        peakDiscounted,
+        offPeakBase,
+        offPeakDiscounted,
+      };
+    }
+  }
+
+  function showWeeklyCapTooltip(target: HTMLElement, week: any, isHover: boolean) {
     if (!week) return;
+
+    // Bypassing synthetic mouseenter on touch/mobile devices to prevent click race conditions
+    if (isHover && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
+
     const zonesStr = week.maxRange ? week.maxRange.replace('Z', 'Zone ').replace('Z', '') : 'Bus Only';
     
     // Highlight outside zone stations in yellow
@@ -183,6 +230,10 @@
     const capVal = week.fareTypeWeeklyCap || week.weeklyCap;
     const hitText = week.capHit ? '<span style="color: #34d399; font-weight: 600;">(Capped ✓)</span>' : '';
 
+    const basisHtml = week.widestCapStation
+      ? `<div style="font-size: 0.7rem;"><strong>Determining Station:</strong> <span style="color: #fbbf24; font-weight: 600;">${week.widestCapStation}</span> <span style="color: var(--color-text-muted); font-size: 0.65rem;">(Outside Zone)</span></div>`
+      : `<div style="font-size: 0.7rem;"><strong>Zones:</strong> ${zonesStr}</div>`;
+
     const htmlContent = `
       <div style="text-align: left; font-family: var(--font-sans); min-width: 170px;">
         <div style="font-weight: 700; margin-bottom: 0.35rem; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 0.2rem; display: flex; justify-content: space-between;">
@@ -190,7 +241,7 @@
           ${hitText}
         </div>
         <div style="margin-top: 0.25rem; font-size: 0.7rem;"><strong>Cap Limit:</strong> £${capVal.toFixed(2)}</div>
-        <div style="font-size: 0.7rem;"><strong>Zones:</strong> ${zonesStr}</div>
+        ${basisHtml}
         <div style="margin-top: 0.35rem; max-height: 120px; overflow-y: auto; font-size: 0.68rem; color: rgba(255,255,255,0.85); line-height: 1.35;">
           <strong>Stations Visited:</strong><br/>
           ${stationsStr}
@@ -198,8 +249,6 @@
       </div>
     `;
     
-    const target = event.currentTarget as HTMLElement | null;
-    if (!target) return;
     const rect = target.getBoundingClientRect();
     warningTooltipData = {
       visible: true,
@@ -209,12 +258,19 @@
     };
   }
 
-  function handleWeeklyCapClick(event: MouseEvent | KeyboardEvent, week: any) {
-    event.stopPropagation();
+  function hideWeeklyCapTooltip(event: MouseEvent) {
+    // Bypassing synthetic mouseleave on touch/mobile devices to prevent click race conditions
+    if (event.type === 'mouseleave' && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
+    hideWarningTooltip();
+  }
+
+  function handleWeeklyCapClick(target: HTMLElement, week: any) {
     if (warningTooltipData && warningTooltipData.visible) {
       hideWarningTooltip();
     } else {
-      showWeeklyCapTooltip(event, week);
+      showWeeklyCapTooltip(target, week, false);
     }
   }
 
@@ -235,8 +291,10 @@
 
   $effect(() => {
     if (!showRecurrenceModal) {
-      hideFareTooltip();
-      hideWarningTooltip();
+      untrack(() => {
+        hideFareTooltip();
+        hideWarningTooltip();
+      });
     }
   });
 
@@ -2101,7 +2159,7 @@
                           class="disabled-status-badge"
                           style="cursor: help;"
                           role="status"
-                          onmouseenter={(e) => showWarningTooltip(e, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
+                          onmouseenter={(e) => showWarningTooltip(e.currentTarget, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
                           onmouseleave={hideWarningTooltip}
                         >
                           🚫 Concession Disabled
@@ -2124,8 +2182,11 @@
                             class="fare-source-badge estimate" 
                             style="cursor: help;"
                             role="status"
-                            onmouseenter={(e) => showWarningTooltip(e, "Fares for this route are offline estimates based on zone/mode fallback.")}
-                            onmouseleave={hideWarningTooltip}
+                            onmouseenter={(e) => {
+                              const fares = getRuleFares(rule);
+                              showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                            }}
+                            onmouseleave={hideFareTooltip}
                           >
                             ⚙️ Zone Estimate
                           </span>
@@ -2134,8 +2195,11 @@
                             class="fare-source-badge live" 
                             style="cursor: help;"
                             role="status"
-                            onmouseenter={(e) => showWarningTooltip(e, `Live fare from TfL API: Peak £${rule.exactFarePeak?.toFixed(2)}, Off-Peak £${rule.exactFareOffPeak?.toFixed(2)}${rule.routeDescription && rule.routeDescription !== 'Default Route' ? ' via ' + rule.routeDescription : ''}`)}
-                            onmouseleave={hideWarningTooltip}
+                            onmouseenter={(e) => {
+                              const fares = getRuleFares(rule);
+                              showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                            }}
+                            onmouseleave={hideFareTooltip}
                           >
                             ✓ Live Fare
                           </span>
@@ -2243,7 +2307,7 @@
                           class="disabled-status-badge"
                           style="cursor: help;"
                           role="status"
-                          onmouseenter={(e) => showWarningTooltip(e, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
+                          onmouseenter={(e) => showWarningTooltip(e.currentTarget, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
                           onmouseleave={hideWarningTooltip}
                         >
                           🚫 Concession Disabled
@@ -2266,8 +2330,11 @@
                             class="fare-source-badge estimate" 
                             style="cursor: help;"
                             role="status"
-                            onmouseenter={(e) => showWarningTooltip(e, "Fares for this route are offline estimates based on zone/mode fallback.")}
-                            onmouseleave={hideWarningTooltip}
+                            onmouseenter={(e) => {
+                              const fares = getRuleFares(rule);
+                              showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                            }}
+                            onmouseleave={hideFareTooltip}
                           >
                             ⚙️ Zone Estimate
                           </span>
@@ -2276,8 +2343,11 @@
                             class="fare-source-badge live" 
                             style="cursor: help;"
                             role="status"
-                            onmouseenter={(e) => showWarningTooltip(e, `Live fare from TfL API: Peak £${rule.exactFarePeak?.toFixed(2)}, Off-Peak £${rule.exactFareOffPeak?.toFixed(2)}${rule.routeDescription && rule.routeDescription !== 'Default Route' ? ' via ' + rule.routeDescription : ''}`)}
-                            onmouseleave={hideWarningTooltip}
+                            onmouseenter={(e) => {
+                              const fares = getRuleFares(rule);
+                              showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                            }}
+                            onmouseleave={hideFareTooltip}
                           >
                             ✓ Live Fare
                           </span>
@@ -2581,8 +2651,8 @@
         </div>
 
         <!-- Calendar grid -->
-        <div class="calendar-grid">
-          {#each [...dayLabels, "Cap"] as label}
+        <div class="calendar-grid" class:hide-cap-column={!showWeeklyCapColumn}>
+          {#each (showWeeklyCapColumn ? [...dayLabels, "Cap"] : dayLabels) as label}
             <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">{label}</div>
           {/each}
 
@@ -2649,16 +2719,16 @@
               {/if}
             </div>
 
-            {#if idx % 7 === 6}
+            {#if showWeeklyCapColumn && idx % 7 === 6}
               {@const weekForecast = getForecastWeekForDate(day.date)}
               <div
                 class="calendar-weekly-cap-cell"
                 role="button"
                 tabindex="0"
-                onmouseenter={(e) => showWeeklyCapTooltip(e, weekForecast)}
-                onmouseleave={hideWarningTooltip}
-                onclick={(e) => handleWeeklyCapClick(e, weekForecast)}
-                onkeydown={(e) => { if (e.key === 'Enter') handleWeeklyCapClick(e, weekForecast); }}
+                onmouseenter={(e) => showWeeklyCapTooltip(e.currentTarget, weekForecast, true)}
+                onmouseleave={hideWeeklyCapTooltip}
+                onclick={(e) => { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); }}
+                onkeydown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); } }}
               >
                 {#if weekForecast}
                   {@const progress = weekForecast.capProgress}
@@ -2786,6 +2856,18 @@
                 </div>
               </div>
             {/if}
+          </div>
+
+          <div class="form-group" style="margin-top: 0.75rem; margin-bottom: 0.25rem;">
+            <label class="checkbox-field" class:active={showWeeklyCapColumn} for="sidebar-show-weekly-cap">
+              <input
+                type="checkbox"
+                id="sidebar-show-weekly-cap"
+                bind:checked={showWeeklyCapColumn}
+              />
+              <span class="checkmark"></span>
+              <span class="checkbox-text">📊 Show Weekly Cap Column</span>
+            </label>
           </div>
 
           {#if $globalAdvancedMode}
@@ -3606,7 +3688,7 @@
                         class="fare-api-badge"
                         style="cursor: help;"
                         role="status"
-                        onmouseenter={(e) => showFareTooltip(e, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
+                        onmouseenter={(e) => showFareTooltip(e.currentTarget, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
                         onmouseleave={hideFareTooltip}
                       >✓ TfL API</span>
                     {:else}
@@ -3614,7 +3696,7 @@
                         class="fare-fallback-badge"
                         style="cursor: help; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;"
                         role="status"
-                        onmouseenter={(e) => showFareTooltip(e, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
+                        onmouseenter={(e) => showFareTooltip(e.currentTarget, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
                         onmouseleave={hideFareTooltip}
                       >⚠️ Estimated</span>
                     {/if}
@@ -4674,6 +4756,9 @@
   .calendar-grid {
     grid-template-columns: repeat(7, 1fr) 52px !important;
   }
+  .calendar-grid.hide-cap-column {
+    grid-template-columns: repeat(7, 1fr) !important;
+  }
 
   .calendar-weekly-cap-cell {
     display: flex;
@@ -4733,6 +4818,9 @@
   @media (max-width: 768px) {
     .calendar-grid {
       grid-template-columns: repeat(7, 1fr) 36px !important;
+    }
+    .calendar-grid.hide-cap-column {
+      grid-template-columns: repeat(7, 1fr) !important;
     }
     .calendar-weekly-cap-cell {
       min-height: 65px;

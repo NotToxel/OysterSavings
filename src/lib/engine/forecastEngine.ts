@@ -79,6 +79,7 @@ export interface ForecastWeek {
   maxRange: string;
   outsideZoneStations: string[];
   stationsVisited: string[];
+  widestCapStation?: string;
 }
 
 export interface CostProjection {
@@ -475,6 +476,8 @@ export function runForecast(
       return info?.outsideZone === true;
     });
 
+    const widestCapStation = getOutsideZoneWeeklyCapStationForJourneys(allJourneys, fareType) || undefined;
+
     weeklyBreakdown.push({
       weekStart,
       weekEnd,
@@ -488,6 +491,7 @@ export function runForecast(
       maxRange,
       outsideZoneStations,
       stationsVisited,
+      widestCapStation,
     });
   }
 
@@ -984,5 +988,34 @@ function getOutsideZoneWeeklyCapForJourneys(journeys: PlannedJourney[], fareType
     }
   }
   return outsideZoneCap;
+}
+
+function getOutsideZoneWeeklyCapStationForJourneys(journeys: PlannedJourney[], fareType: FareType): string | null {
+  let outsideZoneCap: number | null = null;
+  let widestStation: string | null = null;
+  for (const j of journeys) {
+    if (j.mode === 'bus') continue;
+    if (j.originStationName) {
+      const oInfo = getStationInfo(j.originStationName);
+      if (oInfo && oInfo.naptanId) {
+        const cap = getOutsideZoneWeeklyCap(oInfo.naptanId, fareType);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+          widestStation = j.originStationName;
+        }
+      }
+    }
+    if (j.destinationStationName) {
+      const dInfo = getStationInfo(j.destinationStationName);
+      if (dInfo && dInfo.naptanId) {
+        const cap = getOutsideZoneWeeklyCap(dInfo.naptanId, fareType);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+          widestStation = j.destinationStationName;
+        }
+      }
+    }
+  }
+  return widestStation;
 }
 
