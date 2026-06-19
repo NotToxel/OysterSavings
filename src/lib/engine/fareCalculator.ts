@@ -85,7 +85,9 @@ export function calculateFareTypeFare(
     journey.isBus,
     journey.originZone ?? undefined,
     journey.destinationZone ?? undefined,
-    journey.mode
+    journey.mode,
+    journey.originNaptan || journey.origin,
+    journey.destinationNaptan || journey.destination
   );
 }
 

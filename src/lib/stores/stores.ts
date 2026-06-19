@@ -193,6 +193,14 @@ export const plannedJourneys = writable<PlannedJourney[]>([]);
 export const detectedPatterns = writable<DetectedPattern[]>([]);
 export const forecastResult = writable<ForecastResult | null>(null);
 
+export interface ApiRetryInfo {
+  attempt: number;
+  maxRetries: number;
+  status: 'loading' | 'retrying' | 'timeout';
+}
+export const apiRetryStatus = writable<Record<string, ApiRetryInfo>>({});
+
+
 // Navigation
 export const currentPage = writable<'home' | 'analysis' | 'planner' | 'compare' | 'faq'>('home');
 

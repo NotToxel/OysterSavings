@@ -7,6 +7,8 @@ export interface StationInfo {
   altZone?: number; // stations on zone boundaries
   modes: ('underground' | 'national_rail' | 'overground' | 'dlr' | 'elizabeth' | 'tram')[];
   naptanId?: string; // TfL NaPTAN identifier for API fare lookups
+  outsideZone?: boolean; // station is outside standard fare zones 1-9
+  contactlessOnly?: boolean; // station only accepts contactless payment (no Oyster)
 }
 
 // Map of canonical station names (lowercase) to their zone info

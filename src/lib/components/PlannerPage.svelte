@@ -9,6 +9,7 @@
     fareTypeCost,
     globalAdvancedMode,
     useAlternativeFares,
+    apiRetryStatus,
   } from "$lib/stores/stores";
   import {
     type RecurrenceRule,
@@ -42,6 +43,8 @@
     calculateTravelcardPeriodCost,
     advanceByMonths,
     daysBetween,
+    getOutsideZoneDailyCap,
+    getOutsideZoneWeeklyCap,
   } from "$lib/data/fareData";
   import {
     searchStations,
@@ -108,9 +111,132 @@
     }
   }
 
+  // Warning tooltip state for contactless-only journeys in discount modes
+  let warningTooltipData = $state<{
+    visible: boolean;
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+
+  const activeRetryInfo = $derived.by(() => {
+    if (!selectedOriginStation?.info?.naptanId || !selectedDestStation?.info?.naptanId) return null;
+    const fromNaptan = selectedOriginStation.info.naptanId;
+    const toNaptan = selectedDestStation.info.naptanId;
+    const keys = Object.keys($apiRetryStatus).filter(k => k.startsWith(`${fromNaptan}-${toNaptan}`));
+    if (keys.length === 0) return null;
+    return $apiRetryStatus[keys[0]];
+  });
+
+  function getRuleRetryInfo(rule: RecurrenceRule) {
+    if (!rule.originStation || !rule.destinationStation) return null;
+    const keys = Object.keys($apiRetryStatus).filter(k => k.startsWith(`${rule.originStation}-${rule.destinationStation}`));
+    if (keys.length === 0) return null;
+    return $apiRetryStatus[keys[0]];
+  }
+
+  function showWarningTooltip(event: MouseEvent, text: string) {
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    warningTooltipData = {
+      visible: true,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      text,
+    };
+  }
+
+  function hideWarningTooltip() {
+    if (warningTooltipData) {
+      warningTooltipData.visible = false;
+    }
+  }
+
+  function getMonday(d: Date): Date {
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d);
+    monday.setDate(diff);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  }
+
+  function getForecastWeekForDate(date: Date) {
+    if (!$forecastResult) return null;
+    const monday = getMonday(date);
+    const key = formatLocalDate(monday);
+    return $forecastResult.weeklyBreakdown.find(w => formatLocalDate(w.weekStart) === key);
+  }
+
+  function showWeeklyCapTooltip(event: MouseEvent | KeyboardEvent, week: any) {
+    if (!week) return;
+    const zonesStr = week.maxRange ? week.maxRange.replace('Z', 'Zone ').replace('Z', '') : 'Bus Only';
+    
+    // Highlight outside zone stations in yellow
+    const stationsStr = week.stationsVisited && week.stationsVisited.length > 0
+      ? week.stationsVisited.map((name: string) => {
+          const isOz = week.outsideZoneStations?.includes(name);
+          return isOz ? `<span style="color: #fbbf24; font-weight: 600;">${name} (Outside Zone)</span>` : name;
+        }).join(', ')
+      : 'None';
+      
+    const capVal = week.fareTypeWeeklyCap || week.weeklyCap;
+    const hitText = week.capHit ? '<span style="color: #34d399; font-weight: 600;">(Capped ✓)</span>' : '';
+
+    const htmlContent = `
+      <div style="text-align: left; font-family: var(--font-sans); min-width: 170px;">
+        <div style="font-weight: 700; margin-bottom: 0.35rem; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 0.2rem; display: flex; justify-content: space-between;">
+          <span>Weekly Cap Details</span>
+          ${hitText}
+        </div>
+        <div style="margin-top: 0.25rem; font-size: 0.7rem;"><strong>Cap Limit:</strong> £${capVal.toFixed(2)}</div>
+        <div style="font-size: 0.7rem;"><strong>Zones:</strong> ${zonesStr}</div>
+        <div style="margin-top: 0.35rem; max-height: 120px; overflow-y: auto; font-size: 0.68rem; color: rgba(255,255,255,0.85); line-height: 1.35;">
+          <strong>Stations Visited:</strong><br/>
+          ${stationsStr}
+        </div>
+      </div>
+    `;
+    
+    const target = event.currentTarget as HTMLElement | null;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    warningTooltipData = {
+      visible: true,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      text: htmlContent,
+    };
+  }
+
+  function handleWeeklyCapClick(event: MouseEvent | KeyboardEvent, week: any) {
+    event.stopPropagation();
+    if (warningTooltipData && warningTooltipData.visible) {
+      hideWarningTooltip();
+    } else {
+      showWeeklyCapTooltip(event, week);
+    }
+  }
+
+  function isRuleDisabledForFareType(rule: RecurrenceRule, fareType: string): boolean {
+    if (!rule.isAdvancedMode || fareType === 'none') return false;
+    
+    const checkContactlessOnly = (val: string | null | undefined) => {
+      if (!val) return false;
+      const byNaptan = getStationByNaptan(val);
+      if (byNaptan?.info.contactlessOnly) return true;
+      const byName = getStationInfo(val);
+      if (byName?.contactlessOnly) return true;
+      return false;
+    };
+
+    return checkContactlessOnly(rule.originStation) || checkContactlessOnly(rule.destinationStation);
+  }
+
   $effect(() => {
     if (!showRecurrenceModal) {
       hideFareTooltip();
+      hideWarningTooltip();
     }
   });
 
@@ -140,11 +266,13 @@
             offPeak: lookupFare(zoneRange, false, rule.mode)
           };
           
-          const result = await lookupStationFare(rule.originStation, rule.destinationStation, fallback, $useAlternativeFares, rule.mode);
+          const result = await lookupStationFare(rule.originStation, rule.destinationStation, fallback, $useAlternativeFares, rule.mode, $selectedFareType);
           
           if (result.isFromApi) {
             let targetPeak = result.peak;
             let targetOffPeak = result.offPeak;
+            let targetBasePeak = result.basePeak;
+            let targetBaseOffPeak = result.baseOffPeak;
             let targetDesc = result.routeDescription;
 
             // If the rule already has a route description, try to match it in result.options
@@ -154,6 +282,14 @@
                 targetPeak = matchedOpt.peak;
                 targetOffPeak = matchedOpt.offPeak;
                 targetDesc = matchedOpt.routeDescription;
+                
+                if (result.baseOptions) {
+                  const matchedBase = result.baseOptions.find(o => o.routeDescription === rule.routeDescription);
+                  if (matchedBase) {
+                    targetBasePeak = matchedBase.peak;
+                    targetBaseOffPeak = matchedBase.offPeak;
+                  }
+                }
               }
             }
 
@@ -161,12 +297,16 @@
             if (
               rule.exactFarePeak !== targetPeak || 
               rule.exactFareOffPeak !== targetOffPeak ||
+              rule.exactBaseFarePeak !== targetBasePeak ||
+              rule.exactBaseFareOffPeak !== targetBaseOffPeak ||
               rule.routeDescription !== targetDesc
             ) {
               currentRules[i] = {
                 ...rule,
                 exactFarePeak: targetPeak,
                 exactFareOffPeak: targetOffPeak,
+                exactBaseFarePeak: targetBasePeak,
+                exactBaseFareOffPeak: targetBaseOffPeak,
                 routeDescription: targetDesc
               };
               updatedAny = true;
@@ -269,10 +409,86 @@
   let advancedFareLoading = $state(false);
   let advancedFareResult = $state<ApiFareResult | null>(null);
 
+  let outsideZoneCapDetails = $derived.by(() => {
+    let oNaptan = selectedOriginStation?.info.naptanId;
+    let dNaptan = selectedDestStation?.info.naptanId;
+    
+    let result: {
+      peak: { cap: number; stationName: string } | null;
+      offPeak: { cap: number; stationName: string } | null;
+      weekly: { cap: number; stationName: string } | null;
+    } = {
+      peak: null,
+      offPeak: null,
+      weekly: null
+    };
+    
+    const checkStation = (naptan: string, name: string) => {
+      const p = getOutsideZoneDailyCap(naptan, $selectedFareType, true);
+      const op = getOutsideZoneDailyCap(naptan, $selectedFareType, false);
+      const w = getOutsideZoneWeeklyCap(naptan, $selectedFareType);
+      
+      if (p !== null) {
+        if (result.peak === null || p > result.peak.cap) {
+          result.peak = { cap: p, stationName: name };
+        }
+      }
+      if (op !== null) {
+        if (result.offPeak === null || op > result.offPeak.cap) {
+          result.offPeak = { cap: op, stationName: name };
+        }
+      }
+      if (w !== null) {
+        if (result.weekly === null || w > result.weekly.cap) {
+          result.weekly = { cap: w, stationName: name };
+        }
+      }
+    };
+    
+    if (oNaptan) {
+      checkStation(oNaptan, selectedOriginStation!.info.name);
+    }
+    if (dNaptan) {
+      checkStation(dNaptan, selectedDestStation!.info.name);
+    }
+    
+    return result;
+  });
+
   let selectedRouteIndex = $state<number>(0);
   let selectedPeakFare = $state<number>(0);
   let selectedOffPeakFare = $state<number>(0);
   let selectedRouteDescription = $state<string>("");
+
+  let selectedBasePeakFare = $derived.by(() => {
+    if (advancedFareResult && advancedFareResult.isFromApi && 'baseOptions' in advancedFareResult && advancedFareResult.baseOptions) {
+      const selectedOpt = advancedFareResult.options?.[selectedRouteIndex];
+      if (selectedOpt) {
+        const matchedBase = advancedFareResult.baseOptions.find(o => o.routeDescription === selectedOpt.routeDescription);
+        if (matchedBase) return matchedBase.peak;
+      }
+      return advancedFareResult.basePeak;
+    }
+    if (advancedFareResult && 'basePeak' in advancedFareResult) {
+      return advancedFareResult.basePeak;
+    }
+    return selectedPeakFare;
+  });
+
+  let selectedBaseOffPeakFare = $derived.by(() => {
+    if (advancedFareResult && advancedFareResult.isFromApi && 'baseOptions' in advancedFareResult && advancedFareResult.baseOptions) {
+      const selectedOpt = advancedFareResult.options?.[selectedRouteIndex];
+      if (selectedOpt) {
+        const matchedBase = advancedFareResult.baseOptions.find(o => o.routeDescription === selectedOpt.routeDescription);
+        if (matchedBase) return matchedBase.offPeak;
+      }
+      return advancedFareResult.baseOffPeak;
+    }
+    if (advancedFareResult && 'baseOffPeak' in advancedFareResult) {
+      return advancedFareResult.baseOffPeak;
+    }
+    return selectedOffPeakFare;
+  });
 
   // Default Home Station state
   let useDefaultHomeStation = $state(
@@ -511,20 +727,22 @@
       peak: lookupFare(
         getZoneRange(newOriginZone, newDestZone),
         true,
-        resolvedMode,
+        resolvedMode
       ),
       offPeak: lookupFare(
         getZoneRange(newOriginZone, newDestZone),
         false,
-        resolvedMode,
+        resolvedMode
       ),
     };
+    advancedFareLoading = true;
     advancedFareResult = await lookupStationFare(
       selectedOriginStation.info.naptanId,
       selectedDestStation.info.naptanId,
       fallback,
       $useAlternativeFares,
       resolvedMode,
+      $selectedFareType,
     );
     advancedFareLoading = false;
   }
@@ -622,41 +840,19 @@
 
   let advancedTotalFare = $derived.by(() => {
     if (!selectedOriginStation || !selectedDestStation || !advancedFareResult) return 0;
-    const resolvedMode = determineModeFromStations(
-      selectedOriginStation,
-      selectedDestStation,
-    );
     const dateObj = modalReferenceDate || parseLocalDate(planStart);
     
     // Outbound
     const outboundRepTime = getRepresentativeTime(newTimePeriod);
     const isOutboundPeak = isPeakJourney(dateObj, outboundRepTime, newOriginZone, newDestZone);
-    const outboundBase = isOutboundPeak ? selectedPeakFare : selectedOffPeakFare;
-    const outboundFare = calculateDiscountedFare(
-      outboundBase,
-      $selectedFareType,
-      isOutboundPeak,
-      false,
-      newOriginZone,
-      newDestZone,
-      resolvedMode,
-    );
+    const outboundFare = isOutboundPeak ? selectedPeakFare : selectedOffPeakFare;
     
     if (!newIsReturn) return outboundFare;
     
     // Return
     const returnRepTime = getRepresentativeTime(newReturnTimePeriod);
     const isReturnPeak = isPeakJourney(dateObj, returnRepTime, newOriginZone, newDestZone);
-    const returnBase = isReturnPeak ? selectedPeakFare : selectedOffPeakFare;
-    const returnFare = calculateDiscountedFare(
-      returnBase,
-      $selectedFareType,
-      isReturnPeak,
-      false,
-      newOriginZone,
-      newDestZone,
-      resolvedMode,
-    );
+    const returnFare = isReturnPeak ? selectedPeakFare : selectedOffPeakFare;
     
     return outboundFare + returnFare;
   });
@@ -837,6 +1033,8 @@
       $plannedJourneys,
       "student",
       "bus_pass",
+      "Z1-2",
+      $selectedFareType
     );
 
     // Bus passes are purchased in whole months — ceil to whole months
@@ -846,7 +1044,7 @@
     const stdBusPeriodCost =
       BUS_PASS_MONTHLY * wholeMonthsBus + studentUncoveredBusPassSpend;
 
-    const railcardForecast = runForecast($plannedJourneys, "railcard", 0);
+    const railcardForecast = runForecast($plannedJourneys, "railcard", 0, $selectedFareType);
     const railcardPeriodCost = railcardForecast
       ? railcardForecast.totalPaygFareTypeCapped
       : totalPayg;
@@ -895,6 +1093,7 @@
         "student",
         "travelcard",
         zone,
+        $selectedFareType
       );
 
       // Determine standard travelcard costs based on user requests
@@ -944,7 +1143,8 @@
           startDate,
           tcEndDate,
           'student',
-          'student'
+          'student',
+          $selectedFareType
         );
         tcPeriodCost = monthlyTcCost + hybridPAYGSpend;
 
@@ -965,7 +1165,8 @@
           $plannedJourneys,
           "student",
           "travelcard",
-          zone
+          zone,
+          $selectedFareType
         );
         const oddPeriodCost = studentTcPeriodResult.cost + studentUncoveredTcSpend;
 
@@ -1018,7 +1219,8 @@
             startDate,
             tcEndDate,
             'student',
-            'student'
+            'student',
+            $selectedFareType
           );
           const monthlyPaygHybridCost = monthlyTcCost + monthlyPaygSpend;
           if (monthlyPaygHybridCost < tcPeriodCost) {
@@ -1042,7 +1244,8 @@
             startDate,
             tcEndDate,
             'student',
-            'railcard'
+            'railcard',
+            $selectedFareType
           );
           const monthlyRailcardHybridCost = monthlyTcCost + monthlyRailcardSpend;
           if (monthlyRailcardHybridCost < tcPeriodCost) {
@@ -1081,7 +1284,8 @@
               startDate,
               tcEndDate,
               'student',
-              'student'
+              'student',
+              $selectedFareType
             );
             const paygTotal = tcCost + standardPAYGSpend;
             if (paygTotal < bestWeeklyPaygCost) {
@@ -1095,7 +1299,8 @@
               startDate,
               tcEndDate,
               'student',
-              'railcard'
+              'railcard',
+              $selectedFareType
             );
             const railcardTotal = tcCost + railcardSpend;
             if (railcardTotal < bestWeeklyRailcardCost) {
@@ -1377,6 +1582,8 @@
               advancedFareResult.isFromApi && {
                 exactFarePeak: selectedPeakFare,
                 exactFareOffPeak: selectedOffPeakFare,
+                exactBaseFarePeak: selectedBasePeakFare,
+                exactBaseFareOffPeak: selectedBaseOffPeakFare,
                 routeDescription: selectedRouteDescription,
               }),
           }),
@@ -1442,6 +1649,8 @@
         advancedFareResult = {
           peak: rule.exactFarePeak,
           offPeak: rule.exactFareOffPeak,
+          basePeak: rule.exactBaseFarePeak ?? rule.exactFarePeak,
+          baseOffPeak: rule.exactBaseFareOffPeak ?? rule.exactFareOffPeak,
           isFromApi: true,
           routeDescription: rule.routeDescription,
         } as ApiFareResult;
@@ -1525,10 +1734,11 @@
   }
 
   function regenerate() {
-    const journeys = generatePlannedJourneys($recurrenceRules);
+    const activeRules = $recurrenceRules.filter(r => !isRuleDisabledForFareType(r, $selectedFareType));
+    const journeys = generatePlannedJourneys(activeRules);
     $plannedJourneys = journeys;
     if (journeys.length > 0) {
-      $forecastResult = runForecast(journeys, $selectedFareType, $fareTypeCost);
+      $forecastResult = runForecast(journeys, $selectedFareType, $fareTypeCost, $selectedFareType);
     } else {
       $forecastResult = null;
     }
@@ -1853,9 +2063,12 @@
               <p class="empty-text">No travel routines configured yet.</p>
             {:else}
               {#each $recurrenceRules.filter((r) => r.intervalType !== "none") as rule}
-                <div class="rule-card">
+                {@const isDisabled = isRuleDisabledForFareType(rule, $selectedFareType)}
+                <div class="rule-card" class:disabled={isDisabled}>
                   <div class="rule-info">
-                    <div class="rule-name">{rule.name}</div>
+                    <div class="rule-name" style="{isDisabled ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+                      {rule.name}
+                    </div>
                     <div class="rule-detail">
                       {#if rule.isAdvancedMode && rule.originStationName && rule.destinationStationName}
                         {rule.originStationName}
@@ -1881,6 +2094,53 @@
                           (d) => ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][d],
                         )
                         .join(",")}
+                    </div>
+                    <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.3rem; flex-wrap: wrap;">
+                      {#if isDisabled}
+                        <span 
+                          class="disabled-status-badge"
+                          style="cursor: help;"
+                          role="status"
+                          onmouseenter={(e) => showWarningTooltip(e, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
+                          onmouseleave={hideWarningTooltip}
+                        >
+                          🚫 Concession Disabled
+                        </span>
+                      {:else}
+                        {@const isEstimate = !rule.isAdvancedMode || rule.exactFarePeak === undefined || rule.exactFareOffPeak === undefined}
+                        {@const retryInfo = getRuleRetryInfo(rule)}
+                        {#if retryInfo}
+                          <span class="rule-syncing-indicator" title="Currently fetching live fare from TfL API...">
+                            {#if retryInfo.status === 'timeout'}
+                              ⏱️ Timeout, retrying...
+                            {:else if retryInfo.status === 'retrying'}
+                              🔄 Retrying ({retryInfo.attempt}/{retryInfo.maxRetries})...
+                            {:else}
+                              🔄 Fetching fare...
+                            {/if}
+                          </span>
+                        {:else if isEstimate && rule.mode !== 'bus'}
+                          <span 
+                            class="fare-source-badge estimate" 
+                            style="cursor: help;"
+                            role="status"
+                            onmouseenter={(e) => showWarningTooltip(e, "Fares for this route are offline estimates based on zone/mode fallback.")}
+                            onmouseleave={hideWarningTooltip}
+                          >
+                            ⚙️ Zone Estimate
+                          </span>
+                        {:else if rule.mode !== 'bus'}
+                          <span 
+                            class="fare-source-badge live" 
+                            style="cursor: help;"
+                            role="status"
+                            onmouseenter={(e) => showWarningTooltip(e, `Live fare from TfL API: Peak £${rule.exactFarePeak?.toFixed(2)}, Off-Peak £${rule.exactFareOffPeak?.toFixed(2)}${rule.routeDescription && rule.routeDescription !== 'Default Route' ? ' via ' + rule.routeDescription : ''}`)}
+                            onmouseleave={hideWarningTooltip}
+                          >
+                            ✓ Live Fare
+                          </span>
+                        {/if}
+                      {/if}
                     </div>
                   </div>
                   <div class="rule-actions">
@@ -1945,9 +2205,12 @@
         {#if showOneOffJourneys}
           <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
             {#each $recurrenceRules.filter((r) => r.intervalType === "none") as rule}
-              <div class="rule-card">
+              {@const isDisabled = isRuleDisabledForFareType(rule, $selectedFareType)}
+              <div class="rule-card" class:disabled={isDisabled}>
                 <div class="rule-info">
-                  <div class="rule-name">{rule.name}</div>
+                  <div class="rule-name" style="{isDisabled ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+                    {rule.name}
+                  </div>
                   <div class="rule-detail">
                     {rule.startDate.toLocaleDateString("en-GB", {
                       weekday: "short",
@@ -1974,6 +2237,53 @@
                       ? ` (+${rule.returnTimePeriod})`
                       : ""}
                   </div>
+                    <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.3rem; flex-wrap: wrap;">
+                      {#if isDisabled}
+                        <span 
+                          class="disabled-status-badge"
+                          style="cursor: help;"
+                          role="status"
+                          onmouseenter={(e) => showWarningTooltip(e, "This route includes contactless-only stations and does not support concession/discount fares. Journey disabled until switched back to Adult fare type.")}
+                          onmouseleave={hideWarningTooltip}
+                        >
+                          🚫 Concession Disabled
+                        </span>
+                      {:else}
+                        {@const isEstimate = !rule.isAdvancedMode || rule.exactFarePeak === undefined || rule.exactFareOffPeak === undefined}
+                        {@const retryInfo = getRuleRetryInfo(rule)}
+                        {#if retryInfo}
+                          <span class="rule-syncing-indicator" title="Currently fetching live fare from TfL API...">
+                            {#if retryInfo.status === 'timeout'}
+                              ⏱️ Timeout, retrying...
+                            {:else if retryInfo.status === 'retrying'}
+                              🔄 Retrying ({retryInfo.attempt}/{retryInfo.maxRetries})...
+                            {:else}
+                              🔄 Fetching fare...
+                            {/if}
+                          </span>
+                        {:else if isEstimate && rule.mode !== 'bus'}
+                          <span 
+                            class="fare-source-badge estimate" 
+                            style="cursor: help;"
+                            role="status"
+                            onmouseenter={(e) => showWarningTooltip(e, "Fares for this route are offline estimates based on zone/mode fallback.")}
+                            onmouseleave={hideWarningTooltip}
+                          >
+                            ⚙️ Zone Estimate
+                          </span>
+                        {:else if rule.mode !== 'bus'}
+                          <span 
+                            class="fare-source-badge live" 
+                            style="cursor: help;"
+                            role="status"
+                            onmouseenter={(e) => showWarningTooltip(e, `Live fare from TfL API: Peak £${rule.exactFarePeak?.toFixed(2)}, Off-Peak £${rule.exactFareOffPeak?.toFixed(2)}${rule.routeDescription && rule.routeDescription !== 'Default Route' ? ' via ' + rule.routeDescription : ''}`)}
+                            onmouseleave={hideWarningTooltip}
+                          >
+                            ✓ Live Fare
+                          </span>
+                        {/if}
+                      {/if}
+                    </div>
                 </div>
                 <div class="rule-actions">
                   <button
@@ -2272,11 +2582,11 @@
 
         <!-- Calendar grid -->
         <div class="calendar-grid">
-          {#each dayLabels as label}
-            <div class="calendar-header">{label}</div>
+          {#each [...dayLabels, "Cap"] as label}
+            <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">{label}</div>
           {/each}
 
-          {#each calendarDays as day}
+          {#each calendarDays as day, idx}
             {@const dateKey = formatLocalDate(day.date)}
             {@const dayJourneys = journeysByDate.get(dateKey) || []}
             {@const forecast = forecastByDate.get(dateKey)}
@@ -2314,21 +2624,58 @@
                   <div class="day-spend">
                     £{forecast.cappedFareFareType.toFixed(2)}
                   </div>
-                  <div class="mini-cap-bar">
-                    <div
-                      class="mini-cap-fill"
-                      style="width: {forecast.capProgressFareType *
-                        100}%; background: {getCapColor(
-                        forecast.capProgressFareType,
-                      )};"
-                    ></div>
+                  <div class="mini-cap-bar" style="display: flex; gap: 0; background: rgba(255, 255, 255, 0.1); overflow: hidden; border-radius: 2px; height: 4px; margin-top: 0.25rem;">
+                    {#if forecast.busProgressFareType && forecast.busProgressFareType > 0}
+                      <div
+                        class="mini-cap-fill-bus"
+                        style="width: {forecast.busProgressFareType * 100}%; background: {forecast.isBusCapHitFareType || forecast.capHitFareType ? '#10b981' : '#e0311a'}; height: 100%; transition: width 0.3s ease;"
+                        title="Bus Spend: £{forecast.cappedBusFareFareType?.toFixed(2)}"
+                      ></div>
+                    {/if}
+                    {#if forecast.railProgressFareType && forecast.railProgressFareType > 0}
+                      <div
+                        class="mini-cap-fill-rail"
+                        style="width: {forecast.railProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)}; height: 100%; transition: width 0.3s ease;"
+                        title="Rail/Tube Spend: £{forecast.cappedRailFareFareType?.toFixed(2)}"
+                      ></div>
+                    {/if}
                   </div>
-                  {#if forecast.capHitFareType}
+                  {#if forecast.isTotalCapHitFareType}
                     <div class="cap-hit-label">Cap Hit ✓</div>
+                  {:else if forecast.isBusCapHitFareType}
+                    <div class="cap-hit-label bus">Bus Cap ✓</div>
                   {/if}
                 {/if}
               {/if}
             </div>
+
+            {#if idx % 7 === 6}
+              {@const weekForecast = getForecastWeekForDate(day.date)}
+              <div
+                class="calendar-weekly-cap-cell"
+                role="button"
+                tabindex="0"
+                onmouseenter={(e) => showWeeklyCapTooltip(e, weekForecast)}
+                onmouseleave={hideWarningTooltip}
+                onclick={(e) => handleWeeklyCapClick(e, weekForecast)}
+                onkeydown={(e) => { if (e.key === 'Enter') handleWeeklyCapClick(e, weekForecast); }}
+              >
+                {#if weekForecast}
+                  {@const progress = weekForecast.capProgress}
+                  <div class="weekly-spend-label">
+                    £{weekForecast.totalFareFareType.toFixed(2)}
+                  </div>
+                  <div class="weekly-progress-container" title="Weekly Cap Progress: {Math.round(progress * 100)}%">
+                    <div class="weekly-progress-fill" style="height: {progress * 100}%; background: {progress >= 1 ? '#10b981' : progress >= 0.7 ? '#f59e0b' : '#009FE3'};"></div>
+                  </div>
+                  {#if weekForecast.capHit}
+                    <div class="weekly-cap-hit-tag">Capped</div>
+                  {/if}
+                {:else}
+                  <span style="opacity: 0.2; font-size: 0.6rem;">-</span>
+                {/if}
+              </div>
+            {/if}
           {/each}
         </div>
       </div>
@@ -2941,9 +3288,17 @@
                       {#each selectedOriginStation.info.modes as mode}
                         <img src="/images/{mode}.svg" alt={mode} class="mode-icon-inline small" title={mode} />
                       {/each}
-                      <span class="station-zone-badge small" style="color: {getZoneColor(selectedOriginStation.info.zone)}; border-color: {getZoneColor(selectedOriginStation.info.zone)}40; background: {getZoneColor(selectedOriginStation.info.zone)}15;"
-                        >{formatZoneDisplay(selectedOriginStation.info)}</span
-                      >
+                      {#if selectedOriginStation.info.outsideZone}
+                        <span class="station-zone-badge small outside-zone-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.15);"
+                          >Outside Zones 1-9</span>
+                      {:else}
+                        <span class="station-zone-badge small" style="color: {getZoneColor(selectedOriginStation.info.zone)}; border-color: {getZoneColor(selectedOriginStation.info.zone)}40; background: {getZoneColor(selectedOriginStation.info.zone)}15;"
+                          >{formatZoneDisplay(selectedOriginStation.info)}</span>
+                      {/if}
+                      {#if selectedOriginStation.info.contactlessOnly}
+                        <span class="station-zone-badge small contactless-only-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15);"
+                          >Contactless Only</span>
+                      {/if}
                     </div>
                   {:else}
                     <input
@@ -2990,9 +3345,17 @@
                             {#each result.info.modes as mode}
                               <img src="/images/{mode}.svg" alt={mode} class="mode-icon-inline small" title={mode} />
                             {/each}
-                            <span class="station-zone-badge small" style="color: {getZoneColor(result.info.zone)}; border-color: {getZoneColor(result.info.zone)}40; background: {getZoneColor(result.info.zone)}15;"
-                              >{formatZoneDisplay(result.info)}</span
-                            >
+                            {#if result.info.outsideZone}
+                              <span class="station-zone-badge small outside-zone-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.15);"
+                                >Outside Zones 1-9</span>
+                            {:else}
+                              <span class="station-zone-badge small" style="color: {getZoneColor(result.info.zone)}; border-color: {getZoneColor(result.info.zone)}40; background: {getZoneColor(result.info.zone)}15;"
+                                >{formatZoneDisplay(result.info)}</span>
+                            {/if}
+                            {#if result.info.contactlessOnly}
+                              <span class="station-zone-badge small contactless-only-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15);"
+                                >Contactless Only</span>
+                            {/if}
                           </span>
                         </button>
                       </li>
@@ -3029,9 +3392,17 @@
                       {#each selectedDestStation.info.modes as mode}
                         <img src="/images/{mode}.svg" alt={mode} class="mode-icon-inline small" title={mode} />
                       {/each}
-                      <span class="station-zone-badge small" style="color: {getZoneColor(selectedDestStation.info.zone)}; border-color: {getZoneColor(selectedDestStation.info.zone)}40; background: {getZoneColor(selectedDestStation.info.zone)}15;"
-                        >{formatZoneDisplay(selectedDestStation.info)}</span
-                      >
+                      {#if selectedDestStation.info.outsideZone}
+                        <span class="station-zone-badge small outside-zone-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.15);"
+                          >Outside Zones 1-9</span>
+                      {:else}
+                        <span class="station-zone-badge small" style="color: {getZoneColor(selectedDestStation.info.zone)}; border-color: {getZoneColor(selectedDestStation.info.zone)}40; background: {getZoneColor(selectedDestStation.info.zone)}15;"
+                          >{formatZoneDisplay(selectedDestStation.info)}</span>
+                      {/if}
+                      {#if selectedDestStation.info.contactlessOnly}
+                        <span class="station-zone-badge small contactless-only-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15);"
+                          >Contactless Only</span>
+                      {/if}
                     </div>
                   {:else}
                     <input
@@ -3077,9 +3448,17 @@
                             {#each result.info.modes as mode}
                               <img src="/images/{mode}.svg" alt={mode} class="mode-icon-inline small" title={mode} />
                             {/each}
-                            <span class="station-zone-badge small" style="color: {getZoneColor(result.info.zone)}; border-color: {getZoneColor(result.info.zone)}40; background: {getZoneColor(result.info.zone)}15;"
-                              >{formatZoneDisplay(result.info)}</span
-                            >
+                            {#if result.info.outsideZone}
+                              <span class="station-zone-badge small outside-zone-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.15);"
+                                >Outside Zones 1-9</span>
+                            {:else}
+                              <span class="station-zone-badge small" style="color: {getZoneColor(result.info.zone)}; border-color: {getZoneColor(result.info.zone)}40; background: {getZoneColor(result.info.zone)}15;"
+                                >{formatZoneDisplay(result.info)}</span>
+                            {/if}
+                            {#if result.info.contactlessOnly}
+                              <span class="station-zone-badge small contactless-only-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15);"
+                                >Contactless Only</span>
+                            {/if}
                           </span>
                         </button>
                       </li>
@@ -3205,30 +3584,20 @@
                 Estimated Fare:
                 <strong>£{estimatedTotalFare.toFixed(2)}</strong>
               {:else if advancedFareLoading}
-                <span class="fare-loading">🔍 Querying TfL Live API...</span>
+                <span class="fare-loading">
+                  {#if activeRetryInfo}
+                    {#if activeRetryInfo.status === 'timeout'}
+                      ⏱️ Request timed out. Retrying attempt {activeRetryInfo.attempt + 1}/{activeRetryInfo.maxRetries}...
+                    {:else if activeRetryInfo.status === 'retrying'}
+                      🔄 Slow connection. Retrying TfL API (Attempt {activeRetryInfo.attempt}/{activeRetryInfo.maxRetries})...
+                    {:else}
+                      🔍 Querying TfL Live API (Attempt {activeRetryInfo.attempt}/{activeRetryInfo.maxRetries})...
+                    {/if}
+                  {:else}
+                    🔍 Querying TfL Live API...
+                  {/if}
+                </span>
               {:else if selectedOriginStation && selectedDestStation && selectedOriginStation.info.naptanId !== selectedDestStation.info.naptanId && advancedFareResult}
-                {@const resolvedModeForDiscount = determineModeFromStations(
-                  selectedOriginStation,
-                  selectedDestStation,
-                )}
-                {@const discountedPeak = calculateDiscountedFare(
-                  selectedPeakFare,
-                  $selectedFareType,
-                  true,
-                  false,
-                  newOriginZone,
-                  newDestZone,
-                  resolvedModeForDiscount,
-                )}
-                {@const discountedOffPeak = calculateDiscountedFare(
-                  selectedOffPeakFare,
-                  $selectedFareType,
-                  false,
-                  false,
-                  newOriginZone,
-                  newDestZone,
-                  resolvedModeForDiscount,
-                )}
                 {@const fareResult = advancedFareResult}
                 <div class="advanced-fare-preview-layout" style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%;">
                   <div class="retrieved-fares-row" style="display: flex; align-items: center; gap: 0.3rem;">
@@ -3237,7 +3606,7 @@
                         class="fare-api-badge"
                         style="cursor: help;"
                         role="status"
-                        onmouseenter={(e) => showFareTooltip(e, true, selectedPeakFare, discountedPeak, selectedOffPeakFare, discountedOffPeak)}
+                        onmouseenter={(e) => showFareTooltip(e, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
                         onmouseleave={hideFareTooltip}
                       >✓ TfL API</span>
                     {:else}
@@ -3245,13 +3614,13 @@
                         class="fare-fallback-badge"
                         style="cursor: help; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;"
                         role="status"
-                        onmouseenter={(e) => showFareTooltip(e, false, selectedPeakFare, discountedPeak, selectedOffPeakFare, discountedOffPeak)}
+                        onmouseenter={(e) => showFareTooltip(e, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
                         onmouseleave={hideFareTooltip}
                       >⚠️ Estimated</span>
                     {/if}
-                    Peak: <strong>£{discountedPeak.toFixed(2)}</strong>
+                    Peak: <strong>£{selectedPeakFare.toFixed(2)}</strong>
                     <span style="margin: 0 0.3rem; color: var(--color-text-muted);">|</span>
-                    Off-Peak: <strong>£{discountedOffPeak.toFixed(2)}</strong>
+                    Off-Peak: <strong>£{selectedOffPeakFare.toFixed(2)}</strong>
                   </div>
 
                   {#if !fareResult.isFromApi && fareResult.reason}
@@ -3275,24 +3644,6 @@
                       </span>
                       <div class="route-options-list" style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
                         {#each fareResult.options as opt, idx}
-                          {@const discountedOptPeak = calculateDiscountedFare(
-                            opt.peak,
-                            $selectedFareType,
-                            true,
-                            false,
-                            newOriginZone,
-                            newDestZone,
-                            resolvedModeForDiscount,
-                          )}
-                          {@const discountedOptOffPeak = calculateDiscountedFare(
-                            opt.offPeak,
-                            $selectedFareType,
-                            false,
-                            false,
-                            newOriginZone,
-                            newDestZone,
-                            resolvedModeForDiscount,
-                          )}
                           <button
                             type="button"
                             class="route-option-card"
@@ -3314,7 +3665,7 @@
                                 {opt.routeDescription}
                               </div>
                               <div style="font-size: 0.72rem; color: var(--color-text-muted);">
-                                Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{discountedOptPeak.toFixed(2)}</strong> <span style="margin: 0 0.15rem; opacity: 0.5;">•</span> Off-Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{discountedOptOffPeak.toFixed(2)}</strong>
+                                Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{opt.peak.toFixed(2)}</strong> <span style="margin: 0 0.15rem; opacity: 0.5;">•</span> Off-Peak: <strong style="color: {selectedRouteIndex === idx ? '#fff' : 'var(--color-text)'};">£{opt.offPeak.toFixed(2)}</strong>
                               </div>
                             </div>
                           </button>
@@ -3346,6 +3697,46 @@
                   (includes return)</span
                 >
               {/if}
+
+              {#if advancedMode && newMode !== "bus" && (outsideZoneCapDetails.peak !== null || outsideZoneCapDetails.weekly !== null)}
+                <div class="outside-zone-caps-preview">
+                  <div class="outside-zone-caps-preview-title">
+                    Outside Zone Station Caps ({FARE_TYPES[$selectedFareType].name})
+                  </div>
+                  <div class="outside-zone-caps-preview-grid">
+                    {#if outsideZoneCapDetails.peak !== null}
+                      <div class="outside-zone-caps-preview-item">
+                        <span>Daily Peak Cap: <strong>£{outsideZoneCapDetails.peak.cap.toFixed(2)}</strong></span>
+                        <span class="outside-zone-caps-station">({outsideZoneCapDetails.peak.stationName})</span>
+                      </div>
+                    {/if}
+                    {#if outsideZoneCapDetails.offPeak !== null}
+                      <div class="outside-zone-caps-preview-item">
+                        <span>Daily Off-Peak Cap: <strong>£{outsideZoneCapDetails.offPeak.cap.toFixed(2)}</strong></span>
+                        <span class="outside-zone-caps-station">({outsideZoneCapDetails.offPeak.stationName})</span>
+                      </div>
+                    {/if}
+                    {#if outsideZoneCapDetails.weekly !== null}
+                      <div class="outside-zone-caps-preview-item">
+                        <span>Weekly Cap: <strong>£{outsideZoneCapDetails.weekly.cap.toFixed(2)}</strong></span>
+                        <span class="outside-zone-caps-station">({outsideZoneCapDetails.weekly.stationName})</span>
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
+
+              {#if advancedMode && newMode !== "bus" && $selectedFareType !== 'none' && ((selectedOriginStation?.info.contactlessOnly) || (selectedDestStation?.info.contactlessOnly))}
+                <div class="warning-box" style="margin-top: 0.65rem; padding: 0.65rem; border-radius: 8px; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.25); font-size: 0.78rem; color: #ef4444; line-height: 1.4;">
+                  ⚠️ Elizabeth line stations west of Shenfield are contactless-only and do not accept concession/discount fares. Please change the fare type to Contactless (Adult) to use this station.
+                </div>
+              {/if}
+
+              {#if advancedMode && newMode !== "bus" && (selectedOriginStation?.info.naptanId === '920GLGW0' || selectedDestStation?.info.naptanId === '920GLGW0')}
+                <div class="warning-box" style="margin-top: 0.65rem; padding: 0.65rem; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); font-size: 0.78rem; color: #f59e0b; line-height: 1.4;">
+                  ℹ️ Gatwick Airport fares calculated using standard Southern / Thameslink rates. Gatwick Express services are excluded from capping and this planner.
+                </div>
+              {/if}
             </div>
           </div>
         </div>
@@ -3358,7 +3749,7 @@
           <button
             class="btn-primary"
             onclick={saveRule}
-            disabled={(newIntervalType !== "none" && newDays.length === 0) || (advancedMode && newMode !== "bus" && (!selectedOriginStation || !selectedDestStation || selectedOriginStation.info.naptanId === selectedDestStation.info.naptanId))}
+            disabled={(newIntervalType !== "none" && newDays.length === 0) || (advancedMode && newMode !== "bus" && (!selectedOriginStation || !selectedDestStation || selectedOriginStation.info.naptanId === selectedDestStation.info.naptanId || ($selectedFareType !== 'none' && (selectedOriginStation.info.contactlessOnly || selectedDestStation.info.contactlessOnly))))}
             >{editRuleId ? "Save Routine" : "Add Routine"}</button
           >
         </div>
@@ -3414,6 +3805,19 @@
         <span class="hovercard-label">Card/Discount:</span>
         <span class="hovercard-value text-highlight">{fareTooltipData.cardName}</span>
       </div>
+    </div>
+  </div>
+{/if}
+
+<svelte:window onclick={hideWarningTooltip} />
+
+{#if warningTooltipData && warningTooltipData.visible}
+  <div
+    class="warning-hovercard"
+    style="position: fixed; left: {warningTooltipData.x}px; top: {warningTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
+  >
+    <div style="font-size: 0.72rem; line-height: 1.35; color: #fff; font-weight: 500; font-family: var(--font-sans);">
+      {@html warningTooltipData.text}
     </div>
   </div>
 {/if}
@@ -4168,6 +4572,186 @@
     font-family: var(--font-sans);
   }
 
+  .warning-hovercard {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.98), rgba(185, 28, 28, 0.98)); /* Red warning theme */
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    max-width: 250px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .rule-card.disabled {
+    opacity: 0.75;
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    margin: 0.5rem 0;
+    box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.03);
+  }
+
+  .disabled-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #f87171;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    width: max-content;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+
+  .fare-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    width: max-content;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  }
+
+  .fare-source-badge.live {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: #34d399;
+  }
+
+  .fare-source-badge.estimate {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+  }
+
+  .rule-syncing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    background: rgba(0, 159, 227, 0.08);
+    border: 1px solid rgba(0, 159, 227, 0.2);
+    color: #60a5fa;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    width: max-content;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  }
+
+  .cap-hit-label.bus {
+    color: #f87171;
+  }
+
+  .rule-card .fare-source-badge {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  .rule-card:hover .fare-source-badge {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Weekly Cap Calendar Column Override */
+  .calendar-grid {
+    grid-template-columns: repeat(7, 1fr) 52px !important;
+  }
+
+  .calendar-weekly-cap-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.35rem 0.15rem;
+    min-height: 80px;
+    position: relative;
+    cursor: help;
+    transition: all 0.2s ease;
+  }
+
+  .calendar-weekly-cap-cell:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .weekly-spend-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.25rem;
+    text-align: center;
+  }
+
+  .weekly-progress-container {
+    width: 6px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .weekly-progress-fill {
+    width: 100%;
+    border-radius: 3px;
+    transition: height 0.3s ease;
+  }
+
+  .weekly-cap-hit-tag {
+    font-size: 0.5rem;
+    color: #10b981;
+    font-weight: 700;
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .calendar-grid {
+      grid-template-columns: repeat(7, 1fr) 36px !important;
+    }
+    .calendar-weekly-cap-cell {
+      min-height: 65px;
+      padding: 0.2rem 0.05rem;
+    }
+    .weekly-spend-label {
+      font-size: 0.52rem;
+      margin-bottom: 0.15rem;
+    }
+    .weekly-progress-container {
+      width: 4px;
+      height: 24px;
+    }
+    .weekly-cap-hit-tag {
+      font-size: 0.42rem;
+      margin-top: 0.15rem;
+    }
+  }
+
   /* Theme borders */
   .fare-hovercard.api-theme {
     border-top: 3px solid var(--color-success); /* TfL API Emerald accent */
@@ -4754,5 +5338,40 @@
 
   .btn-preset:active {
     transform: scale(0.95);
+  }
+
+  .outside-zone-caps-preview {
+    font-size: 0.8rem;
+    background: var(--color-bg-glass);
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    margin-top: 0.65rem;
+  }
+
+  .outside-zone-caps-preview-title {
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding-bottom: 0.25rem;
+  }
+
+  .outside-zone-caps-preview-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .outside-zone-caps-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-secondary);
+  }
+
+  .outside-zone-caps-station {
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
   }
 </style>

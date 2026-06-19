@@ -3,6 +3,7 @@
 
 import sampledZoneFaresData from './sampledZoneFares.json';
 const exactFares: Record<string, { peak: number, offPeak: number }> = sampledZoneFaresData as any;
+import { getStationByNaptan, getStationInfo } from './stationService';
 
 export type ZoneRange =
   | 'Z1'
@@ -52,6 +53,7 @@ export interface FareTypeInfo {
 }
 
 export * from './fareRates';
+export * from './outsideZoneFares';
 import {
   PAYG_FARES,
   DAILY_CAPS,
@@ -93,10 +95,31 @@ export function calculateDiscountedFare(
   isBus: boolean = false,
   originZone?: number,
   destinationZone?: number,
-  mode?: string
+  mode?: string,
+  originNaptanOrName?: string | null,
+  destinationNaptanOrName?: string | null
 ): number {
   if (fareType === 'none' || fareType === 'student') {
     return baseFare;
+  }
+
+  // If origin/destination is contactless-only, concession/discount fares do not apply (force base fare)
+  if (originNaptanOrName || destinationNaptanOrName) {
+    let isContactlessOnly = false;
+    const checkContactlessOnly = (val: string | null | undefined) => {
+      if (!val) return false;
+      const byNaptan = getStationByNaptan(val);
+      if (byNaptan?.info.contactlessOnly) return true;
+      const byName = getStationInfo(val);
+      if (byName?.contactlessOnly) return true;
+      return false;
+    };
+    if (checkContactlessOnly(originNaptanOrName) || checkContactlessOnly(destinationNaptanOrName)) {
+      isContactlessOnly = true;
+    }
+    if (isContactlessOnly) {
+      return baseFare;
+    }
   }
 
   const fareTypeInfo = FARE_TYPES[fareType];

@@ -1,5 +1,7 @@
-import { getStationByNaptan } from '../data/stationService';
+import { getStationByNaptan, getStationInfo } from '../data/stationService';
 import type { ClassifiedJourney } from './journeyClassifier';
+import { calculateDiscountedFare, type FareType } from '../data/fareData';
+import { apiRetryStatus } from '../stores/stores';
 
 const CACHE_KEY = 'oystersavings_station_fare_cache';
 const MAX_CACHE_ENTRIES = 500;
@@ -14,18 +16,24 @@ export interface RouteOption {
 export interface StationFare {
   peak: number;
   offPeak: number;
+  basePeak: number;
+  baseOffPeak: number;
   fromStation: string;
   toStation: string;
   fetchedAt: number;
   validUntil: number;  // from API endDate — auto-expires when fare period ends
   isFromApi: true;
   options?: RouteOption[];
+  baseOptions?: RouteOption[];
   routeDescription?: string;
+  passengerTypeMatched: boolean;
 }
 
 export interface FallbackFare {
   peak: number;
   offPeak: number;
+  basePeak: number;
+  baseOffPeak: number;
   isFromApi: false;
   reason?: 'offline' | 'timeout' | 'no_route' | 'api_error';
 }
@@ -46,8 +54,29 @@ const inFlightRequests = new Map<string, Promise<FareResult>>();
 // Rate limiting
 let lastRequestTime = 0;
 
-function getCacheKey(fromNaptan: string, toNaptan: string): string {
-  return `${fromNaptan}-${toNaptan}`;
+export function fareTypeToPassengerTypes(fareType: string): string[] {
+  switch (fareType) {
+    case 'none':
+      return ['Adult'];
+    case 'railcard':
+      return ['Railcard'];
+    case 'jobcentre':
+      return ['JobCentrePlus'];
+    case 'disabled':
+      return ['DisabledPersonsRailcard'];
+    case 'zip_11_15':
+      return ['Age11To15'];
+    case 'zip_16_17':
+      return ['Age16To18'];
+    case 'student':
+      return ['Student18Plus', 'Apprentice'];
+    default:
+      return ['Adult'];
+  }
+}
+
+function getCacheKey(fromNaptan: string, toNaptan: string, fareType: string = 'none'): string {
+  return `${fromNaptan}-${toNaptan}-${fareType}`;
 }
 
 // Load persistent cache from localStorage
@@ -88,14 +117,19 @@ function isCacheValid(fare: StationFare): boolean {
 }
 
 // Look up fare from cache layers (session → localStorage)
-export function getCachedFare(fromNaptan: string, toNaptan: string, useAlternativeFares: boolean = false): StationFare | null {
-  const key = getCacheKey(fromNaptan, toNaptan);
+export function getCachedFare(
+  fromNaptan: string,
+  toNaptan: string,
+  useAlternativeFares: boolean = false,
+  fareType: string = 'none'
+): StationFare | null {
+  const key = getCacheKey(fromNaptan, toNaptan, fareType);
 
   // Layer 1: Session cache (fastest)
   let sessionHit = sessionCache.get(key);
   if (!sessionHit) {
     // Also try the old key for backwards compatibility
-    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}`;
+    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}-${fareType}`;
     sessionHit = sessionCache.get(oldKey);
   }
   if (sessionHit && isCacheValid(sessionHit)) {
@@ -106,7 +140,7 @@ export function getCachedFare(fromNaptan: string, toNaptan: string, useAlternati
   const persistentCache = loadPersistentCache();
   let persistentHit = persistentCache.entries[key];
   if (!persistentHit) {
-    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}`;
+    const oldKey = useAlternativeFares ? `${fromNaptan}-${toNaptan}-cheapest` : `${fromNaptan}-${toNaptan}-${fareType}`;
     persistentHit = persistentCache.entries[oldKey];
   }
   if (persistentHit && isCacheValid(persistentHit)) {
@@ -119,8 +153,8 @@ export function getCachedFare(fromNaptan: string, toNaptan: string, useAlternati
 }
 
 // Store fare in both cache layers
-function setCachedFare(fromNaptan: string, toNaptan: string, fare: StationFare): void {
-  const key = getCacheKey(fromNaptan, toNaptan);
+function setCachedFare(fromNaptan: string, toNaptan: string, fare: StationFare, fareType: string = 'none'): void {
+  const key = getCacheKey(fromNaptan, toNaptan, fareType);
 
   // Session cache
   sessionCache.set(key, fare);
@@ -150,125 +184,184 @@ export function mergeRouteOptions(options: RouteOption[]): RouteOption[] {
 
 // Parse TfL FareTo API response
 function parseTflFareResponse(
-  data: unknown[],
+  adultData: unknown[],
+  concessionData: unknown[] | null,
   fromNaptan: string,
-  toNaptan: string
+  toNaptan: string,
+  fareType: string
 ): StationFare | null {
   try {
-    const rawOptions: RouteOption[] = [];
-    let validUntil = Date.now() + 365 * 24 * 60 * 60 * 1000;
-
-    for (const section of data) {
-      const s = section as Record<string, unknown>;
-      const rows = s.rows as Array<Record<string, unknown>> | undefined;
-      if (!rows) continue;
-
-      for (const row of rows) {
-        if (row.passengerType !== 'Adult') continue;
-
-        const ticketsAvailable = row.ticketsAvailable as Array<Record<string, unknown>> | undefined;
-        if (!ticketsAvailable) continue;
-
-        // Parse end date for cache expiry
-        const endDateStr = row.endDate as string | undefined;
-        if (endDateStr) {
-          const t = new Date(endDateStr).getTime();
-          if (!isNaN(t) && t < validUntil) {
-            validUntil = t;
+    const targetPassengerTypes = fareTypeToPassengerTypes(fareType);
+    
+    // Helper to parse for a list of passenger types on a specific data source
+    const parseForPassengerTypes = (
+      sourceData: unknown[],
+      types: string[]
+    ): { options: RouteOption[], validUntil: number } | null => {
+      const rawOptions: RouteOption[] = [];
+      let validUntil = Date.now() + 365 * 24 * 60 * 60 * 1000;
+      
+      for (const section of sourceData) {
+        const s = section as Record<string, unknown>;
+        const rows = s.rows as Array<Record<string, unknown>> | undefined;
+        if (!rows) continue;
+        
+        for (const row of rows) {
+          if (!types.includes(row.passengerType as string)) continue;
+          
+          const ticketsAvailable = row.ticketsAvailable as Array<Record<string, unknown>> | undefined;
+          if (!ticketsAvailable) continue;
+          
+          const endDateStr = row.endDate as string | undefined;
+          if (endDateStr) {
+            const t = new Date(endDateStr).getTime();
+            if (!isNaN(t) && t < validUntil) {
+              validUntil = t;
+            }
           }
-        }
-
-        const routeDescription = (row.routeDescription as string) || (row.displayName as string) || 'Default Route';
-
-        // Collect all PAYG ticket costs
-        const paygCosts: number[] = [];
-
-        for (const ticket of ticketsAvailable) {
-          const ticketType = ticket.ticketType as Record<string, unknown> | undefined;
-          const ticketTime = ticket.ticketTime as Record<string, unknown> | undefined;
-          const cost = parseFloat(ticket.cost as string);
-
-          if (isNaN(cost)) continue;
-
-          const typeDesc = (ticketType?.description as string || '').toLowerCase();
-          const timeDesc = (ticketTime?.description as string || '').toLowerCase();
-
-          // Look for PAYG / Pay as you go tickets
-          if (!typeDesc.includes('pay as you go') && !typeDesc.includes('oyster')) continue;
-
-          // Try to identify peak vs off-peak
-          if (
-            timeDesc.includes('peak') && !timeDesc.includes('off')
-            || timeDesc.includes('0630') || timeDesc.includes('06:30')
-            || (timeDesc.includes('monday') && timeDesc.includes('friday'))
-          ) {
-            paygCosts.push(cost);
-          } else if (
-            timeDesc.includes('off peak') || timeDesc.includes('off-peak')
-            || timeDesc.includes('all other times')
-            || timeDesc.includes('at any time')
-          ) {
-            paygCosts.push(cost);
-          } else {
-            paygCosts.push(cost);
+          
+          const routeDescription = (row.routeDescription as string) || (row.displayName as string) || 'Default Route';
+          const paygCosts: number[] = [];
+          
+          for (const ticket of ticketsAvailable) {
+            const ticketType = ticket.ticketType as Record<string, unknown> | undefined;
+            const ticketTime = ticket.ticketTime as Record<string, unknown> | undefined;
+            const cost = parseFloat(ticket.cost as string);
+            if (isNaN(cost)) continue;
+            
+            const typeDesc = (ticketType?.description as string || '').toLowerCase();
+            const timeDesc = (ticketTime?.description as string || '').toLowerCase();
+            
+            if (!typeDesc.includes('pay as you go') && !typeDesc.includes('oyster')) continue;
+            
+            if (
+              timeDesc.includes('peak') && !timeDesc.includes('off')
+              || timeDesc.includes('0630') || timeDesc.includes('06:30')
+              || (timeDesc.includes('monday') && timeDesc.includes('friday'))
+            ) {
+              paygCosts.push(cost);
+            } else if (
+              timeDesc.includes('off peak') || timeDesc.includes('off-peak')
+              || timeDesc.includes('all other times')
+              || timeDesc.includes('at any time')
+            ) {
+              paygCosts.push(cost);
+            } else {
+              paygCosts.push(cost);
+            }
           }
-        }
-
-        if (paygCosts.length > 0) {
-          let peak = 0;
-          let offPeak = 0;
-          if (paygCosts.length >= 2) {
-            paygCosts.sort((a, b) => a - b);
-            peak = paygCosts[paygCosts.length - 1];
-            offPeak = paygCosts[0];
-          } else {
-            peak = paygCosts[0];
-            offPeak = paygCosts[0];
+          
+          if (paygCosts.length > 0) {
+            let peak = 0;
+            let offPeak = 0;
+            if (paygCosts.length >= 2) {
+              paygCosts.sort((a, b) => a - b);
+              peak = paygCosts[paygCosts.length - 1];
+              offPeak = paygCosts[0];
+            } else {
+              peak = paygCosts[0];
+              offPeak = paygCosts[0];
+            }
+            
+            let finalRouteDesc = routeDescription;
+            if (finalRouteDesc.toLowerCase() === 'default route') {
+              finalRouteDesc = 'Default Route';
+            }
+            
+            rawOptions.push({
+              peak,
+              offPeak,
+              routeDescription: finalRouteDesc
+            });
           }
-
-          let finalRouteDesc = routeDescription;
-          if (finalRouteDesc.toLowerCase() === 'default route') {
-            finalRouteDesc = 'Default Route';
-          }
-
-          rawOptions.push({
-            peak,
-            offPeak,
-            routeDescription: finalRouteDesc
-          });
         }
       }
+      
+      if (rawOptions.length === 0) return null;
+      
+      return {
+        options: mergeRouteOptions(rawOptions),
+        validUntil
+      };
+    };
+    
+    // 1. Parse base adult fares
+    const adultResult = parseForPassengerTypes(adultData, ['Adult']);
+    if (!adultResult) return null;
+    
+    // 2. Parse target passenger types fares
+    let targetResult = concessionData ? parseForPassengerTypes(concessionData, targetPassengerTypes) : null;
+    let passengerTypeMatched = true;
+    
+    if (!targetResult) {
+      passengerTypeMatched = false;
+      // Fallback: apply manual discount formula to the adult result
+      const options = adultResult.options.map(opt => {
+        const peakDisc = calculateDiscountedFare(
+          opt.peak,
+          fareType as any,
+          true,
+          false,
+          undefined,
+          undefined,
+          undefined,
+          fromNaptan,
+          toNaptan
+        );
+        const offPeakDisc = calculateDiscountedFare(
+          opt.offPeak,
+          fareType as any,
+          false,
+          false,
+          undefined,
+          undefined,
+          undefined,
+          fromNaptan,
+          toNaptan
+        );
+        return {
+          peak: peakDisc,
+          offPeak: offPeakDisc,
+          routeDescription: opt.routeDescription
+        };
+      });
+      targetResult = {
+        options,
+        validUntil: adultResult.validUntil
+      };
     }
-
-    if (rawOptions.length === 0) return null;
-
-    // Merge options that have identical peak and off-peak costs
-    const mergedOptions = mergeRouteOptions(rawOptions);
-
-    // Find the default option
-    const defaultOpt = mergedOptions.find(o => o.routeDescription === 'Default Route') || mergedOptions[0];
-
+    
+    // Get default options
+    const defaultTargetOpt = targetResult.options.find(o => o.routeDescription === 'Default Route') || targetResult.options[0];
+    const defaultAdultOpt = adultResult.options.find(o => o.routeDescription === 'Default Route') || adultResult.options[0];
+    
     return {
-      peak: defaultOpt.peak,
-      offPeak: defaultOpt.offPeak,
+      peak: defaultTargetOpt.peak,
+      offPeak: defaultTargetOpt.offPeak,
+      basePeak: defaultAdultOpt.peak,
+      baseOffPeak: defaultAdultOpt.offPeak,
       fromStation: fromNaptan,
       toStation: toNaptan,
       fetchedAt: Date.now(),
-      validUntil,
+      validUntil: Math.min(targetResult.validUntil, adultResult.validUntil),
       isFromApi: true,
-      options: mergedOptions,
-      routeDescription: defaultOpt.routeDescription
+      options: targetResult.options,
+      baseOptions: adultResult.options,
+      routeDescription: defaultTargetOpt.routeDescription,
+      passengerTypeMatched
     };
   } catch {
     return null;
   }
 }
 
-// Fetch fare from TfL API with timeout, rate limiting, and retries
-async function fetchFromTfl(
+// Fetch raw passengerType fares from TfL API with timeout, rate limiting, and retries
+// Fetch raw passengerType fares from TfL API with timeout, rate limiting, and retries
+async function fetchRawFromTfl(
   fromNaptan: string,
-  toNaptan: string
-): Promise<StationFare | { isError: true; reason: 'offline' | 'timeout' | 'no_route' | 'api_error' }> {
+  toNaptan: string,
+  passengerType: string
+): Promise<unknown[] | { isError: true; reason: 'offline' | 'timeout' | 'no_route' | 'api_error' }> {
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.onLine === false) {
     return { isError: true, reason: 'offline' };
   }
@@ -276,9 +369,24 @@ async function fetchFromTfl(
   const maxRetries = 3;
   let attempt = 0;
   let lastErrorReason: 'offline' | 'timeout' | 'no_route' | 'api_error' = 'api_error';
+  const key = `${fromNaptan}-${toNaptan}-${passengerType}`;
+
+  const clearStatus = () => {
+    apiRetryStatus.update(state => {
+      const newState = { ...state };
+      delete newState[key];
+      return newState;
+    });
+  };
 
   while (attempt < maxRetries) {
     attempt++;
+
+    // Update store with current attempt status
+    apiRetryStatus.update(state => ({
+      ...state,
+      [key]: { attempt, maxRetries, status: attempt === 1 ? 'loading' : 'retrying' }
+    }));
 
     // Rate limiting between requests
     const now = Date.now();
@@ -289,7 +397,7 @@ async function fetchFromTfl(
     }
     lastRequestTime = Date.now();
 
-    const url = `https://api.tfl.gov.uk/StopPoint/${fromNaptan}/FareTo/${toNaptan}`;
+    const url = `https://api.tfl.gov.uk/StopPoint/${fromNaptan}/FareTo/${toNaptan}?passengerType=${passengerType}`;
 
     try {
       const controller = new AbortController();
@@ -307,6 +415,7 @@ async function fetchFromTfl(
 
       if (response.status === 404) {
         // Not Found / No direct route or no fares available
+        clearStatus();
         return { isError: true, reason: 'no_route' };
       }
 
@@ -317,17 +426,18 @@ async function fetchFromTfl(
           await new Promise(resolve => setTimeout(resolve, 500));
           continue;
         }
+        clearStatus();
         return { isError: true, reason: 'api_error' };
       }
 
       const data = await response.json();
-      if (!Array.isArray(data)) return { isError: true, reason: 'api_error' };
+      if (!Array.isArray(data)) {
+        clearStatus();
+        return { isError: true, reason: 'api_error' };
+      }
 
-      const parsed = parseTflFareResponse(data, fromNaptan, toNaptan);
-      if (parsed) return parsed;
-
-      // If parsing failed on a valid response structure, don't retry
-      return { isError: true, reason: 'api_error' };
+      clearStatus();
+      return data;
     } catch (err: any) {
       if (err.name === 'AbortError') {
         lastErrorReason = 'timeout';
@@ -338,13 +448,60 @@ async function fetchFromTfl(
       }
 
       if (attempt < maxRetries) {
+        apiRetryStatus.update(state => ({
+          ...state,
+          [key]: { attempt, maxRetries, status: 'timeout' }
+        }));
         await new Promise(resolve => setTimeout(resolve, 500));
         continue;
       }
+      clearStatus();
       return { isError: true, reason: lastErrorReason };
     }
   }
+  clearStatus();
   return { isError: true, reason: lastErrorReason };
+}
+
+// Fetch concession/discount fares alongside Adult base fares in parallel
+async function fetchFromTfl(
+  fromNaptan: string,
+  toNaptan: string,
+  fareType: string
+): Promise<StationFare | { isError: true; reason: 'offline' | 'timeout' | 'no_route' | 'api_error' }> {
+  const targetPassengerTypes = fareTypeToPassengerTypes(fareType);
+  const primaryConcessionType = targetPassengerTypes[0];
+
+  // Fetch Adult (base) fares first (or parallel)
+  const adultPromise = fetchRawFromTfl(fromNaptan, toNaptan, 'Adult');
+
+  if (fareType === 'none' || primaryConcessionType === 'Adult') {
+    const adultData = await adultPromise;
+    if ('isError' in adultData) {
+      return adultData;
+    }
+    const parsed = parseTflFareResponse(adultData, null, fromNaptan, toNaptan, fareType);
+    if (parsed) return parsed;
+    return { isError: true, reason: 'api_error' };
+  }
+
+  // Fetch both in parallel
+  const concessionPromise = fetchRawFromTfl(fromNaptan, toNaptan, primaryConcessionType);
+  const [adultData, concessionData] = await Promise.all([adultPromise, concessionPromise]);
+
+  if ('isError' in adultData) {
+    return adultData;
+  }
+
+  const parsed = parseTflFareResponse(
+    adultData,
+    'isError' in concessionData ? null : concessionData,
+    fromNaptan,
+    toNaptan,
+    fareType
+  );
+  if (parsed) return parsed;
+  return { isError: true, reason: 'api_error' };
 }
 
 /**
@@ -360,23 +517,25 @@ async function fetchFromTfl(
  * @param fallbackFare - Zone-based fare to use if API is unavailable
  * @param useAlternativeFares - Preference for cheapest route from TfL API
  * @param mode - Transport mode context to resolve the correct child platform ID
+ * @param fareType - Core fare type (Adult, Student, Railcard, etc.) to target correct passenger type
  */
 export async function lookupStationFare(
   fromNaptan: string,
   toNaptan: string,
   fallbackFare: { peak: number; offPeak: number },
   useAlternativeFares: boolean = false,
-  mode: string = 'underground'
+  mode: string = 'underground',
+  fareType: FareType = 'none'
 ): Promise<FareResult> {
 
   // Check cache first
-  const cached = getCachedFare(fromNaptan, toNaptan, useAlternativeFares);
+  const cached = getCachedFare(fromNaptan, toNaptan, useAlternativeFares, fareType);
   let fareResult: FareResult;
 
   if (cached) {
     fareResult = cached;
   } else {
-    const key = getCacheKey(fromNaptan, toNaptan);
+    const key = getCacheKey(fromNaptan, toNaptan, fareType);
 
     // Check if already in-flight (deduplication)
     const inFlight = inFlightRequests.get(key);
@@ -385,19 +544,26 @@ export async function lookupStationFare(
     } else {
       // Create the fetch promise
       const fetchPromise = (async (): Promise<FareResult> => {
-        const apiResult = await fetchFromTfl(fromNaptan, toNaptan);
+        const apiResult = await fetchFromTfl(fromNaptan, toNaptan, fareType);
 
         if (apiResult && !('isError' in apiResult)) {
-          setCachedFare(fromNaptan, toNaptan, apiResult);
+          setCachedFare(fromNaptan, toNaptan, apiResult, fareType);
           return apiResult;
         }
 
         const reason = apiResult && 'isError' in apiResult ? apiResult.reason : 'api_error';
 
         // Fallback to zone-based fare
+        const basePeak = fallbackFare.peak;
+        const baseOffPeak = fallbackFare.offPeak;
+        const peak = calculateDiscountedFare(basePeak, fareType, true, false, undefined, undefined, undefined, fromNaptan, toNaptan);
+        const offPeak = calculateDiscountedFare(baseOffPeak, fareType, false, false, undefined, undefined, undefined, fromNaptan, toNaptan);
+
         return {
-          peak: fallbackFare.peak,
-          offPeak: fallbackFare.offPeak,
+          peak,
+          offPeak,
+          basePeak,
+          baseOffPeak,
           isFromApi: false,
           reason,
         };

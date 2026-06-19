@@ -13,6 +13,8 @@ import {
   parseLocalDate,
   getDailyBusCap,
   getWeeklyBusCap,
+  getOutsideZoneDailyCap,
+  getOutsideZoneWeeklyCap,
 } from '../data/fareData';
 
 export interface DayCapResult {
@@ -134,6 +136,28 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
     const dailyBusCap = getDailyBusCap(railcardType);
     const hasRail = railJourneys.length > 0;
     let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, railcardType) : dailyBusCap;
+
+    let outsideZoneCap: number | null = null;
+    for (const res of railJourneys) {
+      const oNaptan = res.journey.originNaptan;
+      const dNaptan = res.journey.destinationNaptan;
+      if (oNaptan) {
+        const cap = getOutsideZoneDailyCap(oNaptan, railcardType, isPeakDay);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+      if (dNaptan) {
+        const cap = getOutsideZoneDailyCap(dNaptan, railcardType, isPeakDay);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+    }
+    if (outsideZoneCap !== null) {
+      dailyCap = outsideZoneCap;
+    }
+
     const explicitCapHit = journeys.some((j) => j.journey.isCapHit);
     
     if (explicitCapHit && !isSimulated) {
@@ -228,7 +252,7 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
     const uncappedRailSpend = railJourneys.reduce((sum, j) => sum + j.expectedFare, 0);
     const uncappedBusSpend = busJourneys.reduce((sum, j) => sum + j.expectedFare, 0);
 
-    const capHit = totalSpend >= dailyCap * 0.95 || runningBusSpend >= dailyBusCap * 0.95 || journeys.some((j) => j.journey.isCapHit);
+    const capHit = (dailyCap > 0 && totalSpend >= dailyCap * 0.95) || (dailyBusCap > 0 && runningBusSpend >= dailyBusCap * 0.95) || journeys.some((j) => j.journey.isCapHit);
     const savedByCap = capHit ? Math.max(0, (uncappedRailSpend + uncappedBusSpend) - totalSpend) : 0;
     
     const capType = capHit ? (isPeakDay ? 'peak' : 'off-peak') : (isPeakDay ? 'peak' : 'off-peak');
@@ -295,7 +319,29 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
     const hasRail = allJourneys.some((j) => !j.journey.isBus);
     
     const weeklyBusCap = getWeeklyBusCap(railcardType);
-    const weeklyCap = hasRail ? lookupWeeklyCap(maxZoneRange, railcardType) : weeklyBusCap;
+    let weeklyCap = hasRail ? lookupWeeklyCap(maxZoneRange, railcardType) : weeklyBusCap;
+
+    let outsideZoneCap: number | null = null;
+    for (const res of allJourneys) {
+      if (res.journey.isBus) continue;
+      const oNaptan = res.journey.originNaptan;
+      const dNaptan = res.journey.destinationNaptan;
+      if (oNaptan) {
+        const cap = getOutsideZoneWeeklyCap(oNaptan, railcardType);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+      if (dNaptan) {
+        const cap = getOutsideZoneWeeklyCap(dNaptan, railcardType);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+    }
+    if (outsideZoneCap !== null) {
+      weeklyCap = outsideZoneCap;
+    }
 
     const weeklyBusSpend = days.reduce((sum, d) => sum + d.busSpend, 0);
     const weeklyRailSpend = days.reduce((sum, d) => sum + d.railJourneySpend, 0);
@@ -310,7 +356,7 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
     const finalWeeklySpend = Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
 
     const totalSpendWithoutWeeklyCapping = days.reduce((sum, d) => sum + d.totalSpend, 0);
-    const capHit = (weeklyBusSpend >= weeklyBusCap) || (totalWeeklySpendBeforeMixedCap >= weeklyCap);
+    const capHit = (weeklyBusCap > 0 && weeklyBusSpend >= weeklyBusCap) || (weeklyCap > 0 && totalWeeklySpendBeforeMixedCap >= weeklyCap);
     const savedByCap = Math.max(0, totalSpendWithoutWeeklyCapping - finalWeeklySpend);
 
     results.push({

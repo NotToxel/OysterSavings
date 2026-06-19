@@ -1,4 +1,5 @@
 // Forecast Engine — cost projections and product comparisons
+import { getStationInfo } from '../data/stationService';
 import type { PlannedJourney } from './recurrenceEngine';
 import type { ClassifiedJourney } from './journeyClassifier';
 import {
@@ -24,6 +25,8 @@ import {
   getBusPassJourneyFare,
   getDailyBusCap,
   getWeeklyBusCap,
+  getOutsideZoneDailyCap,
+  getOutsideZoneWeeklyCap,
 } from '../data/fareData';
 
 export interface ForecastDay {
@@ -43,6 +46,14 @@ export interface ForecastDay {
   cappedBusFareFareType?: number;
   cappedRailFare?: number;
   cappedRailFareFareType?: number;
+  isBusCapHit?: boolean;
+  isBusCapHitFareType?: boolean;
+  isTotalCapHit?: boolean;
+  isTotalCapHitFareType?: boolean;
+  busProgress?: number;
+  railProgress?: number;
+  busProgressFareType?: number;
+  railProgressFareType?: number;
 }
 
 export interface ForecastResult {
@@ -62,8 +73,12 @@ export interface ForecastWeek {
   totalFare: number;
   totalFareFareType: number;
   weeklyCap: number;
+  fareTypeWeeklyCap: number;
   capHit: boolean;
   capProgress: number;
+  maxRange: string;
+  outsideZoneStations: string[];
+  stationsVisited: string[];
 }
 
 export interface CostProjection {
@@ -85,7 +100,8 @@ export interface ProductCosts {
 export function runForecast(
   plannedJourneys: PlannedJourney[],
   fareType: FareType,
-  fareTypeCost: number
+  fareTypeCost: number,
+  activeFareType?: FareType
 ): ForecastResult {
   const fareTypeInfo = FARE_TYPES[fareType];
 
@@ -112,13 +128,42 @@ export function runForecast(
       // Calculate raw single fare — prefer station-specific API fares when available
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       let fare: number;
+      let fareTypeFare: number;
+
       if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
-        fare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        const basePeak = j.exactBaseFarePeak ?? j.exactFarePeak;
+        const baseOffPeak = j.exactBaseFareOffPeak ?? j.exactFareOffPeak;
+        fare = isPeakFare ? basePeak : baseOffPeak;
+
+        if (activeFareType !== undefined && fareType === activeFareType) {
+          fareTypeFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        } else {
+          fareTypeFare = calculateDiscountedFare(
+            fare,
+            fareType,
+            isPeakFare,
+            j.mode === 'bus',
+            j.originZone,
+            j.destinationZone,
+            j.mode,
+            j.originStationName,
+            j.destinationStationName
+          );
+        }
       } else {
         fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+        fareTypeFare = calculateDiscountedFare(
+          fare,
+          fareType,
+          isPeakFare,
+          j.mode === 'bus',
+          j.originZone,
+          j.destinationZone,
+          j.mode,
+          j.originStationName,
+          j.destinationStationName
+        );
       }
-      
-      let fareTypeFare = calculateDiscountedFare(fare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
       totalFare += fare;
       totalFareFareType += fareTypeFare;
@@ -145,8 +190,13 @@ export function runForecast(
     const fareTypeDailyBusCap = getDailyBusCap(fareType);
 
     const hasRail = journeys.some(j => j.mode !== 'bus');
-    const dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, 'none') : dailyBusCap;
-    const fareTypeDailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : fareTypeDailyBusCap;
+    let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, 'none') : dailyBusCap;
+    let fareTypeDailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : fareTypeDailyBusCap;
+
+    const ozDailyCap = getOutsideZoneDailyCapForJourneys(journeys, 'none', isPeakDay);
+    if (ozDailyCap !== null) dailyCap = ozDailyCap;
+    const ozFtDailyCap = getOutsideZoneDailyCapForJourneys(journeys, fareType, isPeakDay);
+    if (ozFtDailyCap !== null) fareTypeDailyCap = ozFtDailyCap;
 
     // Apply daily capping sequentially to the planned journeys of the day
     const sortedJourneys = [...journeys].sort((a, b) => (a.timePeriod || '').localeCompare(b.timePeriod || ''));
@@ -166,13 +216,42 @@ export function runForecast(
 
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       let fare: number;
+      let fareTypeFare: number;
+
       if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
-        fare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        const basePeak = j.exactBaseFarePeak ?? j.exactFarePeak;
+        const baseOffPeak = j.exactBaseFareOffPeak ?? j.exactFareOffPeak;
+        fare = isPeakFare ? basePeak : baseOffPeak;
+
+        if (activeFareType !== undefined && fareType === activeFareType) {
+          fareTypeFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        } else {
+          fareTypeFare = calculateDiscountedFare(
+            fare,
+            fareType,
+            isPeakFare,
+            j.mode === 'bus',
+            j.originZone,
+            j.destinationZone,
+            j.mode,
+            j.originStationName,
+            j.destinationStationName
+          );
+        }
       } else {
         fare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+        fareTypeFare = calculateDiscountedFare(
+          fare,
+          fareType,
+          isPeakFare,
+          j.mode === 'bus',
+          j.originZone,
+          j.destinationZone,
+          j.mode,
+          j.originStationName,
+          j.destinationStationName
+        );
       }
-      
-      let fareTypeFare = calculateDiscountedFare(fare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
       // Standard adult capping
       let finalFare = fare;
@@ -239,9 +318,22 @@ export function runForecast(
       }
     }
 
-    const capHit = runningSpend >= dailyCap || runningBusSpend >= dailyBusCap;
-    const capHitFareType = runningSpendFareType >= fareTypeDailyCap || runningBusSpendFareType >= fareTypeDailyBusCap;
+    const isBusCapHit = dailyBusCap > 0 && runningBusSpend >= dailyBusCap;
+    const isBusCapHitFareType = fareTypeDailyBusCap > 0 && runningBusSpendFareType >= fareTypeDailyBusCap;
+
+    const isTotalCapHit = dailyCap > 0 && runningSpend >= dailyCap;
+    const isTotalCapHitFareType = fareTypeDailyCap > 0 && runningSpendFareType >= fareTypeDailyCap;
+
+    const capHit = isTotalCapHit || isBusCapHit;
+    const capHitFareType = isTotalCapHitFareType || isBusCapHitFareType;
+    
+    const capProgress = dailyCap > 0 ? Math.min(1, runningSpend / dailyCap) : 0;
     const capProgressFareType = fareTypeDailyCap > 0 ? Math.min(1, runningSpendFareType / fareTypeDailyCap) : 0;
+
+    const busProgress = dailyCap > 0 ? Math.min(1, dayCappedBus / dailyCap) : 0;
+    const railProgress = dailyCap > 0 ? Math.min(1, dayCappedRail / dailyCap) : 0;
+    const busProgressFareType = fareTypeDailyCap > 0 ? Math.min(1, dayCappedBusFareType / fareTypeDailyCap) : 0;
+    const railProgressFareType = fareTypeDailyCap > 0 ? Math.min(1, dayCappedRailFareType / fareTypeDailyCap) : 0;
 
     days.push({
       date: journeys[0].date,
@@ -253,13 +345,21 @@ export function runForecast(
       cappedFare: round2(runningSpend),
       cappedFareFareType: round2(runningSpendFareType),
       capHit,
-      capProgress: Math.min(1, runningSpend / dailyCap),
+      capProgress,
       capHitFareType,
       capProgressFareType,
       cappedBusFare: round2(dayCappedBus),
       cappedBusFareFareType: round2(dayCappedBusFareType),
       cappedRailFare: round2(dayCappedRail),
       cappedRailFareFareType: round2(dayCappedRailFareType),
+      isBusCapHit,
+      isBusCapHitFareType,
+      isTotalCapHit,
+      isTotalCapHitFareType,
+      busProgress,
+      railProgress,
+      busProgressFareType,
+      railProgressFareType,
     });
   }
 
@@ -295,8 +395,13 @@ export function runForecast(
     const fareTypeWeeklyBusCap = getWeeklyBusCap(fareType);
 
     const hasRail = allJourneys.some(j => j.mode !== 'bus');
-    const weeklyCap = hasRail ? lookupWeeklyCap(maxRange, 'none') : weeklyBusCap;
-    const fareTypeWeeklyCap = hasRail ? lookupWeeklyCap(maxRange, fareType) : fareTypeWeeklyBusCap;
+    let weeklyCap = hasRail ? lookupWeeklyCap(maxRange, 'none') : weeklyBusCap;
+    let fareTypeWeeklyCap = hasRail ? lookupWeeklyCap(maxRange, fareType) : fareTypeWeeklyBusCap;
+
+    const ozWeeklyCap = getOutsideZoneWeeklyCapForJourneys(allJourneys, 'none');
+    if (ozWeeklyCap !== null) weeklyCap = ozWeeklyCap;
+    const ozFtWeeklyCap = getOutsideZoneWeeklyCapForJourneys(allJourneys, fareType);
+    if (ozFtWeeklyCap !== null) fareTypeWeeklyCap = ozFtWeeklyCap;
 
     const weeklyBusSpend = weekDays.reduce((s, d) => s + (d.cappedBusFare ?? 0), 0);
     const weeklyBusSpendFareType = weekDays.reduce((s, d) => s + (d.cappedBusFareFareType ?? 0), 0);
@@ -344,15 +449,31 @@ export function runForecast(
       runningTotalSpendOfWeekFareType += d.cappedFareFareType;
 
       // Mark cap hit and progress as complete if daily cap OR weekly cap is hit
-      if (oldCappedFareFareType > d.cappedFareFareType || runningTotalSpendOfWeekFareType >= fareTypeWeeklyCap || runningBusSpendOfWeekFareType >= fareTypeWeeklyBusCap) {
+      if (
+        oldCappedFareFareType > d.cappedFareFareType || 
+        (fareTypeWeeklyCap > 0 && runningTotalSpendOfWeekFareType >= fareTypeWeeklyCap) || 
+        (fareTypeWeeklyBusCap > 0 && runningBusSpendOfWeekFareType >= fareTypeWeeklyBusCap)
+      ) {
         d.capHitFareType = true;
         d.capProgressFareType = 1.0;
       }
-      if (oldCappedFare > d.cappedFare || runningTotalSpendOfWeek >= weeklyCap || runningBusSpendOfWeek >= weeklyBusCap) {
+      if (
+        oldCappedFare > d.cappedFare || 
+        (weeklyCap > 0 && runningTotalSpendOfWeek >= weeklyCap) || 
+        (weeklyBusCap > 0 && runningBusSpendOfWeek >= weeklyBusCap)
+      ) {
         d.capHit = true;
         d.capProgress = 1.0;
       }
     }
+
+    const stationsVisited = Array.from(new Set(
+      allJourneys.flatMap(j => [j.originStationName, j.destinationStationName]).filter((name): name is string => !!name)
+    ));
+    const outsideZoneStations = stationsVisited.filter(name => {
+      const info = getStationInfo(name);
+      return info?.outsideZone === true;
+    });
 
     weeklyBreakdown.push({
       weekStart,
@@ -361,8 +482,12 @@ export function runForecast(
       totalFare: round2(cappedTotalFare),
       totalFareFareType: round2(cappedTotalFareFareType),
       weeklyCap,
-      capHit: (weeklyBusSpend >= weeklyBusCap) || (weeklyRailSpend + cappedWeeklyBus >= weeklyCap),
-      capProgress: Math.min(1, (weeklyRailSpend + cappedWeeklyBus) / weeklyCap),
+      fareTypeWeeklyCap,
+      capHit: (weeklyBusCap > 0 && weeklyBusSpend >= weeklyBusCap) || (weeklyCap > 0 && weeklyRailSpend + cappedWeeklyBus >= weeklyCap),
+      capProgress: weeklyCap > 0 ? Math.min(1, (weeklyRailSpend + cappedWeeklyBus) / weeklyCap) : 0,
+      maxRange,
+      outsideZoneStations,
+      stationsVisited,
     });
   }
 
@@ -441,7 +566,8 @@ export function simulatePlannedJourneysSpend(
   plannedJourneys: PlannedJourney[],
   fareType: FareType,
   productType: 'bus_pass' | 'travelcard',
-  tcZoneRange: string = 'Z1-2'
+  tcZoneRange: string = 'Z1-2',
+  activeFareType?: FareType
 ): number {
   const dayMap = new Map<string, PlannedJourney[]>();
   for (const j of plannedJourneys) {
@@ -450,7 +576,7 @@ export function simulatePlannedJourneysSpend(
     dayMap.get(key)!.push(j);
   }
 
-  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean }[] = [];
+  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean; dailyCap: number }[] = [];
 
   for (const [dateStr, journeys] of dayMap) {
     let totalFare = 0;
@@ -465,13 +591,38 @@ export function simulatePlannedJourneysSpend(
       const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       
-      let rawFare: number;
+      let baseFare: number;
       if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
-        rawFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        if (activeFareType !== undefined && fareType === activeFareType) {
+          baseFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        } else {
+          const rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
+          baseFare = calculateDiscountedFare(
+            rawFare,
+            fareType,
+            isPeakFare,
+            j.mode === 'bus',
+            j.originZone,
+            j.destinationZone,
+            j.mode,
+            j.originStationName,
+            j.destinationStationName
+          );
+        }
       } else {
-        rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+        const rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+        baseFare = calculateDiscountedFare(
+          rawFare,
+          fareType,
+          isPeakFare,
+          j.mode === 'bus',
+          j.originZone,
+          j.destinationZone,
+          j.mode,
+          j.originStationName,
+          j.destinationStationName
+        );
       }
-      const baseFare = calculateDiscountedFare(rawFare, fareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
       let passFare = baseFare;
       const mockJourneyForPass = {
@@ -515,7 +666,9 @@ export function simulatePlannedJourneysSpend(
 
     const dailyBusCap = getDailyBusCap(fareType);
     const cappedBus = Math.min(totalBusFare, dailyBusCap);
-    const dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : dailyBusCap;
+    let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : dailyBusCap;
+    const ozDailyCap = getOutsideZoneDailyCapForJourneys(journeys, fareType, isPeakDay);
+    if (ozDailyCap !== null) dailyCap = ozDailyCap;
 
     days.push({
       date: journeys[0].date,
@@ -525,7 +678,8 @@ export function simulatePlannedJourneysSpend(
       isPeakDay,
       cappedBusFare: cappedBus,
       cappedRailFare: totalRailFare,
-      hasRail
+      hasRail,
+      dailyCap
     });
   }
 
@@ -549,9 +703,7 @@ export function simulatePlannedJourneysSpend(
     const cappedWeeklyBusSpend = Math.min(weeklyBusSpend, weeklyBusCap);
 
     for (const d of weekDays) {
-      const dailyBusCap = getDailyBusCap(fareType);
-      const dailyCap = d.hasRail ? lookupDailyCap(d.maxZoneRange, d.isPeakDay, fareType) : dailyBusCap;
-      d.totalFare = Math.min(d.totalFare, dailyCap);
+      d.totalFare = Math.min(d.totalFare, d.dailyCap);
     }
 
     const weekStart = parseLocalDate(weekKey);
@@ -573,7 +725,10 @@ export function simulatePlannedJourneysSpend(
       maxRange = 'Z1-2';
     }
 
-    const weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, fareType) : weeklyBusCap;
+    let weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, fareType) : weeklyBusCap;
+    const ozWeeklyCap = getOutsideZoneWeeklyCapForJourneys(weekJourneys, fareType);
+    if (ozWeeklyCap !== null) weeklyCap = ozWeeklyCap;
+
     const totalWeeklySpendBeforeMixedCap = weeklyRailSpend + cappedWeeklyBusSpend;
     totalCappedSpend += Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
   }
@@ -591,7 +746,8 @@ export function simulateHybridPlannedJourneysSpend(
   tcStartDate: Date | null,
   tcEndDate: Date | null,
   tcFareType: FareType,
-  paygFareType: FareType
+  paygFareType: FareType,
+  activeGlobalFareType?: FareType
 ): number {
   const dayMap = new Map<string, PlannedJourney[]>();
   for (const j of plannedJourneys) {
@@ -600,7 +756,7 @@ export function simulateHybridPlannedJourneysSpend(
     dayMap.get(key)!.push(j);
   }
 
-  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; isTcActive: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean }[] = [];
+  const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; isTcActive: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean; dailyCap: number }[] = [];
 
   for (const [dateStr, journeys] of dayMap) {
     let totalFare = 0;
@@ -628,14 +784,38 @@ export function simulateHybridPlannedJourneysSpend(
       const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       
-      let rawFare: number;
+      let baseFare: number;
       if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
-        rawFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        if (activeGlobalFareType !== undefined && activeFareType === activeGlobalFareType) {
+          baseFare = isPeakFare ? j.exactFarePeak : j.exactFareOffPeak;
+        } else {
+          const rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
+          baseFare = calculateDiscountedFare(
+            rawFare,
+            activeFareType,
+            isPeakFare,
+            j.mode === 'bus',
+            j.originZone,
+            j.destinationZone,
+            j.mode,
+            j.originStationName,
+            j.destinationStationName
+          );
+        }
       } else {
-        rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+        const rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+        baseFare = calculateDiscountedFare(
+          rawFare,
+          activeFareType,
+          isPeakFare,
+          j.mode === 'bus',
+          j.originZone,
+          j.destinationZone,
+          j.mode,
+          j.originStationName,
+          j.destinationStationName
+        );
       }
-
-      const baseFare = calculateDiscountedFare(rawFare, activeFareType, isPeakFare, j.mode === 'bus', j.originZone, j.destinationZone, j.mode);
 
       let fare = baseFare;
       if (isTcActive) {
@@ -677,7 +857,9 @@ export function simulateHybridPlannedJourneysSpend(
 
     const activeDailyBusCap = getDailyBusCap(activeFareType);
     const cappedBus = Math.min(totalBusFare, activeDailyBusCap);
-    const dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, activeFareType) : activeDailyBusCap;
+    let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, activeFareType) : activeDailyBusCap;
+    const ozDailyCap = getOutsideZoneDailyCapForJourneys(journeys, activeFareType, isPeakDay);
+    if (ozDailyCap !== null) dailyCap = ozDailyCap;
 
     days.push({
       date: firstJourneyDate,
@@ -688,7 +870,8 @@ export function simulateHybridPlannedJourneysSpend(
       isTcActive,
       cappedBusFare: cappedBus,
       cappedRailFare: totalRailFare,
-      hasRail
+      hasRail,
+      dailyCap
     });
   }
 
@@ -718,9 +901,7 @@ export function simulateHybridPlannedJourneysSpend(
     const cappedWeeklyBusSpend = Math.min(weeklyBusSpend, activeWeeklyBusCap);
 
     for (const d of weekDays) {
-      const activeDailyBusCap = getDailyBusCap(d.isTcActive ? tcFareType : paygFareType);
-      const dailyCap = d.hasRail ? lookupDailyCap(d.maxZoneRange, d.isPeakDay, d.isTcActive ? tcFareType : paygFareType) : activeDailyBusCap;
-      d.totalFare = Math.min(d.totalFare, dailyCap);
+      d.totalFare = Math.min(d.totalFare, d.dailyCap);
     }
 
     const weekStart = parseLocalDate(weekKey);
@@ -742,10 +923,66 @@ export function simulateHybridPlannedJourneysSpend(
       maxRange = 'Z1-2';
     }
 
-    const weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, weekFareType) : activeWeeklyBusCap;
+    let weeklyCap = hasWeeklyRail ? lookupWeeklyCap(maxRange, weekFareType) : activeWeeklyBusCap;
+    const ozWeeklyCap = getOutsideZoneWeeklyCapForJourneys(weekJourneys, weekFareType);
+    if (ozWeeklyCap !== null) weeklyCap = ozWeeklyCap;
+
     const totalWeeklySpendBeforeMixedCap = weeklyRailSpend + cappedWeeklyBusSpend;
     totalCappedSpend += Math.min(totalWeeklySpendBeforeMixedCap, weeklyCap);
   }
 
   return totalCappedSpend;
 }
+
+function getOutsideZoneDailyCapForJourneys(journeys: PlannedJourney[], fareType: FareType, isPeakDay: boolean): number | null {
+  let outsideZoneCap: number | null = null;
+  for (const j of journeys) {
+    if (j.mode === 'bus') continue;
+    if (j.originStationName) {
+      const oInfo = getStationInfo(j.originStationName);
+      if (oInfo && oInfo.naptanId) {
+        const cap = getOutsideZoneDailyCap(oInfo.naptanId, fareType, isPeakDay);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+    }
+    if (j.destinationStationName) {
+      const dInfo = getStationInfo(j.destinationStationName);
+      if (dInfo && dInfo.naptanId) {
+        const cap = getOutsideZoneDailyCap(dInfo.naptanId, fareType, isPeakDay);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+    }
+  }
+  return outsideZoneCap;
+}
+
+function getOutsideZoneWeeklyCapForJourneys(journeys: PlannedJourney[], fareType: FareType): number | null {
+  let outsideZoneCap: number | null = null;
+  for (const j of journeys) {
+    if (j.mode === 'bus') continue;
+    if (j.originStationName) {
+      const oInfo = getStationInfo(j.originStationName);
+      if (oInfo && oInfo.naptanId) {
+        const cap = getOutsideZoneWeeklyCap(oInfo.naptanId, fareType);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+    }
+    if (j.destinationStationName) {
+      const dInfo = getStationInfo(j.destinationStationName);
+      if (dInfo && dInfo.naptanId) {
+        const cap = getOutsideZoneWeeklyCap(dInfo.naptanId, fareType);
+        if (cap !== null && (outsideZoneCap === null || cap > outsideZoneCap)) {
+          outsideZoneCap = cap;
+        }
+      }
+    }
+  }
+  return outsideZoneCap;
+}
+
