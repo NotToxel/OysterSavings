@@ -3195,17 +3195,15 @@
 
           <div class="form-group" style="margin-top: 0.5rem;">
             <div class="zone-preview">
-              {#if !advancedMode}
-                {#if newMode !== "bus"}
-                  Fare zone: <strong
-                    >{getZoneRange(newOriginZone, newDestZone)}</strong
-                  >
-                  <span style="margin: 0 0.5rem;">•</span>
-                {/if}
+              {#if newMode === "bus"}
+                Flat Fare: <strong>£{estimatedTotalFare.toFixed(2)}</strong>
+              {:else if !advancedMode}
+                Fare zone: <strong
+                  >{getZoneRange(newOriginZone, newDestZone)}</strong
+                >
+                <span style="margin: 0 0.5rem;">•</span>
                 Estimated Fare:
                 <strong>£{estimatedTotalFare.toFixed(2)}</strong>
-              {:else if newMode === "bus"}
-                Flat Fare: <strong>£1.75</strong>
               {:else if advancedFareLoading}
                 <span class="fare-loading">🔍 Querying TfL Live API...</span>
               {:else if selectedOriginStation && selectedDestStation && selectedOriginStation.info.naptanId !== selectedDestStation.info.naptanId && advancedFareResult}
