@@ -84,6 +84,7 @@
   let currentDetectedPatterns = $derived(plannerCard ? plannerCard.detectedPatterns : []);
 
   let showRecurrenceModal = $state(false);
+  let isMouseDownOnOverlay = false;
   let showActiveRoutines = $state(true);
   let showOneOffJourneys = $state(true);
   let showStudentComparisonTable = $state(false);
@@ -3666,8 +3667,13 @@
   {#if showRecurrenceModal}
     <div
       class="modal-overlay"
+      onmousedown={(e) => {
+        isMouseDownOnOverlay = e.target === e.currentTarget;
+      }}
       onclick={(e) => {
-        if (e.target === e.currentTarget) showRecurrenceModal = false;
+        if (e.target === e.currentTarget && isMouseDownOnOverlay) {
+          showRecurrenceModal = false;
+        }
       }}
       onkeydown={(e) => {
         if (e.key === "Escape") showRecurrenceModal = false;

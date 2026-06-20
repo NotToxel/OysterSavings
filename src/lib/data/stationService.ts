@@ -14,6 +14,80 @@ export interface StationInfo {
 import STATIONS_JSON from './stationData.json';
 export const STATIONS = STATIONS_JSON as Record<string, StationInfo>;
 
+/**
+ * Helper to normalize station names and queries for search by removing
+ * apostrophes, replacing special punctuation with spaces, and collapsing whitespace.
+ */
+export function normalizeForSearch(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/['’]/g, '') // remove apostrophes (king's -> kings)
+    .replace(/[^a-z0-9]/g, ' ') // replace non-alphanumeric with spaces
+    .replace(/\s+/g, ' ') // collapse multiple spaces
+    .trim();
+}
+
+export function getLevenshteinDistance(a: string, b: string): number {
+  const tmp: number[][] = [];
+  for (let i = 0; i <= a.length; i++) {
+    tmp[i] = [i];
+  }
+  for (let j = 0; j <= b.length; j++) {
+    tmp[0][j] = j;
+  }
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      tmp[i][j] = Math.min(
+        tmp[i - 1][j] + 1, // deletion
+        tmp[i][j - 1] + 1, // insertion
+        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1) // substitution
+      );
+    }
+  }
+  return tmp[a.length][b.length];
+}
+
+export function getSimilarity(a: string, b: string): number {
+  const dist = getLevenshteinDistance(a, b);
+  const maxLen = Math.max(a.length, b.length);
+  return maxLen === 0 ? 1 : 1 - dist / maxLen;
+}
+
+export const STATION_NICKNAMES: Record<string, string[]> = {
+  "king's cross st. pancras": ["kx", "kxs", "kings x", "stpancras"],
+  "london st pancras international ll": ["stpancras"],
+  "london st pancras international": ["stpancras"],
+  "victoria": ["vicky"],
+  "charing cross": ["cx", "charing x"],
+  "liverpool street": ["lpl"],
+  "london fenchurch street": ["fstr"],
+  "gatwick airport": ["lgw"],
+  "heathrow terminals 2 & 3": ["lhr", "heathrow 2 3", "heathrow t23"],
+  "heathrow terminal 4": ["heathrow t4"],
+  "heathrow terminal 5": ["heathrow t5"],
+  "tottenham court road underground station": ["tcr"],
+  "tottenham court road elizabeth line station": ["tcr"],
+  "elephant & castle": ["e&c"],
+  "highbury & islington": ["h&i"],
+  "clapham junction": ["clj"],
+  "high street kensington": ["hsk"],
+  "london bridge": ["lbg"],
+  "finsbury park": ["fpk"]
+};
+
+export const NICKNAME_TO_KEYS: Record<string, string[]> = {};
+for (const [key, aliases] of Object.entries(STATION_NICKNAMES)) {
+  for (const alias of aliases) {
+    const normAlias = normalizeForSearch(alias);
+    if (!NICKNAME_TO_KEYS[normAlias]) {
+      NICKNAME_TO_KEYS[normAlias] = [];
+    }
+    if (!NICKNAME_TO_KEYS[normAlias].includes(key)) {
+      NICKNAME_TO_KEYS[normAlias].push(key);
+    }
+  }
+}
+
 export function normalizeStationName(raw: string): string {
   return raw
     .replace(/\s*\[.*?\]\s*/g, '') // remove [National Rail], [London Underground], etc.
@@ -79,6 +153,16 @@ export function getStationInfo(rawName: string, preferredModeOverride?: string |
 
   // Helper to check compatibility
   const isCompatible = (info: StationInfo) => !preferredMode || info.modes.includes(preferredMode as any);
+
+  // Nickname resolution
+  const normSearch = normalizeForSearch(rawName);
+  if (NICKNAME_TO_KEYS[normSearch]) {
+    for (const key of NICKNAME_TO_KEYS[normSearch]) {
+      if (STATIONS[key] && isCompatible(STATIONS[key])) {
+        return STATIONS[key];
+      }
+    }
+  }
 
   // Direct lookup
   if (STATIONS[normalized] && isCompatible(STATIONS[normalized])) {
@@ -250,19 +334,6 @@ export function getZoneColor(zone: number | string | undefined): string {
 }
 
 /**
- * Helper to normalize station names and queries for search by removing
- * apostrophes, replacing special punctuation with spaces, and collapsing whitespace.
- */
-function normalizeForSearch(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/['’]/g, '') // remove apostrophes (king's -> kings)
-    .replace(/[^a-z0-9]/g, ' ') // replace non-alphanumeric with spaces
-    .replace(/\s+/g, ' ') // collapse multiple spaces
-    .trim();
-}
-
-/**
  * Search stations by name with fuzzy matching.
  * Returns up to `limit` results sorted by relevance.
  */
@@ -273,7 +344,49 @@ export function searchStations(query: string, limit: number = 10): StationSearch
   const qNorm = normalizeForSearch(query);
   const hasNorm = qNorm.length > 0;
   const results: StationSearchResult[] = [];
+  const keyToResultIndex: Record<string, number> = {};
 
+  const addOrUpdateResult = (key: string, info: StationInfo, score: number) => {
+    if (keyToResultIndex[key] !== undefined) {
+      const idx = keyToResultIndex[key];
+      if (score > results[idx].matchScore) {
+        results[idx].matchScore = score;
+      }
+    } else {
+      results.push({ key, info, matchScore: score });
+      keyToResultIndex[key] = results.length - 1;
+    }
+  };
+
+  // 1. Check exact nickname matches first
+  if (hasNorm && NICKNAME_TO_KEYS[qNorm]) {
+    for (const key of NICKNAME_TO_KEYS[qNorm]) {
+      if (STATIONS[key]) {
+        addOrUpdateResult(key, STATIONS[key], 98);
+      }
+    }
+  }
+
+  // 2. Check prefix/inclusion matches against nicknames
+  if (hasNorm) {
+    for (const [key, aliases] of Object.entries(STATION_NICKNAMES)) {
+      if (!STATIONS[key]) continue;
+      for (const alias of aliases) {
+        const normAlias = normalizeForSearch(alias);
+        if (normAlias === qNorm) continue; // exact match already handled
+
+        if (normAlias.startsWith(qNorm)) {
+          const score = 85 + (qNorm.length / normAlias.length) * 10;
+          addOrUpdateResult(key, STATIONS[key], score);
+        } else if (normAlias.includes(qNorm)) {
+          const score = 70 + (qNorm.length / normAlias.length) * 10;
+          addOrUpdateResult(key, STATIONS[key], score);
+        }
+      }
+    }
+  }
+
+  // 3. Check exact, prefix, word-starts-with, and inclusion matches against names and keys
   for (const [key, info] of Object.entries(STATIONS)) {
     const name = info.name.toLowerCase();
     const nameNorm = normalizeForSearch(info.name);
@@ -314,7 +427,75 @@ export function searchStations(query: string, limit: number = 10): StationSearch
     }
 
     if (score > 0) {
-      results.push({ key, info, matchScore: score });
+      addOrUpdateResult(key, info, score);
+    }
+  }
+
+  // 4. Fuzzy spelling/typo correction (Levenshtein distance matching)
+  if (qNorm.length >= 3) {
+    for (const [key, info] of Object.entries(STATIONS)) {
+      const nameNorm = normalizeForSearch(info.name);
+      const keyNorm = normalizeForSearch(key);
+
+      // Check full string similarity
+      const nameSim = getSimilarity(qNorm, nameNorm);
+      if (nameSim >= 0.75) {
+        addOrUpdateResult(key, info, 30 + nameSim * 35);
+      }
+
+      const keySim = getSimilarity(qNorm, keyNorm);
+      if (keySim >= 0.75) {
+        addOrUpdateResult(key, info, 30 + keySim * 35);
+      }
+
+      // Check station nicknames fuzzy similarity
+      if (STATION_NICKNAMES[key]) {
+        for (const alias of STATION_NICKNAMES[key]) {
+          const aliasNorm = normalizeForSearch(alias);
+          const aliasSim = getSimilarity(qNorm, aliasNorm);
+          if (aliasSim >= 0.75) {
+            addOrUpdateResult(key, info, 30 + aliasSim * 35);
+          }
+        }
+      }
+
+      // Check word-by-word token fuzzy similarity (e.g. typos in long names)
+      const queryWords = qNorm.split(' ').filter(w => w.length > 0);
+      const stationWords = nameNorm.split(' ').filter(w => w.length > 0);
+      
+      if (queryWords.length > 0) {
+        let allWordsMatched = true;
+        let totalWordSimilarity = 0;
+        
+        for (const qw of queryWords) {
+          let bestWordSimilarity = 0;
+          for (const sw of stationWords) {
+            if (qw.length === 1) {
+              if (sw === qw) {
+                bestWordSimilarity = 1.0;
+                break;
+              }
+            } else {
+              const sim = getSimilarity(qw, sw);
+              if (sim > bestWordSimilarity) {
+                bestWordSimilarity = sim;
+              }
+            }
+          }
+          
+          if (bestWordSimilarity < 0.75) {
+            allWordsMatched = false;
+            break;
+          }
+          totalWordSimilarity += bestWordSimilarity;
+        }
+        
+        if (allWordsMatched) {
+          const avgWordSimilarity = totalWordSimilarity / queryWords.length;
+          const score = 25 + avgWordSimilarity * 35; // Range: 51.25 to 60
+          addOrUpdateResult(key, info, score);
+        }
+      }
     }
   }
 
