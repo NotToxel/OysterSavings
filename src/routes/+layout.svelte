@@ -61,7 +61,7 @@
   <!-- Top nav bar -->
   <header class="top-bar">
     {#if $isDemoMode}
-      <div class="demo-banner animate-fade-in">
+      <div class="demo-banner animate-fade-in max-md:flex-col max-md:items-center max-md:text-center max-md:px-4 max-md:py-2 max-md:gap-2">
         <div class="demo-banner-content">
           <span class="demo-flash">⚡</span>
           <span>
@@ -72,18 +72,18 @@
             {/if}
           </span>
         </div>
-        <button class="btn-demo-exit" onclick={handleExitDemo}>
+        <button class="btn-demo-exit max-md:w-full" onclick={handleExitDemo}>
           ✕ Exit Demo
         </button>
       </div>
     {/if}
-    <div class="top-bar-inner">
+    <div class="top-bar-inner max-md:flex-wrap max-md:justify-center">
       <button class="logo" onclick={() => navigateTo('home')}>
         <span class="logo-icon">🦪</span>
         <span class="logo-text">Oyster<span class="logo-accent">Savings</span></span>
       </button>
 
-      <nav class="nav-pills">
+      <nav class="nav-pills max-md:order-3 max-md:w-full max-md:justify-center">
         {#each navItems as item}
           {#if item.id === 'home' || item.id === 'planner' || item.id === 'faq' || $hasData}
             <button
@@ -92,20 +92,20 @@
               onclick={() => navigateTo(item.id)}
             >
               <span class="nav-icon">{item.icon}</span>
-              <span class="nav-label">{item.label}</span>
+              <span class="nav-label max-md:hidden">{item.label}</span>
             </button>
           {/if}
         {/each}
       </nav>
 
-      <div class="nav-badge">
+      <div class="nav-badge max-md:hidden">
         <span class="privacy-badge">🔒 Privacy Protected</span>
       </div>
     </div>
   </header>
 
   <!-- Main content -->
-  <main class="main-content">
+  <main class="main-content max-md:p-4">
     {@render children()}
   </main>
 
@@ -319,31 +319,6 @@
     border-top: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  /* Responsive */
-  @media (max-width: 768px) {
-    .top-bar-inner {
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .nav-pills {
-      order: 3;
-      width: 100%;
-      justify-content: center;
-    }
-
-    .nav-label {
-      display: none;
-    }
-
-    .nav-badge {
-      display: none;
-    }
-
-    .main-content {
-      padding: 1rem;
-    }
-  }
 
   /* Demo banner */
   .demo-banner {
@@ -393,19 +368,6 @@
     border-color: white;
   }
 
-  @media (max-width: 768px) {
-    .demo-banner {
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 0.5rem 1rem;
-      gap: 0.5rem;
-    }
-    
-    .btn-demo-exit {
-      width: 100%;
-    }
-  }
 
   .report-meta-footer {
     display: flex;

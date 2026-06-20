@@ -427,10 +427,10 @@
 
   <!-- Settings bar -->
   <div class="glass-card settings-bar">
-    <div class="settings-row">
+    <div class="settings-row flex flex-col md:flex-row items-start md:items-center gap-6 flex-wrap">
       <div class="setting-inline">
         <label class="setting-label-inline" for="compare-fare-type">Simulate with</label>
-        <select class="input-field compact-select" id="compare-fare-type" bind:value={$selectedFareType}>
+        <select class="input-field compact-select w-full md:w-[240px]" id="compare-fare-type" bind:value={$selectedFareType}>
           {#each fareTypeOptions as opt}
             <option value={opt.value}>{opt.label}</option>
           {/each}
@@ -550,7 +550,7 @@
 
   <!-- High-visibility Recommendation Banner -->
   {#if travelSummary && bestOption}
-    <div class="glass-card recommendation-banner animate-fade-in">
+    <div class="glass-card recommendation-banner flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center animate-fade-in">
       <div class="banner-icon">💡</div>
       <div class="banner-content">
         <span class="banner-tag">Our Recommendation</span>
@@ -584,7 +584,7 @@
           </strong> {getSpanLabel()}.
         </p>
       </div>
-      <div class="banner-action">
+      <div class="banner-action text-left md:text-right min-w-0 md:min-w-[140px] flex-shrink-0">
         <span class="action-label">Estimated Cost</span>
         <span class="action-price">
           £{
@@ -626,7 +626,7 @@
   </div>
 
   <!-- Chart -->
-  <div class="glass-card chart-container">
+  <div class="glass-card chart-container h-[300px] md:h-[400px]">
     <canvas bind:this={chartCanvas}></canvas>
   </div>
 
@@ -1114,18 +1114,4 @@
     font-size: 0.75rem;
   }
 
-  @media (max-width: 768px) {
-    .chart-container { height: 300px; }
-    .settings-row { flex-direction: column; align-items: flex-start; }
-    .compact-select { min-width: 100%; }
-    .recommendation-banner {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-    .banner-action {
-      text-align: left;
-      min-width: 0;
-    }
-  }
 </style>

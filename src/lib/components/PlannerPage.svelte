@@ -103,6 +103,24 @@
     isApi: boolean;
   } | null>(null);
 
+  // A helper to safely position tooltips within screen bounds
+  function calculateTooltipX(target: HTMLElement, tooltipWidth: number): number {
+    const rect = target.getBoundingClientRect();
+    const targetCenterX = rect.left + rect.width / 2;
+    const padding = 12; // Safety margin from viewport edges
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 375;
+    
+    // If viewport is narrower than tooltip width + padding, center it on screen
+    if (screenWidth <= tooltipWidth + padding * 2) {
+      return screenWidth / 2;
+    }
+    
+    const halfWidth = tooltipWidth / 2;
+    const minX = halfWidth + padding;
+    const maxX = screenWidth - halfWidth - padding;
+    return Math.max(minX, Math.min(maxX, targetCenterX));
+  }
+
   function showFareTooltip(
     target: HTMLElement,
     isApi: boolean,
@@ -112,9 +130,10 @@
     offPeakDiscounted: number,
   ) {
     const rect = target.getBoundingClientRect();
+    const x = calculateTooltipX(target, 320);
     fareTooltipData = {
       visible: true,
-      x: rect.left + rect.width / 2,
+      x,
       y: rect.top,
       peakBase,
       peakDiscounted,
@@ -149,6 +168,29 @@
     week: any;
   } | null>(null);
 
+  // Odd-period travelcard explanation tooltip state
+  let oddPeriodTooltipData = $state<{
+    visible: boolean;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  function showOddPeriodTooltip(target: HTMLElement) {
+    const rect = target.getBoundingClientRect();
+    const x = calculateTooltipX(target, 320);
+    oddPeriodTooltipData = {
+      visible: true,
+      x,
+      y: rect.top
+    };
+  }
+
+  function hideOddPeriodTooltip() {
+    if (oddPeriodTooltipData) {
+      oddPeriodTooltipData.visible = false;
+    }
+  }
+
   const activeRetryInfo = $derived.by(() => {
     if (!selectedOriginStation?.info?.naptanId || !selectedDestStation?.info?.naptanId) return null;
     const fromNaptan = selectedOriginStation.info.naptanId;
@@ -172,9 +214,10 @@
     type?: 'concession-disabled'
   ) {
     const rect = target.getBoundingClientRect();
+    const x = calculateTooltipX(target, 300);
     warningTooltipData = {
       visible: true,
-      x: rect.left + rect.width / 2,
+      x,
       y: rect.top,
       text,
       title,
@@ -254,9 +297,10 @@
     }
 
     const rect = target.getBoundingClientRect();
+    const x = calculateTooltipX(target, 320);
     weeklyCapTooltipData = {
       visible: true,
-      x: rect.left + rect.width / 2,
+      x,
       y: rect.top,
       week,
     };
@@ -2536,7 +2580,7 @@
   </div>
 
   <!-- Mobile Tab Switcher -->
-  <div class="mobile-tabs-container">
+  <div class="mobile-tabs-container hidden max-xl:flex">
     <button
       type="button"
       class="mobile-tab"
@@ -2563,9 +2607,9 @@
     </button>
   </div>
 
-  <div class="planner-layout active-tab-{activeMobileTab}">
+  <div class="planner-layout active-tab-{activeMobileTab} grid grid-cols-1 xl:grid-cols-[300px_1fr_300px] gap-6 items-start">
     <!-- Sidebar: Rules & patterns -->
-    <div class="planner-sidebar">
+    <div class="planner-sidebar" class:max-xl:hidden={activeMobileTab !== "schedules"} class:max-xl:block={activeMobileTab === "schedules"}>
       <!-- Date range -->
       <div class="glass-card sidebar-section">
         <h3 class="sidebar-title">📅 Planning Period</h3>
@@ -2948,28 +2992,28 @@
     </div>
 
     <!-- Calendar and Settings -->
-    <div class="calendar-area">
+    <div class="calendar-area" class:max-xl:hidden={activeMobileTab !== "calendar"} class:max-xl:block={activeMobileTab === "calendar"}>
       <!-- Forecast summary -->
       {#if $forecastResult}
-        <div class="glass-card forecast-summary">
+        <div class="glass-card forecast-summary flex justify-around gap-4 p-5 max-xl:grid max-xl:grid-cols-2 max-xl:gap-5 max-xl:p-4">
           <div class="forecast-stat">
-            <span class="forecast-label">Standard PAYG</span>
-            <span class="forecast-value"
+            <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]">Standard PAYG</span>
+            <span class="forecast-value max-xl:text-[1.75rem]"
               >£{$forecastResult.totalPaygCapped.toFixed(2)}</span
             >
           </div>
           <div class="forecast-stat">
-            <span class="forecast-label"
+            <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]"
               >{#if $selectedFareType === "none"}Adult / Contactless{:else}With {fareTypeShortName}
                 Discount{/if}</span
             >
-            <span class="forecast-value green"
+            <span class="forecast-value green max-xl:text-[1.75rem]"
               >£{$forecastResult.totalPaygFareTypeCapped.toFixed(2)}</span
             >
           </div>
-          <div class="forecast-stat highlight">
-            <span class="forecast-label">Potential Saving</span>
-            <span class="forecast-value green large">
+          <div class="forecast-stat highlight max-xl:col-span-2 max-xl:border-t max-xl:border-[rgba(255,255,255,0.08)] max-xl:pt-3">
+            <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]">Potential Saving</span>
+            <span class="forecast-value green large max-xl:text-[2.25rem]">
               £{(
                 $forecastResult.totalPaygCapped -
                 $forecastResult.totalPaygFareTypeCapped
@@ -3079,6 +3123,25 @@
                             style="background: {opt.color};"
                           ></span>
                           {opt.label}
+                          {#if opt.category === 'travelcard_odd'}
+                            <button
+                              type="button"
+                              class="info-badge-btn"
+                              onmouseenter={(e) => showOddPeriodTooltip(e.currentTarget)}
+                              onmouseleave={hideOddPeriodTooltip}
+                              onclick={(e) => {
+                                e.stopPropagation();
+                                if (oddPeriodTooltipData && oddPeriodTooltipData.visible) {
+                                  hideOddPeriodTooltip();
+                                } else {
+                                  showOddPeriodTooltip(e.currentTarget);
+                                }
+                              }}
+                              aria-label="Odd-period travelcard explanation"
+                            >
+                              i
+                            </button>
+                          {/if}
                           {#if opt.isCheapest}
                             <span class="best-value-badge">Best Value</span>
                           {/if}
@@ -3130,19 +3193,7 @@
                 </table>
               </div>
 
-              <!-- Odd-Period Travelcard Explainer -->
-              <div class="odd-period-explainer" style="margin-top: 1.25rem; padding: 0.85rem 1.15rem; background: rgba(180, 83, 9, 0.06); border: 1px solid rgba(180, 83, 9, 0.2); border-radius: 10px; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.5;">
-                <div style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
-                  <span style="font-size: 1rem; color: #b45309;">ℹ️</span>
-                  <strong style="color: var(--color-text-primary); font-weight: 600;">What is an Odd-Period Travelcard?</strong>
-                </div>
-                <p style="margin: 0;">
-                  TfL allows purchasing Travelcards for any custom duration between 1 month and 1 year (e.g., 1 month + 10 days). It is priced at the standard monthly rate for the whole months, plus a daily rate of 1/30th of the monthly cost for each additional day, rounded up to the nearest 10p.
-                </p>
-                <p style="margin: 0.45rem 0 0 0; font-size: 0.75rem; color: var(--color-text-muted);">
-                  OysterSavings automatically compares this custom odd-period ticket against alternative weekly combinations and PAYG options to ensure you get the absolute cheapest projection.
-                </p>
-              </div>
+
             {/if}
           </div>
         {/if}
@@ -3180,7 +3231,7 @@
 
           <button
             type="button"
-            class="btn-primary mobile-layout-add-btn"
+            class="btn-primary mobile-layout-add-btn hidden max-xl:inline-flex max-xl:items-center max-xl:gap-1"
             style="font-size: 0.8rem; padding: 0.45rem 0.9rem;"
             onclick={() => {
               resetForm();
@@ -3192,7 +3243,7 @@
         </div>
 
         <!-- Calendar grid -->
-        <div class="calendar-grid" class:hide-cap-column={!showWeeklyCapColumn}>
+        <div class="calendar-grid max-md:[--cap-col-width:36px]" class:hide-cap-column={!showWeeklyCapColumn}>
           {#each (showWeeklyCapColumn ? [...dayLabels, "Cap"] : dayLabels) as label}
             <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">{label}</div>
           {/each}
@@ -3202,7 +3253,7 @@
             {@const dayJourneys = journeysByDate.get(dateKey) || []}
             {@const forecast = forecastByDate.get(dateKey)}
             <div
-              class="calendar-cell"
+              class="calendar-cell max-xl:!min-h-[65px] max-xl:!p-1"
               class:other-month={!day.isCurrentMonth}
               class:cap-hit={forecast?.capHitFareType}
               class:has-journeys={dayJourneys.length > 0}
@@ -3219,7 +3270,7 @@
               <div class="day-number">{day.date.getDate()}</div>
               {#if dayJourneys.length > 0}
                 <button
-                  class="clear-day-btn"
+                  class="clear-day-btn max-xl:!opacity-100 max-xl:!top-[2px] max-xl:!right-[2px] max-xl:!w-4 max-xl:!h-4 max-xl:!text-[0.5rem]"
                   onclick={(e) => {
                     e.stopPropagation();
                     clearJourneysForDate(dateKey);
@@ -3228,11 +3279,11 @@
                 >
                   ✕
                 </button>
-                <div class="day-journey-count">
+                <div class="day-journey-count max-xl:text-[0.6rem]">
                   {dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}
                 </div>
                 {#if forecast}
-                  <div class="day-spend">
+                  <div class="day-spend max-xl:text-[0.65rem]">
                     £{forecast.cappedFareFareType.toFixed(2)}
                   </div>
                   <div class="mini-cap-bar" style="display: flex; gap: 0; background: rgba(255, 255, 255, 0.1); overflow: hidden; border-radius: 2px; height: 4px; margin-top: 0.25rem;">
@@ -3252,9 +3303,9 @@
                     {/if}
                   </div>
                   {#if forecast.isTotalCapHitFareType}
-                    <div class="cap-hit-label">Cap Hit ✓</div>
+                    <div class="cap-hit-label max-xl:text-[0.5rem]">Cap Hit ✓</div>
                   {:else if forecast.isBusCapHitFareType}
-                    <div class="cap-hit-label bus">Bus Cap ✓</div>
+                    <div class="cap-hit-label bus max-xl:text-[0.5rem]">Bus Cap ✓</div>
                   {/if}
                 {/if}
               {/if}
@@ -3263,7 +3314,7 @@
             {#if showWeeklyCapColumn && idx % 7 === 6}
               {@const weekForecast = getForecastWeekForDate(day.date)}
               <div
-                class="calendar-weekly-cap-cell"
+                class="calendar-weekly-cap-cell max-md:!min-h-[65px] max-md:!py-[0.2rem] max-md:!px-[0.05rem]"
                 role="button"
                 tabindex="0"
                 onmouseenter={(e) => showWeeklyCapTooltip(e.currentTarget, weekForecast, true)}
@@ -3273,14 +3324,14 @@
               >
                 {#if weekForecast}
                   {@const progress = weekForecast.capProgress}
-                  <div class="weekly-spend-label">
+                  <div class="weekly-spend-label max-md:text-[0.52rem] max-md:mb-[0.15rem]">
                     £{weekForecast.totalFareFareType.toFixed(2)}
                   </div>
-                  <div class="weekly-progress-container" title="Weekly Cap Progress: {Math.round(progress * 100)}%">
+                  <div class="weekly-progress-container max-md:!w-1 max-md:!h-6" title="Weekly Cap Progress: {Math.round(progress * 100)}%">
                     <div class="weekly-progress-fill" style="height: {progress * 100}%; background: {progress >= 1 ? '#10b981' : progress >= 0.7 ? '#f59e0b' : '#009FE3'};"></div>
                   </div>
                   {#if weekForecast.capHit}
-                    <div class="weekly-cap-hit-tag">Capped</div>
+                    <div class="weekly-cap-hit-tag max-md:text-[0.42rem] max-md:mt-[0.15rem]">Capped</div>
                   {/if}
                 {:else}
                   <span style="opacity: 0.2; font-size: 0.6rem;">-</span>
@@ -3293,7 +3344,7 @@
     </div>
 
     <!-- Right Sidebar for Settings -->
-    <div class="planner-sidebar">
+    <div class="planner-sidebar" class:max-xl:hidden={activeMobileTab !== "settings"} class:max-xl:block={activeMobileTab === "settings"}>
       <!-- Default Settings -->
       <div class="glass-card sidebar-section" style="position: relative; z-index: 10;">
         <h3 class="sidebar-title">⚙️ Default Journey Settings</h3>
@@ -3645,7 +3696,7 @@
         </div>
 
         <div class="modal-body">
-          <div class="form-row">
+          <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
             <div class="form-group">
               <label class="setting-label" for="modal-journey-type"
                 >Journey Type</label
@@ -3670,7 +3721,7 @@
             </div>
           </div>
 
-          <div class="form-row">
+          <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
             <div class="form-group">
               <label class="setting-label" for="modal-rule-name"
                 >{newIntervalType === "none"
@@ -3704,7 +3755,7 @@
           </div>
 
           {#if newIntervalType !== "none"}
-            <div class="form-row">
+            <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
               <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
                   <label class="setting-label" for="modal-start-date" style="margin-bottom: 0;">Start Date</label>
@@ -3795,7 +3846,7 @@
               </div>
             </div>
             {#if newMode !== "bus"}
-              <div class="form-row">
+              <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
                 <div class="form-group">
                   <label class="setting-label" for="modal-time-period"
                     >Time Period</label
@@ -3814,7 +3865,7 @@
             {/if}
           {:else}
             <!-- Standard dropdown mode selection for Simple Mode -->
-            <div class="form-row">
+            <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
               <div class="form-group">
                 <label class="setting-label" for="modal-transport-mode"
                   >Transport Mode</label
@@ -3850,7 +3901,7 @@
           {/if}
 
           <div
-            class="form-row return-journey-row"
+            class="form-row return-journey-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3"
             style="margin-top: 0.5rem; align-items: flex-end;"
           >
             <div class="form-group checkbox-group" style="margin-bottom: 0;">
@@ -4097,7 +4148,7 @@
               {/if}
             {:else}
               <!-- Standard Zone Selectors -->
-              <div class="form-row">
+              <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
                 <div class="form-group">
                   <label class="setting-label" for="modal-origin-zone"
                     >Origin Zone</label
@@ -4163,7 +4214,7 @@
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
               <div class="form-group">
                 <label class="setting-label" for="modal-interval-value"
                   >Repeat Every</label
@@ -4432,7 +4483,30 @@
   </div>
 {/if}
 
-<svelte:window onclick={() => { hideWarningTooltip(); hideWeeklyCapTooltip(); }} />
+<svelte:window onclick={() => { hideWarningTooltip(); hideWeeklyCapTooltip(); hideFareTooltip(); hideOddPeriodTooltip(); }} />
+
+{#if oddPeriodTooltipData && oddPeriodTooltipData.visible}
+  <div
+    class="odd-period-hovercard warning-hovercard"
+    style="position: fixed; left: {oddPeriodTooltipData.x}px; top: {oddPeriodTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999; border-top-color: #fb923c;"
+  >
+    <div class="warning-header">
+      <span class="warning-title-wrapper" style="color: #fb923c;">
+        <span class="warning-icon">ℹ️</span>
+        <span class="warning-title" style="color: #fb923c;">What is an Odd-Period Travelcard?</span>
+      </span>
+    </div>
+    <div class="hovercard-divider warning-divider" style="border-top-color: rgba(251, 146, 60, 0.2);"></div>
+    <div class="warning-body" style="font-size: 0.8rem; line-height: 1.45; color: var(--color-text-secondary);">
+      <p style="margin: 0 0 0.5rem 0;">
+        TfL allows purchasing Travelcards for any custom duration between 1 month and 1 year (e.g., 1 month + 10 days). It is priced at the standard monthly rate for the whole months, plus a daily rate of 1/30th of the monthly cost for each additional day, rounded up to the nearest 10p.
+      </p>
+      <p style="margin: 0; font-size: 0.725rem; color: var(--color-text-muted);">
+        OysterSavings automatically compares this custom odd-period ticket against alternative weekly combinations and PAYG options to ensure you get the absolute cheapest projection.
+      </p>
+    </div>
+  </div>
+{/if}
 
 {#if weeklyCapTooltipData && weeklyCapTooltipData.visible}
   {@const week = weeklyCapTooltipData.week}
@@ -4854,12 +4928,7 @@
     letter-spacing: -0.02em;
   }
 
-  .planner-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr 300px;
-    gap: 1.5rem;
-    align-items: start;
-  }
+
 
   .station-selected-display {
     display: flex;
@@ -5050,10 +5119,6 @@
   .forecast-summary {
     border-color: rgba(16, 185, 129, 0.2);
     margin-bottom: 1.25rem;
-    display: flex;
-    justify-content: space-around;
-    padding: 1.25rem;
-    gap: 1rem;
   }
   .forecast-stat {
     display: flex;
@@ -5203,11 +5268,7 @@
   .form-group {
     margin-bottom: 1rem;
   }
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
+
 
   .day-selector {
     display: flex;
@@ -5489,6 +5550,43 @@
     border-color: rgba(17, 24, 39, 0.99) transparent transparent transparent;
   }
 
+  .info-badge-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--color-text-secondary);
+    font-size: 0.65rem;
+    font-weight: 700;
+    font-family: serif;
+    cursor: pointer;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .info-badge-btn:hover {
+    background: var(--color-oyster-blue);
+    border-color: var(--color-oyster-blue);
+    color: white;
+  }
+
+  .odd-period-hovercard {
+    background: linear-gradient(135deg, rgba(24, 15, 10, 0.99), rgba(17, 24, 39, 0.99)) !important;
+    border: 1px solid rgba(251, 146, 60, 0.25) !important;
+    border-top: 3px solid #fb923c !important;
+  }
+
+  .odd-period-hovercard::after {
+    border-color: rgba(17, 24, 39, 0.99) transparent transparent transparent !important;
+  }
+
   .warning-header {
     display: flex;
     justify-content: space-between;
@@ -5639,9 +5737,10 @@
     pointer-events: auto;
   }
 
-  /* Weekly Cap Calendar Column Override */
   .calendar-grid {
-    grid-template-columns: repeat(7, 1fr) 52px !important;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr) var(--cap-col-width, 52px) !important;
+    gap: 2px;
   }
   .calendar-grid.hide-cap-column {
     grid-template-columns: repeat(7, 1fr) !important;
@@ -5703,27 +5802,12 @@
   }
 
   @media (max-width: 768px) {
-    .calendar-grid {
-      grid-template-columns: repeat(7, 1fr) 36px !important;
+    .fare-hovercard, .weekly-cap-hovercard, .warning-hovercard, .odd-period-hovercard {
+      width: calc(100vw - 24px) !important;
+      max-width: 340px !important;
     }
-    .calendar-grid.hide-cap-column {
-      grid-template-columns: repeat(7, 1fr) !important;
-    }
-    .calendar-weekly-cap-cell {
-      min-height: 65px;
-      padding: 0.2rem 0.05rem;
-    }
-    .weekly-spend-label {
-      font-size: 0.52rem;
-      margin-bottom: 0.15rem;
-    }
-    .weekly-progress-container {
-      width: 4px;
-      height: 24px;
-    }
-    .weekly-cap-hit-tag {
-      font-size: 0.42rem;
-      margin-top: 0.15rem;
+    .fare-hovercard::after, .weekly-cap-hovercard::after, .warning-hovercard::after, .odd-period-hovercard::after {
+      display: none !important;
     }
   }
 
@@ -6062,131 +6146,39 @@
   }
 
   .mobile-tabs-container {
-    display: none;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    backdrop-filter: blur(12px);
   }
-
-  @media (max-width: 1150px) {
-    .mobile-layout-add-btn {
-      display: inline-flex !important;
-      align-items: center;
-      gap: 0.25rem;
-    }
-    .mobile-tabs-container {
-      display: flex;
-      gap: 0.5rem;
-      padding: 0.25rem;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      margin-bottom: 1.25rem;
-      backdrop-filter: blur(12px);
-    }
-    .mobile-tab {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.35rem;
-      padding: 0.6rem;
-      background: none;
-      border: none;
-      color: var(--color-text-secondary);
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-    .mobile-tab:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.05);
-    }
-    .mobile-tab.active {
-      background: var(--color-oyster-blue);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(0, 159, 227, 0.3);
-    }
-
-    .calendar-nav {
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .calendar-nav .btn-primary {
-      width: auto;
-      max-width: max-content;
-      text-align: center;
-    }
-
-    .planner-layout {
-      grid-template-columns: 1fr;
-    }
-    .planner-layout .planner-sidebar:first-of-type {
-      display: none;
-    }
-    .planner-layout .calendar-area {
-      display: none;
-    }
-    .planner-layout .planner-sidebar:last-of-type {
-      display: none;
-    }
-
-    .planner-layout.active-tab-schedules .planner-sidebar:first-of-type {
-      display: block;
-    }
-    .planner-layout.active-tab-calendar .calendar-area {
-      display: block;
-    }
-    .planner-layout.active-tab-settings .planner-sidebar:last-of-type {
-      display: block;
-    }
-    .forecast-summary {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-      padding: 1rem;
-    }
-    .forecast-stat.highlight {
-      grid-column: span 2;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      padding-top: 0.75rem;
-    }
-    .forecast-label {
-      white-space: normal;
-      font-size: 0.75rem;
-    }
-    .forecast-value {
-      font-size: 1.75rem;
-    }
-    .forecast-value.large {
-      font-size: 2.25rem;
-    }
-    .clear-day-btn {
-      opacity: 1 !important;
-      top: 2px;
-      right: 2px;
-      width: 16px;
-      height: 16px;
-      font-size: 0.5rem;
-    }
-    .calendar-cell {
-      min-height: 65px;
-      padding: 0.25rem;
-    }
-    .day-journey-count {
-      font-size: 0.6rem;
-    }
-    .day-spend {
-      font-size: 0.65rem;
-    }
-    .cap-hit-label {
-      font-size: 0.5rem;
-    }
-    .form-row {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
+  .mobile-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.6rem;
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  .mobile-tab:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .mobile-tab.active {
+    background: var(--color-oyster-blue);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 159, 227, 0.3);
   }
 
   /* Transition overlay styling */

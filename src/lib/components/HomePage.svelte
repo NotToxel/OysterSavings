@@ -169,7 +169,7 @@
         <div class="hero-badge">
           <span>🔒</span> Privacy Protected TfL Analytics
         </div>
-        <h1 class="hero-title">
+        <h1 class="hero-title text-[2rem] md:text-[3rem]">
           Unlock Your
           <span class="gradient-text">Oyster Savings</span>
         </h1>
@@ -177,15 +177,15 @@
           Analyze your TfL travel history, discover missed discount savings, and forecast the most cost-effective ticket combinations.
         </p>
 
-        <div class="hero-actions animate-fade-in" style="animation-delay: 0.1s">
-          <button class="btn-primary btn-lg" onclick={startAnalysis}>
+        <div class="hero-actions flex flex-col md:flex-row justify-center gap-4 mb-10 animate-fade-in" style="animation-delay: 0.1s">
+          <button class="btn-primary btn-lg w-full md:w-auto justify-center" onclick={startAnalysis}>
             📊 Generate Analysis
           </button>
           <a
             href="https://github.com/NotToxel/OysterSavings"
             target="_blank"
             rel="noopener noreferrer"
-            class="btn-secondary btn-lg btn-github"
+            class="btn-secondary btn-lg btn-github w-full md:w-auto justify-center"
           >
             <svg class="github-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -216,15 +216,15 @@
 
       <!-- Quick Demo CTA to make it easy for users without a file -->
       <section class="demo-intro-section animate-slide-up" style="animation-delay: 0.3s">
-        <div class="demo-intro-card glass-card">
-          <div class="demo-intro-content">
+        <div class="demo-intro-card glass-card flex flex-col md:flex-row items-center justify-between p-6 md:py-6 md:px-8 gap-6">
+          <div class="demo-intro-content flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
             <span class="demo-sparkle">✨</span>
             <div class="demo-intro-text">
               <h3>Just want to try it out?</h3>
               <p>Explore OysterSavings with pre-configured London commuter profiles.</p>
             </div>
           </div>
-          <button class="btn-secondary btn-demo-quick" onclick={() => { showDemoProfiles = true; showWalkthrough = false; }}>
+          <button class="btn-secondary btn-demo-quick w-full md:w-auto justify-center" onclick={() => { showDemoProfiles = true; showWalkthrough = false; }}>
             ⚡ Browse Demo Profiles
           </button>
         </div>
@@ -233,7 +233,7 @@
       <!-- How it works -->
       <section class="how-it-works animate-slide-up" style="animation-delay: 0.4s">
         <h2 class="section-title">How It Works</h2>
-        <div class="steps-grid">
+        <div class="steps-grid grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="step-card">
             <div class="step-number">1</div>
             <h3>Export CSV</h3>
@@ -259,7 +259,7 @@
     {:else}
       <!-- Walkthrough Section -->
       <section class="walkthrough-section animate-slide-up">
-        <div class="walkthrough-card glass-card">
+        <div class="walkthrough-card glass-card p-6 md:p-10">
           <!-- Back & Progress Header -->
           <div class="walkthrough-header">
             <button class="btn-back" onclick={resetWalkthrough}>
@@ -282,39 +282,39 @@
           <div class="walkthrough-steps-nav">
             <button class="step-nav-item" class:active={walkthroughStep === 1} class:completed={walkthroughStep > 1} onclick={() => walkthroughStep = 1}>
               <span class="step-nav-num">1</span>
-              <span class="step-nav-text">Sign In</span>
+              <span class="step-nav-text hidden md:block">Sign In</span>
             </button>
-            <div class="step-nav-line" class:completed={walkthroughStep > 1}></div>
+            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 1}></div>
             <button class="step-nav-item" class:active={walkthroughStep === 2} class:completed={walkthroughStep > 2} onclick={() => walkthroughStep = 2}>
               <span class="step-nav-num">2</span>
-              <span class="step-nav-text">Select Card</span>
+              <span class="step-nav-text hidden md:block">Select Card</span>
             </button>
-            <div class="step-nav-line" class:completed={walkthroughStep > 2}></div>
+            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 2}></div>
             <button class="step-nav-item" class:active={walkthroughStep === 3} class:completed={walkthroughStep > 3} onclick={() => walkthroughStep = 3}>
               <span class="step-nav-num">3</span>
-              <span class="step-nav-text">View History</span>
+              <span class="step-nav-text hidden md:block">View History</span>
             </button>
-            <div class="step-nav-line" class:completed={walkthroughStep > 3}></div>
+            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 3}></div>
             <button class="step-nav-item" class:active={walkthroughStep === 4} class:completed={walkthroughStep > 4} onclick={() => walkthroughStep = 4}>
               <span class="step-nav-num">4</span>
-              <span class="step-nav-text">Select Dates</span>
+              <span class="step-nav-text hidden md:block">Select Dates</span>
             </button>
-            <div class="step-nav-line" class:completed={walkthroughStep > 4}></div>
+            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 4}></div>
             <button class="step-nav-item" class:active={walkthroughStep === 5} class:completed={walkthroughStep > 5} onclick={() => walkthroughStep = 5}>
               <span class="step-nav-num">5</span>
-              <span class="step-nav-text">Export CSV</span>
+              <span class="step-nav-text hidden md:block">Export CSV</span>
             </button>
-            <div class="step-nav-line" class:completed={walkthroughStep > 5}></div>
+            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 5}></div>
             <button class="step-nav-item" class:active={walkthroughStep === 6} onclick={() => walkthroughStep = 6}>
               <span class="step-nav-num">6</span>
-              <span class="step-nav-text">Upload</span>
+              <span class="step-nav-text hidden md:block">Upload</span>
             </button>
           </div>
 
           <!-- Step Content -->
           <div class="step-content-container">
             {#if walkthroughStep === 1}
-              <div class="step-pane animate-fade-in">
+              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
                 <div class="step-desc">
                   <h2>1. Sign in to your TfL Account</h2>
                   <p>Visit the official Transport for London (TfL) account portal and sign in with your registered email address and password.</p>
@@ -328,7 +328,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 2}
-              <div class="step-pane animate-fade-in">
+              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
                 <div class="step-desc">
                   <h2>2. Select Your Travel Card</h2>
                   <p>From the Dashboard main screen, click <strong>Go to Oyster</strong> or <strong>Go to contactless</strong> depending on which payment card you use for travel.</p>
@@ -339,7 +339,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 3}
-              <div class="step-pane animate-fade-in">
+              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
                 <div class="step-desc">
                   <h2>3. Go to Journey History</h2>
                   <p>On your travel card overview page, locate the <strong>Journeys</strong> card or sidebar menu and select <strong>View journey history</strong>.</p>
@@ -350,7 +350,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 4}
-              <div class="step-pane animate-fade-in">
+              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
                 <div class="step-desc">
                   <h2>4. Choose Date Range</h2>
                   <p>Select your desired date range from the dropdown menu (or specify a custom range using the date picker) and click <strong>Submit</strong> to load the journey records.</p>
@@ -361,7 +361,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 5}
-              <div class="step-pane animate-fade-in">
+              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
                 <div class="step-desc">
                   <h2>5. Download CSV Statement</h2>
                   <p>Scroll down to the bottom of the journey records table and click the <strong>Download CSV format</strong> button to download your travel history file.</p>
@@ -372,7 +372,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 6}
-              <div class="step-pane upload-pane animate-fade-in">
+              <div class="step-pane upload-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
                 <div class="step-desc-centered">
                   <h2>6. Upload and Optimize!</h2>
                   <p>Drag your downloaded CSV file here or click to browse. Fares are fetched directly from TfL to safely compute your savings.</p>
@@ -463,7 +463,7 @@
       </div>
 
       <!-- Stat cards -->
-      <div class="stats-grid">
+      <div class="stats-grid grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="stat-card">
           <div class="stat-icon">🚆</div>
           <div class="stat-value">{journeyCount}</div>
@@ -769,19 +769,7 @@
     color: var(--color-oyster-blue);
   }
 
-  @media (max-width: 768px) {
-    .hero-title {
-      font-size: 2rem;
-    }
 
-    .steps-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
 
   /* Demo Profiles Grid and Cards */
   .demo-profiles-container {
@@ -1304,49 +1292,5 @@
   }
 
   /* Responsive styling */
-  @media (max-width: 768px) {
-    .hero-actions {
-      flex-direction: column;
-      align-items: center;
-    }
 
-    .hero-actions .btn-lg {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .demo-intro-card {
-      flex-direction: column;
-      text-align: center;
-      padding: 1.5rem;
-    }
-
-    .demo-intro-content {
-      flex-direction: column;
-      text-align: center;
-    }
-
-    .btn-demo-quick {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .walkthrough-card {
-      padding: 1.5rem;
-    }
-
-    .step-nav-text {
-      display: none;
-    }
-
-    .step-nav-line {
-      margin-bottom: 0px;
-    }
-
-    .step-pane {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-      min-height: auto;
-    }
-  }
 </style>

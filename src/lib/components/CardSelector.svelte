@@ -12,9 +12,9 @@
 </script>
 
 {#if showSelector || showAddButton}
-  <div class="card-selector" class:multi={showSelector}>
+  <div class="card-selector flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-5 flex-wrap" class:multi={showSelector}>
     {#if showSelector}
-      <div class="card-pills">
+      <div class="card-pills flex flex-row flex-nowrap md:flex-wrap overflow-x-auto md:overflow-x-visible gap-[4px] bg-white/3 rounded-xl p-[4px]">
         {#each $cards as card}
           <button
             class="card-pill"
@@ -23,7 +23,7 @@
             style="--card-accent: {card.color}"
           >
             <span class="card-dot" style="background: {card.color}"></span>
-            <span class="card-pill-label">{card.name}</span>
+            <span class="card-pill-label max-w-[120px] md:max-w-[180px] truncate">{card.name}</span>
           </button>
         {/each}
         <button
@@ -32,7 +32,7 @@
           onclick={() => selectCard('combined')}
         >
           <span class="card-dot combined-dot"></span>
-          <span class="card-pill-label">Combined</span>
+          <span class="card-pill-label max-w-[120px] md:max-w-[180px] truncate">Combined</span>
         </button>
       </div>
     {/if}
@@ -55,23 +55,6 @@
 {/if}
 
 <style>
-  .card-selector {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-  }
-
-  .card-pills {
-    display: flex;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    padding: 4px;
-    flex-wrap: wrap;
-  }
-
   .card-pill {
     display: flex;
     align-items: center;
@@ -116,12 +99,6 @@
     background: linear-gradient(135deg, #009FE3, #6f4390) !important;
   }
 
-  .card-pill-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 180px;
-  }
-
   .add-card-btn {
     display: flex;
     align-items: center;
@@ -149,21 +126,5 @@
     cursor: not-allowed;
     border-color: rgba(255, 255, 255, 0.05);
     color: var(--color-text-muted);
-  }
-
-  @media (max-width: 768px) {
-    .card-selector {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .card-pills {
-      overflow-x: auto;
-      flex-wrap: nowrap;
-    }
-
-    .card-pill-label {
-      max-width: 120px;
-    }
   }
 </style>

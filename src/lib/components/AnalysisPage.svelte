@@ -520,7 +520,10 @@
                 <div style="position: absolute; left: 11px; top: 10px; bottom: 10px; width: 1px; background: rgba(255,255,255,0.06); pointer-events: none;"></div>
 
                 {#each group.journeys as j}
-                  <div class="timeline-node" style="position: relative; padding: 0.75rem 1rem 0.75rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor || 'var(--color-oyster-blue)'}; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                  <div
+                    class="timeline-node flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4"
+                    style="position: relative; padding: 0.75rem 1rem 0.75rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor || 'var(--color-oyster-blue)'}; border-radius: 4px;"
+                  >
                     <!-- Colored dot on the line -->
                     <div style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor || 'var(--color-oyster-blue)'}; border: 2px solid var(--color-bg); box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"></div>
                     
@@ -531,7 +534,7 @@
                     </div>
 
                     <!-- Journey Details -->
-                    <div style="flex: 1; font-size: 0.85rem; color: var(--color-text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    <div style="flex: 1; font-size: 0.85rem; color: var(--color-text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="w-full md:w-auto">
                       {#if j.isBus}
                         <span style="color: var(--color-text-secondary); font-weight: 500;">{j.raw.journeyAction}</span>
                       {:else if j.origin && j.destination}
@@ -547,7 +550,7 @@
                     </div>
 
                     <!-- Card badge & Cost info -->
-                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;" class="w-full justify-between md:w-auto md:justify-start">
                       <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}; margin: 0; padding: 0.15rem 0.45rem; font-size: 0.7rem;">
                         <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
                         <span class="badge-text">{j.cardName || 'Card'}</span>
@@ -656,7 +659,7 @@
     <InsightsPage />
   {:else if activeTab === "savings"}
     <!-- Fare Type Savings Panel -->
-    <div class="savings-layout">
+    <div class="savings-layout grid grid-cols-1 md:grid-cols-[280px_1fr]">
       <!-- Settings -->
       <div class="glass-card savings-settings">
         <h3 class="settings-title">⚙️ Savings Settings</h3>
@@ -1092,7 +1095,7 @@
             {/if}
 
             <!-- Breakdown cards -->
-            <div class="savings-cards">
+            <div class="savings-cards grid grid-cols-2 md:grid-cols-4">
               <div class="stat-card">
                 <div class="stat-value">
                   £{$savingsResult.totalExpectedSpend.toFixed(2)}
@@ -1388,7 +1391,7 @@
       {/if}
       {#if $capSummary}
         <!-- Summary cards -->
-        <div class="cap-summary-grid">
+        <div class="cap-summary-grid grid grid-cols-2 lg:grid-cols-5">
           <div class="stat-card">
             <div class="stat-icon">📅</div>
             <div class="stat-value">
@@ -1434,17 +1437,17 @@
         <h3 class="cap-section-title">Daily Cap Progress</h3>
         <div class="cap-bars">
           {#each $dailyCapResults as day}
-            <div class="cap-day-row" class:cap-hit={day.capHit}>
-              <div class="cap-day-date">{day.date}</div>
+            <div class="cap-day-row flex md:flex-row max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1 max-md:p-3" class:cap-hit={day.capHit}>
+              <div class="cap-day-date max-md:row-start-1 max-md:col-start-1 max-md:text-[0.85rem] max-md:!min-w-0">{day.date}</div>
               <div
-                class="cap-day-zones"
+                class="cap-day-zones max-md:row-start-2 max-md:col-start-1 max-md:text-[0.75rem] max-md:!min-w-0"
                 style="font-size: 0.8rem; font-weight: 700; color: {getZoneColor(
                   day.maxZoneRange,
                 )}; min-width: 60px;"
               >
                 {day.maxZoneRange}
               </div>
-              <div class="cap-day-bar-container">
+              <div class="cap-day-bar-container max-md:row-start-3 max-md:col-span-2 max-md:w-full max-md:my-1">
                 <div class="cap-progress">
                   <div
                     class="cap-progress-bar"
@@ -1453,7 +1456,7 @@
                   ></div>
                 </div>
               </div>
-              <div class="cap-day-values">
+              <div class="cap-day-values max-md:row-start-1 max-md:col-start-2 max-md:justify-end max-md:!min-w-0 max-md:text-[0.85rem]">
                 <span class="cap-day-spend">£{day.totalSpend.toFixed(2)}</span>
                 <span class="cap-day-divider">/</span>
                 <span
@@ -1467,10 +1470,10 @@
                   £{day.dailyCap.toFixed(2)}
                 </span>
               </div>
-              <div class="cap-day-journeys">{day.journeys.length} trips</div>
+              <div class="cap-day-journeys max-md:row-start-2 max-md:col-start-2 max-md:!min-w-0 max-md:text-[0.75rem] max-md:text-right">{day.journeys.length} trips</div>
               {#if day.capHit}
                 <span
-                  class="badge badge-cap"
+                  class="badge badge-cap max-md:row-start-4 max-md:col-span-2 max-md:justify-self-start max-md:mt-1"
                   class:badge-peak={day.capType === "peak"}
                   class:badge-off-peak={day.capType === "off-peak"}
                 >
@@ -1491,8 +1494,8 @@
         <h3 class="cap-section-title">Weekly Cap Progress</h3>
         <div class="cap-bars">
           {#each $weeklyCapResults as week}
-            <div class="cap-day-row" class:cap-hit={week.capHit}>
-              <div class="cap-day-date" style="min-width: 160px;">
+            <div class="cap-day-row flex md:flex-row max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1 max-md:p-3" class:cap-hit={week.capHit}>
+              <div class="cap-day-date max-md:row-start-1 max-md:col-start-1 max-md:text-[0.85rem] max-md:!min-w-0" style="min-width: 160px;">
                 {week.weekStart.toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "short",
@@ -1502,7 +1505,7 @@
                   month: "short",
                 })}
               </div>
-              <div class="cap-day-bar-container">
+              <div class="cap-day-bar-container max-md:row-start-3 max-md:col-span-2 max-md:w-full max-md:my-1">
                 <div class="cap-progress">
                   <div
                     class="cap-progress-bar"
@@ -1511,14 +1514,14 @@
                   ></div>
                 </div>
               </div>
-              <div class="cap-day-values">
+              <div class="cap-day-values max-md:row-start-1 max-md:col-start-2 max-md:justify-end max-md:!min-w-0 max-md:text-[0.85rem]">
                 <span class="cap-day-spend">£{week.totalSpend.toFixed(2)}</span>
                 <span class="cap-day-divider">/</span>
                 <span class="cap-day-cap">£{week.weeklyCap.toFixed(2)}</span>
               </div>
-              <div class="cap-day-journeys">{week.days.length} days</div>
+              <div class="cap-day-journeys max-md:row-start-2 max-md:col-start-2 max-md:!min-w-0 max-md:text-[0.75rem] max-md:text-right">{week.days.length} days</div>
               {#if week.capHit}
-                <span class="badge badge-cap">Cap Hit</span>
+                <span class="badge badge-cap max-md:row-start-4 max-md:col-span-2 max-md:justify-self-start max-md:mt-1">Cap Hit</span>
               {/if}
             </div>
           {/each}
@@ -1815,8 +1818,6 @@
 
   /* Savings layout */
   .savings-layout {
-    display: grid;
-    grid-template-columns: 280px 1fr;
     gap: 1.5rem;
     align-items: start;
   }
@@ -1919,8 +1920,6 @@
   }
 
   .savings-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
     gap: 0.75rem;
     margin-bottom: 1rem;
   }
@@ -1981,8 +1980,6 @@
 
   /* Cap analysis */
   .cap-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
@@ -2006,7 +2003,6 @@
   }
 
   .cap-day-row {
-    display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 0.5rem 0.75rem;
@@ -2058,60 +2054,4 @@
     text-align: right;
   }
 
-  @media (max-width: 768px) {
-    .savings-layout {
-      grid-template-columns: 1fr;
-    }
-    .savings-cards {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .cap-summary-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .cap-day-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.25rem 0.5rem;
-      padding: 0.75rem;
-      border-radius: 8px;
-    }
-    .cap-day-date {
-      grid-row: 1;
-      grid-column: 1;
-      font-size: 0.85rem;
-      min-width: 0 !important;
-    }
-    .cap-day-zones {
-      grid-row: 2;
-      grid-column: 1;
-      font-size: 0.75rem;
-      min-width: 0 !important;
-    }
-    .cap-day-values {
-      grid-row: 1;
-      grid-column: 2;
-      justify-content: flex-end;
-      min-width: 0 !important;
-      font-size: 0.85rem;
-    }
-    .cap-day-journeys {
-      grid-row: 2;
-      grid-column: 2;
-      min-width: 0 !important;
-      font-size: 0.75rem;
-      text-align: right;
-    }
-    .cap-day-bar-container {
-      grid-row: 3;
-      grid-column: 1 / 3;
-      width: 100%;
-      margin: 0.25rem 0;
-    }
-    .cap-day-row .badge-cap {
-      grid-row: 4;
-      grid-column: 1 / 3;
-      justify-self: start;
-      margin-top: 0.25rem;
-    }
-  }
 </style>

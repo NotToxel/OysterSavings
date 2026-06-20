@@ -1011,7 +1011,7 @@
     {/if}
 
     <!-- Active Insights Grid -->
-    <div class="insights-grid">
+    <div class="insights-grid flex flex-col md:grid md:grid-cols-2 gap-6 items-start">
       <!-- Column 1: Traveler Profile & Top Journeys -->
       <div class="column">
         <!-- Traveler Persona Card -->
@@ -1046,7 +1046,7 @@
         <!-- Travel Profile Card -->
         <div class="glass-card stats-card-large">
           <h3 class="card-title">📊 Travel Profile</h3>
-          <div class="grid-stats">
+          <div class="grid-stats grid grid-cols-2 gap-4 mb-5">
             <div class="metric">
               <span class="metric-val">{travelProfile.journeys}</span>
               <span class="metric-label">Total Journeys</span>
@@ -1070,7 +1070,7 @@
               <span class="metric-label">Primary Zone Range</span>
             </div>
           </div>
-          <div class="projections-bar">
+          <div class="projections-bar flex flex-col md:flex-row gap-2 md:gap-4 border-t border-white/5 pt-4">
             <div class="projection">
               <span class="proj-label">Projected Monthly</span>
               <span class="proj-val"
@@ -2256,16 +2256,4 @@
     color: var(--color-text-muted);
   }
 
-  @media (max-width: 768px) {
-    .insights-grid {
-      grid-template-columns: 1fr;
-    }
-    .grid-stats {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .projections-bar {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-  }
 </style>

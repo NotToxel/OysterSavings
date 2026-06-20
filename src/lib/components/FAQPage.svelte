@@ -279,7 +279,7 @@
   <!-- Header -->
   <div class="faq-header">
     <span class="faq-badge">❓ Info & Support</span>
-    <h1 class="faq-title">
+    <h1 class="faq-title text-[2rem] md:text-[2.75rem]">
       Frequently Asked <span class="gradient-text">Questions</span>
     </h1>
     <p class="faq-subtitle">
@@ -289,14 +289,14 @@
   </div>
 
   <!-- Search & Category Filters -->
-  <div class="faq-controls glass-card">
+  <div class="faq-controls glass-card p-4 md:p-6 gap-4 md:gap-5">
     <div class="search-wrapper">
       <span class="search-icon">🔍</span>
       <input
         type="text"
         bind:value={searchQuery}
         placeholder="Search questions, keywords, or fares..."
-        class="input-field search-input"
+        class="input-field search-input h-11 md:h-12"
         id="faq-search-bar"
       />
       {#if searchQuery}
@@ -311,7 +311,7 @@
     <div class="categories-tabs">
       {#each categories as cat}
         <button
-          class="category-tab"
+          class="category-tab py-1.5 px-3 md:py-2 md:px-4 text-[0.75rem] md:text-[0.8rem] rounded-lg md:rounded-xl"
           class:active={activeCategory === cat.id}
           onclick={() => selectCategory(cat.id)}
         >
@@ -327,7 +327,7 @@
       {#each filteredFaqs as faq (faq.id)}
         <div class="faq-item glass-card" class:is-open={openFaqs[faq.id]}>
           <button
-            class="faq-trigger"
+            class="faq-trigger py-4 px-[1.2rem] md:py-5 md:px-6 text-[0.9rem] md:text-[1rem]"
             onclick={() => toggleFaq(faq.id)}
             aria-expanded={openFaqs[faq.id]}
           >
@@ -339,7 +339,7 @@
 
           {#if openFaqs[faq.id]}
             <div class="faq-panel" transition:slide={{ duration: 250 }}>
-              <div class="faq-content">
+              <div class="faq-content py-4 px-[1.2rem] md:py-5 md:px-6 text-[0.85rem] md:text-[0.9rem]">
                 {@html faq.answerHtml}
               </div>
             </div>
@@ -638,33 +638,4 @@
     line-height: 1.4;
   }
 
-  @media (max-width: 768px) {
-    .faq-title {
-      font-size: 2rem;
-    }
-
-    .faq-controls {
-      padding: 1rem;
-      gap: 1rem;
-    }
-
-    .search-input {
-      height: 44px;
-    }
-
-    .category-tab {
-      padding: 0.4rem 0.8rem;
-      font-size: 0.75rem;
-    }
-
-    .faq-trigger {
-      padding: 1rem 1.2rem;
-      font-size: 0.9rem;
-    }
-
-    .faq-content {
-      padding: 1rem 1.2rem;
-      font-size: 0.85rem;
-    }
-  }
 </style>
