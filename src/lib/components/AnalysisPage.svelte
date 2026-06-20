@@ -35,6 +35,24 @@
   let overrideCost = $state(false);
   let searchQuery = $state("");
   let customCostInput = $state("");
+
+  // Multi-card simulation and journey view state
+  let selectedSimCardId = $state<string>("");
+  let journeyViewMode = $state<"table" | "timeline" | "split">("table");
+
+  let activeSim = $derived(
+    $combinedSimulation?.simulations[selectedSimCardId] ?? null
+  );
+
+  $effect(() => {
+    if ($combinedSimulation) {
+      if (!selectedSimCardId || !$combinedSimulation.simulations[selectedSimCardId]) {
+        selectedSimCardId = $combinedSimulation.optimalCardId;
+      }
+    } else {
+      selectedSimCardId = "";
+    }
+  });
   let isCardCostDisabled = $derived(
     ($selectedFareType === "railcard" && $detectedDiscount === "railcard") ||
       ($selectedFareType === "disabled" && $detectedDiscount === "disabled"),
@@ -256,6 +274,21 @@
       return "❌ Missed Saving — Disabled Persons Railcard would be cheaper";
     return "⚠️ Disabled Persons Railcard costs more than your National Railcard";
   });
+
+  // Group journeys chronologically by date for the timeline layout
+  let groupedTimelineJourneys = $derived.by(() => {
+    const groups: Array<{ dateStr: string; journeys: MultiCardClassifiedJourney[] }> = [];
+    let currentGroup: { dateStr: string; journeys: MultiCardClassifiedJourney[] } | null = null;
+    
+    for (const j of filteredJourneys) {
+      if (!currentGroup || currentGroup.dateStr !== j.raw.dateStr) {
+        currentGroup = { dateStr: j.raw.dateStr, journeys: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.journeys.push(j);
+    }
+    return groups;
+  });
 </script>
 
 <div class="analysis-page">
@@ -335,106 +368,290 @@
       {/if}
     </div>
 
-    <!-- Journey table -->
-    <div
-      class="table-container glass-card"
-      style="padding: 0; overflow: hidden;"
-    >
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              {#if $activeCardId === 'combined' && $cards.length > 1}
-                <th>Card</th>
-              {/if}
-              <th class="sortable" onclick={() => toggleSort("date")}>
-                Date {sortKey === "date" ? (sortAsc ? "↑" : "↓") : ""}
-              </th>
-              <th>Time</th>
-              <th>Journey</th>
-              <th>Mode</th>
-              <th>Zones</th>
-              <th>Peak</th>
-              <th class="sortable" onclick={() => toggleSort("charge")}>
-                Charge {sortKey === "charge" ? (sortAsc ? "↑" : "↓") : ""}
-              </th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each filteredJourneys as j, i}
-              <tr
-                class="animate-fade-in"
-                style="animation-delay: {Math.min(i * 20, 500)}ms"
-              >
-                {#if $activeCardId === 'combined' && $cards.length > 1}
-                  <td>
-                    <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}">
-                      <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
-                      <span class="badge-text">{j.cardName || 'Card'}</span>
-                    </div>
-                  </td>
-                {/if}
-                <td class="date-cell"><span class="day-of-week" style="opacity: 0.8; font-weight: 600; margin-right: 0.25rem;">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][j.dayOfWeek]}</span>{j.raw.dateStr}</td>
-                <td class="time-cell">{j.raw.startTime || "—"}</td>
-                <td class="journey-cell">
-                  {#if j.isBus}
-                    {j.raw.journeyAction}
-                  {:else if j.origin && j.destination}
-                    <span class="station"
-                      >{j.origin.replace(/\s*\[.*?\]/g, "")}</span
-                    >
-                    <span class="arrow">→</span>
-                    <span class="station"
-                      >{j.destination.replace(/\s*\[.*?\]/g, "")}</span
-                    >
-                  {:else}
-                    {j.raw.journeyAction}
-                  {/if}
-                </td>
-                <td>
-                  <span class="badge {getModeBadgeClass(j.mode)}"
-                    >{getModeLabel(j.mode)}</span
-                  >
-                </td>
-                <td class="zone-cell">{j.zoneRange || "—"}</td>
-                <td>
-                  {#if j.isBus}
-                    <span class="badge badge-bus">Flat</span>
-                  {:else if j.isPeak}
-                    <span class="badge badge-peak">Peak</span>
-                  {:else}
-                    <span class="badge badge-offpeak">Off-Pk</span>
-                  {/if}
-                  {#if j.isEveningPeakException}
-                    <span
-                      class="badge badge-offpeak"
-                      style="margin-left: 2px;"
-                      title="Evening peak exception: inbound to Zone 1"
-                      >Exc</span
-                    >
-                  {/if}
-                </td>
-                <td class="charge-cell">
-                  {#if j.raw.charge === 0 && j.isCapHit}
-                    <span style="color: #34d399;">FREE</span>
-                  {:else}
-                    £{j.raw.charge.toFixed(2)}
-                  {/if}
-                </td>
-                <td class="note-cell">
-                  {#if j.isCapHit}
-                    <span class="badge badge-cap">Cap Hit</span>
-                  {:else if j.isHopperFree}
-                    <span class="badge badge-cap">Hopper</span>
-                  {/if}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+    <!-- View Switcher (only for combined multi-card mode) -->
+    {#if $activeCardId === 'combined' && $cards.length > 1}
+      <div class="view-switcher" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); width: fit-content;">
+        <button
+          class="switch-btn"
+          class:active={journeyViewMode === 'table'}
+          onclick={() => journeyViewMode = 'table'}
+          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode === 'table' ? 'rgba(255, 255, 255, 0.08)' : 'transparent'}; color: {journeyViewMode === 'table' ? '#fff' : 'var(--color-text-secondary)'}; border-color: {journeyViewMode === 'table' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'}; transition: all 0.2s;"
+        >
+          📋 Table View
+        </button>
+        <button
+          class="switch-btn"
+          class:active={journeyViewMode === 'timeline'}
+          onclick={() => journeyViewMode = 'timeline'}
+          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode === 'timeline' ? 'rgba(255, 255, 255, 0.08)' : 'transparent'}; color: {journeyViewMode === 'timeline' ? '#fff' : 'var(--color-text-secondary)'}; border-color: {journeyViewMode === 'timeline' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'}; transition: all 0.2s;"
+        >
+          ⏱️ Timeline View
+        </button>
+        <button
+          class="switch-btn"
+          class:active={journeyViewMode === 'split'}
+          onclick={() => journeyViewMode = 'split'}
+          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode === 'split' ? 'rgba(255, 255, 255, 0.08)' : 'transparent'}; color: {journeyViewMode === 'split' ? '#fff' : 'var(--color-text-secondary)'}; border-color: {journeyViewMode === 'split' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'}; transition: all 0.2s;"
+        >
+          🥞 Split View
+        </button>
       </div>
-    </div>
+    {/if}
+
+    {#if !($activeCardId === 'combined' && $cards.length > 1) || journeyViewMode === 'table'}
+      <!-- Standard Journey table -->
+      <div
+        class="table-container glass-card"
+        style="padding: 0; overflow: hidden;"
+      >
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                {#if $activeCardId === 'combined' && $cards.length > 1}
+                  <th>Card</th>
+                {/if}
+                <th class="sortable" onclick={() => toggleSort("date")}>
+                  Date {sortKey === "date" ? (sortAsc ? "↑" : "↓") : ""}
+                </th>
+                <th>Time</th>
+                <th>Journey</th>
+                <th>Mode</th>
+                <th>Zones</th>
+                <th>Peak</th>
+                <th class="sortable" onclick={() => toggleSort("charge")}>
+                  Charge {sortKey === "charge" ? (sortAsc ? "↑" : "↓") : ""}
+                </th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each filteredJourneys as j, i}
+                <tr
+                  class="animate-fade-in"
+                  style="animation-delay: {Math.min(i * 20, 500)}ms"
+                >
+                  {#if $activeCardId === 'combined' && $cards.length > 1}
+                    <td>
+                      <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}">
+                        <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
+                        <span class="badge-text">{j.cardName || 'Card'}</span>
+                      </div>
+                    </td>
+                  {/if}
+                  <td class="date-cell"><span class="day-of-week" style="opacity: 0.8; font-weight: 600; margin-right: 0.25rem;">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][j.dayOfWeek]}</span>{j.raw.dateStr}</td>
+                  <td class="time-cell">{j.raw.startTime || "—"}</td>
+                  <td class="journey-cell">
+                    {#if j.isBus}
+                      {j.raw.journeyAction}
+                    {:else if j.origin && j.destination}
+                      <span class="station"
+                        >{j.origin.replace(/\s*\[.*?\]/g, "")}</span
+                      >
+                      <span class="arrow">→</span>
+                      <span class="station"
+                        >{j.destination.replace(/\s*\[.*?\]/g, "")}</span
+                      >
+                    {:else}
+                      {j.raw.journeyAction}
+                    {/if}
+                  </td>
+                  <td>
+                    <span class="badge {getModeBadgeClass(j.mode)}"
+                      >{getModeLabel(j.mode)}</span
+                    >
+                  </td>
+                  <td class="zone-cell">{j.zoneRange || "—"}</td>
+                  <td>
+                    {#if j.isBus}
+                      <span class="badge badge-bus">Flat</span>
+                    {:else if j.isPeak}
+                      <span class="badge badge-peak">Peak</span>
+                    {:else}
+                      <span class="badge badge-offpeak">Off-Pk</span>
+                    {/if}
+                    {#if j.isEveningPeakException}
+                      <span
+                        class="badge badge-offpeak"
+                        style="margin-left: 2px;"
+                        title="Evening peak exception: inbound to Zone 1"
+                        >Exc</span
+                      >
+                    {/if}
+                  </td>
+                  <td class="charge-cell">
+                    {#if j.raw.charge === 0 && j.isCapHit}
+                      <span style="color: #34d399;">FREE</span>
+                    {:else}
+                      £{j.raw.charge.toFixed(2)}
+                    {/if}
+                  </td>
+                  <td class="note-cell">
+                    {#if j.isCapHit}
+                      <span class="badge badge-cap">Cap Hit</span>
+                    {:else if j.isHopperFree}
+                      <span class="badge badge-cap">Hopper</span>
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {:else if journeyViewMode === 'timeline'}
+      <!-- Chronological Interleaved Timeline View -->
+      <div class="timeline-container animate-fade-in" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 0.5rem;">
+        {#if groupedTimelineJourneys.length === 0}
+          <div class="glass-card" style="padding: 3rem 1.5rem; text-align: center; color: var(--color-text-muted);">
+            No journeys matching search/filters.
+          </div>
+        {:else}
+          {#each groupedTimelineJourneys as group}
+            <div class="timeline-group">
+              <!-- Date Header Divider -->
+              <div class="timeline-date-divider" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                <span style="font-size: 0.8rem; font-weight: 800; color: #fff; background: rgba(255,255,255,0.06); padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04);">{group.dateStr}</span>
+                <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.06);"></div>
+              </div>
+              
+              <div class="timeline-nodes" style="display: flex; flex-direction: column; gap: 0.5rem; position: relative;">
+                <!-- Vertical connection line -->
+                <div style="position: absolute; left: 11px; top: 10px; bottom: 10px; width: 1px; background: rgba(255,255,255,0.06); pointer-events: none;"></div>
+
+                {#each group.journeys as j}
+                  <div class="timeline-node" style="position: relative; padding: 0.75rem 1rem 0.75rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor || 'var(--color-oyster-blue)'}; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <!-- Colored dot on the line -->
+                    <div style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor || 'var(--color-oyster-blue)'}; border: 2px solid var(--color-bg); box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"></div>
+                    
+                    <!-- Time & Mode badge -->
+                    <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 130px; flex-shrink: 0;">
+                      <span style="font-size: 0.85rem; font-weight: 700; color: #fff; font-family: monospace; opacity: 0.95;">{j.raw.startTime || "—"}</span>
+                      <span class="badge {getModeBadgeClass(j.mode)}" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">{getModeLabel(j.mode)}</span>
+                    </div>
+
+                    <!-- Journey Details -->
+                    <div style="flex: 1; font-size: 0.85rem; color: var(--color-text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                      {#if j.isBus}
+                        <span style="color: var(--color-text-secondary); font-weight: 500;">{j.raw.journeyAction}</span>
+                      {:else if j.origin && j.destination}
+                        <span style="font-weight: 600; color: #fff;">{j.origin.replace(/\s*\[.*?\]/g, "")}</span>
+                        <span style="color: var(--color-text-muted); margin: 0 0.25rem;">→</span>
+                        <span style="font-weight: 600; color: #fff;">{j.destination.replace(/\s*\[.*?\]/g, "")}</span>
+                        {#if j.zoneRange}
+                          <span style="font-size: 0.75rem; color: {getZoneColor(j.zoneRange)}; font-weight: 700; margin-left: 0.35rem;">({j.zoneRange})</span>
+                        {/if}
+                      {:else}
+                        <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
+                      {/if}
+                    </div>
+
+                    <!-- Card badge & Cost info -->
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
+                      <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}; margin: 0; padding: 0.15rem 0.45rem; font-size: 0.7rem;">
+                        <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
+                        <span class="badge-text">{j.cardName || 'Card'}</span>
+                      </div>
+                      
+                      <div style="text-align: right; min-width: 65px;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: {j.raw.charge === 0 && j.isCapHit ? '#34d399' : '#fff'};">
+                          {#if j.raw.charge === 0 && j.isCapHit}
+                            FREE
+                          {:else}
+                            £{j.raw.charge.toFixed(2)}
+                          {/if}
+                        </span>
+                        {#if j.isCapHit}
+                          <div style="font-size: 0.6rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;">Cap</div>
+                        {:else if j.isHopperFree}
+                          <div style="font-size: 0.6rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;">Hopper</div>
+                        {/if}
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/each}
+        {/if}
+      </div>
+    {:else if journeyViewMode === 'split'}
+      <!-- Per-Card Split panels layout -->
+      <div class="split-columns-container animate-fade-in" style="display: flex; gap: 1rem; flex-wrap: wrap; width: 100%; margin-top: 0.5rem;">
+        {#each $cards as card}
+          {@const cardJourneys = filteredJourneys.filter(j => j.cardId === card.id)}
+          <div class="glass-card split-column" style="flex: 1 1 350px; min-width: 320px; padding: 1.25rem 1rem; border-color: {card.color}20; background: rgba(255,255,255,0.01); position: relative; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Column glow -->
+            <div style="position: absolute; inset: 0; background: radial-gradient(circle at 100% 0%, {card.color}05, transparent 60%); pointer-events: none; border-radius: 12px;"></div>
+            
+            <!-- Column Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; position: relative; z-index: 1;">
+              <div>
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem; color: #fff;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: {card.color}"></span>
+                  {card.name}
+                </h4>
+                <span style="font-size: 0.75rem; color: var(--color-text-secondary);">{card.detectedDiscount ? FARE_TYPES[card.detectedDiscount].name : 'Adult PAYG'}</span>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 0.95rem; font-weight: 800; color: #fff;">£{cardJourneys.reduce((sum, j) => sum + j.raw.charge, 0).toFixed(2)}</div>
+                <span style="font-size: 0.7rem; color: var(--color-text-muted);">{cardJourneys.length} journeys</span>
+              </div>
+            </div>
+
+            <!-- Scrollable Table -->
+            <div style="overflow-x: auto; overflow-y: auto; max-height: 450px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: rgba(0,0,0,0.15); position: relative; z-index: 1;">
+              <table class="data-table" style="font-size: 0.75rem; width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: rgba(255,255,255,0.02);">
+                    <th style="padding: 0.5rem; text-align: left; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);">Date/Time</th>
+                    <th style="padding: 0.5rem; text-align: left; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);">Journey</th>
+                    <th style="padding: 0.5rem; text-align: right; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);">Charge</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#if cardJourneys.length === 0}
+                    <tr>
+                      <td colspan="3" style="text-align: center; color: var(--color-text-muted); padding: 3rem 1rem;">No journeys matching filters</td>
+                    </tr>
+                  {:else}
+                    {#each cardJourneys as j}
+                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
+                        <td style="padding: 0.5rem; white-space: nowrap; vertical-align: middle;">
+                          <div style="font-weight: 600; color: #fff;">{j.raw.dateStr}</div>
+                          <div style="font-size: 0.65rem; color: var(--color-text-secondary);">{j.raw.startTime || '—'}</div>
+                        </td>
+                        <td style="padding: 0.5rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;" title="{j.isBus ? j.raw.journeyAction : (j.origin && j.destination ? `${j.origin} → ${j.destination}` : j.raw.journeyAction)}">
+                          {#if j.isBus}
+                            <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
+                          {:else if j.origin && j.destination}
+                            <span style="color: #fff;">{j.origin.replace(/\s*\[.*?\]/g, "")} → {j.destination.replace(/\s*\[.*?\]/g, "")}</span>
+                          {:else}
+                            <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
+                          {/if}
+                        </td>
+                        <td style="padding: 0.5rem; text-align: right; font-weight: 700; color: {j.raw.charge === 0 && j.isCapHit ? '#34d399' : '#fff'}; vertical-align: middle;">
+                          {#if j.raw.charge === 0 && j.isCapHit}
+                            FREE
+                          {:else}
+                            £{j.raw.charge.toFixed(2)}
+                          {/if}
+                          {#if j.isCapHit}
+                            <div style="font-size: 0.55rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;">Cap</div>
+                          {:else if j.isHopperFree}
+                            <div style="font-size: 0.55rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;">Hopper</div>
+                          {/if}
+                        </td>
+                      </tr>
+                    {/each}
+                  {/if}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
   {:else if activeTab === "insights"}
     <InsightsPage />
   {:else if activeTab === "savings"}
@@ -973,7 +1190,8 @@
   {:else if activeTab === "caps"}
     <!-- Cap Analysis -->
     <div class="cap-layout">
-      {#if $activeCardId === 'combined' && $cards.length > 1 && $combinedSimulation}
+      {#if $activeCardId === 'combined' && $cards.length > 1 && $combinedSimulation && activeSim}
+        {@const optimalSim = $combinedSimulation.simulations[$combinedSimulation.optimalCardId]}
         <div class="glass-card consolidation-simulation-card animate-fade-in">
           <div class="consolidation-glow"></div>
           
@@ -984,12 +1202,12 @@
                   ✨ Single-Card Consolidation Simulation
                 </h3>
                 <p style="font-size: 0.825rem; color: var(--color-text-secondary); margin: 0;">
-                  What if all journeys were made using a single physical card with your best discount: <strong>{$combinedSimulation.bestDiscountName}</strong>?
+                  Simulate consolidating all journeys onto a single physical card to identify optimal strategies and capping benefits.
                 </p>
               </div>
-              {#if $combinedSimulation.netDifference > 0}
+              {#if activeSim.netDifference > 0}
                 <div class="badge-saving">
-                  🎉 Potential Saving: £{$combinedSimulation.netDifference.toFixed(2)}
+                  🎉 Potential Saving: £{activeSim.netDifference.toFixed(2)}
                 </div>
               {:else}
                 <div class="badge-saving neutral">
@@ -997,6 +1215,50 @@
                 </div>
               {/if}
             </div>
+
+            <!-- Selector Controls for Simulation Target Card -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.75rem; flex-wrap: wrap; align-items: center;">
+              <span style="font-size: 0.8rem; color: var(--color-text-muted); margin-right: 0.5rem;">Simulate using card:</span>
+              {#each Object.values($combinedSimulation.simulations) as sim}
+                {@const simCard = $cards.find(c => c.id === sim.cardId)}
+                <button
+                  class="cost-btn"
+                  class:active={selectedSimCardId === sim.cardId}
+                  onclick={() => selectedSimCardId = sim.cardId}
+                  style="padding: 0.35rem 0.75rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; border-radius: 20px; background: {selectedSimCardId === sim.cardId ? (simCard?.color ? `${simCard.color}25` : 'rgba(255,255,255,0.1)') : 'transparent'}; border-color: {selectedSimCardId === sim.cardId ? (simCard?.color || 'var(--color-border-accent)') : 'rgba(255,255,255,0.1)'}; color: #fff;"
+                >
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: {simCard?.color || '#fff'}"></span>
+                  <strong>{sim.cardName}</strong> <span style="opacity: 0.7; font-size: 0.75rem;">({sim.discountName})</span>
+                </button>
+              {/each}
+            </div>
+
+            <!-- Optimal Strategy Banner -->
+            {#if selectedSimCardId === $combinedSimulation.optimalCardId}
+              {#if activeSim.netDifference > 0}
+                <div class="glass-card" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; border-left: 4px solid #10b981;">
+                  <span style="font-size: 1.25rem; line-height: 1;">💡</span>
+                  <div>
+                    <strong style="color: #34d399; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Optimal Strategy</strong>
+                    <p style="margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;">
+                      Consolidating all travel onto a single card with <strong>{activeSim.cardName} ({activeSim.discountName})</strong> is your best choice, saving you <strong>£{activeSim.netDifference.toFixed(2)}</strong>!
+                    </p>
+                  </div>
+                </div>
+              {/if}
+            {:else if optimalSim && optimalSim.netDifference > 0}
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div class="glass-card" style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; border-left: 4px solid #fbbf24; cursor: pointer;" onclick={() => { selectedSimCardId = $combinedSimulation.optimalCardId; }} role="button" tabindex="0">
+                <span style="font-size: 1.25rem; line-height: 1;">⚠️</span>
+                <div>
+                  <strong style="color: #fbbf24; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Sub-optimal Strategy</strong>
+                  <p style="margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;">
+                    Consolidating on <strong>{optimalSim.cardName} ({optimalSim.discountName})</strong> would be more optimal, saving you <strong>£{optimalSim.netDifference.toFixed(2)}</strong> (compared to £{activeSim.netDifference.toFixed(2)} with this card). <u>Click here to switch to optimal.</u>
+                  </p>
+                </div>
+              </div>
+            {/if}
 
             <!-- Breakdown comparison grid -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
@@ -1008,14 +1270,14 @@
 
               <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; border-color: rgba(52, 211, 153, 0.15);">
                 <div style="font-size: 0.72rem; text-transform: uppercase; color: #34d399; font-weight: 600; letter-spacing: 0.05em;">Simulated Consolidated Spend</div>
-                <div style="font-size: 1.6rem; font-weight: 900; color: #34d399; margin-top: 0.25rem;">£{$combinedSimulation.simulatedTotalSpend.toFixed(2)}</div>
-                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">One card ({$combinedSimulation.bestDiscountName})</div>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #34d399; margin-top: 0.25rem;">£{activeSim.simulatedTotalSpend.toFixed(2)}</div>
+                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">One card ({activeSim.discountName})</div>
               </div>
 
               <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem;">
                 <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.05em;">Simulated Capping Hits</div>
                 <div style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 0.25rem;">
-                  { $combinedSimulation.simulatedCapSummary.daysCapHit } Days <span style="font-size: 0.8rem; font-weight: 500; color: var(--color-text-muted);">/ { $combinedSimulation.simulatedCapSummary.weeksCapHit } Weeks</span>
+                  { activeSim.simulatedCapSummary.daysCapHit } Days <span style="font-size: 0.8rem; font-weight: 500; color: var(--color-text-muted);">/ { activeSim.simulatedCapSummary.weeksCapHit } Weeks</span>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">
                   vs { $capSummary?.daysCapHit ?? 0 } Days / { $capSummary?.weeksCapHit ?? 0 } Weeks actual
@@ -1024,20 +1286,20 @@
             </div>
 
             <!-- Savings components details -->
-            {#if $combinedSimulation.netDifference > 0}
+            {#if activeSim.netDifference > 0}
               <div style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; font-size: 0.825rem; line-height: 1.5; color: var(--color-text-secondary);">
                 <div style="font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
-                  🔍 Why would you save £{$combinedSimulation.netDifference.toFixed(2)}?
+                  🔍 Why would you save £{activeSim.netDifference.toFixed(2)}?
                 </div>
                 <ul style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                  {#if $combinedSimulation.consolidationBenefit > 0}
+                  {#if activeSim.consolidationBenefit > 0}
                     <li>
-                      <strong>Capping Consolidation Benefit:</strong> Combining travel onto a single card pool saves you <strong>£{$combinedSimulation.consolidationBenefit.toFixed(2)}</strong> by hitting daily or weekly caps earlier instead of split spend.
+                      <strong>Capping Consolidation Benefit:</strong> Combining travel onto a single card pool saves you <strong>£{activeSim.consolidationBenefit.toFixed(2)}</strong> by hitting daily or weekly caps earlier instead of split spend.
                     </li>
                   {/if}
-                  {#if $combinedSimulation.discountUpgradeBenefit > 0}
+                  {#if activeSim.discountUpgradeBenefit > 0}
                     <li>
-                      <strong>Discount Upgrade Benefit:</strong> Upgrading journeys on adult cards to the best available <strong>{$combinedSimulation.bestDiscountName}</strong> discount saves you <strong>£{$combinedSimulation.discountUpgradeBenefit.toFixed(2)}</strong> on single fares.
+                      <strong>Discount Upgrade Benefit:</strong> Upgrading journeys on adult cards to the best available <strong>{activeSim.discountName}</strong> discount saves you <strong>£{activeSim.discountUpgradeBenefit.toFixed(2)}</strong> on single fares.
                     </li>
                   {/if}
                 </ul>
@@ -1045,7 +1307,7 @@
             {/if}
 
             <!-- Missed Caps Section -->
-            {#if $combinedSimulation.missedDailyCaps.length > 0 || $combinedSimulation.missedWeeklyCaps.length > 0}
+            {#if activeSim.missedDailyCaps.length > 0 || activeSim.missedWeeklyCaps.length > 0}
               <div style="margin-top: 1rem;">
                 <button
                   class="cost-btn"
@@ -1057,14 +1319,14 @@
                     }
                   }}
                 >
-                  <span>📋 Show Missed Capping Opportunities ({$combinedSimulation.missedDailyCaps.length + $combinedSimulation.missedWeeklyCaps.length})</span>
+                  <span>📋 Show Missed Capping Opportunities ({activeSim.missedDailyCaps.length + activeSim.missedWeeklyCaps.length})</span>
                   <span>▼</span>
                 </button>
                 
                 <div id="missed-caps-details" style="display: none; margin-top: 0.75rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); max-height: 250px; overflow-y: auto;">
-                  {#if $combinedSimulation.missedWeeklyCaps.length > 0}
+                  {#if activeSim.missedWeeklyCaps.length > 0}
                     <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.5rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;">Missed Weekly Caps</div>
-                    {#each $combinedSimulation.missedWeeklyCaps as w}
+                    {#each activeSim.missedWeeklyCaps as w}
                       <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);">
                         <span style="color: var(--color-text-secondary);">
                           Week of {w.weekStart.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ({w.zoneRange})
@@ -1076,9 +1338,9 @@
                     {/each}
                   {/if}
 
-                  {#if $combinedSimulation.missedDailyCaps.length > 0}
+                  {#if activeSim.missedDailyCaps.length > 0}
                     <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.75rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;">Missed Daily Caps</div>
-                    {#each $combinedSimulation.missedDailyCaps as d}
+                    {#each activeSim.missedDailyCaps as d}
                       <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);">
                         <span style="color: var(--color-text-secondary);">
                           {d.date} ({d.zoneRange})
