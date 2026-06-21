@@ -3351,13 +3351,13 @@
                     </div>
                     {#if forecast.isTotalCapHitFareType}
                       <div class="cap-hit-label max-xl:text-[0.5rem]">
-                        <span class="max-[440px]:hidden">Cap Hit ✓</span>
-                        <span class="hidden max-[440px]:inline">Cap ✓</span>
+                        <span class="max-sm:hidden">Cap Hit ✓</span>
+                        <span class="hidden max-sm:inline">Cap ✓</span>
                       </div>
                     {:else if forecast.isBusCapHitFareType}
                       <div class="cap-hit-label bus max-xl:text-[0.5rem]">
-                        <span class="max-[440px]:hidden">Bus Cap ✓</span>
-                        <span class="hidden max-[440px]:inline">Bus ✓</span>
+                        <span class="max-sm:hidden">Bus Cap ✓</span>
+                        <span class="hidden max-sm:inline">Bus ✓</span>
                       </div>
                     {/if}
                   {/if}
@@ -3385,8 +3385,8 @@
                     </div>
                     {#if weekForecast.capHit}
                       <div class="weekly-cap-hit-tag max-md:text-[0.42rem] max-md:mt-[0.15rem]">
-                        <span class="max-[440px]:hidden">Capped</span>
-                        <span class="hidden max-[440px]:inline">Cap ✓</span>
+                        <span class="max-sm:hidden">Capped</span>
+                        <span class="hidden max-sm:inline">Cap ✓</span>
                       </div>
                     {/if}
                   {:else}
