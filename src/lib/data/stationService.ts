@@ -240,7 +240,7 @@ export function getStationInfo(rawName: string, preferredModeOverride?: string |
       const bWordCount = getWords(b.key).length;
       const aDiff = Math.abs(aWordCount - queryWordCount);
       const bDiff = Math.abs(bWordCount - queryWordCount);
-      
+
       if (aDiff !== bDiff) {
         return aDiff - bDiff;
       }
@@ -434,7 +434,7 @@ export function searchStations(query: string, limit: number = 10): StationSearch
       score = 100;
     } else if (hasNorm && nameNorm === qNorm) {
       score = 95;
-    } 
+    }
     // Starts-with matches
     else if (name.startsWith(q)) {
       score = 85 + (q.length / name.length) * 10;
@@ -498,11 +498,11 @@ export function searchStations(query: string, limit: number = 10): StationSearch
       // Check word-by-word token fuzzy similarity (e.g. typos in long names)
       const queryWords = qNorm.split(' ').filter(w => w.length > 0);
       const stationWords = nameNorm.split(' ').filter(w => w.length > 0);
-      
+
       if (queryWords.length > 0) {
         let allWordsMatched = true;
         let totalWordSimilarity = 0;
-        
+
         for (const qw of queryWords) {
           let bestWordSimilarity = 0;
           for (const sw of stationWords) {
@@ -518,14 +518,14 @@ export function searchStations(query: string, limit: number = 10): StationSearch
               }
             }
           }
-          
+
           if (bestWordSimilarity < 0.75) {
             allWordsMatched = false;
             break;
           }
           totalWordSimilarity += bestWordSimilarity;
         }
-        
+
         if (allWordsMatched) {
           const avgWordSimilarity = totalWordSimilarity / queryWords.length;
           const score = 25 + avgWordSimilarity * 35; // Range: 51.25 to 60
