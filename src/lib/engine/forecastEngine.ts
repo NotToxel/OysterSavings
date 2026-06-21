@@ -185,10 +185,13 @@ export function runForecast(
       }
     }
 
+    // Determine cap type for this day — if any journey is flagged useOffpeakCap, treat as off-peak cap day
+    // (useOffpeakCap means peak fare but off-peak cap, so the day's cap threshold is off-peak)
     const isPeakDay = journeys.some(j => {
+      if (j.useOffpeakCap) return false; // explicitly off-peak cap
       const repTime = getRepresentativeTime(j.timePeriod);
       return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
-    });
+    }) && !journeys.every(j => j.useOffpeakCap);
     
     if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
       maxZoneRange = 'Z1-2';
@@ -770,10 +773,12 @@ export function simulatePlannedJourneysSpend(
       }
     }
 
+    // Determine cap type for this day — if any journey is flagged useOffpeakCap, treat as off-peak cap day
     const isPeakDay = journeys.some(j => {
+      if (j.useOffpeakCap) return false;
       const repTime = getRepresentativeTime(j.timePeriod);
       return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
-    });
+    }) && !journeys.every(j => j.useOffpeakCap);
 
     if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
       maxZoneRange = 'Z1-2';

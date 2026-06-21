@@ -13,6 +13,7 @@ try {
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
+// Trigger Vite reload
 export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   define: {

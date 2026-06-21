@@ -465,4 +465,26 @@
     max-width: none !important;
     padding: 0.5rem 0.85rem !important;
   }
+
+  @media (max-width: 480px) {
+    .top-bar-inner {
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0.5rem !important;
+      padding: 0.75rem 1rem !important;
+    }
+    .logo {
+      display: flex !important;
+      justify-content: center !important;
+      margin: 0 auto !important;
+    }
+    .nav-badge {
+      display: none !important;
+    }
+    .nav-pills {
+      width: 100% !important;
+      justify-content: center !important;
+    }
+  }
 </style>

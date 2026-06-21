@@ -1,7 +1,7 @@
 // Journey Classifier — extracts mode, zones, peak/off-peak from CSV journey strings
 import type { ParsedJourney } from './csvParser';
 import { detectTransportMode, getStationZone, getStationBestZone, getStationInfo, type TransportMode } from '../data/stationService';
-import { getZoneRange, isPeakJourney, isUKBankHoliday, lookupFare } from '../data/fareData';
+import { getZoneRange, isPeakJourney, isCapPeakForStation, isUKBankHoliday, lookupFare } from '../data/fareData';
 
 export interface ClassifiedJourney {
   raw: ParsedJourney;
@@ -14,6 +14,7 @@ export interface ClassifiedJourney {
   destinationZone: number | null;
   zoneRange: string | null;
   isPeak: boolean;
+  isCapPeak: boolean; // which cap bucket this journey counts towards (may differ from isPeak for exception stations)
   isEveningPeakException: boolean;
   dayOfWeek: number; // 0=Sun, 6=Sat
   isWeekend: boolean;
@@ -311,6 +312,12 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
     }
   }
 
+  // isCapPeak: which daily cap bucket this journey counts towards.
+  // For exception stations, may differ from isPeak (peak fare but off-peak cap).
+  const isCapPeak = (!isBus && time)
+    ? isCapPeakForStation(journey.date, journey.startTime, origin)
+    : isPeak;
+
   // Detect cap hit from note
   const isCapHit = journey.note.toLowerCase().includes('daily cap') ||
     journey.note.toLowerCase().includes('cheaper or free today');
@@ -329,6 +336,7 @@ export function classifyJourney(journey: ParsedJourney): ClassifiedJourney {
     destinationZone,
     zoneRange,
     isPeak,
+    isCapPeak,
     isEveningPeakException: eveningException,
     dayOfWeek,
     isWeekend,

@@ -551,6 +551,12 @@
     margin-bottom: 1.5rem;
   }
 
+  @media (max-width: 480px) {
+    .hero-badge {
+      display: none !important;
+    }
+  }
+
   .hero-title {
     font-size: 3rem;
     font-weight: 900;

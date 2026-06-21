@@ -18,7 +18,7 @@
     combinedSimulation,
   } from "$lib/stores/stores";
   import { calculateFareTypeSavings } from "$lib/engine/savingsEngine";
-  import { FARE_TYPES, type FareType } from "$lib/data/fareData";
+  import { FARE_TYPES, type FareType, lookupDailyCap, lookupWeeklyCap } from "$lib/data/fareData";
   import { getZoneColor } from "$lib/data/stationService";
   import InsightsPage from "./InsightsPage.svelte";
   import CardSelector from "./CardSelector.svelte";
@@ -193,7 +193,10 @@
     // Sort
     list.sort((a, b) => {
       let cmp = 0;
-      if (sortKey === "date") cmp = a.raw.date.getTime() - b.raw.date.getTime();
+      if (sortKey === "date") {
+        cmp = a.raw.date.getTime() - b.raw.date.getTime();
+        if (cmp === 0) cmp = (a.raw.startTime || '').localeCompare(b.raw.startTime || '');
+      }
       else if (sortKey === "charge") cmp = a.raw.charge - b.raw.charge;
       else if (sortKey === "mode") cmp = a.mode.localeCompare(b.mode);
       return sortAsc ? cmp : -cmp;
@@ -275,20 +278,212 @@
     return "⚠️ Disabled Persons Railcard costs more than your National Railcard";
   });
 
-  // Group journeys chronologically by date for the timeline layout
-  let groupedTimelineJourneys = $derived.by(() => {
-    const groups: Array<{ dateStr: string; journeys: MultiCardClassifiedJourney[] }> = [];
-    let currentGroup: { dateStr: string; journeys: MultiCardClassifiedJourney[] } | null = null;
+  let activeZoneRanges = $derived.by(() => {
+    const ranges = new Set<string>();
+    for (const j of $classifiedJourneys) {
+      if (j.zoneRange && j.zoneRange !== '—') {
+        ranges.add(j.zoneRange);
+      }
+    }
+    if (ranges.size === 0) ranges.add('Z1-2');
+    return Array.from(ranges).sort();
+  });
+
+  interface TimelineDayGroup {
+    dateStr: string;
+    dateObj: Date;
+    journeys: MultiCardClassifiedJourney[];
+    cardsActive: Array<{
+      id: string;
+      name: string;
+      color: string;
+      discount: FareType;
+      zones: string[];
+      isCapPeakDay: boolean; // whether the first rail journey on this day counts as peak cap
+    }>;
+  }
+
+  interface TimelineWeekGroup {
+    weekStart: Date;
+    weekStartStr: string;
+    days: TimelineDayGroup[];
+    actualSpend: number;
+    simulatedSpend: number;
+    savings: number;
+    capLimit: number;
+    maxZoneRange: string;
+    isCapped: boolean;
+    simCapHit: boolean;
+  }
+
+  // Group journeys by week, then day chronologically for the timeline layout
+  let groupedTimelineWeeks = $derived.by(() => {
+    // 1. Group journeys by date to form days
+    const dayMap = new Map<string, { dateStr: string; dateObj: Date; journeys: MultiCardClassifiedJourney[] }>();
     
     for (const j of filteredJourneys) {
-      if (!currentGroup || currentGroup.dateStr !== j.raw.dateStr) {
-        currentGroup = { dateStr: j.raw.dateStr, journeys: [] };
-        groups.push(currentGroup);
+      const key = j.raw.dateStr;
+      const existing = dayMap.get(key);
+      if (existing) {
+        existing.journeys.push(j);
+      } else {
+        dayMap.set(key, {
+          dateStr: key,
+          dateObj: new Date(j.raw.date),
+          journeys: [j],
+        });
       }
-      currentGroup.journeys.push(j);
     }
-    return groups;
+    
+    // Sort journeys within each day — LATEST time at top (reverse chronological)
+    const days: TimelineDayGroup[] = Array.from(dayMap.values()).map(day => {
+      day.journeys.sort((a, b) => {
+        const timeA = a.raw.startTime || "";
+        const timeB = b.raw.startTime || "";
+        return timeB.localeCompare(timeA); // reversed: latest first
+      });
+      
+      // Determine cards active on this day and their zones
+      // Also determine whether today is a peak or off-peak cap day per card
+      const cardsActiveMap = new Map<string, { id: string; name: string; color: string; discount: FareType; zones: Set<string>; isCapPeakDay: boolean | null }>();
+      for (const j of day.journeys) {
+        if (!j.cardId) continue;
+        const zoneNorm = j.zoneRange === 'Z1' ? 'Z1-2' : j.zoneRange;
+        const existing = cardsActiveMap.get(j.cardId);
+        if (existing) {
+          if (zoneNorm && zoneNorm !== '—') {
+            existing.zones.add(zoneNorm);
+          }
+          // Track cap peak: first non-bus journey's isCapPeak decides the day's cap type
+          if (!j.isBus && existing.isCapPeakDay === null) {
+            existing.isCapPeakDay = j.isCapPeak;
+          }
+        } else {
+          const card = $cards.find(c => c.id === j.cardId);
+          const zones = new Set<string>();
+          if (zoneNorm && zoneNorm !== '—') {
+            zones.add(zoneNorm);
+          }
+          cardsActiveMap.set(j.cardId, {
+            id: j.cardId,
+            name: j.cardName || 'Card',
+            color: j.cardColor || '#fff',
+            discount: card?.detectedDiscount || 'none',
+            zones,
+            isCapPeakDay: !j.isBus ? j.isCapPeak : null,
+          });
+        }
+      }
+      
+      return {
+        dateStr: day.dateStr,
+        dateObj: day.dateObj,
+        journeys: day.journeys,
+        cardsActive: Array.from(cardsActiveMap.values()).map(c => ({
+          ...c,
+          zones: Array.from(c.zones).sort(),
+          isCapPeakDay: c.isCapPeakDay ?? false,
+        })),
+      };
+    });
+    
+    // 2. Group days by week (Monday start)
+    const weekMap = new Map<number, { weekStart: Date; days: TimelineDayGroup[] }>();
+    
+    const getMondayOfDate = (d: Date): Date => {
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(d);
+      monday.setDate(diff);
+      monday.setHours(0, 0, 0, 0);
+      return monday;
+    };
+    
+    for (const d of days) {
+      const mon = getMondayOfDate(d.dateObj);
+      const key = mon.getTime();
+      const existing = weekMap.get(key);
+      if (existing) {
+        existing.days.push(d);
+      } else {
+        weekMap.set(key, {
+          weekStart: mon,
+          days: [d],
+        });
+      }
+    }
+    
+    // Convert to week groups and compute summaries
+    const weeks: TimelineWeekGroup[] = Array.from(weekMap.values()).map(w => {
+      w.days.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+      
+      const keyTime = w.weekStart.getTime();
+      
+      const actualWeek = $weeklyCapResults?.find(wr => wr.weekStart.getTime() === keyTime);
+      const actualSpend = actualWeek?.totalSpend ?? w.days.reduce((sum, d) => sum + d.journeys.reduce((js, j) => js + j.raw.charge, 0), 0);
+      const isCapped = actualWeek?.capHit ?? false;
+      const maxZoneRange = actualWeek?.maxZoneRange ?? 'Z1-2';
+      const capLimit = actualWeek?.weeklyCap ?? lookupWeeklyCap(maxZoneRange, 'none');
+      
+      let simulatedSpend = actualSpend;
+      let simCapHit = false;
+      if ($combinedSimulation) {
+        const optimalSim = $combinedSimulation.simulations[$combinedSimulation.optimalCardId];
+        if (optimalSim) {
+          const simWeek = optimalSim.simulatedWeeklyCaps.find(sw => sw.weekStart.getTime() === keyTime);
+          if (simWeek) {
+            simulatedSpend = simWeek.totalSpend;
+            simCapHit = simWeek.capHit;
+          }
+        }
+      }
+      
+      const savings = Math.max(0, Math.round((actualSpend - simulatedSpend) * 100) / 100);
+      
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const weekStartStr = `Week of ${w.weekStart.getDate()} ${months[w.weekStart.getMonth()]}`;
+      
+      return {
+        weekStart: w.weekStart,
+        weekStartStr,
+        days: w.days,
+        actualSpend: Math.round(actualSpend * 100) / 100,
+        simulatedSpend: Math.round(simulatedSpend * 100) / 100,
+        savings,
+        capLimit,
+        maxZoneRange,
+        isCapped,
+        simCapHit,
+      };
+    });
+    
+    // Sort weeks descending or ascending depending on sortAsc
+    weeks.sort((a, b) => {
+      const cmp = a.weekStart.getTime() - b.weekStart.getTime();
+      return sortAsc ? cmp : -cmp;
+    });
+    
+    return weeks;
   });
+
+  // Collapsed days state for the timeline view
+  let collapsedDays = $state<Record<string, boolean>>({});
+
+  function toggleDayCollapse(dateStr: string) {
+    collapsedDays[dateStr] = !collapsedDays[dateStr];
+  }
+
+  function collapseAllDays() {
+    for (const week of groupedTimelineWeeks) {
+      for (const day of week.days) {
+        collapsedDays[day.dateStr] = true;
+      }
+    }
+  }
+
+  function expandAllDays() {
+    collapsedDays = {};
+  }
 </script>
 
 <div class="analysis-page">
@@ -500,80 +695,296 @@
         </div>
       </div>
     {:else if journeyViewMode === 'timeline'}
+      <!-- Multi-Card Optimization & Caps Info Box -->
+      {#if $activeCardId === 'combined' && $cards.length > 1 && $combinedSimulation}
+        {@const optimalSim = $combinedSimulation.simulations[$combinedSimulation.optimalCardId]}
+        
+        <div class="glass-card timeline-summary-widget animate-fade-in" style="padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden; margin-bottom: 1.25rem;">
+          <!-- Subtle glow accent of the optimal card -->
+          <div style="position: absolute; right: 0; top: 0; width: 200px; height: 200px; background: radial-gradient(circle, {($cards.find(c => c.id === $combinedSimulation.optimalCardId)?.color || 'rgba(0,159,227,0.4)')}10 0%, transparent 70%); pointer-events: none;"></div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.4rem;">
+                🔮 Combined Capping & Savings Summary
+              </h3>
+              <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0;">
+                Review each card's caps, simulated one-card performance, and consolidation recommendations.
+              </p>
+            </div>
+            {#if optimalSim && optimalSim.netDifference > 0}
+              <div class="badge-saving" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 8px; font-size: 0.8rem;">
+                🎉 Potential Saving: £{optimalSim.netDifference.toFixed(2)}
+              </div>
+            {/if}
+          </div>
+
+          <!-- Cards Caps & Spend Comparison Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.85rem; width: 100%;">
+            {#each $cards as card}
+              {@const sim = $combinedSimulation.simulations[card.id]}
+              {@const discount = card.detectedDiscount || 'none'}
+              {@const discountName = FARE_TYPES[discount].name}
+              
+              <!-- Relevant zone ranges that the card actually travelled in -->
+              {@const cardZones = Array.from(new Set(card.classifiedJourneys.map(j => j.zoneRange === 'Z1' ? 'Z1-2' : j.zoneRange).filter((z): z is string => typeof z === 'string' && z !== '—'))).sort()}
+              
+              <div class="glass-card" style="border: 1px solid {card.color}25; background: rgba(0,0,0,0.15); padding: 0.85rem; border-radius: 10px; display: flex; flex-direction: column; gap: 0.5rem; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.4rem;">
+                  <span style="font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.35rem; color: #fff;">
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: {card.color}"></span>
+                    {card.name}
+                  </span>
+                  <span style="font-size: 0.7rem; font-weight: 600; padding: 0.1rem 0.35rem; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--color-text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {discountName}
+                  </span>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem;">
+                  <div>
+                    <span style="color: var(--color-text-muted); display: block;">Actual spend:</span>
+                    <strong style="color: #fff;">£{(card.weeklyCapResults.reduce((sum, w) => sum + w.totalSpend, 0)).toFixed(2)}</strong>
+                  </div>
+                  <div>
+                    <span style="color: var(--color-text-muted); display: block;">Caps hit:</span>
+                    <strong style="color: #fff;">
+                      {card.capSummary?.daysCapHit ?? 0}d / {card.capSummary?.weeksCapHit ?? 0}w
+                    </strong>
+                  </div>
+                </div>
+
+                <!-- Show specific fare caps rules for this card's discount type and active zone ranges -->
+                <div style="margin-top: 0.25rem; padding-top: 0.4rem; border-top: 1px dashed rgba(255,255,255,0.05); font-size: 0.7rem; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="font-weight: 600; color: var(--color-text-muted); font-size: 0.65rem; text-transform: uppercase; margin-bottom: 0.1rem;">Fare Cap Rates:</div>
+                  {#if cardZones.length > 0}
+                    {#each cardZones as zone}
+                      {@const dailyPeak = lookupDailyCap(zone, true, discount)}
+                      {@const dailyOffPeak = lookupDailyCap(zone, false, discount)}
+                      {@const weeklyVal = lookupWeeklyCap(zone, discount)}
+                      <div style="background: rgba(255,255,255,0.02); padding: 0.3rem 0.4rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 0.1rem;">
+                        <div style="font-weight: 700; color: #fff; font-size: 0.725rem;">🚇 {zone}</div>
+                        <div style="display: flex; justify-content: space-between;">
+                          <span>Daily (Peak/Off-Peak):</span>
+                          <strong>£{dailyPeak.toFixed(2)} / £{dailyOffPeak.toFixed(2)}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                          <span>Weekly:</span>
+                          <strong>£{weeklyVal.toFixed(2)}</strong>
+                        </div>
+                      </div>
+                    {/each}
+                  {:else}
+                    <div style="font-style: italic; color: var(--color-text-muted);">No zones travelled in</div>
+                  {/if}
+                </div>
+
+                {#if sim && sim.netDifference > 0}
+                  <div style="margin-top: 0.4rem; padding: 0.35rem 0.5rem; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 6px; font-size: 0.725rem; color: #34d399; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Simulated One-Card Spend:</span>
+                    <strong>£{sim.simulatedTotalSpend.toFixed(2)} (-£{sim.netDifference.toFixed(2)})</strong>
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          </div>
+
+          <!-- Consolidation savings box -->
+          {#if optimalSim && optimalSim.netDifference > 0}
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 0.75rem 1rem; border-left: 4px solid #10b981; font-size: 0.8rem; line-height: 1.45; color: var(--color-text-primary);">
+              <strong>💡 Consolidation Opportunity:</strong> Had you consolidated all journeys onto a single card — specifically the <strong>{optimalSim.cardName}</strong> (which features the <strong>{optimalSim.discountName}</strong> discount, which has the lowest daily and weekly capping thresholds), you would have spent a total of <strong style="color: #34d399;">£{optimalSim.simulatedTotalSpend.toFixed(2)}</strong> instead of £{$combinedSimulation.actualTotalSpend.toFixed(2)}, saving a whopping <strong>£{optimalSim.netDifference.toFixed(2)}</strong>!
+              {#if optimalSim.consolidationBenefit > 0 || optimalSim.discountUpgradeBenefit > 0}
+                <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--color-text-secondary); display: flex; gap: 1rem; flex-wrap: wrap;">
+                  {#if optimalSim.consolidationBenefit > 0}
+                    <span>• <strong>Capping Consolidation:</strong> £{optimalSim.consolidationBenefit.toFixed(2)} saved by pooling journeys under one cap.</span>
+                  {/if}
+                  {#if optimalSim.discountUpgradeBenefit > 0}
+                    <span>• <strong>Discount Upgrades:</strong> £{optimalSim.discountUpgradeBenefit.toFixed(2)} saved by applying the card's concession rates to all journeys.</span>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 0.75rem 1rem; border-left: 4px solid #10b981; font-size: 0.8rem; color: var(--color-text-primary);">
+              <strong>✓ Fully Optimized:</strong> Your journeys are already distributed across your cards in a way that minimizes total spend. No consolidation savings are available!
+            </div>
+          {/if}
+        </div>
+      {/if}
+
       <!-- Chronological Interleaved Timeline View -->
       <div class="timeline-container animate-fade-in" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 0.5rem;">
-        {#if groupedTimelineJourneys.length === 0}
+        {#if groupedTimelineWeeks.length === 0}
           <div class="glass-card" style="padding: 3rem 1.5rem; text-align: center; color: var(--color-text-muted);">
             No journeys matching search/filters.
           </div>
         {:else}
-          {#each groupedTimelineJourneys as group}
-            <div class="timeline-group">
-              <!-- Date Header Divider -->
-              <div class="timeline-date-divider" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
-                <span style="font-size: 0.8rem; font-weight: 800; color: #fff; background: rgba(255,255,255,0.06); padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04);">{group.dateStr}</span>
-                <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.06);"></div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: -0.5rem;">
+            <button
+              class="cost-btn"
+              style="padding: 0.25rem 0.6rem; font-size: 0.725rem; border-radius: 4px; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); color: var(--color-text-secondary); cursor: pointer;"
+              onclick={expandAllDays}
+            >
+              Expand All Days
+            </button>
+            <button
+              class="cost-btn"
+              style="padding: 0.25rem 0.6rem; font-size: 0.725rem; border-radius: 4px; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); color: var(--color-text-secondary); cursor: pointer;"
+              onclick={collapseAllDays}
+            >
+              Collapse All Days
+            </button>
+          </div>
+          
+          {#each groupedTimelineWeeks as week}
+            <div class="timeline-week-block" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; position: relative;">
+              <!-- Subtle card background glow if weekly cap is hit -->
+              {#if week.isCapped}
+                <div style="position: absolute; inset: 0; background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.03), transparent 60%); pointer-events: none; border-radius: 12px;"></div>
+              {/if}
+
+              <!-- Week Header -->
+              <div class="timeline-week-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.6rem; margin-bottom: 1rem; position: relative; z-index: 1;">
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+                  🗓️ {week.weekStartStr}
+                </h4>
+                <div style="font-size: 0.8rem; color: var(--color-text-secondary); text-align: right; display: flex; align-items: center; gap: 0.5rem;">
+                  <span>Weekly Spend: <strong style="color: #fff;">£{week.actualSpend.toFixed(2)}</strong></span>
+                  {#if week.isCapped}
+                    <span class="badge-dot" style="background: var(--color-success);" title="Weekly Cap Reached"></span>
+                    <span style="color: #34d399; font-weight: 700; font-size: 0.725rem;">CAPPED</span>
+                  {/if}
+                </div>
               </div>
-              
-              <div class="timeline-nodes" style="display: flex; flex-direction: column; gap: 0.5rem; position: relative;">
-                <!-- Vertical connection line -->
-                <div style="position: absolute; left: 11px; top: 10px; bottom: 10px; width: 1px; background: rgba(255,255,255,0.06); pointer-events: none;"></div>
 
-                {#each group.journeys as j}
-                  <div
-                    class="timeline-node flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4"
-                    style="position: relative; padding: 0.75rem 1rem 0.75rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor || 'var(--color-oyster-blue)'}; border-radius: 4px;"
-                  >
-                    <!-- Colored dot on the line -->
-                    <div style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor || 'var(--color-oyster-blue)'}; border: 2px solid var(--color-bg); box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"></div>
-                    
-                    <!-- Time & Mode badge -->
-                    <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 130px; flex-shrink: 0;">
-                      <span style="font-size: 0.85rem; font-weight: 700; color: #fff; font-family: monospace; opacity: 0.95;">{j.raw.startTime || "—"}</span>
-                      <span class="badge {getModeBadgeClass(j.mode)}" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">{getModeLabel(j.mode)}</span>
-                    </div>
-
-                    <!-- Journey Details -->
-                    <div style="flex: 1; font-size: 0.85rem; color: var(--color-text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="w-full md:w-auto">
-                      {#if j.isBus}
-                        <span style="color: var(--color-text-secondary); font-weight: 500;">{j.raw.journeyAction}</span>
-                      {:else if j.origin && j.destination}
-                        <span style="font-weight: 600; color: #fff;">{j.origin.replace(/\s*\[.*?\]/g, "")}</span>
-                        <span style="color: var(--color-text-muted); margin: 0 0.25rem;">→</span>
-                        <span style="font-weight: 600; color: #fff;">{j.destination.replace(/\s*\[.*?\]/g, "")}</span>
-                        {#if j.zoneRange}
-                          <span style="font-size: 0.75rem; color: {getZoneColor(j.zoneRange)}; font-weight: 700; margin-left: 0.35rem;">({j.zoneRange})</span>
+              <!-- Days within Week -->
+              <div style="display: flex; flex-direction: column; gap: 1rem; position: relative; z-index: 1;">
+                {#each week.days as group}
+                  {@const isCollapsed = !!collapsedDays[group.dateStr]}
+                  <div class="timeline-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <button
+                      type="button"
+                      class="timeline-date-divider"
+                      style="display: flex; align-items: center; gap: 1rem; cursor: pointer; user-select: none; width: 100%; border: none; background: none; font-family: inherit; font-size: inherit; color: inherit; padding: 0;"
+                      onclick={() => toggleDayCollapse(group.dateStr)}
+                    >
+                      <span
+                        class="timeline-date-header"
+                        style="font-size: 0.8rem; font-weight: 800; color: #fff; background: rgba(255,255,255,0.06); padding: 0.2rem 0.55rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04); display: inline-flex; align-items: center; gap: 0.35rem; transition: background 0.2s;"
+                      >
+                        <span class="chevron" style="display: inline-block; font-size: 0.65rem; transition: transform 0.2s; transform: {isCollapsed ? 'rotate(-90deg)' : 'none'};">▼</span>
+                        {group.dateStr}
+                        {#if isCollapsed}
+                          <span style="font-size: 0.7rem; font-weight: 500; opacity: 0.6; margin-left: 0.35rem;">({group.journeys.length} {group.journeys.length === 1 ? 'journey' : 'journeys'})</span>
                         {/if}
-                      {:else}
-                        <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
-                      {/if}
-                    </div>
+                      </span>
+                      <span style="flex: 1; height: 1px; background: rgba(255,255,255,0.06);"></span>
+                    </button>
 
-                    <!-- Card badge & Cost info -->
-                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;" class="w-full justify-between md:w-auto md:justify-start">
-                      <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}; margin: 0; padding: 0.15rem 0.45rem; font-size: 0.7rem;">
-                        <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
-                        <span class="badge-text">{j.cardName || 'Card'}</span>
+                    {#if !isCollapsed}
+                      <!-- Card day summary showing relevant daily zones and caps for that day -->
+                      <div style="display: flex; flex-direction: column; gap: 0.3rem; margin-left: 1.5rem; margin-bottom: 0.25rem;">
+                        {#each group.cardsActive as cardInfo}
+                      <div class="card-day-summary" style="display: flex; align-items: flex-start; gap: 0.35rem; font-size: 0.725rem; color: var(--color-text-secondary); flex-wrap: wrap;">
+                            <span class="badge-dot" style="background: {cardInfo.color}; width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-top: 0.35rem;"></span>
+                            <strong style="color: #fff; margin-top: 0.15rem;">{cardInfo.name}:</strong>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                            {#each cardInfo.zones as zone}
+                              {@const peakCap = lookupDailyCap(zone, true, cardInfo.discount)}
+                              {@const offPeakCap = lookupDailyCap(zone, false, cardInfo.discount)}
+                              {@const isPeakActive = cardInfo.isCapPeakDay}
+                              <span style="background: rgba(255,255,255,0.03); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04); font-size: 0.7rem; display: flex; gap: 0.3rem; align-items: center;">
+                                <span style="color: {zone.includes('-') && parseInt(zone.replace('Z','').split('-')[1]) > 2 ? '#a78bfa' : 'var(--color-oyster-blue)'};">🚇 {zone}</span>
+                                <span style="padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; font-weight: 700; {isPeakActive ? 'background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35);' : 'background: rgba(255,255,255,0.04); color: var(--color-text-muted); border: 1px solid rgba(255,255,255,0.06);'}" title="{isPeakActive ? 'Peak cap active' : 'Not active'}">Peak £{peakCap.toFixed(2)}</span>
+                                <span style="padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; font-weight: 700; {!isPeakActive ? 'background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.35);' : 'background: rgba(255,255,255,0.04); color: var(--color-text-muted); border: 1px solid rgba(255,255,255,0.06);'}" title="{!isPeakActive ? 'Off-peak cap active' : 'Not active'}">Off-Pk £{offPeakCap.toFixed(2)}</span>
+                              </span>
+                            {/each}
+                            </div>
+                          </div>
+                        {/each}
                       </div>
-                      
-                      <div style="text-align: right; min-width: 65px;">
-                        <span style="font-size: 0.85rem; font-weight: 700; color: {j.raw.charge === 0 && j.isCapHit ? '#34d399' : '#fff'};">
-                          {#if j.raw.charge === 0 && j.isCapHit}
-                            FREE
-                          {:else}
-                            £{j.raw.charge.toFixed(2)}
-                          {/if}
-                        </span>
-                        {#if j.isCapHit}
-                          <div style="font-size: 0.6rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;">Cap</div>
-                        {:else if j.isHopperFree}
-                          <div style="font-size: 0.6rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;">Hopper</div>
-                        {/if}
+
+                      <div class="timeline-nodes" style="display: flex; flex-direction: column; gap: 0.4rem; position: relative;">
+                        <!-- Vertical connection line -->
+                        <div style="position: absolute; left: 11px; top: 10px; bottom: 10px; width: 1px; background: rgba(255,255,255,0.06); pointer-events: none;"></div>
+
+                        {#each group.journeys as j}
+                          <div
+                            class="timeline-node flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4"
+                            style="position: relative; padding: 0.5rem 0.75rem 0.5rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor || 'var(--color-oyster-blue)'}; border-radius: 4px;"
+                          >
+                            <!-- Colored dot on the line -->
+                            <div style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor || 'var(--color-oyster-blue)'}; border: 2px solid var(--color-bg); box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"></div>
+                            
+                            <!-- Time & Mode badge -->
+                            <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 120px; flex-shrink: 0;">
+                              <span style="font-size: 0.8rem; font-weight: 700; color: #fff; font-family: monospace; opacity: 0.95;">{j.raw.startTime || "—"}</span>
+                              <span class="badge {getModeBadgeClass(j.mode)}" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">{getModeLabel(j.mode)}</span>
+                            </div>
+
+                            <!-- Journey Details -->
+                            <div style="flex: 1; font-size: 0.8rem; color: var(--color-text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="w-full md:w-auto">
+                              {#if j.isBus}
+                                <span style="color: var(--color-text-secondary); font-weight: 500;">{j.raw.journeyAction}</span>
+                              {:else if j.origin && j.destination}
+                                <span style="font-weight: 600; color: #fff;">{j.origin.replace(/\s*\[.*?\]/g, "")}</span>
+                                <span style="color: var(--color-text-muted); margin: 0 0.2rem;">→</span>
+                                <span style="font-weight: 600; color: #fff;">{j.destination.replace(/\s*\[.*?\]/g, "")}</span>
+                                {#if j.zoneRange}
+                                  <span style="font-size: 0.7rem; color: {getZoneColor(j.zoneRange)}; font-weight: 700; margin-left: 0.3rem;">({j.zoneRange})</span>
+                                {/if}
+                              {:else}
+                                <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
+                              {/if}
+                            </div>
+
+                            <!-- Card badge & Cost info -->
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;" class="w-full justify-between md:w-auto md:justify-start">
+                              <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}; margin: 0; padding: 0.1rem 0.4rem; font-size: 0.65rem;">
+                                <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
+                                <span class="badge-text">{j.cardName || 'Card'}</span>
+                              </div>
+                              
+                              <div style="text-align: right; min-width: 60px;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: {j.raw.charge === 0 && j.isCapHit ? '#34d399' : '#fff'};">
+                                  {#if j.raw.charge === 0 && j.isCapHit}
+                                    FREE
+                                  {:else}
+                                    £{j.raw.charge.toFixed(2)}
+                                  {/if}
+                                </span>
+                                {#if j.isCapHit}
+                                  <div style="font-size: 0.55rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;">Cap Hit</div>
+                                {:else if j.isHopperFree}
+                                  <div style="font-size: 0.55rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;">Hopper</div>
+                                {/if}
+                              </div>
+                            </div>
+                          </div>
+                        {/each}
                       </div>
-                    </div>
+                    {/if}
                   </div>
                 {/each}
               </div>
+
+              <!-- Weekly Cap Summary Footer -->
+              <div class="timeline-weekly-summary-footer" style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.775rem; position: relative; z-index: 1;">
+                <div style="color: var(--color-text-secondary);">
+                  📊 <strong>{week.maxZoneRange} Weekly Cap Limit:</strong> £{week.capLimit.toFixed(2)}
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                  <div>
+                    <span style="color: var(--color-text-muted);">Weekly spend:</span>
+                    <strong style="color: #fff; margin-left: 0.25rem;">£{week.actualSpend.toFixed(2)}</strong>
+                  </div>
+                  {#if week.savings > 0}
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.15rem 0.45rem; border-radius: 4px; color: #34d399; font-weight: 600;">
+                      Simulated saving: <strong>-£{week.savings.toFixed(2)}</strong>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+
             </div>
           {/each}
         {/if}
@@ -1250,17 +1661,20 @@
                 </div>
               {/if}
             {:else if optimalSim && optimalSim.netDifference > 0}
-              <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div class="glass-card" style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; border-left: 4px solid #fbbf24; cursor: pointer;" onclick={() => { selectedSimCardId = $combinedSimulation.optimalCardId; }} role="button" tabindex="0">
+              <button
+                type="button"
+                class="glass-card"
+                style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; border-left: 4px solid #fbbf24; cursor: pointer; text-align: left; font-family: inherit; font-size: inherit; color: inherit; width: 100%; outline: none;"
+                onclick={() => { selectedSimCardId = $combinedSimulation.optimalCardId; }}
+              >
                 <span style="font-size: 1.25rem; line-height: 1;">⚠️</span>
-                <div>
+                <span style="display: block; text-align: left;">
                   <strong style="color: #fbbf24; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Sub-optimal Strategy</strong>
-                  <p style="margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;">
+                  <span style="display: block; margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;">
                     Consolidating on <strong>{optimalSim.cardName} ({optimalSim.discountName})</strong> would be more optimal, saving you <strong>£{optimalSim.netDifference.toFixed(2)}</strong> (compared to £{activeSim.netDifference.toFixed(2)} with this card). <u>Click here to switch to optimal.</u>
-                  </p>
-                </div>
-              </div>
+                  </span>
+                </span>
+              </button>
             {/if}
 
             <!-- Breakdown comparison grid -->

@@ -378,9 +378,8 @@
 
 {#if open}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="dialog-overlay" onclick={closeDialog} onkeydown={(e) => { if (e.key === 'Escape') closeDialog(); }}>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="dialog-card glass-card" class:wide-dialog={step === 'decide' && addMode === 'merge' && mergeClash} onclick={(e) => e.stopPropagation()}>
+  <div class="dialog-overlay" onclick={(e) => { if (e.target === e.currentTarget) closeDialog(); }} onkeydown={(e) => { if (e.key === 'Escape') closeDialog(); }}>
+    <div class="dialog-card glass-card" class:wide-dialog={step === 'decide' && addMode === 'merge' && mergeClash}>
       <div class="dialog-header">
         <h3 class="dialog-title">
           {#if step === 'upload'}📂 Add Data / CSV
@@ -449,37 +448,31 @@
             <p class="decision-question">How would you like to add this data?</p>
 
             <div class="mode-selector">
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div
+              <button
+                type="button"
                 class="mode-card"
                 class:active={addMode === 'merge'}
                 onclick={() => addMode = 'merge'}
-                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') addMode = 'merge'; }}
-                role="button"
-                tabindex="0"
               >
                 <div class="mode-card-icon">📄</div>
                 <div class="mode-card-info">
                   <span class="mode-card-title">Extend Existing Card</span>
                   <span class="mode-card-desc">Merge travel history into a card you already added.</span>
                 </div>
-              </div>
+              </button>
 
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div
+              <button
+                type="button"
                 class="mode-card"
                 class:active={addMode === 'new'}
                 onclick={() => addMode = 'new'}
-                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') addMode = 'new'; }}
-                role="button"
-                tabindex="0"
               >
                 <div class="mode-card-icon">💳</div>
                 <div class="mode-card-info">
                   <span class="mode-card-title">Add as New Card</span>
                   <span class="mode-card-desc">Keep this data separate as a new physical card.</span>
                 </div>
-              </div>
+              </button>
             </div>
 
             <div class="mode-content-panel">
@@ -546,17 +539,13 @@
                                 {/each}
                                 {#if mergeClash.clashes.length > 5}
                                   {#if !showAllConflicts}
-                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                    <div class="clash-more clickable" onclick={() => showAllConflicts = true} role="button" tabindex="0">
+                                    <button type="button" class="clash-more clickable" onclick={() => showAllConflicts = true}>
                                       ...and {mergeClash.clashes.length - 5} more conflicts (click to expand)
-                                    </div>
+                                    </button>
                                   {:else}
-                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                    <div class="clash-more clickable" onclick={() => showAllConflicts = false} role="button" tabindex="0">
+                                    <button type="button" class="clash-more clickable" onclick={() => showAllConflicts = false}>
                                       Show less conflicts
-                                    </div>
+                                    </button>
                                   {/if}
                                 {/if}
                               </div>
@@ -1105,11 +1094,15 @@
   }
 
   .clash-more {
+    background: none;
+    border: none;
+    font-family: inherit;
     font-size: 0.68rem;
     color: var(--color-text-muted);
     text-align: center;
     padding: 0.25rem 0;
     font-style: italic;
+    width: 100%;
   }
 
   /* Mode selector elements */
@@ -1131,6 +1124,10 @@
     cursor: pointer;
     transition: all 0.25s ease;
     text-align: left;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    width: 100%;
   }
 
   .mode-card:hover {

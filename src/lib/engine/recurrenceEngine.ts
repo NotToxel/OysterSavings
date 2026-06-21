@@ -27,6 +27,7 @@ export interface RecurrenceRule {
   exactBaseFareOffPeak?: number;
   isAdvancedMode?: boolean;
   routeDescription?: string;
+  useOffpeakCap?: boolean; // Peak fare, but journey counts towards off-peak daily cap (exception stations)
 }
 
 export interface PlannedJourney {
@@ -47,6 +48,7 @@ export interface PlannedJourney {
   originStationName?: string;
   destinationStationName?: string;
   routeDescription?: string;
+  useOffpeakCap?: boolean; // Peak fare, but counts towards off-peak daily cap
 }
 
 // Generate concrete journey instances from recurrence rules
@@ -135,6 +137,7 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
             destinationStationName: rule.destinationStationName,
             routeDescription: rule.routeDescription,
           }),
+          ...(rule.useOffpeakCap && { useOffpeakCap: true }),
         });
 
         if (rule.isReturn && rule.returnTimePeriod) {

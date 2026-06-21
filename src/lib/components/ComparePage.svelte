@@ -23,6 +23,7 @@
   let activeSpan = $state<'weekly' | 'monthly' | 'annual'>('monthly');
   let chartCanvas: HTMLCanvasElement;
   let chart: Chart | null = null;
+  let showPriceReference = $state(false);
 
   // Visible products checkboxes state
   let visibleProducts = $state({
@@ -712,10 +713,42 @@
 
   <!-- Static travelcard price reference -->
   <div class="glass-card" style="padding: 0; overflow: hidden; margin-top: 1.5rem;">
-    <div style="padding: 1rem 1.25rem 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">
-      <h3 style="font-size: 0.9rem; font-weight: 600; color: var(--color-text-secondary); margin: 0;">📋 Travelcard Price Reference</h3>
+    <div style="padding: 0.75rem 1.25rem; border-bottom: {showPriceReference ? '1px solid rgba(255, 255, 255, 0.04)' : 'none'}; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 0.9rem; font-weight: 600; color: var(--color-text-secondary); margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+        📋 Travelcard Price Reference
+      </h3>
+      {#if showPriceReference}
+        <button
+          type="button"
+          class="cost-btn"
+          style="padding: 0.25rem 0.6rem; font-size: 0.725rem; border-radius: 6px; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); color: var(--color-text-secondary); cursor: pointer;"
+          onclick={() => showPriceReference = false}
+        >
+          Collapse ▲
+        </button>
+      {/if}
     </div>
-    <div style="overflow-x: auto;">
+
+    {#if !showPriceReference}
+      <div style="padding: 1.75rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; background: rgba(255,255,255,0.01); text-align: center;">
+        <span style="font-size: 1.75rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));">📊</span>
+        <div>
+          <h4 style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #fff;">Need to check TfL fare rates?</h4>
+          <p style="margin: 0.35rem 0 0 0; font-size: 0.775rem; color: var(--color-text-secondary); max-width: 460px; line-height: 1.45;">
+            View the complete static weekly, monthly, and annual Travelcard pricing matrix for all zone combinations and bus passes.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn-primary"
+          style="margin-top: 0.35rem; padding: 0.5rem 1.5rem; font-size: 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 159, 227, 0.25);"
+          onclick={() => showPriceReference = true}
+        >
+          📂 Open Travelcard Price Reference Table
+        </button>
+      </div>
+    {:else}
+      <div style="overflow-x: auto;" class="animate-fade-in">
       <table class="data-table">
         <thead>
           <tr>
@@ -795,6 +828,7 @@
         </tbody>
       </table>
     </div>
+    {/if}
   </div>
 
   <AddCardDialog bind:open={showAddDialog} />

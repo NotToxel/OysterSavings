@@ -395,6 +395,165 @@ export function getRepresentativeTime(timePeriod: string): string {
   return '12:00';
 }
 
+/**
+ * Off-peak daily cap exception stations.
+ * Journeys tapping in from these stations AT OR AFTER the listed cut-off time
+ * (during the 06:30–09:30 morning peak window on weekdays) count towards the
+ * OFF-PEAK daily cap, even though the peak single fare is still charged.
+ * Values are the cut-off in total minutes from midnight.
+ */
+export const OFFPEAK_CAP_EXCEPTION_STATIONS: Record<string, number> = {
+  // Amersham
+  'amersham': 550,           // 09:10
+  'amersham rail station': 550,
+  'amersham underground station': 550,
+
+  // Broxbourne
+  'broxbourne': 560,         // 09:20
+  'broxbourne rail station': 560,
+
+  // Bushey
+  'bushey': 560,             // 09:20
+  'bushey rail station': 560,
+
+  // Carpenders Park
+  'carpenders park': 560,    // 09:20
+  'carpenders park rail station': 560,
+
+  // Chalfont & Latimer
+  'chalfont & latimer': 560, // 09:20
+  'chalfont & latimer rail station': 560,
+  'chalfont & latimer underground station': 560,
+  'chalfont and latimer': 560,
+  'chalfont and latimer rail station': 560,
+  'chalfont and latimer underground station': 560,
+
+  // Chesham
+  'chesham': 550,            // 09:10
+  'chesham underground station': 550,
+
+  // Enfield Chase
+  'enfield chase': 560,      // 09:20
+  'enfield chase rail station': 560,
+
+  // Epsom
+  'epsom': 560,              // 09:20
+  'epsom rail station': 560,
+
+  // Hatch End
+  'hatch end': 560,          // 09:20
+  'hatch end rail station': 560,
+
+  // Hertford East
+  'hertford east': 540,      // 09:00
+  'hertford east rail station': 540,
+
+  // Hertford North
+  'hertford north': 560,     // 09:20
+  'hertford north rail station': 560,
+
+  // Rye House
+  'rye house': 540,          // 09:00
+  'rye house rail station': 540,
+
+  // St Margarets (Herts)
+  'st margarets (herts)': 540,  // 09:00
+  'st margarets herts': 540,
+  'st. margarets (herts)': 540,
+  'st. margarets herts': 540,
+  'st margarets (herts) rail station': 540,
+  'st. margarets (herts) rail station': 540,
+  'st margarets herts rail station': 540,
+
+  // Swanley
+  'swanley': 550,            // 09:10
+  'swanley rail station': 550,
+
+  // Watford High Street
+  'watford high street': 550, // 09:10
+  'watford high street rail station': 550,
+
+  // Ware
+  'ware': 540,               // 09:00
+  'ware rail station': 540,
+
+  // Burnham
+  'burnham': 550,            // 09:10
+  'burnham (berks)': 550,
+  'burnham (berks) rail station': 550,
+
+  // Slough
+  'slough': 560,             // 09:20
+  'slough rail station': 560,
+
+  // Taplow
+  'taplow': 550,             // 09:10
+  'taplow rail station': 550,
+
+  // Maidenhead
+  'maidenhead': 558,         // 09:18
+  'maidenhead rail station': 558,
+
+  // Twyford
+  'twyford': 550,            // 09:10
+  'twyford rail station': 550,
+};
+
+/**
+ * Returns the off-peak cap cut-off in total minutes for a station, or null if
+ * the station is not in the exception list.
+ */
+export function getOffpeakCapCutoff(stationName: string | null | undefined): number | null {
+  if (!stationName) return null;
+  const key = stationName.toLowerCase().trim();
+  return OFFPEAK_CAP_EXCEPTION_STATIONS[key] ?? null;
+}
+
+/**
+ * Determines whether a journey contributes to the PEAK daily cap.
+ * Unlike isPeakJourney() which determines the fare, this function determines
+ * which cap bucket the journey counts towards.
+ *
+ * For exception stations: a journey in the 06:30–09:30 window that taps in
+ * AT OR AFTER the station's cut-off time counts towards the off-peak cap
+ * (even though the peak fare is charged).
+ */
+export function isCapPeakForStation(
+  date: Date,
+  timeStr: string,
+  originName: string | null | undefined
+): boolean {
+  const dayOfWeek = date.getDay();
+  // Weekends and bank holidays are always off-peak cap
+  if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+  if (isUKBankHoliday(date)) return false;
+
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return false;
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  if (isNaN(hours) || isNaN(minutes)) return false;
+
+  const totalMinutes = hours * 60 + minutes;
+
+  // Morning peak window: 06:30–09:29 (390–569 minutes)
+  const isMorningPeak = totalMinutes >= 390 && totalMinutes < 570;
+
+  if (isMorningPeak) {
+    // Check if origin station has an off-peak cap exception
+    const cutoff = getOffpeakCapCutoff(originName);
+    if (cutoff !== null && totalMinutes >= cutoff) {
+      // Tap-in is at or after the station's cut-off → counts as off-peak cap
+      return false;
+    }
+    return true; // Standard morning peak cap
+  }
+
+  // Evening peak window: 16:00–18:59 (960–1139 minutes)
+  const isEveningPeak = totalMinutes >= 960 && totalMinutes < 1140;
+  return isEveningPeak;
+}
+
 // Local YYYY-MM-DD date formatter
 export function formatLocalDate(d: Date): string {
   const year = d.getFullYear();

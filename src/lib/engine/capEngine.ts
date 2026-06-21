@@ -16,6 +16,7 @@ import {
   getOutsideZoneDailyCap,
   getOutsideZoneWeeklyCap,
   isStPancrasToStratford,
+  isCapPeakForStation,
 } from '../data/fareData';
 
 export interface DayCapResult {
@@ -117,17 +118,13 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
 
     let maxZoneRange = getMaxZoneRange(journeys);
 
-    // Determine off-peak vs peak cap based on the first journey of the day
+    // Determine cap type: use the first rail journey's origin name + time for exception-aware lookup
     let isPeakDay = false;
-    if (journeys.length > 0) {
-      const sortedJourneys = [...journeys].sort((a, b) => (a.journey.raw.startTime || '').localeCompare(b.journey.raw.startTime || ''));
-      const firstTime = sortedJourneys[0].journey.raw.startTime;
-      const dayOfWeek = sortedJourneys[0].journey.raw.date.getDay();
-      
-      // Peak cap applies if the first journey on a weekday is between 04:30 and 09:30
-      if (dayOfWeek >= 1 && dayOfWeek <= 5 && firstTime >= '04:30' && firstTime < '09:30') {
-        isPeakDay = true;
-      }
+    const sortedForCap = [...journeys].sort((a, b) => (a.journey.raw.startTime || '').localeCompare(b.journey.raw.startTime || ''));
+    const firstRailForCap = sortedForCap.find(j => !j.journey.isBus);
+    if (firstRailForCap) {
+      const fj = firstRailForCap.journey;
+      isPeakDay = isCapPeakForStation(fj.raw.date, fj.raw.startTime, fj.origin);
     }
     
     // Detect if this is a simulation (meaning the actualCharge values are expected/concession fares, not CSV values)

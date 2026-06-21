@@ -52,6 +52,7 @@
     getWeeklyBusCap,
     lookupWeeklyCap,
     getTravelcardJourneyFare,
+    getOffpeakCapCutoff,
   } from "$lib/data/fareData";
   import {
     searchStations,
@@ -414,6 +415,23 @@
     hideOddPeriodTooltip(undefined, true);
   }
 
+  function handleWindowClick(e: MouseEvent) {
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+    if (
+      target.closest('.weekly-cap-hovercard') ||
+      target.closest('.fare-hovercard') ||
+      target.closest('.warning-hovercard') ||
+      target.closest('.odd-period-hovercard')
+    ) {
+      return;
+    }
+    hideWeeklyCapTooltip(undefined, true);
+    hideFareTooltip(undefined, true);
+    hideWarningTooltip(undefined, true);
+    hideOddPeriodTooltip(undefined, true);
+  }
+
   function handleWeeklyCapClick(target: HTMLElement, week: any) {
     if (weeklyCapTooltipData?.visible && weeklyCapTooltipData.pinned) {
       hideWeeklyCapTooltip(undefined, true);
@@ -598,6 +616,9 @@
   let newRuleEndDate = $state("");
   let syncWithPlanEnd = $state(true);
   let syncWithPlanStart = $state(true);
+
+  // Off-peak cap override: shown only for exception stations + 06:30-09:30
+  let useOffpeakCapOverride = $state(false);
 
   // Advanced Mode state
   let advancedMode = $state($globalAdvancedMode);
@@ -1066,7 +1087,12 @@
 
   // Date range for planning
   let planStart = $state(formatInputDate(new Date()));
-  let planEnd = $state(formatInputDate(addMonths(new Date(), 1)));
+  const defaultEndDate = (() => {
+    const end = addMonths(new Date(), 1);
+    end.setDate(end.getDate() - 1);
+    return formatInputDate(end);
+  })();
+  let planEnd = $state(defaultEndDate);
   const maxYear = new Date().getFullYear() + 2;
   const maxDateStr = `${maxYear}-12-31`;
   const minYear = new Date().getFullYear() - 2;
@@ -2271,6 +2297,7 @@
         newIntervalType === "none"
           ? parseLocalDate(newRuleDate)
           : parseLocalDate(newRuleEndDate),
+      ...(useOffpeakCapOverride && selectedOriginStation && getOffpeakCapCutoff(selectedOriginStation.info.name) !== null && newTimePeriod === '06:30-09:30' && { useOffpeakCap: true }),
       // Advanced Mode fields
       ...(advancedMode && {
         isAdvancedMode: true,
@@ -2325,6 +2352,7 @@
     newRuleEndDate = formatInputDate(rule.endDate);
     syncWithPlanEnd = (newRuleEndDate === planEnd);
     syncWithPlanStart = (newRuleDate === planStart);
+    useOffpeakCapOverride = rule.useOffpeakCap || false;
     // Restore Advanced Mode state
     advancedMode = rule.isAdvancedMode || false;
     if (
@@ -2548,6 +2576,7 @@
     newRuleEndDate = planEnd;
     syncWithPlanEnd = true;
     syncWithPlanStart = true;
+    useOffpeakCapOverride = false;
     // Reset Advanced Mode
     advancedMode = $globalAdvancedMode;
     originStationResults = [];
@@ -4058,6 +4087,20 @@
                   </select>
                 </div>
               </div>
+              {#if newTimePeriod === '06:30-09:30' && selectedOriginStation}
+                {@const excCutoff = getOffpeakCapCutoff(selectedOriginStation.info.name)}
+                {#if excCutoff !== null}
+                  {@const excHH = String(Math.floor(excCutoff / 60)).padStart(2, '0')}
+                  {@const excMM = String(excCutoff % 60).padStart(2, '0')}
+                  <label class="checkbox-field offpeak-cap-exception-cb" for="modal-offpeak-cap-override" style="margin-top: -0.4rem; margin-bottom: 0.5rem; padding: 0.55rem 0.75rem; border-radius: 8px; border: 1px solid rgba(16,185,129,0.25); background: rgba(16,185,129,0.06); cursor: pointer; display: flex; align-items: flex-start; gap: 0.6rem;">
+                    <input type="checkbox" id="modal-offpeak-cap-override" bind:checked={useOffpeakCapOverride} style="margin-top: 0.1rem; flex-shrink: 0;" />
+                    <span>
+                      <span style="font-size: 0.8rem; font-weight: 600; color: #34d399; display: block; margin-bottom: 0.1rem;">Off-peak daily cap after {excHH}:{excMM}</span>
+                      <span style="font-size: 0.72rem; color: var(--color-text-secondary); line-height: 1.4;">Peak fare still applies — journeys from <strong style="color: #fff;">{selectedOriginStation.info.name}</strong> tapping in at or after {excHH}:{excMM} count towards the <strong style="color: #34d399;">off-peak daily cap</strong> instead of the peak cap.</span>
+                    </span>
+                  </label>
+                {/if}
+              {/if}
             {/if}
           {:else}
             <!-- Standard dropdown mode selection for Simple Mode -->
@@ -4645,8 +4688,6 @@
 </div>
 
 {#if fareTooltipData && fareTooltipData.visible}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="fare-hovercard"
     class:interactable={!isDesktop || fareTooltipData.pinned}
@@ -4654,8 +4695,6 @@
     style="position: fixed; left: {fareTooltipData.pinned ? '50%' : fareTooltipData.x + 'px'}; top: {fareTooltipData.pinned ? '50%' : fareTooltipData.y + 'px'}; transform: {fareTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999;"
     class:api-theme={fareTooltipData.isApi}
     class:estimate-theme={!fareTooltipData.isApi}
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
   >
     <div class="hovercard-header">
       <span class="hovercard-title">Fare Details</span>
@@ -4701,18 +4740,14 @@
   </div>
 {/if}
 
-<svelte:window onclick={() => { hideWarningTooltip(undefined, true); hideWeeklyCapTooltip(undefined, true); hideFareTooltip(undefined, true); hideOddPeriodTooltip(undefined, true); }} />
+<svelte:window onclick={handleWindowClick} />
 
 {#if oddPeriodTooltipData && oddPeriodTooltipData.visible}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="odd-period-hovercard warning-hovercard"
     class:interactable={!isDesktop || oddPeriodTooltipData.pinned}
     class:pinned={oddPeriodTooltipData.pinned}
     style="position: fixed; left: {oddPeriodTooltipData.pinned ? '50%' : oddPeriodTooltipData.x + 'px'}; top: {oddPeriodTooltipData.pinned ? '50%' : oddPeriodTooltipData.y + 'px'}; transform: {oddPeriodTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999; border-top-color: #fb923c;"
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
   >
     <div class="warning-header">
       <span class="warning-title-wrapper" style="color: #fb923c;">
@@ -4733,12 +4768,13 @@
 {/if}
 
 {#if weeklyCapTooltipData?.pinned || fareTooltipData?.pinned || warningTooltipData?.pinned || oddPeriodTooltipData?.pinned}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div 
+  <button 
+    type="button"
     class="tooltip-backdrop" 
+    aria-label="Close tooltip"
     onpointerdown={handleGlobalBackdropPointerDown}
-    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99998; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); touch-action: none;"
-  ></div>
+    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99998; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); touch-action: none; border: none; padding: 0; cursor: default;"
+  ></button>
 {/if}
 
 {#if weeklyCapTooltipData && weeklyCapTooltipData.visible}
@@ -4760,15 +4796,11 @@
   {@const showHighlights = validZones.length > 0 && Math.min(...validZones) !== Math.max(...validZones)}
   {@const minZone = validZones.length > 0 ? Math.min(...validZones) : 0}
   {@const maxZone = validZones.length > 0 ? Math.max(...validZones) : 0}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="weekly-cap-hovercard"
     class:interactable={!isDesktop || weeklyCapTooltipData.pinned}
     class:pinned={weeklyCapTooltipData.pinned}
     style="position: fixed; left: {weeklyCapTooltipData.pinned ? '50%' : weeklyCapTooltipData.x + 'px'}; top: {weeklyCapTooltipData.pinned ? '50%' : weeklyCapTooltipData.y + 'px'}; transform: {weeklyCapTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999;"
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
   >
     <div class="hovercard-header">
       <span class="hovercard-title">Weekly Cap Details</span>
@@ -4851,15 +4883,11 @@
 {/if}
 
 {#if warningTooltipData && warningTooltipData.visible}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="warning-hovercard"
     class:interactable={!isDesktop || warningTooltipData.pinned}
     class:pinned={warningTooltipData.pinned}
     style="position: fixed; left: {warningTooltipData.pinned ? '50%' : warningTooltipData.x + 'px'}; top: {warningTooltipData.pinned ? '50%' : warningTooltipData.y + 'px'}; transform: {warningTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999;"
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
   >
     {#if warningTooltipData.type === 'concession-disabled'}
       <div class="warning-header">

@@ -23,7 +23,12 @@ for (const group of outsideZoneFaresData) {
     if (!STATIONS[key]) {
       const name = key
         .split(' ')
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .map(w => {
+          if (w.startsWith('(') && w.length > 1) {
+            return '(' + w.charAt(1).toUpperCase() + w.slice(2);
+          }
+          return w.charAt(0).toUpperCase() + w.slice(1);
+        })
         .join(' ');
       STATIONS[key] = {
         name,
