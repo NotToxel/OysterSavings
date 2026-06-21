@@ -163,8 +163,12 @@ export function calculateDiscountedFare(
 
 // Determine zone range string from origin/destination zones
 export function getZoneRange(originZone: number, destZone: number): string {
-  const minZone = Math.min(originZone, destZone);
-  const maxZone = Math.max(originZone, destZone);
+  const zones = [originZone, destZone].filter(z => z > 0);
+  if (zones.length === 0) {
+    return 'Z1-2';
+  }
+  const minZone = Math.min(...zones);
+  const maxZone = Math.max(...zones);
 
   if (minZone === maxZone) {
     return `Z${minZone}`;

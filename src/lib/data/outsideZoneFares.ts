@@ -105,9 +105,36 @@ export function getOutsideZoneDailyCap(
   if (group.contactlessOnly && fareType !== 'none') return null;
 
   const caps = group.dailyCaps[fareType];
-  if (!caps) return null;
+  if (caps) {
+    return isPeak ? caps.peak : caps.offPeak;
+  }
 
-  return isPeak ? caps.peak : caps.offPeak;
+  // Fallback to 'none' (Adult) daily caps if this fareType is not specifically defined
+  const noneCaps = group.dailyCaps['none'];
+  if (!noneCaps) return null;
+
+  // If child/concession fare types that get 50% discount
+  if (fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17') {
+    const val = isPeak ? noneCaps.peak : noneCaps.offPeak;
+    return Math.floor(val * 0.5 * 20) / 20; // round down to nearest 5p per TfL rules
+  }
+
+  // If railcard / disabled fare types
+  if (fareType === 'railcard' || fareType === 'disabled') {
+    // Standard railcards get 1/3 discount on off-peak only (appliesToPeak is false)
+    // Disabled Persons gets 1/3 discount on both peak and off-peak daily caps (appliesToPeak is true)
+    const multiplier = 0.666;
+    if (isPeak) {
+      if (fareType === 'disabled') {
+        return Math.floor(noneCaps.peak * multiplier * 20) / 20;
+      }
+      return noneCaps.peak; // standard railcard pays peak cap
+    } else {
+      return Math.floor(noneCaps.offPeak * multiplier * 20) / 20;
+    }
+  }
+
+  return isPeak ? noneCaps.peak : noneCaps.offPeak;
 }
 
 /**
@@ -124,11 +151,23 @@ export function getOutsideZoneWeeklyCap(
 
   if (group.contactlessOnly && fareType !== 'none') return null;
 
-  const ranges = group.zoneRanges[fareType];
-  if (!ranges || ranges.length === 0) return null;
+  let ranges = group.zoneRanges[fareType];
+  if (ranges && ranges.length > 0) {
+    return ranges[0].weeklyCap;
+  }
 
-  // Return the widest zone range's weekly cap (first entry is typically the widest)
-  return ranges[0].weeklyCap;
+  // Fallback to 'none' (Adult) if this fareType has no specific weekly cap range
+  const noneRanges = group.zoneRanges['none'];
+  if (!noneRanges || noneRanges.length === 0) return null;
+
+  const baseCap = noneRanges[0].weeklyCap;
+  if (baseCap === null) return null;
+
+  if (fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17') {
+    return Math.round(baseCap * 0.5 * 10) / 10; // Round to nearest 10p per TfL rules
+  }
+
+  return baseCap;
 }
 
 /**

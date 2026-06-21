@@ -34,6 +34,11 @@ for (const group of outsideZoneFaresData) {
         outsideZone: true,
         contactlessOnly: group.contactlessOnly
       };
+    } else {
+      STATIONS[key].outsideZone = true;
+      if (group.contactlessOnly) {
+        STATIONS[key].contactlessOnly = true;
+      }
     }
   }
 }
@@ -324,6 +329,9 @@ export function getModeBadges(modes: StationInfo['modes']): string[] {
  * Format a zone display string (e.g., "Zone 2/3" for altZone stations)
  */
 export function formatZoneDisplay(info: StationInfo): string {
+  if (info.outsideZone || info.zone === 0) {
+    return 'Outside Zone';
+  }
   if (info.altZone !== undefined && info.altZone !== null) {
     return `Zone ${info.zone}/${info.altZone}`;
   }

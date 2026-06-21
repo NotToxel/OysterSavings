@@ -173,6 +173,29 @@
     week: any;
   } | null>(null);
 
+  let isDesktop = $state(true);
+
+  $effect(() => {
+    const media = window.matchMedia('(hover: hover)');
+    isDesktop = media.matches;
+    const listener = (e: MediaQueryListEvent) => {
+      isDesktop = e.matches;
+    };
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  });
+
+  $effect(() => {
+    if (weeklyCapTooltipData && weeklyCapTooltipData.visible && !isDesktop) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  });
+
   // Odd-period travelcard explanation tooltip state
   let oddPeriodTooltipData = $state<{
     visible: boolean;
@@ -319,6 +342,26 @@
     if (weeklyCapTooltipData) {
       weeklyCapTooltipData.visible = false;
     }
+  }
+
+  function handleBackdropPointerDown(e: PointerEvent) {
+    const hovercard = document.querySelector('.weekly-cap-hovercard');
+    if (hovercard) {
+      const rect = hovercard.getBoundingClientRect();
+      const leeway = 16;
+      const x = e.clientX;
+      const y = e.clientY;
+      const insideWithLeeway = 
+        x >= rect.left - leeway &&
+        x <= rect.right + leeway &&
+        y >= rect.top - leeway &&
+        y <= rect.bottom + leeway;
+      
+      if (insideWithLeeway) {
+        return;
+      }
+    }
+    hideWeeklyCapTooltip();
   }
 
   function handleWeeklyCapClick(target: HTMLElement, week: any) {
@@ -4586,6 +4629,15 @@
   </div>
 {/if}
 
+{#if weeklyCapTooltipData && weeklyCapTooltipData.visible && !isDesktop}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div 
+    class="tooltip-backdrop" 
+    onpointerdown={handleBackdropPointerDown}
+    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99998; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); touch-action: none;"
+  ></div>
+{/if}
+
 {#if weeklyCapTooltipData && weeklyCapTooltipData.visible}
   {@const week = weeklyCapTooltipData.week}
   {@const progress = Math.min(week.totalFareFareType / (week.fareTypeWeeklyCap || week.weeklyCap), 1)}
@@ -4601,13 +4653,18 @@
     }
     return { name, info, numericZones };
   })}
-  {@const validZones = visitedWithInfo.flatMap((x: any) => x.numericZones)}
+  {@const validZones = visitedWithInfo.flatMap((x: any) => x.numericZones).filter((z: number) => z > 0)}
   {@const showHighlights = validZones.length > 0 && Math.min(...validZones) !== Math.max(...validZones)}
   {@const minZone = validZones.length > 0 ? Math.min(...validZones) : 0}
   {@const maxZone = validZones.length > 0 ? Math.max(...validZones) : 0}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="weekly-cap-hovercard"
+    class:interactable={!isDesktop}
     style="position: fixed; left: {weeklyCapTooltipData.x}px; top: {weeklyCapTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.stopPropagation()}
   >
     <div class="hovercard-header">
       <span class="hovercard-title">Weekly Cap Details</span>
@@ -4735,6 +4792,10 @@
     transition: opacity 0.15s ease, transform 0.15s ease;
     font-family: var(--font-sans);
     color: #fff;
+  }
+
+  .weekly-cap-hovercard.interactable {
+    pointer-events: auto !important;
   }
 
   .weekly-cap-hovercard::after {
@@ -5973,9 +6034,19 @@
   }
 
   @media (max-width: 768px) {
-    .fare-hovercard, .weekly-cap-hovercard, .warning-hovercard, .odd-period-hovercard {
+    .fare-hovercard, .warning-hovercard, .odd-period-hovercard {
       width: calc(100vw - 24px) !important;
       max-width: 340px !important;
+    }
+    .weekly-cap-hovercard {
+      position: fixed !important;
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: calc(100vw - 32px) !important;
+      max-width: 340px !important;
+      max-height: 85vh;
+      overflow-y: auto;
     }
     .fare-hovercard::after, .weekly-cap-hovercard::after, .warning-hovercard::after, .odd-period-hovercard::after {
       display: none !important;

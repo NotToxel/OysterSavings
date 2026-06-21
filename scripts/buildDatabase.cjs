@@ -20,6 +20,7 @@ function cleanBaseName(name) {
     .replace(/\s*(Underground Station|Rail Station|DLR Station|Tram Stop|Elizabeth line Station|Overground Station|Underground|DLR|Elizabeth line|Overground)\s*$/gi, '')
     // .replace(/\s*\(London\)/gi, '') // Preserve (London) in the name
     .replace(/\s*\(platforms?\s*[\d\-]+\)\s*/gi, '')
+    .replace(/-+$/, '') // Remove trailing hyphens
     .trim();
 }
 
