@@ -3240,7 +3240,7 @@
         {/if}
       {/if}
 
-      <div class="glass-card" style="padding: 1.25rem;">
+      <div class="glass-card calendar-card" style="margin-top: 1rem; margin-bottom: 1rem;">
         <!-- Calendar header -->
         <div
           class="calendar-nav"
@@ -3288,7 +3288,10 @@
           <!-- Calendar grid -->
           <div class="calendar-grid max-md:[--cap-col-width:36px]" class:hide-cap-column={!showWeeklyCapColumn}>
             {#each (showWeeklyCapColumn ? [...dayLabels, "Cap"] : dayLabels) as label}
-              <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">{label}</div>
+              <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">
+                <span class="max-sm:hidden">{label}</span>
+                <span class="hidden max-sm:inline">{label === 'Cap' ? 'Cap' : label[0]}</span>
+              </div>
             {/each}
 
             {#each calendarDays as day, idx}
@@ -3323,7 +3326,8 @@
                     ✕
                   </button>
                   <div class="day-journey-count max-xl:text-[0.6rem]">
-                    {dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}
+                    <span class="max-sm:hidden">{dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}</span>
+                    <span class="hidden max-sm:inline">{dayJourneys.length}x</span>
                   </div>
                   {#if forecast}
                     <div class="day-spend max-xl:text-[0.65rem]">
@@ -3346,9 +3350,15 @@
                       {/if}
                     </div>
                     {#if forecast.isTotalCapHitFareType}
-                      <div class="cap-hit-label max-xl:text-[0.5rem]">Cap Hit ✓</div>
+                      <div class="cap-hit-label max-xl:text-[0.5rem]">
+                        <span class="max-sm:hidden">Cap Hit ✓</span>
+                        <span class="hidden max-sm:inline">Cap ✓</span>
+                      </div>
                     {:else if forecast.isBusCapHitFareType}
-                      <div class="cap-hit-label bus max-xl:text-[0.5rem]">Bus Cap ✓</div>
+                      <div class="cap-hit-label bus max-xl:text-[0.5rem]">
+                        <span class="max-sm:hidden">Bus Cap ✓</span>
+                        <span class="hidden max-sm:inline">Bus ✓</span>
+                      </div>
                     {/if}
                   {/if}
                 {/if}
@@ -3374,7 +3384,10 @@
                       <div class="weekly-progress-fill" style="height: {progress * 100}%; background: {progress >= 1 ? '#10b981' : progress >= 0.7 ? '#f59e0b' : '#009FE3'};"></div>
                     </div>
                     {#if weekForecast.capHit}
-                      <div class="weekly-cap-hit-tag max-md:text-[0.42rem] max-md:mt-[0.15rem]">Capped</div>
+                      <div class="weekly-cap-hit-tag max-md:text-[0.42rem] max-md:mt-[0.15rem]">
+                        <span class="max-sm:hidden">Capped</span>
+                        <span class="hidden max-sm:inline">Cap ✓</span>
+                      </div>
                     {/if}
                   {:else}
                     <span style="opacity: 0.2; font-size: 0.6rem;">-</span>
@@ -5844,7 +5857,16 @@
 
   @media (max-width: 767px) {
     .calendar-grid {
-      min-width: 580px;
+      min-width: 320px;
+    }
+  }
+
+  .calendar-card {
+    padding: 1.25rem;
+  }
+  @media (max-width: 640px) {
+    .calendar-card {
+      padding: 0.75rem;
     }
   }
 
