@@ -102,6 +102,7 @@
     offPeakDiscounted: number;
     cardName: string;
     isApi: boolean;
+    pinned?: boolean;
   } | null>(null);
 
   // A helper to safely position tooltips within screen bounds
@@ -146,12 +147,17 @@
       offPeakDiscounted,
       cardName: FARE_TYPES[$selectedFareType].name,
       isApi,
+      pinned: !isHover,
     };
   }
 
-  function hideFareTooltip() {
+  function hideFareTooltip(event?: MouseEvent | PointerEvent | TouchEvent, force = false) {
     if (fareTooltipData) {
+      if (!force && fareTooltipData.pinned && event?.type === 'mouseleave') {
+        return;
+      }
       fareTooltipData.visible = false;
+      fareTooltipData.pinned = false;
     }
   }
 
@@ -163,6 +169,7 @@
     text: string;
     title?: string;
     type?: 'concession-disabled';
+    pinned?: boolean;
   } | null>(null);
 
   // Weekly cap details tooltip state
@@ -171,6 +178,7 @@
     x: number;
     y: number;
     week: any;
+    pinned?: boolean;
   } | null>(null);
 
   let isDesktop = $state(true);
@@ -186,7 +194,8 @@
   });
 
   $effect(() => {
-    if (weeklyCapTooltipData && weeklyCapTooltipData.visible && !isDesktop) {
+    const anyTooltipPinned = (weeklyCapTooltipData?.pinned || fareTooltipData?.pinned || warningTooltipData?.pinned || oddPeriodTooltipData?.pinned);
+    if (anyTooltipPinned) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -201,21 +210,30 @@
     visible: boolean;
     x: number;
     y: number;
+    pinned?: boolean;
   } | null>(null);
 
-  function showOddPeriodTooltip(target: HTMLElement) {
+  function showOddPeriodTooltip(target: HTMLElement, isHover: boolean = false) {
+    if (isHover && typeof window !== 'undefined' && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
     const rect = target.getBoundingClientRect();
     const x = calculateTooltipX(target, 320);
     oddPeriodTooltipData = {
       visible: true,
       x,
-      y: rect.top
+      y: rect.top,
+      pinned: !isHover,
     };
   }
 
-  function hideOddPeriodTooltip() {
+  function hideOddPeriodTooltip(event?: MouseEvent | PointerEvent | TouchEvent, force = false) {
     if (oddPeriodTooltipData) {
+      if (!force && oddPeriodTooltipData.pinned && event?.type === 'mouseleave') {
+        return;
+      }
       oddPeriodTooltipData.visible = false;
+      oddPeriodTooltipData.pinned = false;
     }
   }
 
@@ -239,8 +257,12 @@
     target: HTMLElement,
     text: string,
     title?: string,
-    type?: 'concession-disabled'
+    type?: 'concession-disabled',
+    isHover: boolean = false,
   ) {
+    if (isHover && typeof window !== 'undefined' && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
     const rect = target.getBoundingClientRect();
     const x = calculateTooltipX(target, 300);
     warningTooltipData = {
@@ -250,12 +272,30 @@
       text,
       title,
       type,
+      pinned: !isHover,
     };
   }
 
-  function hideWarningTooltip() {
+  function hideWarningTooltip(event?: MouseEvent | PointerEvent | TouchEvent, force = false) {
     if (warningTooltipData) {
+      if (!force && warningTooltipData.pinned && event?.type === 'mouseleave') {
+        return;
+      }
       warningTooltipData.visible = false;
+      warningTooltipData.pinned = false;
+    }
+  }
+
+  function handleWarningClick(
+    target: HTMLElement,
+    text: string,
+    title?: string,
+    type?: 'concession-disabled'
+  ) {
+    if (warningTooltipData?.visible && warningTooltipData.pinned) {
+      hideWarningTooltip(undefined, true);
+    } else {
+      showWarningTooltip(target, text, title, type, false);
     }
   }
 
@@ -331,21 +371,28 @@
       x,
       y: rect.top,
       week,
+      pinned: !isHover,
     };
   }
 
-  function hideWeeklyCapTooltip(event?: MouseEvent) {
+  function hideWeeklyCapTooltip(event?: MouseEvent | PointerEvent | TouchEvent, force = false) {
     // Bypassing synthetic mouseleave on touch/mobile devices to prevent click race conditions
     if (event && event.type === 'mouseleave' && !window.matchMedia('(hover: hover)').matches) {
       return;
     }
     if (weeklyCapTooltipData) {
+      if (!force && weeklyCapTooltipData.pinned && event?.type === 'mouseleave') {
+        return;
+      }
       weeklyCapTooltipData.visible = false;
+      weeklyCapTooltipData.pinned = false;
     }
   }
 
-  function handleBackdropPointerDown(e: PointerEvent) {
-    const hovercard = document.querySelector('.weekly-cap-hovercard');
+  function handleGlobalBackdropPointerDown(e: PointerEvent) {
+    const hovercard = document.querySelector(
+      '.weekly-cap-hovercard, .fare-hovercard, .warning-hovercard, .odd-period-hovercard'
+    );
     if (hovercard) {
       const rect = hovercard.getBoundingClientRect();
       const leeway = 16;
@@ -361,12 +408,15 @@
         return;
       }
     }
-    hideWeeklyCapTooltip();
+    hideWeeklyCapTooltip(undefined, true);
+    hideFareTooltip(undefined, true);
+    hideWarningTooltip(undefined, true);
+    hideOddPeriodTooltip(undefined, true);
   }
 
   function handleWeeklyCapClick(target: HTMLElement, week: any) {
-    if (weeklyCapTooltipData && weeklyCapTooltipData.visible) {
-      hideWeeklyCapTooltip();
+    if (weeklyCapTooltipData?.visible && weeklyCapTooltipData.pinned) {
+      hideWeeklyCapTooltip(undefined, true);
     } else {
       showWeeklyCapTooltip(target, week, false);
     }
@@ -2727,7 +2777,7 @@
           </button>
         </div>
         {#if showActiveRoutines}
-          <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
+          <div class="rules-list">
             {#if $recurrenceRules.filter((r) => r.intervalType !== "none").length === 0}
               <p class="empty-text">No travel routines configured yet.</p>
             {:else}
@@ -2769,14 +2819,36 @@
                         <span 
                           class="disabled-status-badge"
                           style="cursor: help;"
-                          role="status"
+                          role="button"
+                          tabindex="0"
                           onmouseenter={(e) => showWarningTooltip(
                             e.currentTarget,
                             "This route includes contactless-only stations that do not support concession or discount fares.",
                             "Concession Disabled",
-                            "concession-disabled"
+                            "concession-disabled",
+                            true
                           )}
-                          onmouseleave={hideWarningTooltip}
+                          onmouseleave={(e) => hideWarningTooltip(e)}
+                          onclick={(e) => {
+                            e.stopPropagation();
+                            handleWarningClick(
+                              e.currentTarget,
+                              "This route includes contactless-only stations that do not support concession or discount fares.",
+                              "Concession Disabled",
+                              "concession-disabled"
+                            );
+                          }}
+                          onkeydown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              handleWarningClick(
+                                e.currentTarget,
+                                "This route includes contactless-only stations that do not support concession or discount fares.",
+                                "Concession Disabled",
+                                "concession-disabled"
+                              );
+                            }
+                          }}
                         >
                           🚫 Concession Disabled
                         </span>
@@ -2802,12 +2874,12 @@
                               const fares = getRuleFares(rule);
                               showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
-                            onmouseleave={hideFareTooltip}
+                            onmouseleave={(e) => hideFareTooltip(e)}
                             onclick={(e) => {
                               e.stopPropagation();
                               const fares = getRuleFares(rule);
-                              if (fareTooltipData?.visible) {
-                                hideFareTooltip();
+                              if (fareTooltipData?.visible && fareTooltipData.pinned) {
+                                hideFareTooltip(undefined, true);
                               } else {
                                 showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
                               }
@@ -2824,12 +2896,12 @@
                               const fares = getRuleFares(rule);
                               showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
-                            onmouseleave={hideFareTooltip}
+                            onmouseleave={(e) => hideFareTooltip(e)}
                             onclick={(e) => {
                               e.stopPropagation();
                               const fares = getRuleFares(rule);
-                              if (fareTooltipData?.visible) {
-                                hideFareTooltip();
+                              if (fareTooltipData?.visible && fareTooltipData.pinned) {
+                                hideFareTooltip(undefined, true);
                               } else {
                                 showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
                               }
@@ -2901,7 +2973,7 @@
           </button>
         </div>
         {#if showOneOffJourneys}
-          <div style="margin-top: 1rem; max-height: 400px; overflow-y: auto;">
+          <div class="rules-list">
             {#each $recurrenceRules.filter((r) => r.intervalType === "none") as rule}
               {@const isDisabled = isRuleDisabledForFareType(rule, $selectedFareType)}
               <div class="rule-card" class:disabled={isDisabled}>
@@ -2940,14 +3012,36 @@
                         <span 
                           class="disabled-status-badge"
                           style="cursor: help;"
-                          role="status"
+                          role="button"
+                          tabindex="0"
                           onmouseenter={(e) => showWarningTooltip(
                             e.currentTarget,
                             "This route includes contactless-only stations that do not support concession or discount fares.",
                             "Concession Disabled",
-                            "concession-disabled"
+                            "concession-disabled",
+                            true
                           )}
-                          onmouseleave={hideWarningTooltip}
+                          onmouseleave={(e) => hideWarningTooltip(e)}
+                          onclick={(e) => {
+                            e.stopPropagation();
+                            handleWarningClick(
+                              e.currentTarget,
+                              "This route includes contactless-only stations that do not support concession or discount fares.",
+                              "Concession Disabled",
+                              "concession-disabled"
+                            );
+                          }}
+                          onkeydown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              handleWarningClick(
+                                e.currentTarget,
+                                "This route includes contactless-only stations that do not support concession or discount fares.",
+                                "Concession Disabled",
+                                "concession-disabled"
+                              );
+                            }
+                          }}
                         >
                           🚫 Concession Disabled
                         </span>
@@ -2973,12 +3067,12 @@
                               const fares = getRuleFares(rule);
                               showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
-                            onmouseleave={hideFareTooltip}
+                            onmouseleave={(e) => hideFareTooltip(e)}
                             onclick={(e) => {
                               e.stopPropagation();
                               const fares = getRuleFares(rule);
-                              if (fareTooltipData?.visible) {
-                                hideFareTooltip();
+                              if (fareTooltipData?.visible && fareTooltipData.pinned) {
+                                hideFareTooltip(undefined, true);
                               } else {
                                 showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
                               }
@@ -2995,12 +3089,12 @@
                               const fares = getRuleFares(rule);
                               showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
-                            onmouseleave={hideFareTooltip}
+                            onmouseleave={(e) => hideFareTooltip(e)}
                             onclick={(e) => {
                               e.stopPropagation();
                               const fares = getRuleFares(rule);
-                              if (fareTooltipData?.visible) {
-                                hideFareTooltip();
+                              if (fareTooltipData?.visible && fareTooltipData.pinned) {
+                                hideFareTooltip(undefined, true);
                               } else {
                                 showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
                               }
@@ -3211,14 +3305,14 @@
                             <button
                               type="button"
                               class="info-badge-btn"
-                              onmouseenter={(e) => showOddPeriodTooltip(e.currentTarget)}
-                              onmouseleave={hideOddPeriodTooltip}
+                              onmouseenter={(e) => showOddPeriodTooltip(e.currentTarget, true)}
+                              onmouseleave={(e) => hideOddPeriodTooltip(e)}
                               onclick={(e) => {
                                 e.stopPropagation();
-                                if (oddPeriodTooltipData && oddPeriodTooltipData.visible) {
-                                  hideOddPeriodTooltip();
+                                if (oddPeriodTooltipData?.visible && oddPeriodTooltipData.pinned) {
+                                  hideOddPeriodTooltip(undefined, true);
                                 } else {
-                                  showOddPeriodTooltip(e.currentTarget);
+                                  showOddPeriodTooltip(e.currentTarget, false);
                                 }
                               }}
                               aria-label="Odd-period travelcard explanation"
@@ -3285,10 +3379,7 @@
 
       <div class="glass-card calendar-card" style="margin-top: 1rem; margin-bottom: 1rem;">
         <!-- Calendar header -->
-        <div
-          class="calendar-nav"
-          style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;"
-        >
+        <div class="calendar-nav">
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <button
               type="button"
@@ -3414,7 +3505,7 @@
                   role="button"
                   tabindex="0"
                   onmouseenter={(e) => showWeeklyCapTooltip(e.currentTarget, weekForecast, true)}
-                  onmouseleave={hideWeeklyCapTooltip}
+                  onmouseleave={(e) => hideWeeklyCapTooltip(e)}
                   onclick={(e) => { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); }}
                   onkeydown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); } }}
                 >
@@ -4386,11 +4477,11 @@
                         class="fare-api-badge"
                         style="cursor: help;"
                         onmouseenter={(e) => showFareTooltip(e.currentTarget, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, true)}
-                        onmouseleave={hideFareTooltip}
+                        onmouseleave={(e) => hideFareTooltip(e)}
                         onclick={(e) => {
                           e.stopPropagation();
-                          if (fareTooltipData?.visible) {
-                            hideFareTooltip();
+                          if (fareTooltipData?.visible && fareTooltipData.pinned) {
+                            hideFareTooltip(undefined, true);
                           } else {
                             showFareTooltip(e.currentTarget, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, false);
                           }
@@ -4402,11 +4493,11 @@
                         class="fare-fallback-badge"
                         style="cursor: help;"
                         onmouseenter={(e) => showFareTooltip(e.currentTarget, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, true)}
-                        onmouseleave={hideFareTooltip}
+                        onmouseleave={(e) => hideFareTooltip(e)}
                         onclick={(e) => {
                           e.stopPropagation();
-                          if (fareTooltipData?.visible) {
-                            hideFareTooltip();
+                          if (fareTooltipData?.visible && fareTooltipData.pinned) {
+                            hideFareTooltip(undefined, true);
                           } else {
                             showFareTooltip(e.currentTarget, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, false);
                           }
@@ -4554,11 +4645,17 @@
 </div>
 
 {#if fareTooltipData && fareTooltipData.visible}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="fare-hovercard"
-    style="position: fixed; left: {fareTooltipData.x}px; top: {fareTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
+    class:interactable={!isDesktop || fareTooltipData.pinned}
+    class:pinned={fareTooltipData.pinned}
+    style="position: fixed; left: {fareTooltipData.pinned ? '50%' : fareTooltipData.x + 'px'}; top: {fareTooltipData.pinned ? '50%' : fareTooltipData.y + 'px'}; transform: {fareTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999;"
     class:api-theme={fareTooltipData.isApi}
     class:estimate-theme={!fareTooltipData.isApi}
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.stopPropagation()}
   >
     <div class="hovercard-header">
       <span class="hovercard-title">Fare Details</span>
@@ -4604,12 +4701,18 @@
   </div>
 {/if}
 
-<svelte:window onclick={() => { hideWarningTooltip(); hideWeeklyCapTooltip(); hideFareTooltip(); hideOddPeriodTooltip(); }} />
+<svelte:window onclick={() => { hideWarningTooltip(undefined, true); hideWeeklyCapTooltip(undefined, true); hideFareTooltip(undefined, true); hideOddPeriodTooltip(undefined, true); }} />
 
 {#if oddPeriodTooltipData && oddPeriodTooltipData.visible}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="odd-period-hovercard warning-hovercard"
-    style="position: fixed; left: {oddPeriodTooltipData.x}px; top: {oddPeriodTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999; border-top-color: #fb923c;"
+    class:interactable={!isDesktop || oddPeriodTooltipData.pinned}
+    class:pinned={oddPeriodTooltipData.pinned}
+    style="position: fixed; left: {oddPeriodTooltipData.pinned ? '50%' : oddPeriodTooltipData.x + 'px'}; top: {oddPeriodTooltipData.pinned ? '50%' : oddPeriodTooltipData.y + 'px'}; transform: {oddPeriodTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999; border-top-color: #fb923c;"
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.stopPropagation()}
   >
     <div class="warning-header">
       <span class="warning-title-wrapper" style="color: #fb923c;">
@@ -4629,12 +4732,12 @@
   </div>
 {/if}
 
-{#if weeklyCapTooltipData && weeklyCapTooltipData.visible && !isDesktop}
+{#if weeklyCapTooltipData?.pinned || fareTooltipData?.pinned || warningTooltipData?.pinned || oddPeriodTooltipData?.pinned}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div 
     class="tooltip-backdrop" 
-    onpointerdown={handleBackdropPointerDown}
-    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99998; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); touch-action: none;"
+    onpointerdown={handleGlobalBackdropPointerDown}
+    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99998; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); touch-action: none;"
   ></div>
 {/if}
 
@@ -4661,8 +4764,9 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="weekly-cap-hovercard"
-    class:interactable={!isDesktop}
-    style="position: fixed; left: {weeklyCapTooltipData.x}px; top: {weeklyCapTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
+    class:interactable={!isDesktop || weeklyCapTooltipData.pinned}
+    class:pinned={weeklyCapTooltipData.pinned}
+    style="position: fixed; left: {weeklyCapTooltipData.pinned ? '50%' : weeklyCapTooltipData.x + 'px'}; top: {weeklyCapTooltipData.pinned ? '50%' : weeklyCapTooltipData.y + 'px'}; transform: {weeklyCapTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999;"
     onclick={(e) => e.stopPropagation()}
     onkeydown={(e) => e.stopPropagation()}
   >
@@ -4747,9 +4851,15 @@
 {/if}
 
 {#if warningTooltipData && warningTooltipData.visible}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="warning-hovercard"
-    style="position: fixed; left: {warningTooltipData.x}px; top: {warningTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
+    class:interactable={!isDesktop || warningTooltipData.pinned}
+    class:pinned={warningTooltipData.pinned}
+    style="position: fixed; left: {warningTooltipData.pinned ? '50%' : warningTooltipData.x + 'px'}; top: {warningTooltipData.pinned ? '50%' : warningTooltipData.y + 'px'}; transform: {warningTooltipData.pinned ? 'translate(-50%, -50%)' : 'translate(-50%, -100%) translateY(-10px)'}; z-index: 99999;"
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.stopPropagation()}
   >
     {#if warningTooltipData.type === 'concession-disabled'}
       <div class="warning-header">
@@ -4794,7 +4904,10 @@
     color: #fff;
   }
 
-  .weekly-cap-hovercard.interactable {
+  .fare-hovercard.interactable,
+  .weekly-cap-hovercard.interactable,
+  .warning-hovercard.interactable,
+  .odd-period-hovercard.interactable {
     pointer-events: auto !important;
   }
 
@@ -4919,6 +5032,7 @@
     max-height: 95px;
     overflow-y: auto;
     padding-right: 0.2rem;
+    padding-bottom: 0.35rem; /* Prevents bottom row pills from touching border */
   }
   .station-pill {
     font-size: 0.68rem;
@@ -5003,6 +5117,15 @@
     padding: 0.625rem 0.75rem;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .comparison-table th:not(.text-right),
+  .comparison-table td:not(.text-right) {
+    white-space: normal;
+  }
+
+  .comparison-table th.text-right,
+  .comparison-table td.text-right {
     white-space: nowrap;
   }
 
@@ -5204,6 +5327,13 @@
     align-items: center;
   }
 
+  .rules-list {
+    margin-top: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.75rem; /* Leaves room for scrollbar to avoid overlapping delete button */
+  }
+
   .rule-edit,
   .rule-remove {
     display: flex;
@@ -5369,6 +5499,18 @@
     margin-bottom: 1rem;
     flex-wrap: wrap;
     gap: 0.75rem;
+  }
+
+  @media (max-width: 500px) {
+    .calendar-nav {
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+    }
+    .calendar-nav > div {
+      justify-content: center !important;
+    }
   }
 
   .calendar-month-label {
@@ -6034,11 +6176,7 @@
   }
 
   @media (max-width: 768px) {
-    .fare-hovercard, .warning-hovercard, .odd-period-hovercard {
-      width: calc(100vw - 24px) !important;
-      max-width: 340px !important;
-    }
-    .weekly-cap-hovercard {
+    .fare-hovercard, .weekly-cap-hovercard, .warning-hovercard, .odd-period-hovercard {
       position: fixed !important;
       left: 50% !important;
       top: 50% !important;
@@ -6051,6 +6189,14 @@
     .fare-hovercard::after, .weekly-cap-hovercard::after, .warning-hovercard::after, .odd-period-hovercard::after {
       display: none !important;
     }
+  }
+
+  /* Hide tooltip triangle arrow when pinned (centered modal popup) */
+  .weekly-cap-hovercard.pinned::after,
+  .warning-hovercard.pinned::after,
+  .odd-period-hovercard.pinned::after,
+  .fare-hovercard.pinned::after {
+    display: none !important;
   }
 
   /* Theme borders */
