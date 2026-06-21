@@ -3036,7 +3036,7 @@
     <div class="calendar-area">
       <!-- Forecast summary -->
       {#if $forecastResult}
-        <div class="glass-card forecast-summary flex justify-around gap-4 p-5 max-xl:grid max-xl:grid-cols-2 max-xl:gap-5 max-xl:p-4">
+        <div class="glass-card forecast-summary flex justify-around gap-4 p-5 max-xl:grid max-sm:grid-cols-1 max-xl:grid-cols-2 max-xl:gap-5 max-xl:p-4">
           <div class="forecast-stat">
             <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]">Standard PAYG</span>
             <span class="forecast-value max-xl:text-[1.75rem]"
@@ -3283,103 +3283,106 @@
           </button>
         </div>
 
-        <!-- Calendar grid -->
-        <div class="calendar-grid max-md:[--cap-col-width:36px]" class:hide-cap-column={!showWeeklyCapColumn}>
-          {#each (showWeeklyCapColumn ? [...dayLabels, "Cap"] : dayLabels) as label}
-            <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">{label}</div>
-          {/each}
+        <!-- Calendar scroll container for mobile -->
+        <div class="calendar-grid-wrapper" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; margin-top: 1rem;">
+          <!-- Calendar grid -->
+          <div class="calendar-grid max-md:[--cap-col-width:36px]" class:hide-cap-column={!showWeeklyCapColumn}>
+            {#each (showWeeklyCapColumn ? [...dayLabels, "Cap"] : dayLabels) as label}
+              <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">{label}</div>
+            {/each}
 
-          {#each calendarDays as day, idx}
-            {@const dateKey = formatLocalDate(day.date)}
-            {@const dayJourneys = journeysByDate.get(dateKey) || []}
-            {@const forecast = forecastByDate.get(dateKey)}
-            <div
-              class="calendar-cell max-xl:!min-h-[65px] max-xl:!p-1"
-              class:other-month={!day.isCurrentMonth}
-              class:cap-hit={forecast?.capHitFareType}
-              class:has-journeys={dayJourneys.length > 0}
-              class:in-planning-period={dateKey >= planStart &&
-                dateKey <= planEnd}
-              role="button"
-              tabindex="0"
-              onclick={() => quickAddOnDate(day.date)}
-              onkeydown={(e) => {
-                if (e.key === "Enter") quickAddOnDate(day.date);
-              }}
-              style="cursor: pointer;"
-            >
-              <div class="day-number">{day.date.getDate()}</div>
-              {#if dayJourneys.length > 0}
-                <button
-                  class="clear-day-btn max-xl:!opacity-100 max-xl:!top-[2px] max-xl:!right-[2px] max-xl:!w-4 max-xl:!h-4 max-xl:!text-[0.5rem]"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    clearJourneysForDate(dateKey);
-                  }}
-                  aria-label="Clear journeys for this day"
-                >
-                  ✕
-                </button>
-                <div class="day-journey-count max-xl:text-[0.6rem]">
-                  {dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}
-                </div>
-                {#if forecast}
-                  <div class="day-spend max-xl:text-[0.65rem]">
-                    £{forecast.cappedFareFareType.toFixed(2)}
-                  </div>
-                  <div class="mini-cap-bar" style="display: flex; gap: 0; background: rgba(255, 255, 255, 0.1); overflow: hidden; border-radius: 2px; height: 4px; margin-top: 0.25rem;">
-                    {#if forecast.busProgressFareType && forecast.busProgressFareType > 0}
-                      <div
-                        class="mini-cap-fill-bus"
-                        style="width: {forecast.busProgressFareType * 100}%; background: {forecast.isBusCapHitFareType || forecast.capHitFareType ? '#10b981' : '#e0311a'}; height: 100%; transition: width 0.3s ease;"
-                        title="Bus Spend: £{forecast.cappedBusFareFareType?.toFixed(2)}"
-                      ></div>
-                    {/if}
-                    {#if forecast.railProgressFareType && forecast.railProgressFareType > 0}
-                      <div
-                        class="mini-cap-fill-rail"
-                        style="width: {forecast.railProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)}; height: 100%; transition: width 0.3s ease;"
-                        title="Rail/Tube Spend: £{forecast.cappedRailFareFareType?.toFixed(2)}"
-                      ></div>
-                    {/if}
-                  </div>
-                  {#if forecast.isTotalCapHitFareType}
-                    <div class="cap-hit-label max-xl:text-[0.5rem]">Cap Hit ✓</div>
-                  {:else if forecast.isBusCapHitFareType}
-                    <div class="cap-hit-label bus max-xl:text-[0.5rem]">Bus Cap ✓</div>
-                  {/if}
-                {/if}
-              {/if}
-            </div>
-
-            {#if showWeeklyCapColumn && idx % 7 === 6}
-              {@const weekForecast = getForecastWeekForDate(day.date)}
+            {#each calendarDays as day, idx}
+              {@const dateKey = formatLocalDate(day.date)}
+              {@const dayJourneys = journeysByDate.get(dateKey) || []}
+              {@const forecast = forecastByDate.get(dateKey)}
               <div
-                class="calendar-weekly-cap-cell max-md:!min-h-[65px] max-md:!py-[0.2rem] max-md:!px-[0.05rem]"
+                class="calendar-cell max-xl:!min-h-[65px] max-xl:!p-1"
+                class:other-month={!day.isCurrentMonth}
+                class:cap-hit={forecast?.capHitFareType}
+                class:has-journeys={dayJourneys.length > 0}
+                class:in-planning-period={dateKey >= planStart &&
+                  dateKey <= planEnd}
                 role="button"
                 tabindex="0"
-                onmouseenter={(e) => showWeeklyCapTooltip(e.currentTarget, weekForecast, true)}
-                onmouseleave={hideWeeklyCapTooltip}
-                onclick={(e) => { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); }}
-                onkeydown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); } }}
+                onclick={() => quickAddOnDate(day.date)}
+                onkeydown={(e) => {
+                  if (e.key === "Enter") quickAddOnDate(day.date);
+                }}
+                style="cursor: pointer;"
               >
-                {#if weekForecast}
-                  {@const progress = weekForecast.capProgress}
-                  <div class="weekly-spend-label max-md:text-[0.52rem] max-md:mb-[0.15rem]">
-                    £{weekForecast.totalFareFareType.toFixed(2)}
+                <div class="day-number">{day.date.getDate()}</div>
+                {#if dayJourneys.length > 0}
+                  <button
+                    class="clear-day-btn max-xl:!opacity-100 max-xl:!top-[2px] max-xl:!right-[2px] max-xl:!w-4 max-xl:!h-4 max-xl:!text-[0.5rem]"
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      clearJourneysForDate(dateKey);
+                    }}
+                    aria-label="Clear journeys for this day"
+                  >
+                    ✕
+                  </button>
+                  <div class="day-journey-count max-xl:text-[0.6rem]">
+                    {dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}
                   </div>
-                  <div class="weekly-progress-container max-md:!w-1 max-md:!h-6" title="Weekly Cap Progress: {Math.round(progress * 100)}%">
-                    <div class="weekly-progress-fill" style="height: {progress * 100}%; background: {progress >= 1 ? '#10b981' : progress >= 0.7 ? '#f59e0b' : '#009FE3'};"></div>
-                  </div>
-                  {#if weekForecast.capHit}
-                    <div class="weekly-cap-hit-tag max-md:text-[0.42rem] max-md:mt-[0.15rem]">Capped</div>
+                  {#if forecast}
+                    <div class="day-spend max-xl:text-[0.65rem]">
+                      £{forecast.cappedFareFareType.toFixed(2)}
+                    </div>
+                    <div class="mini-cap-bar" style="display: flex; gap: 0; background: rgba(255, 255, 255, 0.1); overflow: hidden; border-radius: 2px; height: 4px; margin-top: 0.25rem;">
+                      {#if forecast.busProgressFareType && forecast.busProgressFareType > 0}
+                        <div
+                          class="mini-cap-fill-bus"
+                          style="width: {forecast.busProgressFareType * 100}%; background: {forecast.isBusCapHitFareType || forecast.capHitFareType ? '#10b981' : '#e0311a'}; height: 100%; transition: width 0.3s ease;"
+                          title="Bus Spend: £{forecast.cappedBusFareFareType?.toFixed(2)}"
+                        ></div>
+                      {/if}
+                      {#if forecast.railProgressFareType && forecast.railProgressFareType > 0}
+                        <div
+                          class="mini-cap-fill-rail"
+                          style="width: {forecast.railProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)}; height: 100%; transition: width 0.3s ease;"
+                          title="Rail/Tube Spend: £{forecast.cappedRailFareFareType?.toFixed(2)}"
+                        ></div>
+                      {/if}
+                    </div>
+                    {#if forecast.isTotalCapHitFareType}
+                      <div class="cap-hit-label max-xl:text-[0.5rem]">Cap Hit ✓</div>
+                    {:else if forecast.isBusCapHitFareType}
+                      <div class="cap-hit-label bus max-xl:text-[0.5rem]">Bus Cap ✓</div>
+                    {/if}
                   {/if}
-                {:else}
-                  <span style="opacity: 0.2; font-size: 0.6rem;">-</span>
                 {/if}
               </div>
-            {/if}
-          {/each}
+
+              {#if showWeeklyCapColumn && idx % 7 === 6}
+                {@const weekForecast = getForecastWeekForDate(day.date)}
+                <div
+                  class="calendar-weekly-cap-cell max-md:!min-h-[65px] max-md:!py-[0.2rem] max-md:!px-[0.05rem]"
+                  role="button"
+                  tabindex="0"
+                  onmouseenter={(e) => showWeeklyCapTooltip(e.currentTarget, weekForecast, true)}
+                  onmouseleave={hideWeeklyCapTooltip}
+                  onclick={(e) => { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); }}
+                  onkeydown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleWeeklyCapClick(e.currentTarget, weekForecast); } }}
+                >
+                  {#if weekForecast}
+                    {@const progress = weekForecast.capProgress}
+                    <div class="weekly-spend-label max-md:text-[0.52rem] max-md:mb-[0.15rem]">
+                      £{weekForecast.totalFareFareType.toFixed(2)}
+                    </div>
+                    <div class="weekly-progress-container max-md:!w-1 max-md:!h-6" title="Weekly Cap Progress: {Math.round(progress * 100)}%">
+                      <div class="weekly-progress-fill" style="height: {progress * 100}%; background: {progress >= 1 ? '#10b981' : progress >= 0.7 ? '#f59e0b' : '#009FE3'};"></div>
+                    </div>
+                    {#if weekForecast.capHit}
+                      <div class="weekly-cap-hit-tag max-md:text-[0.42rem] max-md:mt-[0.15rem]">Capped</div>
+                    {/if}
+                  {:else}
+                    <span style="opacity: 0.2; font-size: 0.6rem;">-</span>
+                  {/if}
+                </div>
+              {/if}
+            {/each}
+          </div>
         </div>
       </div>
     </div>
@@ -4885,6 +4888,7 @@
     padding: 0.625rem 0.75rem;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    white-space: nowrap;
   }
 
   .comparison-table th {
@@ -5199,19 +5203,41 @@
     color: var(--color-text-secondary);
     text-transform: uppercase;
     font-weight: 600;
-    white-space: nowrap;
+    white-space: normal;
+    text-align: center;
+  }
+  @media (min-width: 1280px) {
+    .forecast-label {
+      white-space: nowrap;
+    }
   }
   .forecast-value {
     font-weight: 600;
     font-family: monospace;
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
   .forecast-value.green {
     color: #34d399;
   }
   .forecast-value.large {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 900;
+  }
+  @media (min-width: 640px) {
+    .forecast-value {
+      font-size: 1.75rem;
+    }
+    .forecast-value.large {
+      font-size: 2.25rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .forecast-value {
+      font-size: 2rem;
+    }
+    .forecast-value.large {
+      font-size: 2.5rem;
+    }
   }
 
   /* Calendar area */
@@ -5789,23 +5815,37 @@
   }
 
   .rule-card .fare-source-badge {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease-in-out;
-  }
-
-  .rule-card:hover .fare-source-badge {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  @media (hover: hover) {
+    .rule-card .fare-source-badge {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    .rule-card:hover .fare-source-badge {
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
   .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr) var(--cap-col-width, 52px) !important;
     gap: 2px;
+    width: 100%;
   }
   .calendar-grid.hide-cap-column {
     grid-template-columns: repeat(7, 1fr) !important;
+  }
+
+  @media (max-width: 767px) {
+    .calendar-grid {
+      min-width: 580px;
+    }
   }
 
   .calendar-weekly-cap-cell {
@@ -6258,13 +6298,7 @@
     }
   }
 
-  /* On touch/hover:none devices, always show fare badges (no hover state) */
-  @media (hover: none) {
-    .rule-card .fare-source-badge {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  }
+
 
   .mobile-tabs-container {
     gap: 0.5rem;

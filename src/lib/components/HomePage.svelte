@@ -609,11 +609,6 @@
     color: var(--color-text-secondary);
   }
 
-  .steps-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-  }
 
   .step-card {
     text-align: center;
