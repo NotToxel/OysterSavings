@@ -12,7 +12,32 @@ export interface StationInfo {
 }
 
 import STATIONS_JSON from './stationData.json';
-export const STATIONS = STATIONS_JSON as Record<string, StationInfo>;
+import outsideZoneFaresData from './outsideZoneFares.json';
+
+export const STATIONS = { ...(STATIONS_JSON as Record<string, StationInfo>) };
+
+// Dynamically seed outside-zone National Rail stations not present in the TfL stop points seed
+for (const group of outsideZoneFaresData) {
+  for (let i = 0; i < group.stationKeys.length; i++) {
+    const key = group.stationKeys[i];
+    if (!STATIONS[key]) {
+      const name = key
+        .split(' ')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      STATIONS[key] = {
+        name,
+        zone: 0,
+        altZone: null,
+        modes: ['national_rail'],
+        naptanId: group.naptanIds[i],
+        outsideZone: true,
+        contactlessOnly: group.contactlessOnly
+      };
+    }
+  }
+}
+
 
 /**
  * Helper to normalize station names and queries for search by removing
@@ -58,21 +83,32 @@ export const STATION_NICKNAMES: Record<string, string[]> = {
   "london st pancras international ll": ["stpancras"],
   "london st pancras international": ["stpancras"],
   "victoria": ["vicky"],
+  "london victoria": ["vicky"],
   "charing cross": ["cx", "charing x"],
-  "liverpool street": ["lpl"],
+  "london charing cross": ["cx", "charing x"],
+  "liverpool street elizabeth line station": ["lpl"],
+  "liverpool street underground station": ["lpl"],
+  "london liverpool street": ["lpl"],
   "london fenchurch street": ["fstr"],
   "gatwick airport": ["lgw"],
-  "heathrow terminals 2 & 3": ["lhr", "heathrow 2 3", "heathrow t23"],
-  "heathrow terminal 4": ["heathrow t4"],
-  "heathrow terminal 5": ["heathrow t5"],
+  "heathrow terminals 2 & 3 rail station": ["lhr", "heathrow 2 3", "heathrow t23"],
+  "heathrow terminals 2 & 3 underground station": ["lhr", "heathrow 2 3", "heathrow t23"],
+  "heathrow terminal 4 elizabeth line station": ["heathrow t4"],
+  "heathrow terminal 4 underground station": ["heathrow t4"],
+  "heathrow terminal 5 rail station": ["heathrow t5"],
+  "heathrow terminal 5 underground station": ["heathrow t5"],
   "tottenham court road underground station": ["tcr"],
   "tottenham court road elizabeth line station": ["tcr"],
-  "elephant & castle": ["e&c"],
-  "highbury & islington": ["h&i"],
+  "elephant & castle rail station": ["e&c"],
+  "elephant & castle underground station": ["e&c"],
+  "highbury & islington rail station": ["h&i"],
+  "highbury & islington underground station": ["h&i"],
   "clapham junction": ["clj"],
   "high street kensington": ["hsk"],
-  "london bridge": ["lbg"],
-  "finsbury park": ["fpk"]
+  "london bridge rail station": ["lbg"],
+  "london bridge underground station": ["lbg"],
+  "finsbury park rail station": ["fpk"],
+  "finsbury park underground station": ["fpk"]
 };
 
 export const NICKNAME_TO_KEYS: Record<string, string[]> = {};
