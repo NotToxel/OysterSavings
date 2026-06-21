@@ -3036,7 +3036,7 @@
     <div class="calendar-area">
       <!-- Forecast summary -->
       {#if $forecastResult}
-        <div class="glass-card forecast-summary flex justify-around gap-4 p-5 max-xl:grid max-sm:grid-cols-1 max-xl:grid-cols-2 max-xl:gap-5 max-xl:p-4">
+        <div class="glass-card forecast-summary flex justify-around gap-4 max-xl:grid max-sm:grid-cols-1 max-xl:grid-cols-2 max-xl:gap-5">
           <div class="forecast-stat">
             <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]">Standard PAYG</span>
             <span class="forecast-value max-xl:text-[1.75rem]"
@@ -3066,7 +3066,7 @@
         {#if studentComparison}
           <div
             class="glass-card student-comparison-card animate-slide-up"
-            style="margin-top: 1rem; padding: 1.25rem; margin-bottom: 1rem;"
+            style="margin-top: 1rem; margin-bottom: 1rem;"
           >
             <h3 class="comparison-card-title">
               {#if $selectedFareType === "student"}
@@ -3289,8 +3289,8 @@
           <div class="calendar-grid max-md:[--cap-col-width:36px]" class:hide-cap-column={!showWeeklyCapColumn}>
             {#each (showWeeklyCapColumn ? [...dayLabels, "Cap"] : dayLabels) as label}
               <div class="calendar-header" style="{label === 'Cap' ? 'color: var(--color-oyster-blue); font-weight: 700;' : ''}">
-                <span class="max-sm:hidden">{label}</span>
-                <span class="hidden max-sm:inline">{label === 'Cap' ? 'Cap' : label[0]}</span>
+                <span class="max-[440px]:hidden">{label}</span>
+                <span class="hidden max-[440px]:inline">{label === 'Cap' ? 'Cap' : label[0]}</span>
               </div>
             {/each}
 
@@ -3326,8 +3326,8 @@
                     ✕
                   </button>
                   <div class="day-journey-count max-xl:text-[0.6rem]">
-                    <span class="max-sm:hidden">{dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}</span>
-                    <span class="hidden max-sm:inline">{dayJourneys.length}x</span>
+                    <span class="max-[440px]:hidden">{dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}</span>
+                    <span class="hidden max-[440px]:inline">{dayJourneys.length}x</span>
                   </div>
                   {#if forecast}
                     <div class="day-spend max-xl:text-[0.65rem]">
@@ -3351,13 +3351,13 @@
                     </div>
                     {#if forecast.isTotalCapHitFareType}
                       <div class="cap-hit-label max-xl:text-[0.5rem]">
-                        <span class="max-sm:hidden">Cap Hit ✓</span>
-                        <span class="hidden max-sm:inline">Cap ✓</span>
+                        <span class="max-[440px]:hidden">Cap Hit ✓</span>
+                        <span class="hidden max-[440px]:inline">Cap ✓</span>
                       </div>
                     {:else if forecast.isBusCapHitFareType}
                       <div class="cap-hit-label bus max-xl:text-[0.5rem]">
-                        <span class="max-sm:hidden">Bus Cap ✓</span>
-                        <span class="hidden max-sm:inline">Bus ✓</span>
+                        <span class="max-[440px]:hidden">Bus Cap ✓</span>
+                        <span class="hidden max-[440px]:inline">Bus ✓</span>
                       </div>
                     {/if}
                   {/if}
@@ -3385,8 +3385,8 @@
                     </div>
                     {#if weekForecast.capHit}
                       <div class="weekly-cap-hit-tag max-md:text-[0.42rem] max-md:mt-[0.15rem]">
-                        <span class="max-sm:hidden">Capped</span>
-                        <span class="hidden max-sm:inline">Cap ✓</span>
+                        <span class="max-[440px]:hidden">Capped</span>
+                        <span class="hidden max-[440px]:inline">Cap ✓</span>
                       </div>
                     {/if}
                   {:else}
@@ -5198,6 +5198,12 @@
   .forecast-summary {
     border-color: rgba(16, 185, 129, 0.2);
     margin-bottom: 1.25rem;
+    padding: 1.25rem;
+  }
+  @media (max-width: 640px) {
+    .forecast-summary {
+      padding: 0.75rem;
+    }
   }
   .forecast-stat {
     display: flex;
@@ -6233,6 +6239,12 @@
     pointer-events: none;
     transition: opacity 0.2s ease;
   }
+  .calendar-cell,
+  .calendar-header,
+  .calendar-weekly-cap-cell {
+    min-width: 0;
+  }
+
   .calendar-cell {
     position: relative;
   }
