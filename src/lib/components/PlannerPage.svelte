@@ -3052,7 +3052,7 @@
               >£{$forecastResult.totalPaygFareTypeCapped.toFixed(2)}</span
             >
           </div>
-          <div class="forecast-stat highlight max-xl:col-span-2 max-xl:border-t max-xl:border-[rgba(255,255,255,0.08)] max-xl:pt-3">
+          <div class="forecast-stat highlight max-xl:col-span-2 max-sm:col-span-1 max-xl:border-t max-xl:border-[rgba(255,255,255,0.08)] max-xl:pt-3">
             <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]">Potential Saving</span>
             <span class="forecast-value green large max-xl:text-[2.25rem]">
               £{(
@@ -6259,6 +6259,12 @@
     grid-template-columns: 300px 1fr 300px;
     gap: 1.5rem;
     align-items: start;
+  }
+
+  .calendar-area,
+  .planner-sidebar {
+    min-width: 0;
+    width: 100%;
   }
 
   /* max-xl: = max-width: 1279px (Tailwind v4 xl breakpoint starts at 1280px) */
