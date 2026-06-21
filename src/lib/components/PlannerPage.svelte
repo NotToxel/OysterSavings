@@ -129,7 +129,11 @@
     peakDiscounted: number,
     offPeakBase: number,
     offPeakDiscounted: number,
+    isHover: boolean = false,
   ) {
+    if (isHover && typeof window !== 'undefined' && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
     const rect = target.getBoundingClientRect();
     const x = calculateTooltipX(target, 320);
     fareTooltipData = {
@@ -2608,9 +2612,9 @@
     </button>
   </div>
 
-  <div class="planner-layout active-tab-{activeMobileTab} grid grid-cols-1 xl:grid-cols-[300px_1fr_300px] gap-6 items-start">
+  <div class="planner-layout active-tab-{activeMobileTab}">
     <!-- Sidebar: Rules & patterns -->
-    <div class="planner-sidebar" class:max-xl:hidden={activeMobileTab !== "schedules"} class:max-xl:block={activeMobileTab === "schedules"}>
+    <div class="planner-sidebar">
       <!-- Date range -->
       <div class="glass-card sidebar-section">
         <h3 class="sidebar-title">📅 Planning Period</h3>
@@ -2747,31 +2751,49 @@
                             {/if}
                           </span>
                         {:else if isEstimate && rule.mode !== 'bus'}
-                          <span 
+                          <button 
+                            type="button"
                             class="fare-source-badge estimate" 
                             style="cursor: help;"
-                            role="status"
                             onmouseenter={(e) => {
                               const fares = getRuleFares(rule);
-                              showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                              showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
                             onmouseleave={hideFareTooltip}
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              const fares = getRuleFares(rule);
+                              if (fareTooltipData?.visible) {
+                                hideFareTooltip();
+                              } else {
+                                showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
+                              }
+                            }}
                           >
                             ⚙️ Zone Estimate
-                          </span>
+                          </button>
                         {:else if rule.mode !== 'bus'}
-                          <span 
+                          <button 
+                            type="button"
                             class="fare-source-badge live" 
                             style="cursor: help;"
-                            role="status"
                             onmouseenter={(e) => {
                               const fares = getRuleFares(rule);
-                              showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                              showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
                             onmouseleave={hideFareTooltip}
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              const fares = getRuleFares(rule);
+                              if (fareTooltipData?.visible) {
+                                hideFareTooltip();
+                              } else {
+                                showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
+                              }
+                            }}
                           >
                             ✓ Live Fare
-                          </span>
+                          </button>
                         {/if}
                       {/if}
                     </div>
@@ -2900,31 +2922,49 @@
                             {/if}
                           </span>
                         {:else if isEstimate && rule.mode !== 'bus'}
-                          <span 
+                          <button 
+                            type="button"
                             class="fare-source-badge estimate" 
                             style="cursor: help;"
-                            role="status"
                             onmouseenter={(e) => {
                               const fares = getRuleFares(rule);
-                              showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                              showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
                             onmouseleave={hideFareTooltip}
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              const fares = getRuleFares(rule);
+                              if (fareTooltipData?.visible) {
+                                hideFareTooltip();
+                              } else {
+                                showFareTooltip(e.currentTarget, false, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
+                              }
+                            }}
                           >
                             ⚙️ Zone Estimate
-                          </span>
+                          </button>
                         {:else if rule.mode !== 'bus'}
-                          <span 
+                          <button 
+                            type="button"
                             class="fare-source-badge live" 
                             style="cursor: help;"
-                            role="status"
                             onmouseenter={(e) => {
                               const fares = getRuleFares(rule);
-                              showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted);
+                              showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, true);
                             }}
                             onmouseleave={hideFareTooltip}
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              const fares = getRuleFares(rule);
+                              if (fareTooltipData?.visible) {
+                                hideFareTooltip();
+                              } else {
+                                showFareTooltip(e.currentTarget, true, fares.peakBase, fares.peakDiscounted, fares.offPeakBase, fares.offPeakDiscounted, false);
+                              }
+                            }}
                           >
                             ✓ Live Fare
-                          </span>
+                          </button>
                         {/if}
                       {/if}
                     </div>
@@ -2993,7 +3033,7 @@
     </div>
 
     <!-- Calendar and Settings -->
-    <div class="calendar-area" class:max-xl:hidden={activeMobileTab !== "calendar"} class:max-xl:block={activeMobileTab === "calendar"}>
+    <div class="calendar-area">
       <!-- Forecast summary -->
       {#if $forecastResult}
         <div class="glass-card forecast-summary flex justify-around gap-4 p-5 max-xl:grid max-xl:grid-cols-2 max-xl:gap-5 max-xl:p-4">
@@ -3345,7 +3385,7 @@
     </div>
 
     <!-- Right Sidebar for Settings -->
-    <div class="planner-sidebar" class:max-xl:hidden={activeMobileTab !== "settings"} class:max-xl:block={activeMobileTab === "settings"}>
+    <div class="planner-sidebar">
       <!-- Default Settings -->
       <div class="glass-card sidebar-section" style="position: relative; z-index: 10;">
         <h3 class="sidebar-title">⚙️ Default Journey Settings</h3>
@@ -4282,21 +4322,37 @@
                 <div class="advanced-fare-preview-layout" style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%;">
                   <div class="retrieved-fares-row" style="display: flex; align-items: center; gap: 0.3rem;">
                     {#if fareResult.isFromApi}
-                      <span
+                      <button
+                        type="button"
                         class="fare-api-badge"
                         style="cursor: help;"
-                        role="status"
-                        onmouseenter={(e) => showFareTooltip(e.currentTarget, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
+                        onmouseenter={(e) => showFareTooltip(e.currentTarget, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, true)}
                         onmouseleave={hideFareTooltip}
-                      >✓ TfL API</span>
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          if (fareTooltipData?.visible) {
+                            hideFareTooltip();
+                          } else {
+                            showFareTooltip(e.currentTarget, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, false);
+                          }
+                        }}
+                      >✓ TfL API</button>
                     {:else}
-                      <span
+                      <button
+                        type="button"
                         class="fare-fallback-badge"
-                        style="cursor: help; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;"
-                        role="status"
-                        onmouseenter={(e) => showFareTooltip(e.currentTarget, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare)}
+                        style="cursor: help;"
+                        onmouseenter={(e) => showFareTooltip(e.currentTarget, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, true)}
                         onmouseleave={hideFareTooltip}
-                      >⚠️ Estimated</span>
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          if (fareTooltipData?.visible) {
+                            hideFareTooltip();
+                          } else {
+                            showFareTooltip(e.currentTarget, false, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, false);
+                          }
+                        }}
+                      >⚠️ Estimated</button>
                     {/if}
                     Peak: <strong>£{selectedPeakFare.toFixed(2)}</strong>
                     <span style="margin: 0 0.3rem; color: var(--color-text-muted);">|</span>
@@ -5963,6 +6019,9 @@
     color: #10b981;
     font-weight: 600;
     margin-right: 0.3rem;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
   }
 
   .fare-fallback-badge {
@@ -5974,6 +6033,9 @@
     color: #f59e0b;
     font-weight: 600;
     margin-right: 0.3rem;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
   }
 
   /* Segmented control for Advanced Mode binary toggle */
@@ -6149,6 +6211,59 @@
 
   .mobile-layout-add-btn {
     display: none !important;
+  }
+
+  /* Planner layout desktop grid */
+  .planner-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* max-xl: = max-width: 1279px (Tailwind v4 xl breakpoint starts at 1280px) */
+  @media (max-width: 1279px) {
+    .mobile-layout-add-btn {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .mobile-tabs-container {
+      display: flex;
+    }
+
+    .planner-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .planner-layout .planner-sidebar:first-of-type {
+      display: none;
+    }
+    .planner-layout .calendar-area {
+      display: none;
+    }
+    .planner-layout .planner-sidebar:last-of-type {
+      display: none;
+    }
+
+    .planner-layout.active-tab-schedules .planner-sidebar:first-of-type {
+      display: block;
+    }
+    .planner-layout.active-tab-calendar .calendar-area {
+      display: block;
+    }
+    .planner-layout.active-tab-settings .planner-sidebar:last-of-type {
+      display: block;
+    }
+  }
+
+  /* On touch/hover:none devices, always show fare badges (no hover state) */
+  @media (hover: none) {
+    .rule-card .fare-source-badge {
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
   .mobile-tabs-container {
