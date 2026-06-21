@@ -4589,6 +4589,22 @@
 {#if weeklyCapTooltipData && weeklyCapTooltipData.visible}
   {@const week = weeklyCapTooltipData.week}
   {@const progress = Math.min(week.totalFareFareType / (week.fareTypeWeeklyCap || week.weeklyCap), 1)}
+  {@const visitedWithInfo = (week.stationsVisited || []).map((name: string) => {
+    const info = getStationInfo(name);
+    if (!info) return { name, info: null, numericZones: [] };
+    const numericZones = [info.zone];
+    if (info.altZone !== undefined && info.altZone !== null && info.altZone !== 0) {
+      numericZones.push(info.altZone);
+    }
+    if (info.outsideZone || info.zone === 0) {
+      return { name, info, numericZones: [10] };
+    }
+    return { name, info, numericZones };
+  })}
+  {@const validZones = visitedWithInfo.flatMap((x: any) => x.numericZones)}
+  {@const showHighlights = validZones.length > 0 && Math.min(...validZones) !== Math.max(...validZones)}
+  {@const minZone = validZones.length > 0 ? Math.min(...validZones) : 0}
+  {@const maxZone = validZones.length > 0 ? Math.max(...validZones) : 0}
   <div
     class="weekly-cap-hovercard"
     style="position: fixed; left: {weeklyCapTooltipData.x}px; top: {weeklyCapTooltipData.y}px; transform: translate(-50%, -100%) translateY(-10px); z-index: 99999;"
@@ -4606,13 +4622,13 @@
     
     <div class="hovercard-body">
       <div class="weekly-metric-row">
-        <div class="weekly-metric">
-          <span class="metric-label">Cap Limit</span>
-          <span class="metric-value">£{(week.fareTypeWeeklyCap || week.weeklyCap).toFixed(2)}</span>
-        </div>
-        <div class="weekly-metric">
+        <div class="weekly-metric" style="align-items: flex-start; text-align: left;">
           <span class="metric-label">Current Spend</span>
           <span class="metric-value text-highlight">£{week.totalFareFareType.toFixed(2)}</span>
+        </div>
+        <div class="weekly-metric" style="align-items: flex-end; text-align: right;">
+          <span class="metric-label">Cap Limit</span>
+          <span class="metric-value">£{(week.fareTypeWeeklyCap || week.weeklyCap).toFixed(2)}</span>
         </div>
       </div>
 
@@ -4645,13 +4661,22 @@
       <div class="stations-visited-section">
         <span class="section-title">Stations Visited</span>
         <div class="stations-pills-list">
-          {#if week.stationsVisited && week.stationsVisited.length > 0}
-            {#each week.stationsVisited as name}
-              {@const isOz = week.outsideZoneStations?.includes(name)}
-              <span class="station-pill" class:outside-zone={isOz}>
-                {name}
-                {#if isOz}
-                  <span class="oz-badge">OZ</span>
+          {#if visitedWithInfo.length > 0}
+            {#each visitedWithInfo as item}
+              {@const isOz = item.info?.outsideZone || week.outsideZoneStations?.includes(item.name)}
+              {@const isLowest = showHighlights && item.numericZones.includes(minZone)}
+              {@const isHighest = showHighlights && item.numericZones.includes(maxZone)}
+              <span 
+                class="station-pill" 
+                class:outside-zone={isOz}
+                class:lowest-zone={isLowest}
+                class:highest-zone={isHighest}
+              >
+                {item.name}
+                {#if item.info}
+                  <span class="pill-zone-badge" style="opacity: 0.6; font-size: 0.55rem; font-weight: 600; margin-left: 0.15rem;">
+                    ({isOz ? 'OZ' : item.info.altZone ? `Z${item.info.zone}/${item.info.altZone}` : `Z${item.info.zone}`})
+                  </span>
                 {/if}
               </span>
             {/each}
@@ -4862,6 +4887,16 @@
     font-size: 0.7rem;
     color: var(--color-text-muted);
     font-style: italic;
+  }
+  .station-pill.lowest-zone {
+    border-color: rgba(6, 182, 212, 0.45) !important;
+    background: rgba(6, 182, 212, 0.08) !important;
+    color: #e2f8ff !important;
+  }
+  .station-pill.highest-zone {
+    border-color: rgba(236, 72, 153, 0.45) !important;
+    background: rgba(236, 72, 153, 0.08) !important;
+    color: #ffeef6 !important;
   }
 
   /* Student Oyster Comparison Styles */
