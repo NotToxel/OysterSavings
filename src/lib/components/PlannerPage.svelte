@@ -4866,7 +4866,13 @@
 
   /* Student Oyster Comparison Styles */
   .student-comparison-card {
-    border: 1px dashed rgba(0, 159, 227, 0.3);
+    border: 1px solid rgba(0, 159, 227, 0.3);
+    padding: 1.25rem;
+  }
+  @media (max-width: 640px) {
+    .student-comparison-card {
+      padding: 0.75rem;
+    }
   }
 
   .comparison-card-title {
