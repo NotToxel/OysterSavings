@@ -1,0 +1,188 @@
+{
+  "broxbourne": {
+    "name": "Broxbourne",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GBROXBRN"
+  },
+  "hertford east": {
+    "name": "Hertford East",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GHERTFDE"
+  },
+  "ware": {
+    "name": "Ware",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GWARE"
+  },
+  "st. margarets": {
+    "name": "St. Margarets (Herts)",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GSMARGRT"
+  },
+  "rye house": {
+    "name": "Rye House",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GRYEHOUS"
+  },
+  "watford junction": {
+    "name": "Watford Junction",
+    "zone": 10,
+    "modes": ["national_rail", "overground"],
+    "naptanId": "910GWATFDJ"
+  },
+  "shenfield": {
+    "name": "Shenfield",
+    "zone": 12,
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GSHENFLD"
+  },
+  "gatwick airport": {
+    "name": "Gatwick Airport",
+    "zone": 14,
+    "modes": ["national_rail"],
+    "naptanId": "910GGTWK"
+  },
+  "horley": {
+    "name": "Horley",
+    "zone": 13,
+    "modes": ["national_rail"],
+    "naptanId": "910GHORLEY"
+  },
+  "salfords": {
+    "name": "Salfords",
+    "zone": 13,
+    "modes": ["national_rail"],
+    "naptanId": "910GSALFDS"
+  },
+  "earlswood": {
+    "name": "Earlswood",
+    "zone": 13,
+    "modes": ["national_rail"],
+    "naptanId": "910GEARLSWD"
+  },
+  "redhill": {
+    "name": "Redhill",
+    "zone": 13,
+    "modes": ["national_rail"],
+    "naptanId": "910GREDHILL"
+  },
+  "cuffley": {
+    "name": "Cuffley",
+    "zone": 10,
+    "modes": ["national_rail"],
+    "naptanId": "910GCUFFLEY"
+  },
+  "hertford north": {
+    "name": "Hertford North",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GHFDN"
+  },
+  "bayford": {
+    "name": "Bayford",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GBAYFORD"
+  },
+  "epsom": {
+    "name": "Epsom",
+    "zone": 10,
+    "modes": ["national_rail"],
+    "naptanId": "910GEPSM"
+  },
+  "merstham": {
+    "name": "Merstham",
+    "zone": 13,
+    "modes": ["national_rail"],
+    "naptanId": "910GMERSTHM"
+  },
+  "potters bar": {
+    "name": "Potters Bar",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GPOTRSBR"
+  },
+  "radlett": {
+    "name": "Radlett",
+    "zone": 11,
+    "modes": ["national_rail"],
+    "naptanId": "910GRADLETT"
+  },
+  "ockendon": {
+    "name": "Ockendon",
+    "zone": 10,
+    "modes": ["national_rail"],
+    "naptanId": "910GOCKENDN"
+  },
+  "chafford hundred": {
+    "name": "Chafford Hundred",
+    "zone": 10,
+    "modes": ["national_rail"],
+    "naptanId": "910GCHADHDD"
+  },
+  "purfleet": {
+    "name": "Purfleet",
+    "zone": 10,
+    "modes": ["national_rail"],
+    "naptanId": "910GPURFLET"
+  },
+  "grays": {
+    "name": "Grays",
+    "zone": 10,
+    "modes": ["national_rail"],
+    "naptanId": "910GGRAYS"
+  },
+  "taplow": {
+    "name": "Taplow",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GTAPLOW"
+  },
+  "burnham": {
+    "name": "Burnham",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GBNHAM"
+  },
+  "slough": {
+    "name": "Slough",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GSLOUGH"
+  },
+  "langley": {
+    "name": "Langley",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GLANGLEY"
+  },
+  "iver": {
+    "name": "Iver",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GIVER"
+  },
+  "reading": {
+    "name": "Reading",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GRDNGSTN"
+  },
+  "twyford": {
+    "name": "Twyford",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GTWYFORD"
+  },
+  "maidenhead": {
+    "name": "Maidenhead",
+    "zone": "Contactless",
+    "modes": ["national_rail", "elizabeth_line"],
+    "naptanId": "910GMDNHEAD"
+  }
+}
