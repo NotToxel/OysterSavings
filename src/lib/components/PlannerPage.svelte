@@ -1131,6 +1131,7 @@
   });
 
   // Date range for planning
+  let plannerRecalculating = $state(false);
   let planStart = $state(formatInputDate(new Date()));
   const defaultEndDate = (() => {
     const end = addMonths(new Date(), 1);
@@ -1609,7 +1610,7 @@
       );
 
       // Precompute daily cached spends for this zone
-      const daysList: { dateStr: string; paygRail: number; paygBus: number; tcRail: number; tcBus: number }[] = [];
+      const daysList: { dateStr: string; paygRail: number; paygBus: number; tcRail: number; tcBus: number; time: number; weekKey: string }[] = [];
       for (const [dateStr, journeys] of dayJourneysMap) {
         let paygRail = 0;
         let paygBus = 0;
@@ -1640,12 +1641,19 @@
         const paygDailyBusCap = getDailyBusCap(paygFareType);
         const tcDailyBusCap = getDailyBusCap(passFareType);
 
+        const dDate = dateMap.get(dateStr)!;
+        const dTime = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate()).getTime();
+        const monday = getMonday(dDate);
+        const weekKey = formatLocalDate(monday);
+
         daysList.push({
           dateStr,
           paygRail,
           paygBus: Math.min(paygBus, paygDailyBusCap),
           tcRail,
-          tcBus: Math.min(tcBus, tcDailyBusCap)
+          tcBus: Math.min(tcBus, tcDailyBusCap),
+          time: dTime,
+          weekKey
         });
       }
       daysList.sort((a, b) => dateMap.get(a.dateStr)!.getTime() - dateMap.get(b.dateStr)!.getTime());
@@ -1661,18 +1669,13 @@
         const weekDataMap = new Map<string, { rail: number; bus: number; hasTc: boolean }>();
 
         for (const d of daysList) {
-          const dDate = dateMap.get(d.dateStr)!;
-          const dTime = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate()).getTime();
-          const isTcActive = tcStartTime !== -1 && dTime >= tcStartTime && dTime <= tcEndTime;
+          const isTcActive = tcStartTime !== -1 && d.time >= tcStartTime && d.time <= tcEndTime;
 
-          const monday = getMonday(dDate);
-          const weekKey = formatLocalDate(monday);
-
-          if (!weekDataMap.has(weekKey)) {
-            weekDataMap.set(weekKey, { rail: 0, bus: 0, hasTc: false });
+          if (!weekDataMap.has(d.weekKey)) {
+            weekDataMap.set(d.weekKey, { rail: 0, bus: 0, hasTc: false });
           }
 
-          const wData = weekDataMap.get(weekKey)!;
+          const wData = weekDataMap.get(d.weekKey)!;
           if (isTcActive) {
             wData.rail += d.tcRail;
             wData.bus += d.tcBus;
@@ -1889,18 +1892,13 @@
               const weekDataMap = new Map<string, { rail: number; bus: number; hasTc: boolean }>();
 
               for (const d of daysList) {
-                const dDate = dateMap.get(d.dateStr)!;
-                const dTime = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate()).getTime();
-                const isTcActive = tcStartTime !== -1 && dTime >= tcStartTime && dTime <= tcEndTime;
+                const isTcActive = tcStartTime !== -1 && d.time >= tcStartTime && d.time <= tcEndTime;
 
-                const monday = getMonday(dDate);
-                const weekKey = formatLocalDate(monday);
-
-                if (!weekDataMap.has(weekKey)) {
-                  weekDataMap.set(weekKey, { rail: 0, bus: 0, hasTc: false });
+                if (!weekDataMap.has(d.weekKey)) {
+                  weekDataMap.set(d.weekKey, { rail: 0, bus: 0, hasTc: false });
                 }
 
-                const wData = weekDataMap.get(weekKey)!;
+                const wData = weekDataMap.get(d.weekKey)!;
                 if (isTcActive) {
                   wData.rail += d.tcRail;
                   wData.bus += d.tcBus;
@@ -2025,13 +2023,32 @@
         let bestMidPeriodEnd: Date | null = null;
         let bestMidPeriodResult: any = null;
 
+        // Reduce search space via boundary heuristics to support long planning periods without locking the thread
+        const plausibleStarts: Date[] = [];
+        const plausibleEnds: Date[] = [];
+
         for (let i = 0; i < uniqueTravelDates.length; i++) {
-          const tcStart = uniqueTravelDates[i];
+          const d = uniqueTravelDates[i];
+          const isNearStart = i < 15;
+          const isAfterGap = i > 0 && (daysBetween(uniqueTravelDates[i - 1], d) >= 10);
+          if (isNearStart || isAfterGap) {
+            plausibleStarts.push(d);
+          }
+
+          const isNearEnd = i >= uniqueTravelDates.length - 15;
+          const isBeforeGap = i < uniqueTravelDates.length - 1 && (daysBetween(d, uniqueTravelDates[i + 1]) >= 10);
+          if (isNearEnd || isBeforeGap) {
+            plausibleEnds.push(d);
+          }
+        }
+
+        for (const tcStart of plausibleStarts) {
           const startDayIndex = daysBetween(startDate, tcStart);
           if (startDayIndex < 0) continue; // must start in planning period
 
-          for (let j = i; j < uniqueTravelDates.length; j++) {
-            const tcEnd = uniqueTravelDates[j];
+          for (const tcEnd of plausibleEnds) {
+            if (tcEnd.getTime() < tcStart.getTime()) continue;
+
             const endDayIndex = daysBetween(startDate, tcEnd);
             if (endDayIndex >= durationDays) continue; // must fit in planning period
 
@@ -2572,17 +2589,41 @@
   function handleStartChange(e: Event) {
     const val = (e.target as HTMLInputElement).value;
     if (val) {
-      planStart = val;
-      clampDates();
+      plannerRecalculating = true;
+      setTimeout(() => {
+        planStart = val;
+        clampDates();
+        setTimeout(() => {
+          plannerRecalculating = false;
+        }, 50);
+      }, 50);
     }
   }
 
   function handleEndChange(e: Event) {
     const val = (e.target as HTMLInputElement).value;
     if (val) {
-      planEnd = val;
-      clampDates();
+      plannerRecalculating = true;
+      setTimeout(() => {
+        planEnd = val;
+        clampDates();
+        setTimeout(() => {
+          plannerRecalculating = false;
+        }, 50);
+      }, 50);
     }
+  }
+
+  function handleFareTypeChange(e: Event) {
+    const val = (e.currentTarget as HTMLSelectElement).value as FareType;
+    plannerRecalculating = true;
+    setTimeout(() => {
+      $selectedFareType = val;
+      regenerate();
+      setTimeout(() => {
+        plannerRecalculating = false;
+      }, 50);
+    }, 50);
   }
 
   function resetForm() {
@@ -2673,25 +2714,31 @@
   }
 
   function setPlanningPeriod(preset: '1w' | '1m' | '3m' | '6m' | '1y') {
-    const start = parseLocalDate(planStart) || new Date();
-    let end = new Date(start);
-    if (preset === '1w') {
-      end.setDate(start.getDate() + 6);
-    } else if (preset === '1m') {
-      end = addMonths(start, 1);
-      end.setDate(end.getDate() - 1);
-    } else if (preset === '3m') {
-      end = addMonths(start, 3);
-      end.setDate(end.getDate() - 1);
-    } else if (preset === '6m') {
-      end = addMonths(start, 6);
-      end.setDate(end.getDate() - 1);
-    } else if (preset === '1y') {
-      end = addMonths(start, 12);
-      end.setDate(end.getDate() - 1);
-    }
-    planEnd = formatInputDate(end);
-    clampDates();
+    plannerRecalculating = true;
+    setTimeout(() => {
+      const start = parseLocalDate(planStart) || new Date();
+      let end = new Date(start);
+      if (preset === '1w') {
+        end.setDate(start.getDate() + 6);
+      } else if (preset === '1m') {
+        end = addMonths(start, 1);
+        end.setDate(end.getDate() - 1);
+      } else if (preset === '3m') {
+        end = addMonths(start, 3);
+        end.setDate(end.getDate() - 1);
+      } else if (preset === '6m') {
+        end = addMonths(start, 6);
+        end.setDate(end.getDate() - 1);
+      } else if (preset === '1y') {
+        end = addMonths(start, 12);
+        end.setDate(end.getDate() - 1);
+      }
+      planEnd = formatInputDate(end);
+      clampDates();
+      setTimeout(() => {
+        plannerRecalculating = false;
+      }, 50);
+    }, 50);
   }
 </script>
 
@@ -2710,7 +2757,15 @@
   </div>
 {/if}
 
-<div class="planner-page">
+<div class="planner-page" style="position: relative;">
+  {#if plannerRecalculating}
+    <div class="card-switching-overlay">
+      <div class="switching-spinner-box">
+        <div class="tfl-switching-spinner"></div>
+        <div class="switching-text">Recalculating Planner...</div>
+      </div>
+    </div>
+  {/if}
   <div class="planner-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
     <h1 class="page-title" style="margin-bottom: 0;">Journey Planner</h1>
     
@@ -3864,8 +3919,8 @@
           <select
             class="input-field"
             id="sel-fare-type"
-            bind:value={$selectedFareType}
-            onchange={regenerate}
+            value={$selectedFareType}
+            onchange={handleFareTypeChange}
           >
             <option value="none">Adult / Contactless</option>
             <option value="student">Apprentice / 18+ Student Oyster</option>
