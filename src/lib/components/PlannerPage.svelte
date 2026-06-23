@@ -580,6 +580,51 @@
     }
   });
 
+  $effect(() => {
+    // Keep saved rules synced with planStart and planEnd changes
+    const currentStart = planStart;
+    const currentEnd = planEnd;
+
+    if (!$recurrenceRules || $recurrenceRules.length === 0) return;
+
+    let changed = false;
+    const updatedRules = $recurrenceRules.map((r) => {
+      let nextStartDate = r.startDate;
+      let nextEndDate = r.endDate;
+      let ruleChanged = false;
+
+      if (r.syncWithPlanStart && currentStart) {
+        const planStartDate = parseLocalDate(currentStart);
+        if (planStartDate && r.startDate.getTime() !== planStartDate.getTime()) {
+          nextStartDate = planStartDate;
+          ruleChanged = true;
+        }
+      }
+      if (r.syncWithPlanEnd && currentEnd) {
+        const planEndDate = parseLocalDate(currentEnd);
+        if (planEndDate && r.endDate.getTime() !== planEndDate.getTime()) {
+          nextEndDate = planEndDate;
+          ruleChanged = true;
+        }
+      }
+
+      if (ruleChanged) {
+        changed = true;
+        return {
+          ...r,
+          startDate: nextStartDate,
+          endDate: nextEndDate,
+        };
+      }
+      return r;
+    });
+
+    if (changed) {
+      $recurrenceRules = updatedRules;
+      regenerate();
+    }
+  });
+
   // Default fallback values to avoid state_referenced_locally warning and maintain single reference
   const DEFAULT_SETTINGS = {
     originZone: 3,
@@ -2273,6 +2318,8 @@
         newIntervalType === "none"
           ? parseLocalDate(newRuleDate)
           : parseLocalDate(newRuleEndDate),
+      syncWithPlanStart: newIntervalType !== "none" ? syncWithPlanStart : false,
+      syncWithPlanEnd: newIntervalType !== "none" ? syncWithPlanEnd : false,
       ...(useOffpeakCapOverride && selectedOriginStation && getOffpeakCapCutoff(selectedOriginStation.info.name) !== null && newTimePeriod === '06:30-09:30' && { useOffpeakCap: true }),
       // Advanced Mode fields
       ...(advancedMode && {
@@ -2326,8 +2373,8 @@
     newIntervalValue = rule.intervalValue;
     newRuleDate = formatInputDate(rule.startDate);
     newRuleEndDate = formatInputDate(rule.endDate);
-    syncWithPlanEnd = (newRuleEndDate === planEnd);
-    syncWithPlanStart = (newRuleDate === planStart);
+    syncWithPlanEnd = rule.syncWithPlanEnd !== undefined ? rule.syncWithPlanEnd : (newRuleEndDate === planEnd);
+    syncWithPlanStart = rule.syncWithPlanStart !== undefined ? rule.syncWithPlanStart : (newRuleDate === planStart);
     useOffpeakCapOverride = rule.useOffpeakCap || false;
     // Restore Advanced Mode state
     advancedMode = rule.isAdvancedMode || false;
@@ -3899,7 +3946,7 @@
         </div>
 
         <div class="modal-body">
-          <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
+          <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
             <div class="form-group">
               <label class="setting-label" for="modal-journey-type"
                 >Journey Type</label
@@ -3927,7 +3974,7 @@
             </div>
           </div>
 
-          <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
+          <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
             <div class="form-group">
               <label class="setting-label" for="modal-rule-name"
                 >{newIntervalType === "none"
@@ -3961,7 +4008,7 @@
           </div>
 
           {#if newIntervalType !== "none"}
-            <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
+            <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
               <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
                   <label class="setting-label" for="modal-start-date" style="margin-bottom: 0;">Start Date</label>
@@ -4052,7 +4099,7 @@
               </div>
             </div>
             {#if newMode !== "bus"}
-              <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
+              <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
                 <div class="form-group">
                   <label class="setting-label" for="modal-time-period"
                     >Time Period</label
@@ -4085,7 +4132,7 @@
             {/if}
           {:else}
             <!-- Standard dropdown mode selection for Simple Mode -->
-            <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
+            <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
               <div class="form-group">
                 <label class="setting-label" for="modal-transport-mode"
                   >Transport Mode</label
@@ -4121,7 +4168,7 @@
           {/if}
 
           <div
-            class="form-row return-journey-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3"
+            class="form-row return-journey-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3"
             style="margin-top: 0.5rem; align-items: flex-end;"
           >
             <div class="form-group checkbox-group" style="margin-bottom: 0;">
@@ -4368,7 +4415,7 @@
               {/if}
             {:else}
               <!-- Standard Zone Selectors -->
-              <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
+              <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
                 <div class="form-group">
                   <label class="setting-label" for="modal-origin-zone"
                     >Origin Zone</label
@@ -4434,7 +4481,7 @@
               </div>
             </div>
 
-            <div class="form-row grid grid-cols-1 xl:grid-cols-2 max-xl:gap-3">
+            <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
               <div class="form-group">
                 <label class="setting-label" for="modal-interval-value"
                   >Repeat Every</label

@@ -16,6 +16,8 @@ export interface RecurrenceRule {
   startDate: Date;
   endDate: Date;
   excludeDates?: string[]; // Array of YYYY-MM-DD strings
+  syncWithPlanStart?: boolean;
+  syncWithPlanEnd?: boolean;
   // Advanced Mode: station-specific fields
   originStation?: string;       // NaPTAN ID
   destinationStation?: string;  // NaPTAN ID
