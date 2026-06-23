@@ -16,9 +16,15 @@
     activeCardId,
     type MultiCardClassifiedJourney,
     combinedSimulation,
+    isSwitchingCard,
   } from "$lib/stores/stores";
   import { calculateFareTypeSavings } from "$lib/engine/savingsEngine";
-  import { FARE_TYPES, type FareType, lookupDailyCap, lookupWeeklyCap } from "$lib/data/fareData";
+  import {
+    FARE_TYPES,
+    type FareType,
+    lookupDailyCap,
+    lookupWeeklyCap,
+  } from "$lib/data/fareData";
   import { getZoneColor } from "$lib/data/stationService";
   import InsightsPage from "./InsightsPage.svelte";
   import CardSelector from "./CardSelector.svelte";
@@ -36,17 +42,32 @@
   let searchQuery = $state("");
   let customCostInput = $state("");
 
+  // Pagination
+  let currentPageNum = $state(1);
+  const pageSize = 50;
+
+  $effect(() => {
+    // Reset page number when filters or active card changes
+    const _ = $activeCardId;
+    const __ = filterMode;
+    const ___ = searchQuery;
+    currentPageNum = 1;
+  });
+
   // Multi-card simulation and journey view state
   let selectedSimCardId = $state<string>("");
   let journeyViewMode = $state<"table" | "timeline" | "split">("table");
 
   let activeSim = $derived(
-    $combinedSimulation?.simulations[selectedSimCardId] ?? null
+    $combinedSimulation?.simulations[selectedSimCardId] ?? null,
   );
 
   $effect(() => {
     if ($combinedSimulation) {
-      if (!selectedSimCardId || !$combinedSimulation.simulations[selectedSimCardId]) {
+      if (
+        !selectedSimCardId ||
+        !$combinedSimulation.simulations[selectedSimCardId]
+      ) {
         selectedSimCardId = $combinedSimulation.optimalCardId;
       }
     } else {
@@ -138,7 +159,7 @@
   // Find top zone range for student travelcard savings comparison
   let topZone = $derived.by(() => {
     const j = $classifiedJourneys;
-    if (j.length === 0) return 'Z1-2';
+    if (j.length === 0) return "Z1-2";
 
     const zoneCounts = new Map<string, number>();
     for (const jj of j) {
@@ -146,16 +167,19 @@
         zoneCounts.set(jj.zoneRange, (zoneCounts.get(jj.zoneRange) ?? 0) + 1);
       }
     }
-    let top = 'Z1-2';
+    let top = "Z1-2";
     let topCount = 0;
     for (const [z, c] of zoneCounts) {
-      if (c > topCount) { top = z; topCount = c; }
+      if (c > topCount) {
+        top = z;
+        topCount = c;
+      }
     }
     return top;
   });
 
   let topZoneComparison = $derived(
-    $productComparison.find(c => c.zoneRange === topZone)
+    $productComparison.find((c) => c.zoneRange === topZone),
   );
 
   let filteredJourneys = $derived.by(() => {
@@ -195,15 +219,23 @@
       let cmp = 0;
       if (sortKey === "date") {
         cmp = a.raw.date.getTime() - b.raw.date.getTime();
-        if (cmp === 0) cmp = (a.raw.startTime || '').localeCompare(b.raw.startTime || '');
-      }
-      else if (sortKey === "charge") cmp = a.raw.charge - b.raw.charge;
+        if (cmp === 0)
+          cmp = (a.raw.startTime || "").localeCompare(b.raw.startTime || "");
+      } else if (sortKey === "charge") cmp = a.raw.charge - b.raw.charge;
       else if (sortKey === "mode") cmp = a.mode.localeCompare(b.mode);
       return sortAsc ? cmp : -cmp;
     });
 
     return list;
   });
+
+  let paginatedJourneys = $derived(
+    filteredJourneys.slice(
+      (currentPageNum - 1) * pageSize,
+      currentPageNum * pageSize,
+    ),
+  );
+  let totalPages = $derived(Math.ceil(filteredJourneys.length / pageSize));
 
   function toggleSort(key: string) {
     if (sortKey === key) sortAsc = !sortAsc;
@@ -281,11 +313,11 @@
   let activeZoneRanges = $derived.by(() => {
     const ranges = new Set<string>();
     for (const j of $classifiedJourneys) {
-      if (j.zoneRange && j.zoneRange !== '—') {
+      if (j.zoneRange && j.zoneRange !== "—") {
         ranges.add(j.zoneRange);
       }
     }
-    if (ranges.size === 0) ranges.add('Z1-2');
+    if (ranges.size === 0) ranges.add("Z1-2");
     return Array.from(ranges).sort();
   });
 
@@ -319,8 +351,11 @@
   // Group journeys by week, then day chronologically for the timeline layout
   let groupedTimelineWeeks = $derived.by(() => {
     // 1. Group journeys by date to form days
-    const dayMap = new Map<string, { dateStr: string; dateObj: Date; journeys: MultiCardClassifiedJourney[] }>();
-    
+    const dayMap = new Map<
+      string,
+      { dateStr: string; dateObj: Date; journeys: MultiCardClassifiedJourney[] }
+    >();
+
     for (const j of filteredJourneys) {
       const key = j.raw.dateStr;
       const existing = dayMap.get(key);
@@ -334,24 +369,35 @@
         });
       }
     }
-    
+
     // Sort journeys within each day — LATEST time at top (reverse chronological)
-    const days: TimelineDayGroup[] = Array.from(dayMap.values()).map(day => {
+    const days: TimelineDayGroup[] = Array.from(dayMap.values()).map((day) => {
       day.journeys.sort((a, b) => {
         const timeA = a.raw.startTime || "";
         const timeB = b.raw.startTime || "";
         return timeB.localeCompare(timeA); // reversed: latest first
       });
-      
+
       // Determine cards active on this day and their zones
       // Also determine whether today is a peak or off-peak cap day per card
-      const cardsActiveMap = new Map<string, { id: string; name: string; color: string; discount: FareType; zones: Set<string>; isCapPeakDay: boolean | null }>();
+      const cardsActiveMap = new Map<
+        string,
+        {
+          id: string;
+          name: string;
+          color: string;
+          discount: FareType;
+          zones: Set<string>;
+          isCapPeakDay: boolean | null;
+        }
+      >();
       for (const j of day.journeys) {
         if (!j.cardId) continue;
-        const zoneNorm = j.zoneRange === 'Z1' ? 'Z1-2' : j.zoneRange;
+        const zoneNorm =
+          j.zoneRange === "Z1" || j.zoneRange === "Z2" ? "Z1-2" : j.zoneRange;
         const existing = cardsActiveMap.get(j.cardId);
         if (existing) {
-          if (zoneNorm && zoneNorm !== '—') {
+          if (zoneNorm && zoneNorm !== "—") {
             existing.zones.add(zoneNorm);
           }
           // Track cap peak: first non-bus journey's isCapPeak decides the day's cap type
@@ -359,37 +405,40 @@
             existing.isCapPeakDay = j.isCapPeak;
           }
         } else {
-          const card = $cards.find(c => c.id === j.cardId);
+          const card = $cards.find((c) => c.id === j.cardId);
           const zones = new Set<string>();
-          if (zoneNorm && zoneNorm !== '—') {
+          if (zoneNorm && zoneNorm !== "—") {
             zones.add(zoneNorm);
           }
           cardsActiveMap.set(j.cardId, {
             id: j.cardId,
-            name: j.cardName || 'Card',
-            color: j.cardColor || '#fff',
-            discount: card?.detectedDiscount || 'none',
+            name: j.cardName || "Card",
+            color: j.cardColor || "#fff",
+            discount: card?.detectedDiscount || "none",
             zones,
             isCapPeakDay: !j.isBus ? j.isCapPeak : null,
           });
         }
       }
-      
+
       return {
         dateStr: day.dateStr,
         dateObj: day.dateObj,
         journeys: day.journeys,
-        cardsActive: Array.from(cardsActiveMap.values()).map(c => ({
+        cardsActive: Array.from(cardsActiveMap.values()).map((c) => ({
           ...c,
           zones: Array.from(c.zones).sort(),
           isCapPeakDay: c.isCapPeakDay ?? false,
         })),
       };
     });
-    
+
     // 2. Group days by week (Monday start)
-    const weekMap = new Map<number, { weekStart: Date; days: TimelineDayGroup[] }>();
-    
+    const weekMap = new Map<
+      number,
+      { weekStart: Date; days: TimelineDayGroup[] }
+    >();
+
     const getMondayOfDate = (d: Date): Date => {
       const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -398,7 +447,7 @@
       monday.setHours(0, 0, 0, 0);
       return monday;
     };
-    
+
     for (const d of days) {
       const mon = getMondayOfDate(d.dateObj);
       const key = mon.getTime();
@@ -412,37 +461,64 @@
         });
       }
     }
-    
+
     // Convert to week groups and compute summaries
-    const weeks: TimelineWeekGroup[] = Array.from(weekMap.values()).map(w => {
+    const weeks: TimelineWeekGroup[] = Array.from(weekMap.values()).map((w) => {
       w.days.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
-      
+
       const keyTime = w.weekStart.getTime();
-      
-      const actualWeek = $weeklyCapResults?.find(wr => wr.weekStart.getTime() === keyTime);
-      const actualSpend = actualWeek?.totalSpend ?? w.days.reduce((sum, d) => sum + d.journeys.reduce((js, j) => js + j.raw.charge, 0), 0);
+
+      const actualWeek = $weeklyCapResults?.find(
+        (wr) => wr.weekStart.getTime() === keyTime,
+      );
+      const actualSpend =
+        actualWeek?.totalSpend ??
+        w.days.reduce(
+          (sum, d) => sum + d.journeys.reduce((js, j) => js + j.raw.charge, 0),
+          0,
+        );
       const isCapped = actualWeek?.capHit ?? false;
-      const maxZoneRange = actualWeek?.maxZoneRange ?? 'Z1-2';
-      const capLimit = actualWeek?.weeklyCap ?? lookupWeeklyCap(maxZoneRange, 'none');
-      
+      const maxZoneRange = actualWeek?.maxZoneRange ?? "Z1-2";
+      const capLimit =
+        actualWeek?.weeklyCap ?? lookupWeeklyCap(maxZoneRange, "none");
+
       let simulatedSpend = actualSpend;
       let simCapHit = false;
       if ($combinedSimulation) {
-        const optimalSim = $combinedSimulation.simulations[$combinedSimulation.optimalCardId];
+        const optimalSim =
+          $combinedSimulation.simulations[$combinedSimulation.optimalCardId];
         if (optimalSim) {
-          const simWeek = optimalSim.simulatedWeeklyCaps.find(sw => sw.weekStart.getTime() === keyTime);
+          const simWeek = optimalSim.simulatedWeeklyCaps.find(
+            (sw) => sw.weekStart.getTime() === keyTime,
+          );
           if (simWeek) {
             simulatedSpend = simWeek.totalSpend;
             simCapHit = simWeek.capHit;
           }
         }
       }
-      
-      const savings = Math.max(0, Math.round((actualSpend - simulatedSpend) * 100) / 100);
-      
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      const savings = Math.max(
+        0,
+        Math.round((actualSpend - simulatedSpend) * 100) / 100,
+      );
+
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
       const weekStartStr = `Week of ${w.weekStart.getDate()} ${months[w.weekStart.getMonth()]}`;
-      
+
       return {
         weekStart: w.weekStart,
         weekStartStr,
@@ -456,13 +532,13 @@
         simCapHit,
       };
     });
-    
+
     // Sort weeks descending or ascending depending on sortAsc
     weeks.sort((a, b) => {
       const cmp = a.weekStart.getTime() - b.weekStart.getTime();
       return sortAsc ? cmp : -cmp;
     });
-    
+
     return weeks;
   });
 
@@ -491,8 +567,18 @@
 
   <CardSelector onAddData={() => (showAddDialog = true)} />
 
-  <!-- Tab navigation -->
-  <div class="tab-nav" style="margin-bottom: 1.5rem;">
+  <div class="analysis-content-wrapper">
+    {#if $isSwitchingCard}
+      <div class="card-switching-overlay">
+        <div class="switching-spinner-box">
+          <div class="tfl-switching-spinner"></div>
+          <span class="switching-text">Updating Dashboard...</span>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Tab navigation -->
+    <div class="tab-nav" style="margin-bottom: 1.5rem; opacity: {$isSwitchingCard ? 0.35 : 1}; pointer-events: {$isSwitchingCard ? 'none' : 'auto'}; transition: opacity 0.2s;">
     <button
       class="tab-btn"
       class:active={activeTab === "insights"}
@@ -564,36 +650,63 @@
     </div>
 
     <!-- View Switcher (only for combined multi-card mode) -->
-    {#if $activeCardId === 'combined' && $cards.length > 1}
-      <div class="view-switcher" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); width: fit-content;">
+    {#if $activeCardId === "combined" && $cards.length > 1}
+      <div
+        class="view-switcher"
+        style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); width: fit-content;"
+      >
         <button
           class="switch-btn"
-          class:active={journeyViewMode === 'table'}
-          onclick={() => journeyViewMode = 'table'}
-          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode === 'table' ? 'rgba(255, 255, 255, 0.08)' : 'transparent'}; color: {journeyViewMode === 'table' ? '#fff' : 'var(--color-text-secondary)'}; border-color: {journeyViewMode === 'table' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'}; transition: all 0.2s;"
+          class:active={journeyViewMode === "table"}
+          onclick={() => (journeyViewMode = "table")}
+          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode ===
+          'table'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'transparent'}; color: {journeyViewMode === 'table'
+            ? '#fff'
+            : 'var(--color-text-secondary)'}; border-color: {journeyViewMode ===
+          'table'
+            ? 'rgba(255, 255, 255, 0.12)'
+            : 'transparent'}; transition: all 0.2s;"
         >
           📋 Table View
         </button>
         <button
           class="switch-btn"
-          class:active={journeyViewMode === 'timeline'}
-          onclick={() => journeyViewMode = 'timeline'}
-          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode === 'timeline' ? 'rgba(255, 255, 255, 0.08)' : 'transparent'}; color: {journeyViewMode === 'timeline' ? '#fff' : 'var(--color-text-secondary)'}; border-color: {journeyViewMode === 'timeline' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'}; transition: all 0.2s;"
+          class:active={journeyViewMode === "timeline"}
+          onclick={() => (journeyViewMode = "timeline")}
+          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode ===
+          'timeline'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'transparent'}; color: {journeyViewMode === 'timeline'
+            ? '#fff'
+            : 'var(--color-text-secondary)'}; border-color: {journeyViewMode ===
+          'timeline'
+            ? 'rgba(255, 255, 255, 0.12)'
+            : 'transparent'}; transition: all 0.2s;"
         >
           ⏱️ Timeline View
         </button>
         <button
           class="switch-btn"
-          class:active={journeyViewMode === 'split'}
-          onclick={() => journeyViewMode = 'split'}
-          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode === 'split' ? 'rgba(255, 255, 255, 0.08)' : 'transparent'}; color: {journeyViewMode === 'split' ? '#fff' : 'var(--color-text-secondary)'}; border-color: {journeyViewMode === 'split' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'}; transition: all 0.2s;"
+          class:active={journeyViewMode === "split"}
+          onclick={() => (journeyViewMode = "split")}
+          style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-weight: 600; background: {journeyViewMode ===
+          'split'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'transparent'}; color: {journeyViewMode === 'split'
+            ? '#fff'
+            : 'var(--color-text-secondary)'}; border-color: {journeyViewMode ===
+          'split'
+            ? 'rgba(255, 255, 255, 0.12)'
+            : 'transparent'}; transition: all 0.2s;"
         >
           🥞 Split View
         </button>
       </div>
     {/if}
 
-    {#if !($activeCardId === 'combined' && $cards.length > 1) || journeyViewMode === 'table'}
+    {#if !($activeCardId === "combined" && $cards.length > 1) || journeyViewMode === "table"}
       <!-- Standard Journey table -->
       <div
         class="table-container glass-card"
@@ -603,7 +716,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                {#if $activeCardId === 'combined' && $cards.length > 1}
+                {#if $activeCardId === "combined" && $cards.length > 1}
                   <th>Card</th>
                 {/if}
                 <th class="sortable" onclick={() => toggleSort("date")}>
@@ -621,20 +734,35 @@
               </tr>
             </thead>
             <tbody>
-              {#each filteredJourneys as j, i}
+              {#each paginatedJourneys as j}
                 <tr
                   class="animate-fade-in"
-                  style="animation-delay: {Math.min(i * 20, 500)}ms"
                 >
-                  {#if $activeCardId === 'combined' && $cards.length > 1}
+                  {#if $activeCardId === "combined" && $cards.length > 1}
                     <td>
-                      <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}">
-                        <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
-                        <span class="badge-text">{j.cardName || 'Card'}</span>
+                      <div
+                        class="table-card-badge"
+                        style="--badge-color: {j.cardColor ||
+                          'rgba(255,255,255,0.1)'}"
+                      >
+                        <span
+                          class="badge-dot"
+                          style="background: {j.cardColor ||
+                            'rgba(255,255,255,0.5)'}"
+                        ></span>
+                        <span class="badge-text">{j.cardName || "Card"}</span>
                       </div>
                     </td>
                   {/if}
-                  <td class="date-cell"><span class="day-of-week" style="opacity: 0.8; font-weight: 600; margin-right: 0.25rem;">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][j.dayOfWeek]}</span>{j.raw.dateStr}</td>
+                  <td class="date-cell"
+                    ><span
+                      class="day-of-week"
+                      style="opacity: 0.8; font-weight: 600; margin-right: 0.25rem;"
+                      >{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+                        j.dayOfWeek
+                      ]}</span
+                    >{j.raw.dateStr}</td
+                  >
                   <td class="time-cell">{j.raw.startTime || "—"}</td>
                   <td class="journey-cell">
                     {#if j.isBus}
@@ -663,7 +791,7 @@
                     {:else if j.isPeak}
                       <span class="badge badge-peak">Peak</span>
                     {:else}
-                      <span class="badge badge-offpeak">Off-Pk</span>
+                      <span class="badge badge-offpeak">Off-Peak</span>
                     {/if}
                     {#if j.isEveningPeakException}
                       <span
@@ -694,131 +822,71 @@
           </table>
         </div>
       </div>
-    {:else if journeyViewMode === 'timeline'}
-      <!-- Multi-Card Optimization & Caps Info Box -->
-      {#if $activeCardId === 'combined' && $cards.length > 1 && $combinedSimulation}
-        {@const optimalSim = $combinedSimulation.simulations[$combinedSimulation.optimalCardId]}
-        
-        <div class="glass-card timeline-summary-widget animate-fade-in" style="padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden; margin-bottom: 1.25rem;">
-          <!-- Subtle glow accent of the optimal card -->
-          <div style="position: absolute; right: 0; top: 0; width: 200px; height: 200px; background: radial-gradient(circle, {($cards.find(c => c.id === $combinedSimulation.optimalCardId)?.color || 'rgba(0,159,227,0.4)')}10 0%, transparent 70%); pointer-events: none;"></div>
-          
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
-            <div>
-              <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.4rem;">
-                🔮 Combined Capping & Savings Summary
-              </h3>
-              <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0;">
-                Review each card's caps, simulated one-card performance, and consolidation recommendations.
-              </p>
-            </div>
-            {#if optimalSim && optimalSim.netDifference > 0}
-              <div class="badge-saving" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 8px; font-size: 0.8rem;">
-                🎉 Potential Saving: £{optimalSim.netDifference.toFixed(2)}
-              </div>
-            {/if}
+
+      {#if totalPages > 1}
+        <div
+          class="pagination-controls flex flex-col sm:flex-row items-center justify-between mt-4 gap-3 px-4 py-3 bg-white/2 border border-white/6 rounded-xl"
+        >
+          <div class="text-xs text-slate-400">
+            Showing {(currentPageNum - 1) * pageSize + 1} to {Math.min(
+              currentPageNum * pageSize,
+              filteredJourneys.length,
+            )} of {filteredJourneys.length} journeys
           </div>
-
-          <!-- Cards Caps & Spend Comparison Grid -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.85rem; width: 100%;">
-            {#each $cards as card}
-              {@const sim = $combinedSimulation.simulations[card.id]}
-              {@const discount = card.detectedDiscount || 'none'}
-              {@const discountName = FARE_TYPES[discount].name}
-              
-              <!-- Relevant zone ranges that the card actually travelled in -->
-              {@const cardZones = Array.from(new Set(card.classifiedJourneys.map(j => j.zoneRange === 'Z1' ? 'Z1-2' : j.zoneRange).filter((z): z is string => typeof z === 'string' && z !== '—'))).sort()}
-              
-              <div class="glass-card" style="border: 1px solid {card.color}25; background: rgba(0,0,0,0.15); padding: 0.85rem; border-radius: 10px; display: flex; flex-direction: column; gap: 0.5rem; position: relative;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.4rem;">
-                  <span style="font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.35rem; color: #fff;">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background: {card.color}"></span>
-                    {card.name}
-                  </span>
-                  <span style="font-size: 0.7rem; font-weight: 600; padding: 0.1rem 0.35rem; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--color-text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    {discountName}
-                  </span>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem;">
-                  <div>
-                    <span style="color: var(--color-text-muted); display: block;">Actual spend:</span>
-                    <strong style="color: #fff;">£{(card.weeklyCapResults.reduce((sum, w) => sum + w.totalSpend, 0)).toFixed(2)}</strong>
-                  </div>
-                  <div>
-                    <span style="color: var(--color-text-muted); display: block;">Caps hit:</span>
-                    <strong style="color: #fff;">
-                      {card.capSummary?.daysCapHit ?? 0}d / {card.capSummary?.weeksCapHit ?? 0}w
-                    </strong>
-                  </div>
-                </div>
-
-                <!-- Show specific fare caps rules for this card's discount type and active zone ranges -->
-                <div style="margin-top: 0.25rem; padding-top: 0.4rem; border-top: 1px dashed rgba(255,255,255,0.05); font-size: 0.7rem; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
-                  <div style="font-weight: 600; color: var(--color-text-muted); font-size: 0.65rem; text-transform: uppercase; margin-bottom: 0.1rem;">Fare Cap Rates:</div>
-                  {#if cardZones.length > 0}
-                    {#each cardZones as zone}
-                      {@const dailyPeak = lookupDailyCap(zone, true, discount)}
-                      {@const dailyOffPeak = lookupDailyCap(zone, false, discount)}
-                      {@const weeklyVal = lookupWeeklyCap(zone, discount)}
-                      <div style="background: rgba(255,255,255,0.02); padding: 0.3rem 0.4rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 0.1rem;">
-                        <div style="font-weight: 700; color: #fff; font-size: 0.725rem;">🚇 {zone}</div>
-                        <div style="display: flex; justify-content: space-between;">
-                          <span>Daily (Peak/Off-Peak):</span>
-                          <strong>£{dailyPeak.toFixed(2)} / £{dailyOffPeak.toFixed(2)}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                          <span>Weekly:</span>
-                          <strong>£{weeklyVal.toFixed(2)}</strong>
-                        </div>
-                      </div>
-                    {/each}
-                  {:else}
-                    <div style="font-style: italic; color: var(--color-text-muted);">No zones travelled in</div>
-                  {/if}
-                </div>
-
-                {#if sim && sim.netDifference > 0}
-                  <div style="margin-top: 0.4rem; padding: 0.35rem 0.5rem; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 6px; font-size: 0.725rem; color: #34d399; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Simulated One-Card Spend:</span>
-                    <strong>£{sim.simulatedTotalSpend.toFixed(2)} (-£{sim.netDifference.toFixed(2)})</strong>
-                  </div>
-                {/if}
-              </div>
-            {/each}
+          <div class="flex items-center gap-1">
+            <button
+              class="pagination-btn"
+              disabled={currentPageNum === 1}
+              onclick={() => (currentPageNum = 1)}
+            >
+              « First
+            </button>
+            <button
+              class="pagination-btn"
+              disabled={currentPageNum === 1}
+              onclick={() => currentPageNum--}
+            >
+              ‹ Prev
+            </button>
+            <span
+              class="text-xs font-semibold px-3 py-1 bg-white/5 rounded-md border border-white/8 text-white"
+            >
+              Page {currentPageNum} of {totalPages}
+            </span>
+            <button
+              class="pagination-btn"
+              disabled={currentPageNum === totalPages}
+              onclick={() => currentPageNum++}
+            >
+              Next ›
+            </button>
+            <button
+              class="pagination-btn"
+              disabled={currentPageNum === totalPages}
+              onclick={() => (currentPageNum = totalPages)}
+            >
+              Last »
+            </button>
           </div>
-
-          <!-- Consolidation savings box -->
-          {#if optimalSim && optimalSim.netDifference > 0}
-            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 0.75rem 1rem; border-left: 4px solid #10b981; font-size: 0.8rem; line-height: 1.45; color: var(--color-text-primary);">
-              <strong>💡 Consolidation Opportunity:</strong> Had you consolidated all journeys onto a single card — specifically the <strong>{optimalSim.cardName}</strong> (which features the <strong>{optimalSim.discountName}</strong> discount, which has the lowest daily and weekly capping thresholds), you would have spent a total of <strong style="color: #34d399;">£{optimalSim.simulatedTotalSpend.toFixed(2)}</strong> instead of £{$combinedSimulation.actualTotalSpend.toFixed(2)}, saving a whopping <strong>£{optimalSim.netDifference.toFixed(2)}</strong>!
-              {#if optimalSim.consolidationBenefit > 0 || optimalSim.discountUpgradeBenefit > 0}
-                <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--color-text-secondary); display: flex; gap: 1rem; flex-wrap: wrap;">
-                  {#if optimalSim.consolidationBenefit > 0}
-                    <span>• <strong>Capping Consolidation:</strong> £{optimalSim.consolidationBenefit.toFixed(2)} saved by pooling journeys under one cap.</span>
-                  {/if}
-                  {#if optimalSim.discountUpgradeBenefit > 0}
-                    <span>• <strong>Discount Upgrades:</strong> £{optimalSim.discountUpgradeBenefit.toFixed(2)} saved by applying the card's concession rates to all journeys.</span>
-                  {/if}
-                </div>
-              {/if}
-            </div>
-          {:else}
-            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 0.75rem 1rem; border-left: 4px solid #10b981; font-size: 0.8rem; color: var(--color-text-primary);">
-              <strong>✓ Fully Optimized:</strong> Your journeys are already distributed across your cards in a way that minimizes total spend. No consolidation savings are available!
-            </div>
-          {/if}
         </div>
       {/if}
-
+    {:else if journeyViewMode === "timeline"}
       <!-- Chronological Interleaved Timeline View -->
-      <div class="timeline-container animate-fade-in" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 0.5rem;">
+      <div
+        class="timeline-container animate-fade-in"
+        style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 0.5rem;"
+      >
         {#if groupedTimelineWeeks.length === 0}
-          <div class="glass-card" style="padding: 3rem 1.5rem; text-align: center; color: var(--color-text-muted);">
+          <div
+            class="glass-card"
+            style="padding: 3rem 1.5rem; text-align: center; color: var(--color-text-muted);"
+          >
             No journeys matching search/filters.
           </div>
         {:else}
-          <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: -0.5rem;">
+          <div
+            style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: -0.5rem;"
+          >
             <button
               class="cost-btn"
               style="padding: 0.25rem 0.6rem; font-size: 0.725rem; border-radius: 4px; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); color: var(--color-text-secondary); cursor: pointer;"
@@ -834,33 +902,61 @@
               Collapse All Days
             </button>
           </div>
-          
+
           {#each groupedTimelineWeeks as week}
-            <div class="timeline-week-block" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; position: relative;">
+            <div
+              class="timeline-week-block"
+              style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; position: relative;"
+            >
               <!-- Subtle card background glow if weekly cap is hit -->
               {#if week.isCapped}
-                <div style="position: absolute; inset: 0; background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.03), transparent 60%); pointer-events: none; border-radius: 12px;"></div>
+                <div
+                  style="position: absolute; inset: 0; background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.03), transparent 60%); pointer-events: none; border-radius: 12px;"
+                ></div>
               {/if}
 
               <!-- Week Header -->
-              <div class="timeline-week-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.6rem; margin-bottom: 1rem; position: relative; z-index: 1;">
-                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+              <div
+                class="timeline-week-header"
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.6rem; margin-bottom: 1rem; position: relative; z-index: 1;"
+              >
+                <h4
+                  style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.4rem;"
+                >
                   🗓️ {week.weekStartStr}
                 </h4>
-                <div style="font-size: 0.8rem; color: var(--color-text-secondary); text-align: right; display: flex; align-items: center; gap: 0.5rem;">
-                  <span>Weekly Spend: <strong style="color: #fff;">£{week.actualSpend.toFixed(2)}</strong></span>
+                <div
+                  style="font-size: 0.8rem; color: var(--color-text-secondary); text-align: right; display: flex; align-items: center; gap: 0.5rem;"
+                >
+                  <span
+                    >Weekly Spend: <strong style="color: #fff;"
+                      >£{week.actualSpend.toFixed(2)}</strong
+                    ></span
+                  >
                   {#if week.isCapped}
-                    <span class="badge-dot" style="background: var(--color-success);" title="Weekly Cap Reached"></span>
-                    <span style="color: #34d399; font-weight: 700; font-size: 0.725rem;">CAPPED</span>
+                    <span
+                      class="badge-dot"
+                      style="background: var(--color-success);"
+                      title="Weekly Cap Reached"
+                    ></span>
+                    <span
+                      style="color: #34d399; font-weight: 700; font-size: 0.725rem;"
+                      >CAPPED</span
+                    >
                   {/if}
                 </div>
               </div>
 
               <!-- Days within Week -->
-              <div style="display: flex; flex-direction: column; gap: 1rem; position: relative; z-index: 1;">
+              <div
+                style="display: flex; flex-direction: column; gap: 1rem; position: relative; z-index: 1;"
+              >
                 {#each week.days as group}
                   {@const isCollapsed = !!collapsedDays[group.dateStr]}
-                  <div class="timeline-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div
+                    class="timeline-group"
+                    style="display: flex; flex-direction: column; gap: 0.35rem;"
+                  >
                     <button
                       type="button"
                       class="timeline-date-divider"
@@ -871,81 +967,200 @@
                         class="timeline-date-header"
                         style="font-size: 0.8rem; font-weight: 800; color: #fff; background: rgba(255,255,255,0.06); padding: 0.2rem 0.55rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04); display: inline-flex; align-items: center; gap: 0.35rem; transition: background 0.2s;"
                       >
-                        <span class="chevron" style="display: inline-block; font-size: 0.65rem; transition: transform 0.2s; transform: {isCollapsed ? 'rotate(-90deg)' : 'none'};">▼</span>
-                        {group.dateStr}
+                        <span
+                          class="chevron"
+                          style="display: inline-block; font-size: 0.65rem; transition: transform 0.2s; transform: {isCollapsed
+                            ? 'rotate(-90deg)'
+                            : 'none'};">▼</span
+                        >
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][group.dateObj.getDay()]} {group.dateStr}
                         {#if isCollapsed}
-                          <span style="font-size: 0.7rem; font-weight: 500; opacity: 0.6; margin-left: 0.35rem;">({group.journeys.length} {group.journeys.length === 1 ? 'journey' : 'journeys'})</span>
+                          <span
+                            style="font-size: 0.7rem; font-weight: 500; opacity: 0.6; margin-left: 0.35rem;"
+                            >({group.journeys.length}
+                            {group.journeys.length === 1
+                              ? "journey"
+                              : "journeys"})</span
+                          >
                         {/if}
                       </span>
-                      <span style="flex: 1; height: 1px; background: rgba(255,255,255,0.06);"></span>
+                      <span
+                        style="flex: 1; height: 1px; background: rgba(255,255,255,0.06);"
+                      ></span>
                     </button>
 
                     {#if !isCollapsed}
                       <!-- Card day summary showing relevant daily zones and caps for that day -->
-                      <div style="display: flex; flex-direction: column; gap: 0.3rem; margin-left: 1.5rem; margin-bottom: 0.25rem;">
+                      <div
+                        style="display: flex; flex-direction: column; gap: 0.3rem; margin-left: 1.5rem; margin-bottom: 0.25rem;"
+                      >
                         {#each group.cardsActive as cardInfo}
-                      <div class="card-day-summary" style="display: flex; align-items: flex-start; gap: 0.35rem; font-size: 0.725rem; color: var(--color-text-secondary); flex-wrap: wrap;">
-                            <span class="badge-dot" style="background: {cardInfo.color}; width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-top: 0.35rem;"></span>
-                            <strong style="color: #fff; margin-top: 0.15rem;">{cardInfo.name}:</strong>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                            {#each cardInfo.zones as zone}
-                              {@const peakCap = lookupDailyCap(zone, true, cardInfo.discount)}
-                              {@const offPeakCap = lookupDailyCap(zone, false, cardInfo.discount)}
-                              {@const isPeakActive = cardInfo.isCapPeakDay}
-                              <span style="background: rgba(255,255,255,0.03); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04); font-size: 0.7rem; display: flex; gap: 0.3rem; align-items: center;">
-                                <span style="color: {zone.includes('-') && parseInt(zone.replace('Z','').split('-')[1]) > 2 ? '#a78bfa' : 'var(--color-oyster-blue)'};">🚇 {zone}</span>
-                                <span style="padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; font-weight: 700; {isPeakActive ? 'background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35);' : 'background: rgba(255,255,255,0.04); color: var(--color-text-muted); border: 1px solid rgba(255,255,255,0.06);'}" title="{isPeakActive ? 'Peak cap active' : 'Not active'}">Peak £{peakCap.toFixed(2)}</span>
-                                <span style="padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; font-weight: 700; {!isPeakActive ? 'background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.35);' : 'background: rgba(255,255,255,0.04); color: var(--color-text-muted); border: 1px solid rgba(255,255,255,0.06);'}" title="{!isPeakActive ? 'Off-peak cap active' : 'Not active'}">Off-Pk £{offPeakCap.toFixed(2)}</span>
-                              </span>
-                            {/each}
+                          <div
+                            class="card-day-summary"
+                            style="display: flex; align-items: flex-start; gap: 0.35rem; font-size: 0.725rem; color: var(--color-text-secondary); flex-wrap: wrap;"
+                          >
+                            <span
+                              class="badge-dot"
+                              style="background: {cardInfo.color}; width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-top: 0.35rem;"
+                            ></span>
+                            <strong style="color: #fff; margin-top: 0.15rem;"
+                              >{cardInfo.name}:</strong
+                            >
+                            <div
+                              style="display: flex; flex-wrap: wrap; gap: 0.25rem;"
+                            >
+                              {#each cardInfo.zones as zone}
+                                {@const peakCap = lookupDailyCap(
+                                  zone,
+                                  true,
+                                  cardInfo.discount,
+                                )}
+                                {@const offPeakCap = lookupDailyCap(
+                                  zone,
+                                  false,
+                                  cardInfo.discount,
+                                )}
+                                {@const isPeakActive = cardInfo.isCapPeakDay}
+                                <span
+                                  style="background: rgba(255,255,255,0.03); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04); font-size: 0.7rem; display: flex; gap: 0.3rem; align-items: center;"
+                                >
+                                  <span
+                                    style="color: {zone.includes('-') &&
+                                    parseInt(
+                                      zone.replace('Z', '').split('-')[1],
+                                    ) > 2
+                                      ? '#a78bfa'
+                                      : 'var(--color-oyster-blue)'};"
+                                    >🚇 {zone}</span
+                                  >
+                                  <span
+                                    style="padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; font-weight: 700; {isPeakActive
+                                      ? 'background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35);'
+                                      : 'background: rgba(255,255,255,0.04); color: var(--color-text-muted); border: 1px solid rgba(255,255,255,0.06);'}"
+                                    title={isPeakActive
+                                      ? "Peak cap active"
+                                      : "Not active"}
+                                    >Peak £{peakCap.toFixed(2)}</span
+                                  >
+                                  <span
+                                    style="padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; font-weight: 700; {!isPeakActive
+                                      ? 'background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.35);'
+                                      : 'background: rgba(255,255,255,0.04); color: var(--color-text-muted); border: 1px solid rgba(255,255,255,0.06);'}"
+                                    title={!isPeakActive
+                                      ? "Off-peak cap active"
+                                      : "Not active"}
+                                    >Off-Peak £{offPeakCap.toFixed(2)}</span
+                                  >
+                                </span>
+                              {/each}
                             </div>
                           </div>
                         {/each}
                       </div>
 
-                      <div class="timeline-nodes" style="display: flex; flex-direction: column; gap: 0.4rem; position: relative;">
+                      <div
+                        class="timeline-nodes"
+                        style="display: flex; flex-direction: column; gap: 0.4rem; position: relative;"
+                      >
                         <!-- Vertical connection line -->
-                        <div style="position: absolute; left: 11px; top: 10px; bottom: 10px; width: 1px; background: rgba(255,255,255,0.06); pointer-events: none;"></div>
+                        <div
+                          style="position: absolute; left: 11px; top: 10px; bottom: 10px; width: 1px; background: rgba(255,255,255,0.06); pointer-events: none;"
+                        ></div>
 
                         {#each group.journeys as j}
                           <div
                             class="timeline-node flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4"
-                            style="position: relative; padding: 0.5rem 0.75rem 0.5rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor || 'var(--color-oyster-blue)'}; border-radius: 4px;"
+                            style="position: relative; padding: 0.5rem 0.75rem 0.5rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor ||
+                              'var(--color-oyster-blue)'}; border-radius: 4px;"
                           >
                             <!-- Colored dot on the line -->
-                            <div style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor || 'var(--color-oyster-blue)'}; border: 2px solid var(--color-bg); box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"></div>
-                            
+                            <div
+                              style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor ||
+                                'var(--color-oyster-blue)'}; border: 2px solid var(--color-bg); box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"
+                            ></div>
+
                             <!-- Time & Mode badge -->
-                            <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 120px; flex-shrink: 0;">
-                              <span style="font-size: 0.8rem; font-weight: 700; color: #fff; font-family: monospace; opacity: 0.95;">{j.raw.startTime || "—"}</span>
-                              <span class="badge {getModeBadgeClass(j.mode)}" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">{getModeLabel(j.mode)}</span>
+                            <div
+                              style="display: flex; align-items: center; gap: 0.75rem; min-width: 120px; flex-shrink: 0;"
+                            >
+                              <span
+                                style="font-size: 0.8rem; font-weight: 700; color: #fff; font-family: monospace; opacity: 0.95;"
+                                >{j.raw.startTime || "—"}</span
+                              >
+                              <span
+                                class="badge {getModeBadgeClass(j.mode)}"
+                                style="font-size: 0.65rem; padding: 0.1rem 0.4rem;"
+                                >{getModeLabel(j.mode)}</span
+                              >
                             </div>
 
                             <!-- Journey Details -->
-                            <div style="flex: 1; font-size: 0.8rem; color: var(--color-text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="w-full md:w-auto">
+                            <div
+                              style="flex: 1; font-size: 0.8rem; color: var(--color-text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"
+                              class="w-full md:w-auto"
+                            >
                               {#if j.isBus}
-                                <span style="color: var(--color-text-secondary); font-weight: 500;">{j.raw.journeyAction}</span>
+                                <span
+                                  style="color: var(--color-text-secondary); font-weight: 500;"
+                                  >{j.raw.journeyAction}</span
+                                >
                               {:else if j.origin && j.destination}
-                                <span style="font-weight: 600; color: #fff;">{j.origin.replace(/\s*\[.*?\]/g, "")}</span>
-                                <span style="color: var(--color-text-muted); margin: 0 0.2rem;">→</span>
-                                <span style="font-weight: 600; color: #fff;">{j.destination.replace(/\s*\[.*?\]/g, "")}</span>
+                                <span style="font-weight: 600; color: #fff;"
+                                  >{j.origin.replace(/\s*\[.*?\]/g, "")}</span
+                                >
+                                <span
+                                  style="color: var(--color-text-muted); margin: 0 0.2rem;"
+                                  >→</span
+                                >
+                                <span style="font-weight: 600; color: #fff;"
+                                  >{j.destination.replace(
+                                    /\s*\[.*?\]/g,
+                                    "",
+                                  )}</span
+                                >
                                 {#if j.zoneRange}
-                                  <span style="font-size: 0.7rem; color: {getZoneColor(j.zoneRange)}; font-weight: 700; margin-left: 0.3rem;">({j.zoneRange})</span>
+                                  <span
+                                    style="font-size: 0.7rem; color: {getZoneColor(
+                                      j.zoneRange,
+                                    )}; font-weight: 700; margin-left: 0.3rem;"
+                                    >({j.zoneRange})</span
+                                  >
                                 {/if}
                               {:else}
-                                <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
+                                <span
+                                  style="color: var(--color-text-secondary);"
+                                  >{j.raw.journeyAction}</span
+                                >
                               {/if}
                             </div>
 
                             <!-- Card badge & Cost info -->
-                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;" class="w-full justify-between md:w-auto md:justify-start">
-                              <div class="table-card-badge" style="--badge-color: {j.cardColor || 'rgba(255,255,255,0.1)'}; margin: 0; padding: 0.1rem 0.4rem; font-size: 0.65rem;">
-                                <span class="badge-dot" style="background: {j.cardColor || 'rgba(255,255,255,0.5)'}"></span>
-                                <span class="badge-text">{j.cardName || 'Card'}</span>
+                            <div
+                              style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;"
+                              class="w-full justify-between md:w-auto md:justify-start"
+                            >
+                              <div
+                                class="table-card-badge"
+                                style="--badge-color: {j.cardColor ||
+                                  'rgba(255,255,255,0.1)'}; margin: 0; padding: 0.1rem 0.4rem; font-size: 0.65rem;"
+                              >
+                                <span
+                                  class="badge-dot"
+                                  style="background: {j.cardColor ||
+                                    'rgba(255,255,255,0.5)'}"
+                                ></span>
+                                <span class="badge-text"
+                                  >{j.cardName || "Card"}</span
+                                >
                               </div>
-                              
+
                               <div style="text-align: right; min-width: 60px;">
-                                <span style="font-size: 0.8rem; font-weight: 700; color: {j.raw.charge === 0 && j.isCapHit ? '#34d399' : '#fff'};">
+                                <span
+                                  style="font-size: 0.8rem; font-weight: 700; color: {j
+                                    .raw.charge === 0 && j.isCapHit
+                                    ? '#34d399'
+                                    : '#fff'};"
+                                >
                                   {#if j.raw.charge === 0 && j.isCapHit}
                                     FREE
                                   {:else}
@@ -953,9 +1168,17 @@
                                   {/if}
                                 </span>
                                 {#if j.isCapHit}
-                                  <div style="font-size: 0.55rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;">Cap Hit</div>
+                                  <div
+                                    style="font-size: 0.55rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;"
+                                  >
+                                    Cap Hit
+                                  </div>
                                 {:else if j.isHopperFree}
-                                  <div style="font-size: 0.55rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;">Hopper</div>
+                                  <div
+                                    style="font-size: 0.55rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;"
+                                  >
+                                    Hopper
+                                  </div>
                                 {/if}
                               </div>
                             </div>
@@ -968,92 +1191,189 @@
               </div>
 
               <!-- Weekly Cap Summary Footer -->
-              <div class="timeline-weekly-summary-footer" style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.775rem; position: relative; z-index: 1;">
+              <div
+                class="timeline-weekly-summary-footer"
+                style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.775rem; position: relative; z-index: 1;"
+              >
                 <div style="color: var(--color-text-secondary);">
-                  📊 <strong>{week.maxZoneRange} Weekly Cap Limit:</strong> £{week.capLimit.toFixed(2)}
+                  📊 <strong>{week.maxZoneRange} Weekly Cap Limit:</strong>
+                  £{week.capLimit.toFixed(2)}
                 </div>
-                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div
+                  style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;"
+                >
                   <div>
-                    <span style="color: var(--color-text-muted);">Weekly spend:</span>
-                    <strong style="color: #fff; margin-left: 0.25rem;">£{week.actualSpend.toFixed(2)}</strong>
+                    <span style="color: var(--color-text-muted);"
+                      >Weekly spend:</span
+                    >
+                    <strong style="color: #fff; margin-left: 0.25rem;"
+                      >£{week.actualSpend.toFixed(2)}</strong
+                    >
                   </div>
                   {#if week.savings > 0}
-                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.15rem 0.45rem; border-radius: 4px; color: #34d399; font-weight: 600;">
-                      Simulated saving: <strong>-£{week.savings.toFixed(2)}</strong>
+                    <div
+                      style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.15rem 0.45rem; border-radius: 4px; color: #34d399; font-weight: 600;"
+                    >
+                      Simulated saving: <strong
+                        >-£{week.savings.toFixed(2)}</strong
+                      >
                     </div>
                   {/if}
                 </div>
               </div>
-
             </div>
           {/each}
         {/if}
       </div>
-    {:else if journeyViewMode === 'split'}
+    {:else if journeyViewMode === "split"}
       <!-- Per-Card Split panels layout -->
-      <div class="split-columns-container animate-fade-in" style="display: flex; gap: 1rem; flex-wrap: wrap; width: 100%; margin-top: 0.5rem;">
+      <div
+        class="split-columns-container animate-fade-in"
+        style="display: flex; gap: 1rem; flex-wrap: wrap; width: 100%; margin-top: 0.5rem;"
+      >
         {#each $cards as card}
-          {@const cardJourneys = filteredJourneys.filter(j => j.cardId === card.id)}
-          <div class="glass-card split-column" style="flex: 1 1 350px; min-width: 320px; padding: 1.25rem 1rem; border-color: {card.color}20; background: rgba(255,255,255,0.01); position: relative; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
+          {@const cardJourneys = filteredJourneys.filter(
+            (j) => j.cardId === card.id,
+          )}
+          <div
+            class="glass-card split-column"
+            style="flex: 1 1 350px; min-width: 320px; padding: 1.25rem 1rem; border-color: {card.color}20; background: rgba(255,255,255,0.01); position: relative; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;"
+          >
             <!-- Column glow -->
-            <div style="position: absolute; inset: 0; background: radial-gradient(circle at 100% 0%, {card.color}05, transparent 60%); pointer-events: none; border-radius: 12px;"></div>
-            
+            <div
+              style="position: absolute; inset: 0; background: radial-gradient(circle at 100% 0%, {card.color}05, transparent 60%); pointer-events: none; border-radius: 12px;"
+            ></div>
+
             <!-- Column Header -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; position: relative; z-index: 1;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; position: relative; z-index: 1;"
+            >
               <div>
-                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem; color: #fff;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: {card.color}"></span>
+                <h4
+                  style="margin: 0; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem; color: #fff;"
+                >
+                  <span
+                    style="width: 8px; height: 8px; border-radius: 50%; background: {card.color}"
+                  ></span>
                   {card.name}
                 </h4>
-                <span style="font-size: 0.75rem; color: var(--color-text-secondary);">{card.detectedDiscount ? FARE_TYPES[card.detectedDiscount].name : 'Adult PAYG'}</span>
+                <span
+                  style="font-size: 0.75rem; color: var(--color-text-secondary);"
+                  >{card.detectedDiscount
+                    ? FARE_TYPES[card.detectedDiscount].name
+                    : "Adult PAYG"}</span
+                >
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 0.95rem; font-weight: 800; color: #fff;">£{cardJourneys.reduce((sum, j) => sum + j.raw.charge, 0).toFixed(2)}</div>
-                <span style="font-size: 0.7rem; color: var(--color-text-muted);">{cardJourneys.length} journeys</span>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #fff;">
+                  £{cardJourneys
+                    .reduce((sum, j) => sum + j.raw.charge, 0)
+                    .toFixed(2)}
+                </div>
+                <span style="font-size: 0.7rem; color: var(--color-text-muted);"
+                  >{cardJourneys.length} journeys</span
+                >
               </div>
             </div>
 
             <!-- Scrollable Table -->
-            <div style="overflow-x: auto; overflow-y: auto; max-height: 450px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: rgba(0,0,0,0.15); position: relative; z-index: 1;">
-              <table class="data-table" style="font-size: 0.75rem; width: 100%; border-collapse: collapse;">
+            <div
+              style="overflow-x: auto; overflow-y: auto; max-height: 450px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: rgba(0,0,0,0.15); position: relative; z-index: 1;"
+            >
+              <table
+                class="data-table"
+                style="font-size: 0.75rem; width: 100%; border-collapse: collapse;"
+              >
                 <thead>
                   <tr style="background: rgba(255,255,255,0.02);">
-                    <th style="padding: 0.5rem; text-align: left; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);">Date/Time</th>
-                    <th style="padding: 0.5rem; text-align: left; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);">Journey</th>
-                    <th style="padding: 0.5rem; text-align: right; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);">Charge</th>
+                    <th
+                      style="padding: 0.5rem; text-align: left; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);"
+                      >Date/Time</th
+                    >
+                    <th
+                      style="padding: 0.5rem; text-align: left; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);"
+                      >Journey</th
+                    >
+                    <th
+                      style="padding: 0.5rem; text-align: right; color: var(--color-text-secondary); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.04);"
+                      >Charge</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
                   {#if cardJourneys.length === 0}
                     <tr>
-                      <td colspan="3" style="text-align: center; color: var(--color-text-muted); padding: 3rem 1rem;">No journeys matching filters</td>
+                      <td
+                        colspan="3"
+                        style="text-align: center; color: var(--color-text-muted); padding: 3rem 1rem;"
+                        >No journeys matching filters</td
+                      >
                     </tr>
                   {:else}
                     {#each cardJourneys as j}
-                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
-                        <td style="padding: 0.5rem; white-space: nowrap; vertical-align: middle;">
-                          <div style="font-weight: 600; color: #fff;">{j.raw.dateStr}</div>
-                          <div style="font-size: 0.65rem; color: var(--color-text-secondary);">{j.raw.startTime || '—'}</div>
+                      <tr
+                        style="border-bottom: 1px solid rgba(255,255,255,0.02);"
+                      >
+                        <td
+                          style="padding: 0.5rem; white-space: nowrap; vertical-align: middle;"
+                        >
+                          <div style="font-weight: 600; color: #fff;">
+                            {j.raw.dateStr}
+                          </div>
+                          <div
+                            style="font-size: 0.65rem; color: var(--color-text-secondary);"
+                          >
+                            {j.raw.startTime || "—"}
+                          </div>
                         </td>
-                        <td style="padding: 0.5rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;" title="{j.isBus ? j.raw.journeyAction : (j.origin && j.destination ? `${j.origin} → ${j.destination}` : j.raw.journeyAction)}">
+                        <td
+                          style="padding: 0.5rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;"
+                          title={j.isBus
+                            ? j.raw.journeyAction
+                            : j.origin && j.destination
+                              ? `${j.origin} → ${j.destination}`
+                              : j.raw.journeyAction}
+                        >
                           {#if j.isBus}
-                            <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
+                            <span style="color: var(--color-text-secondary);"
+                              >{j.raw.journeyAction}</span
+                            >
                           {:else if j.origin && j.destination}
-                            <span style="color: #fff;">{j.origin.replace(/\s*\[.*?\]/g, "")} → {j.destination.replace(/\s*\[.*?\]/g, "")}</span>
+                            <span style="color: #fff;"
+                              >{j.origin.replace(/\s*\[.*?\]/g, "")} → {j.destination.replace(
+                                /\s*\[.*?\]/g,
+                                "",
+                              )}</span
+                            >
                           {:else}
-                            <span style="color: var(--color-text-secondary);">{j.raw.journeyAction}</span>
+                            <span style="color: var(--color-text-secondary);"
+                              >{j.raw.journeyAction}</span
+                            >
                           {/if}
                         </td>
-                        <td style="padding: 0.5rem; text-align: right; font-weight: 700; color: {j.raw.charge === 0 && j.isCapHit ? '#34d399' : '#fff'}; vertical-align: middle;">
+                        <td
+                          style="padding: 0.5rem; text-align: right; font-weight: 700; color: {j
+                            .raw.charge === 0 && j.isCapHit
+                            ? '#34d399'
+                            : '#fff'}; vertical-align: middle;"
+                        >
                           {#if j.raw.charge === 0 && j.isCapHit}
                             FREE
                           {:else}
                             £{j.raw.charge.toFixed(2)}
                           {/if}
                           {#if j.isCapHit}
-                            <div style="font-size: 0.55rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;">Cap</div>
+                            <div
+                              style="font-size: 0.55rem; color: #10b981; font-weight: 700; text-transform: uppercase; line-height: 1;"
+                            >
+                              Cap
+                            </div>
                           {:else if j.isHopperFree}
-                            <div style="font-size: 0.55rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;">Hopper</div>
+                            <div
+                              style="font-size: 0.55rem; color: #009FE3; font-weight: 700; text-transform: uppercase; line-height: 1;"
+                            >
+                              Hopper
+                            </div>
                           {/if}
                         </td>
                       </tr>
@@ -1271,9 +1591,15 @@
             </div>
 
             {#if $selectedFareType === "student" && topZoneComparison}
-              {@const weeklySaving = topZoneComparison.weeklyPayg - topZoneComparison.weeklyStudentTravelcard}
-              {@const monthlySaving = topZoneComparison.monthlyPayg - topZoneComparison.monthlyStudentTravelcard}
-              {@const annualSaving = topZoneComparison.annualPayg - topZoneComparison.annualStudentTravelcard}
+              {@const weeklySaving =
+                topZoneComparison.weeklyPayg -
+                topZoneComparison.weeklyStudentTravelcard}
+              {@const monthlySaving =
+                topZoneComparison.monthlyPayg -
+                topZoneComparison.monthlyStudentTravelcard}
+              {@const annualSaving =
+                topZoneComparison.annualPayg -
+                topZoneComparison.annualStudentTravelcard}
               <div
                 class="glass-card savings-hero positive"
                 style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05); margin-bottom: 1.5rem; text-align: left; align-items: flex-start; padding: 1.5rem;"
@@ -1288,46 +1614,114 @@
                   class="savings-hero-sub"
                   style="color: var(--color-text-secondary); margin-bottom: 1.25rem; font-size: 0.875rem; text-align: left; line-height: 1.5;"
                 >
-                  While Apprentice/Student Oyster photocards do not discount standard Pay As You Go single fares, you can save 30% on Travelcards! Based on your travel history, here is how much you would save buying Student Travelcards for your most common zone range (<strong>{topZone}</strong>) compared to standard adult PAYG:
+                  While Apprentice/Student Oyster photocards do not discount
+                  standard Pay As You Go single fares, you can save 30% on
+                  Travelcards! Based on your travel history, here is how much
+                  you would save buying Student Travelcards for your most common
+                  zone range (<strong>{topZone}</strong>) compared to standard
+                  adult PAYG:
                 </div>
-                
-                <div class="savings-cards" style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 0.5rem;">
-                  <div class="stat-card" style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Weekly Comparison</div>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">
+
+                <div
+                  class="savings-cards"
+                  style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 0.5rem;"
+                >
+                  <div
+                    class="stat-card"
+                    style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;"
+                  >
+                    <div
+                      style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);"
+                    >
+                      Weekly Comparison
+                    </div>
+                    <div
+                      style="font-size: 1.1rem; font-weight: bold; color: #fff;"
+                    >
                       Adult PAYG: £{topZoneComparison.weeklyPayg.toFixed(2)}
                     </div>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #34d399;">
-                      Student TC: £{topZoneComparison.weeklyStudentTravelcard.toFixed(2)}
+                    <div
+                      style="font-size: 1.1rem; font-weight: bold; color: #34d399;"
+                    >
+                      Student TC: £{topZoneComparison.weeklyStudentTravelcard.toFixed(
+                        2,
+                      )}
                     </div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: {weeklySaving > 0 ? '#34d399' : '#ef4444'}; margin-top: 0.25rem;">
-                      {weeklySaving > 0 ? `Savings: +£${weeklySaving.toFixed(2)}` : `Cost: £${Math.abs(weeklySaving).toFixed(2)} extra`}
+                    <div
+                      style="font-size: 0.85rem; font-weight: 600; color: {weeklySaving >
+                      0
+                        ? '#34d399'
+                        : '#ef4444'}; margin-top: 0.25rem;"
+                    >
+                      {weeklySaving > 0
+                        ? `Savings: +£${weeklySaving.toFixed(2)}`
+                        : `Cost: £${Math.abs(weeklySaving).toFixed(2)} extra`}
                     </div>
                   </div>
 
-                  <div class="stat-card" style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Monthly Comparison</div>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">
+                  <div
+                    class="stat-card"
+                    style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;"
+                  >
+                    <div
+                      style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);"
+                    >
+                      Monthly Comparison
+                    </div>
+                    <div
+                      style="font-size: 1.1rem; font-weight: bold; color: #fff;"
+                    >
                       Adult PAYG: £{topZoneComparison.monthlyPayg.toFixed(2)}
                     </div>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #34d399;">
-                      Student TC: £{topZoneComparison.monthlyStudentTravelcard.toFixed(2)}
+                    <div
+                      style="font-size: 1.1rem; font-weight: bold; color: #34d399;"
+                    >
+                      Student TC: £{topZoneComparison.monthlyStudentTravelcard.toFixed(
+                        2,
+                      )}
                     </div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: {monthlySaving > 0 ? '#34d399' : '#ef4444'}; margin-top: 0.25rem;">
-                      {monthlySaving > 0 ? `Savings: +£${monthlySaving.toFixed(2)}` : `Cost: £${Math.abs(monthlySaving).toFixed(2)} extra`}
+                    <div
+                      style="font-size: 0.85rem; font-weight: 600; color: {monthlySaving >
+                      0
+                        ? '#34d399'
+                        : '#ef4444'}; margin-top: 0.25rem;"
+                    >
+                      {monthlySaving > 0
+                        ? `Savings: +£${monthlySaving.toFixed(2)}`
+                        : `Cost: £${Math.abs(monthlySaving).toFixed(2)} extra`}
                     </div>
                   </div>
 
-                  <div class="stat-card" style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">Annual Comparison</div>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">
+                  <div
+                    class="stat-card"
+                    style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;"
+                  >
+                    <div
+                      style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);"
+                    >
+                      Annual Comparison
+                    </div>
+                    <div
+                      style="font-size: 1.1rem; font-weight: bold; color: #fff;"
+                    >
                       Adult PAYG: £{topZoneComparison.annualPayg.toFixed(2)}
                     </div>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #34d399;">
-                      Student TC: £{topZoneComparison.annualStudentTravelcard.toFixed(2)}
+                    <div
+                      style="font-size: 1.1rem; font-weight: bold; color: #34d399;"
+                    >
+                      Student TC: £{topZoneComparison.annualStudentTravelcard.toFixed(
+                        2,
+                      )}
                     </div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: {annualSaving > 0 ? '#34d399' : '#ef4444'}; margin-top: 0.25rem;">
-                      {annualSaving > 0 ? `Savings: +£${annualSaving.toFixed(2)}` : `Cost: £${Math.abs(annualSaving).toFixed(2)} extra`}
+                    <div
+                      style="font-size: 0.85rem; font-weight: 600; color: {annualSaving >
+                      0
+                        ? '#34d399'
+                        : '#ef4444'}; margin-top: 0.25rem;"
+                    >
+                      {annualSaving > 0
+                        ? `Savings: +£${annualSaving.toFixed(2)}`
+                        : `Cost: £${Math.abs(annualSaving).toFixed(2)} extra`}
                     </div>
                   </div>
                 </div>
@@ -1604,19 +1998,27 @@
   {:else if activeTab === "caps"}
     <!-- Cap Analysis -->
     <div class="cap-layout">
-      {#if $activeCardId === 'combined' && $cards.length > 1 && $combinedSimulation && activeSim}
-        {@const optimalSim = $combinedSimulation.simulations[$combinedSimulation.optimalCardId]}
+      {#if $activeCardId === "combined" && $cards.length > 1 && $combinedSimulation && activeSim}
+        {@const optimalSim =
+          $combinedSimulation.simulations[$combinedSimulation.optimalCardId]}
         <div class="glass-card consolidation-simulation-card animate-fade-in">
           <div class="consolidation-glow"></div>
-          
+
           <div style="position: relative; z-index: 1;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;"
+            >
               <div>
-                <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; color: #fff;">
+                <h3
+                  style="font-size: 1.15rem; font-weight: 800; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; color: #fff;"
+                >
                   ✨ Single-Card Consolidation Simulation
                 </h3>
-                <p style="font-size: 0.825rem; color: var(--color-text-secondary); margin: 0;">
-                  Simulate consolidating all journeys onto a single physical card to identify optimal strategies and capping benefits.
+                <p
+                  style="font-size: 0.825rem; color: var(--color-text-secondary); margin: 0;"
+                >
+                  Simulate consolidating all journeys onto a single physical
+                  card to identify optimal strategies and capping benefits.
                 </p>
               </div>
               {#if activeSim.netDifference > 0}
@@ -1624,25 +2026,42 @@
                   🎉 Potential Saving: £{activeSim.netDifference.toFixed(2)}
                 </div>
               {:else}
-                <div class="badge-saving neutral">
-                  🔄 Fully Optimized
-                </div>
+                <div class="badge-saving neutral">🔄 Fully Optimized</div>
               {/if}
             </div>
 
             <!-- Selector Controls for Simulation Target Card -->
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.75rem; flex-wrap: wrap; align-items: center;">
-              <span style="font-size: 0.8rem; color: var(--color-text-muted); margin-right: 0.5rem;">Simulate using card:</span>
+            <div
+              style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.75rem; flex-wrap: wrap; align-items: center;"
+            >
+              <span
+                style="font-size: 0.8rem; color: var(--color-text-muted); margin-right: 0.5rem;"
+                >Simulate using card:</span
+              >
               {#each Object.values($combinedSimulation.simulations) as sim}
-                {@const simCard = $cards.find(c => c.id === sim.cardId)}
+                {@const simCard = $cards.find((c) => c.id === sim.cardId)}
                 <button
                   class="cost-btn"
                   class:active={selectedSimCardId === sim.cardId}
-                  onclick={() => selectedSimCardId = sim.cardId}
-                  style="padding: 0.35rem 0.75rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; border-radius: 20px; background: {selectedSimCardId === sim.cardId ? (simCard?.color ? `${simCard.color}25` : 'rgba(255,255,255,0.1)') : 'transparent'}; border-color: {selectedSimCardId === sim.cardId ? (simCard?.color || 'var(--color-border-accent)') : 'rgba(255,255,255,0.1)'}; color: #fff;"
+                  onclick={() => (selectedSimCardId = sim.cardId)}
+                  style="padding: 0.35rem 0.75rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; border-radius: 20px; background: {selectedSimCardId ===
+                  sim.cardId
+                    ? simCard?.color
+                      ? `${simCard.color}25`
+                      : 'rgba(255,255,255,0.1)'
+                    : 'transparent'}; border-color: {selectedSimCardId ===
+                  sim.cardId
+                    ? simCard?.color || 'var(--color-border-accent)'
+                    : 'rgba(255,255,255,0.1)'}; color: #fff;"
                 >
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: {simCard?.color || '#fff'}"></span>
-                  <strong>{sim.cardName}</strong> <span style="opacity: 0.7; font-size: 0.75rem;">({sim.discountName})</span>
+                  <span
+                    style="width: 8px; height: 8px; border-radius: 50%; background: {simCard?.color ||
+                      '#fff'}"
+                  ></span>
+                  <strong>{sim.cardName}</strong>
+                  <span style="opacity: 0.7; font-size: 0.75rem;"
+                    >({sim.discountName})</span
+                  >
                 </button>
               {/each}
             </div>
@@ -1650,76 +2069,202 @@
             <!-- Optimal Strategy Banner -->
             {#if selectedSimCardId === $combinedSimulation.optimalCardId}
               {#if activeSim.netDifference > 0}
-                <div class="glass-card" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; border-left: 4px solid #10b981;">
+                <div
+                  class="glass-card"
+                  style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; border-left: 4px solid #10b981;"
+                >
                   <span style="font-size: 1.25rem; line-height: 1;">💡</span>
                   <div>
-                    <strong style="color: #34d399; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Optimal Strategy</strong>
-                    <p style="margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;">
-                      Consolidating all travel onto a single card with <strong>{activeSim.cardName} ({activeSim.discountName})</strong> is your best choice, saving you <strong>£{activeSim.netDifference.toFixed(2)}</strong>!
+                    <strong
+                      style="color: #34d399; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;"
+                      >Optimal Strategy</strong
+                    >
+                    <p
+                      style="margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;"
+                    >
+                      Consolidating all travel onto a single card with <strong
+                        >{activeSim.cardName} ({activeSim.discountName})</strong
+                      >
+                      is your best choice, saving you
+                      <strong>£{activeSim.netDifference.toFixed(2)}</strong>!
                     </p>
                   </div>
                 </div>
               {/if}
-            {:else if optimalSim && optimalSim.netDifference > 0}
+            {:else if optimalSim && optimalSim.netDifference > 0 && (optimalSim.netDifference - activeSim.netDifference > 0.01)}
               <button
                 type="button"
                 class="glass-card"
                 style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; border-left: 4px solid #fbbf24; cursor: pointer; text-align: left; font-family: inherit; font-size: inherit; color: inherit; width: 100%; outline: none;"
-                onclick={() => { selectedSimCardId = $combinedSimulation.optimalCardId; }}
+                onclick={() => {
+                  selectedSimCardId = $combinedSimulation.optimalCardId;
+                }}
               >
                 <span style="font-size: 1.25rem; line-height: 1;">⚠️</span>
                 <span style="display: block; text-align: left;">
-                  <strong style="color: #fbbf24; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Sub-optimal Strategy</strong>
-                  <span style="display: block; margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;">
-                    Consolidating on <strong>{optimalSim.cardName} ({optimalSim.discountName})</strong> would be more optimal, saving you <strong>£{optimalSim.netDifference.toFixed(2)}</strong> (compared to £{activeSim.netDifference.toFixed(2)} with this card). <u>Click here to switch to optimal.</u>
+                  <strong
+                    style="color: #fbbf24; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;"
+                    >Sub-optimal Strategy</strong
+                  >
+                  <span
+                    style="display: block; margin: 0; font-size: 0.825rem; color: var(--color-text-secondary); line-height: 1.45;"
+                  >
+                    Consolidating on <strong
+                      >{optimalSim.cardName} ({optimalSim.discountName})</strong
+                    >
+                    would be more optimal, saving you
+                    <strong>£{optimalSim.netDifference.toFixed(2)}</strong>
+                    (compared to £{activeSim.netDifference.toFixed(2)} with this
+                    card). <u>Click here to switch to optimal.</u>
                   </span>
                 </span>
               </button>
             {/if}
 
             <!-- Breakdown comparison grid -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-              <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem;">
-                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.05em;">Actual Combined Spend</div>
-                <div style="font-size: 1.6rem; font-weight: 900; color: #fff; margin-top: 0.25rem;">£{$combinedSimulation.actualTotalSpend.toFixed(2)}</div>
-                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">Split across {$cards.length} separate cards</div>
-              </div>
-
-              <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; border-color: rgba(52, 211, 153, 0.15);">
-                <div style="font-size: 0.72rem; text-transform: uppercase; color: #34d399; font-weight: 600; letter-spacing: 0.05em;">Simulated Consolidated Spend</div>
-                <div style="font-size: 1.6rem; font-weight: 900; color: #34d399; margin-top: 0.25rem;">£{activeSim.simulatedTotalSpend.toFixed(2)}</div>
-                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">One card ({activeSim.discountName})</div>
-              </div>
-
-              <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem;">
-                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.05em;">Simulated Capping Hits</div>
-                <div style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 0.25rem;">
-                  { activeSim.simulatedCapSummary.daysCapHit } Days <span style="font-size: 0.8rem; font-weight: 500; color: var(--color-text-muted);">/ { activeSim.simulatedCapSummary.weeksCapHit } Weeks</span>
+            <div
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;"
+            >
+              <div
+                style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem;"
+              >
+                <div
+                  style="font-size: 0.72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.05em;"
+                >
+                  Actual Combined Spend
                 </div>
-                <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;">
-                  vs { $capSummary?.daysCapHit ?? 0 } Days / { $capSummary?.weeksCapHit ?? 0 } Weeks actual
+                <div
+                  style="font-size: 1.6rem; font-weight: 900; color: #fff; margin-top: 0.25rem;"
+                >
+                  £{$combinedSimulation.actualTotalSpend.toFixed(2)}
+                </div>
+                <div
+                  style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;"
+                >
+                  Split across {$cards.length} separate cards
+                </div>
+              </div>
+
+              <div
+                style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; border-color: rgba(52, 211, 153, 0.15);"
+              >
+                <div
+                  style="font-size: 0.72rem; text-transform: uppercase; color: #34d399; font-weight: 600; letter-spacing: 0.05em;"
+                >
+                  Simulated Consolidated Spend
+                </div>
+                <div
+                  style="font-size: 1.6rem; font-weight: 900; color: #34d399; margin-top: 0.25rem;"
+                >
+                  £{activeSim.simulatedTotalSpend.toFixed(2)}
+                </div>
+                <div
+                  style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;"
+                >
+                  One card ({activeSim.discountName})
+                </div>
+              </div>
+
+              <div
+                style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem;"
+              >
+                <div
+                  style="font-size: 0.72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.05em;"
+                >
+                  Simulated Capping Hits
+                </div>
+                <div
+                  style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 0.25rem;"
+                >
+                  {activeSim.simulatedCapSummary.daysCapHit} Days
+                  <span
+                    style="font-size: 0.8rem; font-weight: 500; color: var(--color-text-muted);"
+                    >/ {activeSim.simulatedCapSummary.weeksCapHit} Weeks</span
+                  >
+                </div>
+                <div
+                  style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 0.25rem;"
+                >
+                  vs {$capSummary?.daysCapHit ?? 0} Days / {$capSummary?.weeksCapHit ??
+                    0} Weeks actual
                 </div>
               </div>
             </div>
 
             <!-- Savings components details -->
-            {#if activeSim.netDifference > 0}
-              <div style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; font-size: 0.825rem; line-height: 1.5; color: var(--color-text-secondary);">
-                <div style="font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+            {#if activeSim.netDifference > 0 && activeSim.discountUpgradeBenefit > 0}
+              <div
+                style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; font-size: 0.825rem; line-height: 1.5; color: var(--color-text-secondary);"
+              >
+                <div
+                  style="font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;"
+                >
                   🔍 Why would you save £{activeSim.netDifference.toFixed(2)}?
                 </div>
-                <ul style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                  {#if activeSim.consolidationBenefit > 0}
-                    <li>
-                      <strong>Capping Consolidation Benefit:</strong> Combining travel onto a single card pool saves you <strong>£{activeSim.consolidationBenefit.toFixed(2)}</strong> by hitting daily or weekly caps earlier instead of split spend.
-                    </li>
-                  {/if}
-                  {#if activeSim.discountUpgradeBenefit > 0}
-                    <li>
-                      <strong>Discount Upgrade Benefit:</strong> Upgrading journeys on adult cards to the best available <strong>{activeSim.discountName}</strong> discount saves you <strong>£{activeSim.discountUpgradeBenefit.toFixed(2)}</strong> on single fares.
-                    </li>
-                  {/if}
+                <ul
+                  style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem;"
+                >
+                  <li>
+                    <strong>Discount Upgrade Benefit:</strong> Upgrading journeys on adult cards to the best available <strong>{activeSim.discountName}</strong> discount saves you <strong>£{activeSim.discountUpgradeBenefit.toFixed(2)}</strong> on single fares.
+                  </li>
                 </ul>
+              </div>
+            {/if}
+
+            {#if $combinedSimulation.consolidationBenefit > 0}
+              <div
+                class="glass-card consolidation-savings-details"
+                style="margin-bottom: 1.25rem;"
+              >
+                <div style="font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem; justify-content: space-between; flex-wrap: wrap;">
+                  <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    🔗 Capping Consolidation savings: <strong>£{$combinedSimulation.consolidationBenefit.toFixed(2)}</strong>
+                  </span>
+                  <span style="font-size: 0.72rem; color: var(--color-text-muted);">
+                    Applied across {$combinedSimulation.consolidationDays?.length ?? 0} days
+                  </span>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0 0 0.75rem 0; line-height: 1.4;">
+                  By pooling journeys from multiple cards onto a single card, you hit the TfL daily zone caps earlier in the day. Below are the days where you would have saved money by consolidating:
+                </p>
+
+                <div class="consolidation-days-list">
+                  {#each $combinedSimulation.consolidationDays || [] as day}
+                    <div class="consolidation-day-row">
+                      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="font-weight: 600; font-size: 0.8rem; color: #fff;">{day.date}</span>
+                        <span style="font-size: 0.75rem; color: #34d399; font-weight: 600; background: rgba(52, 211, 153, 0.1); padding: 0.15rem 0.4rem; border-radius: 4px;">
+                          Saved £{day.saving.toFixed(2)}
+                        </span>
+                      </div>
+                      <div style="font-size: 0.72rem; color: var(--color-text-muted); display: flex; justify-content: space-between;">
+                        <span>Split cards: £{day.splitSpend.toFixed(2)}</span>
+                        <span>Single card: £{day.combinedSpend.toFixed(2)}</span>
+                      </div>
+                      <!-- List journeys for this day -->
+                      <div style="border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 0.4rem; margin-top: 0.1rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                        {#each day.journeys as j}
+                          <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 0.35rem; min-width: 0;">
+                              <span class="badge-dot" style="background: {j.cardColor}; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;"></span>
+                              <span style="color: var(--color-text-secondary); font-family: monospace; font-size: 0.65rem;">{j.raw.startTime || '—'}</span>
+                              <span style="color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {#if j.isBus}
+                                  {j.raw.journeyAction}
+                                {:else if j.origin && j.destination}
+                                  {j.origin.replace(/\s*\[.*?\]/g, "")} → {j.destination.replace(/\s*\[.*?\]/g, "")}
+                                {:else}
+                                  {j.raw.journeyAction}
+                                {/if}
+                              </span>
+                            </div>
+                            <span style="font-weight: 500; color: #fff; font-family: monospace;">£{j.raw.charge.toFixed(2)}</span>
+                          </div>
+                        {/each}
+                      </div>
+                    </div>
+                  {/each}
+                </div>
               </div>
             {/if}
 
@@ -1730,40 +2275,67 @@
                   class="cost-btn"
                   style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); border-radius: 8px; color: var(--color-text-primary); font-size: 0.85rem; font-weight: 600;"
                   onclick={() => {
-                    const el = document.getElementById('missed-caps-details');
+                    const el = document.getElementById("missed-caps-details");
                     if (el) {
-                      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                      el.style.display =
+                        el.style.display === "none" ? "block" : "none";
                     }
                   }}
                 >
-                  <span>📋 Show Missed Capping Opportunities ({activeSim.missedDailyCaps.length + activeSim.missedWeeklyCaps.length})</span>
+                  <span
+                    >📋 Show Missed Capping Opportunities ({activeSim
+                      .missedDailyCaps.length +
+                      activeSim.missedWeeklyCaps.length})</span
+                  >
                   <span>▼</span>
                 </button>
-                
-                <div id="missed-caps-details" style="display: none; margin-top: 0.75rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); max-height: 250px; overflow-y: auto;">
+
+                <div
+                  id="missed-caps-details"
+                  style="display: none; margin-top: 0.75rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); max-height: 250px; overflow-y: auto;"
+                >
                   {#if activeSim.missedWeeklyCaps.length > 0}
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.5rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;">Missed Weekly Caps</div>
+                    <div
+                      style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.5rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;"
+                    >
+                      Missed Weekly Caps
+                    </div>
                     {#each activeSim.missedWeeklyCaps as w}
-                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);">
+                      <div
+                        style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);"
+                      >
                         <span style="color: var(--color-text-secondary);">
-                          Week of {w.weekStart.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ({w.zoneRange})
+                          Week of {w.weekStart.toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                          })} ({w.zoneRange})
                         </span>
                         <span style="font-weight: 600; color: #34d399;">
-                          Spent £{w.actualSpend.toFixed(2)} (cap: £{w.capLimit.toFixed(2)}) → Saved £{w.saving.toFixed(2)}
+                          Spent £{w.actualSpend.toFixed(2)} (cap: £{w.capLimit.toFixed(
+                            2,
+                          )}) → Saved £{w.saving.toFixed(2)}
                         </span>
                       </div>
                     {/each}
                   {/if}
 
                   {#if activeSim.missedDailyCaps.length > 0}
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.75rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;">Missed Daily Caps</div>
+                    <div
+                      style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 0.75rem 0.5rem 0.25rem 0.5rem; letter-spacing: 0.05em;"
+                    >
+                      Missed Daily Caps
+                    </div>
                     {#each activeSim.missedDailyCaps as d}
-                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);">
+                      <div
+                        style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.02);"
+                      >
                         <span style="color: var(--color-text-secondary);">
                           {d.date} ({d.zoneRange})
                         </span>
                         <span style="font-weight: 600; color: #34d399;">
-                          Spent £{d.actualSpend.toFixed(2)} (cap: £{d.capLimit.toFixed(2)}) → Saved £{d.saving.toFixed(2)}
+                          Spent £{d.actualSpend.toFixed(2)} (cap: £{d.capLimit.toFixed(
+                            2,
+                          )}) → Saved £{d.saving.toFixed(2)}
                         </span>
                       </div>
                     {/each}
@@ -1775,26 +2347,36 @@
         </div>
       {/if}
 
-      {#if $activeCardId === 'combined' && $cards.length > 1}
+      {#if $activeCardId === "combined" && $cards.length > 1}
         <div class="glass-card combined-caps-breakdown">
-          <h4 class="breakdown-title">
-            💳 Per-Card Cap Breakdown
-          </h4>
+          <h4 class="breakdown-title">💳 Per-Card Cap Breakdown</h4>
           <div class="breakdown-grid">
             {#each $cards as card}
               <div class="breakdown-card" style="--card-theme: {card.color}">
-                <div class="breakdown-card-glow" style="background: radial-gradient(circle at 100% 0%, {card.color}15, transparent 60%);"></div>
+                <div
+                  class="breakdown-card-glow"
+                  style="background: radial-gradient(circle at 100% 0%, {card.color}15, transparent 60%);"
+                ></div>
                 <div class="breakdown-card-header">
-                  <span class="breakdown-card-dot" style="background: {card.color}"></span>
+                  <span
+                    class="breakdown-card-dot"
+                    style="background: {card.color}"
+                  ></span>
                   <span class="breakdown-card-name">{card.name}</span>
                 </div>
                 <div class="breakdown-card-stats">
                   <div class="breakdown-stat">
-                    <span class="stat-num">{card.capSummary?.daysCapHit ?? 0}</span>
+                    <span class="stat-num"
+                      >{card.capSummary?.daysCapHit ?? 0}</span
+                    >
                     <span class="stat-desc">Cap Days Hit</span>
                   </div>
                   <div class="breakdown-stat highlighted">
-                    <span class="stat-num" style="color: {card.color}">£{(card.capSummary?.totalSavedByDailyCap ?? 0).toFixed(2)}</span>
+                    <span class="stat-num" style="color: {card.color}"
+                      >£{(card.capSummary?.totalSavedByDailyCap ?? 0).toFixed(
+                        2,
+                      )}</span
+                    >
                     <span class="stat-desc">Daily Cap Savings</span>
                   </div>
                 </div>
@@ -1851,8 +2433,15 @@
         <h3 class="cap-section-title">Daily Cap Progress</h3>
         <div class="cap-bars">
           {#each $dailyCapResults as day}
-            <div class="cap-day-row flex md:flex-row max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1 max-md:p-3" class:cap-hit={day.capHit}>
-              <div class="cap-day-date max-md:row-start-1 max-md:col-start-1 max-md:text-[0.85rem] max-md:!min-w-0">{day.date}</div>
+            <div
+              class="cap-day-row flex md:flex-row max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1 max-md:p-3"
+              class:cap-hit={day.capHit}
+            >
+              <div
+                class="cap-day-date max-md:row-start-1 max-md:col-start-1 max-md:text-[0.85rem] max-md:!min-w-0"
+              >
+                {day.date}
+              </div>
               <div
                 class="cap-day-zones max-md:row-start-2 max-md:col-start-1 max-md:text-[0.75rem] max-md:!min-w-0"
                 style="font-size: 0.8rem; font-weight: 700; color: {getZoneColor(
@@ -1861,7 +2450,9 @@
               >
                 {day.maxZoneRange}
               </div>
-              <div class="cap-day-bar-container max-md:row-start-3 max-md:col-span-2 max-md:w-full max-md:my-1">
+              <div
+                class="cap-day-bar-container max-md:row-start-3 max-md:col-span-2 max-md:w-full max-md:my-1"
+              >
                 <div class="cap-progress">
                   <div
                     class="cap-progress-bar"
@@ -1870,7 +2461,9 @@
                   ></div>
                 </div>
               </div>
-              <div class="cap-day-values max-md:row-start-1 max-md:col-start-2 max-md:justify-end max-md:!min-w-0 max-md:text-[0.85rem]">
+              <div
+                class="cap-day-values max-md:row-start-1 max-md:col-start-2 max-md:justify-end max-md:!min-w-0 max-md:text-[0.85rem]"
+              >
                 <span class="cap-day-spend">£{day.totalSpend.toFixed(2)}</span>
                 <span class="cap-day-divider">/</span>
                 <span
@@ -1884,7 +2477,11 @@
                   £{day.dailyCap.toFixed(2)}
                 </span>
               </div>
-              <div class="cap-day-journeys max-md:row-start-2 max-md:col-start-2 max-md:!min-w-0 max-md:text-[0.75rem] max-md:text-right">{day.journeys.length} trips</div>
+              <div
+                class="cap-day-journeys max-md:row-start-2 max-md:col-start-2 max-md:!min-w-0 max-md:text-[0.75rem] max-md:text-right"
+              >
+                {day.journeys.length} trips
+              </div>
               {#if day.capHit}
                 <span
                   class="badge badge-cap max-md:row-start-4 max-md:col-span-2 max-md:justify-self-start max-md:mt-1"
@@ -1908,8 +2505,14 @@
         <h3 class="cap-section-title">Weekly Cap Progress</h3>
         <div class="cap-bars">
           {#each $weeklyCapResults as week}
-            <div class="cap-day-row flex md:flex-row max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1 max-md:p-3" class:cap-hit={week.capHit}>
-              <div class="cap-day-date max-md:row-start-1 max-md:col-start-1 max-md:text-[0.85rem] max-md:!min-w-0" style="min-width: 160px;">
+            <div
+              class="cap-day-row flex md:flex-row max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1 max-md:p-3"
+              class:cap-hit={week.capHit}
+            >
+              <div
+                class="cap-day-date max-md:row-start-1 max-md:col-start-1 max-md:text-[0.85rem] max-md:!min-w-0"
+                style="min-width: 160px;"
+              >
                 {week.weekStart.toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "short",
@@ -1919,7 +2522,9 @@
                   month: "short",
                 })}
               </div>
-              <div class="cap-day-bar-container max-md:row-start-3 max-md:col-span-2 max-md:w-full max-md:my-1">
+              <div
+                class="cap-day-bar-container max-md:row-start-3 max-md:col-span-2 max-md:w-full max-md:my-1"
+              >
                 <div class="cap-progress">
                   <div
                     class="cap-progress-bar"
@@ -1928,14 +2533,23 @@
                   ></div>
                 </div>
               </div>
-              <div class="cap-day-values max-md:row-start-1 max-md:col-start-2 max-md:justify-end max-md:!min-w-0 max-md:text-[0.85rem]">
+              <div
+                class="cap-day-values max-md:row-start-1 max-md:col-start-2 max-md:justify-end max-md:!min-w-0 max-md:text-[0.85rem]"
+              >
                 <span class="cap-day-spend">£{week.totalSpend.toFixed(2)}</span>
                 <span class="cap-day-divider">/</span>
                 <span class="cap-day-cap">£{week.weeklyCap.toFixed(2)}</span>
               </div>
-              <div class="cap-day-journeys max-md:row-start-2 max-md:col-start-2 max-md:!min-w-0 max-md:text-[0.75rem] max-md:text-right">{week.days.length} days</div>
+              <div
+                class="cap-day-journeys max-md:row-start-2 max-md:col-start-2 max-md:!min-w-0 max-md:text-[0.75rem] max-md:text-right"
+              >
+                {week.days.length} days
+              </div>
               {#if week.capHit}
-                <span class="badge badge-cap max-md:row-start-4 max-md:col-span-2 max-md:justify-self-start max-md:mt-1">Cap Hit</span>
+                <span
+                  class="badge badge-cap max-md:row-start-4 max-md:col-span-2 max-md:justify-self-start max-md:mt-1"
+                  >Cap Hit</span
+                >
               {/if}
             </div>
           {/each}
@@ -1944,10 +2558,125 @@
     </div>
   {/if}
 
+  </div>
+
   <AddCardDialog bind:open={showAddDialog} />
 </div>
 
 <style>
+  /* Card switching loading styles */
+  .analysis-content-wrapper {
+    position: relative;
+    min-height: 200px;
+  }
+
+  .card-switching-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 15, 30, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+
+  .switching-spinner-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1.5rem 2.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .tfl-switching-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(0, 159, 227, 0.1);
+    border-top: 3px solid var(--color-oyster-blue, #009FE3);
+    border-radius: 50%;
+    animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  .switching-text {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Consolidation details styles */
+  .consolidation-savings-details {
+    margin-top: 1rem;
+    border: 1px solid rgba(0, 159, 227, 0.15);
+    background: linear-gradient(135deg, rgba(0, 159, 227, 0.03), rgba(111, 67, 144, 0.01));
+    border-radius: 12px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .consolidation-days-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+    margin-top: 0.75rem;
+  }
+
+  /* Custom scrollbar for scrollable panels */
+  .consolidation-days-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .consolidation-days-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 3px;
+  }
+  .consolidation-days-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+  }
+  .consolidation-days-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .consolidation-day-row {
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    transition: background-color 0.2s;
+  }
+
+  .consolidation-day-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
   .analysis-page {
     max-width: 1100px;
     margin: 0 auto;
@@ -2000,7 +2729,11 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.05), transparent 70%);
+    background: radial-gradient(
+      circle at 0% 0%,
+      rgba(16, 185, 129, 0.05),
+      transparent 70%
+    );
     z-index: 0;
   }
 
@@ -2468,4 +3201,35 @@
     text-align: right;
   }
 
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+  }
+
+  .pagination-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--color-text-secondary);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .pagination-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  .pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
 </style>

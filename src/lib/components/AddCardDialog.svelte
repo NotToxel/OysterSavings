@@ -34,6 +34,7 @@
   // Processing state
   let progressText = $state('');
   let progressPercent = $state(0);
+  let hasError = $state(false);
 
   // Merge state
   let selectedMergeCardId = $state('');
@@ -64,6 +65,7 @@
     classifiedPreview = [];
     progressText = '';
     progressPercent = 0;
+    hasError = false;
     selectedMergeCardId = '';
     mergeResult = null;
     addMode = 'merge';
@@ -71,6 +73,10 @@
   }
 
   function closeDialog() {
+    if (step === 'processing' && !hasError) {
+      open = false;
+      return;
+    }
     open = false;
     resetDialog();
   }
@@ -136,12 +142,16 @@
     step = 'decide';
     if ($cards.length > 0) {
       selectedMergeCardId = $cards[0].id;
-      // Pre-select addMode based on conflict detection
-      const firstCardClash = detectMergeClash(classified, parseResult.journeys, $cards[0]);
-      if (firstCardClash) {
-        addMode = 'new';
-      } else {
+      if ($cards.length >= MAX_CARDS) {
         addMode = 'merge';
+      } else {
+        // Pre-select addMode based on conflict detection
+        const firstCardClash = detectMergeClash(classified, parseResult.journeys, $cards[0]);
+        if (firstCardClash) {
+          addMode = 'new';
+        } else {
+          addMode = 'merge';
+        }
       }
     } else {
       addMode = 'new';
@@ -369,9 +379,16 @@
       progressText = 'Data added!';
       progressPercent = 100;
 
-      setTimeout(() => closeDialog(), 600);
+      setTimeout(() => {
+        open = false;
+        resetDialog();
+      }, 600);
     } catch (err) {
       progressText = `Error: ${err}`;
+      hasError = true;
+      if (!open) {
+        resetDialog();
+      }
     }
   }
 </script>
@@ -479,14 +496,45 @@
               {#if addMode === 'merge'}
                 <div class="merge-panel-config">
                   <span class="config-label">Select Card to Merge Into</span>
-                  {#if $cards.length > 1}
-                    <select class="merge-select" bind:value={selectedMergeCardId}>
+                  {#if $cards.length > 0}
+                    <div class="merge-cards-grid">
                       {#each $cards as card}
-                        <option value={card.id}>{card.name}</option>
+                        <button
+                          type="button"
+                          class="merge-card-option"
+                          class:active={selectedMergeCardId === card.id}
+                          onclick={() => selectedMergeCardId = card.id}
+                          style="--card-theme-color: {card.color}"
+                        >
+                          <div class="card-option-header">
+                            <span class="card-option-dot" style="background: {card.color}"></span>
+                            <span class="card-option-title">{card.name}</span>
+                          </div>
+                          <div class="card-option-details">
+                            <div class="card-option-stat">
+                              <span class="stat-icon">📄</span>
+                              <span><strong>{card.validJourneys?.length ?? 0}</strong> journeys</span>
+                            </div>
+                            <div class="card-option-badge">
+                              <span class="badge-icon">🏷️</span>
+                              <span>
+                                {card.detectedDiscount === 'none' ? 'Adult/Contactless' :
+                                 card.detectedDiscount === 'railcard' ? 'Railcard' :
+                                 card.detectedDiscount === 'disabled' ? 'Disabled Persons' :
+                                 card.detectedDiscount === 'student' ? 'Student' :
+                                 card.detectedDiscount === 'jobcentre' ? 'Jobcentre Plus' :
+                                 card.detectedDiscount === 'zip_11_15' ? '11-15 Zip' :
+                                 card.detectedDiscount === 'zip_16_17' ? '16+ Zip' : 'Standard'}
+                              </span>
+                            </div>
+                          </div>
+                          <div class="card-option-footer" title={card.fileName}>
+                            <span class="file-icon">📁</span>
+                            <span class="file-name">{card.fileName}</span>
+                          </div>
+                        </button>
                       {/each}
-                    </select>
-                  {:else if $cards.length === 1}
-                    <span class="merge-target">Merging into: <strong>{$cards[0].name}</strong></span>
+                    </div>
                   {/if}
 
                   {#if mergeClash}
@@ -576,12 +624,77 @@
 
         {:else if step === 'processing'}
           <div class="processing-panel">
-            <div class="spinner"></div>
-            <p class="progress-text">{progressText}</p>
-            <div class="progress-bar-container">
-              <div class="progress-bar-fill" style="width: {progressPercent}%"></div>
+            <div class="oyster-scanner">
+              <div class="oyster-card-silhouette">
+                <div class="oyster-circle circle-1"></div>
+                <div class="oyster-circle circle-2"></div>
+                <div class="oyster-logo-mini">🦪</div>
+                <div class="scan-laser"></div>
+              </div>
             </div>
-            <span class="progress-percent">{progressPercent}%</span>
+            
+            <p class="progress-text" class:text-glow={!hasError} class:error-text={hasError}>{progressText}</p>
+            
+            {#if !hasError}
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: {progressPercent}%"></div>
+              </div>
+              <span class="progress-percent">{progressPercent}%</span>
+            {:else}
+              <button class="btn-secondary" onclick={closeDialog} style="margin-top: 0.5rem; padding: 0.5rem 1.25rem;">
+                Dismiss
+              </button>
+            {/if}
+
+            <div class="progress-phases">
+              <!-- Phase 1 -->
+              <div class="phase-item completed">
+                <div class="phase-indicator">
+                  <svg class="phase-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <span class="phase-label">CSV Clean & Parse</span>
+              </div>
+
+              <!-- Phase 2 -->
+              <div class="phase-item completed">
+                <div class="phase-indicator">
+                  <svg class="phase-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <span class="phase-label">Route & Mode Classifier</span>
+              </div>
+
+              <!-- Phase 3 -->
+              <div class="phase-item" class:completed={progressPercent > 80} class:active={progressPercent >= 10 && progressPercent <= 80} class:pending={progressPercent < 10}>
+                <div class="phase-indicator">
+                  {#if progressPercent > 80}
+                    <svg class="phase-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  {:else}
+                    <div class="phase-bullet"></div>
+                  {/if}
+                </div>
+                <span class="phase-label">Fetch Live TfL Fares</span>
+              </div>
+
+              <!-- Phase 4 -->
+              <div class="phase-item" class:completed={progressPercent === 100} class:active={progressPercent > 80 && progressPercent < 100} class:pending={progressPercent <= 80}>
+                <div class="phase-indicator">
+                  {#if progressPercent === 100}
+                    <svg class="phase-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  {:else}
+                    <div class="phase-bullet"></div>
+                  {/if}
+                </div>
+                <span class="phase-label">Cap & Savings Analytics</span>
+              </div>
+            </div>
           </div>
 
         {:else if step === 'merged'}
@@ -790,15 +903,7 @@
     background: rgba(231, 113, 13, 0.08);
   }
 
-  .merge-select {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-primary);
-    font-size: 0.82rem;
-  }
+
 
   .merge-target {
     font-size: 0.78rem;
@@ -813,24 +918,198 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem 0;
+    width: 100%;
   }
 
-  .spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top-color: var(--color-oyster-blue);
+  .text-glow {
+    text-shadow: 0 0 10px rgba(0, 159, 227, 0.2);
+    animation: pulse-text 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-text {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+
+  /* Oyster Scanning Animation */
+  .oyster-scanner {
+    position: relative;
+    width: 180px;
+    height: 110px;
+    margin: 0 auto;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(0, 159, 227, 0.2) 0%, rgba(111, 67, 144, 0.1) 100%);
+    border: 1.5px solid rgba(0, 159, 227, 0.35);
+    box-shadow: 0 8px 32px rgba(0, 159, 227, 0.12), inset 0 0 20px rgba(0, 159, 227, 0.05);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .oyster-card-silhouette {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .oyster-circle {
+    position: absolute;
+    border: 1px dashed rgba(255, 255, 255, 0.06);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+  .circle-1 {
+    width: 150px;
+    height: 150px;
+    animation: rotate-dashed-clockwise 25s linear infinite;
+  }
+
+  .circle-2 {
+    width: 90px;
+    height: 90px;
+    animation: rotate-dashed-counter 18s linear infinite;
+  }
+
+  .oyster-logo-mini {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.25rem;
+    filter: drop-shadow(0 0 8px rgba(0, 159, 227, 0.5));
+    animation: pulse-logo 2s ease-in-out infinite;
+  }
+
+  .scan-laser {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-oyster-blue), transparent);
+    box-shadow: 0 0 10px var(--color-oyster-blue), 0 0 3px var(--color-oyster-blue);
+    animation: scan-vertical 2.2s ease-in-out infinite;
+  }
+
+  @keyframes scan-vertical {
+    0% { top: 0%; }
+    50% { top: 100%; }
+    100% { top: 0%; }
+  }
+
+  @keyframes rotate-dashed-clockwise {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  @keyframes rotate-dashed-counter {
+    from { transform: translate(-50%, -50%) rotate(360deg); }
+    to { transform: translate(-50%, -50%) rotate(0deg); }
+  }
+
+  @keyframes pulse-logo {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 8px rgba(0, 159, 227, 0.5)); }
+    50% { transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 0 16px rgba(0, 159, 227, 0.8)); }
+  }
+
+  /* Multi-stage process phases list */
+  .progress-phases {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    width: 100%;
+    max-width: 280px;
+    margin: 1.25rem auto 0 auto;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 0.875rem;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .phase-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+  }
+
+  .phase-indicator {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .phase-check {
+    width: 14px;
+    height: 14px;
+    color: var(--color-success);
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.3));
+    animation: check-scale 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes check-scale {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .phase-bullet {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+    transition: all 0.3s ease;
+  }
+
+  .phase-item.active .phase-bullet {
+    background: var(--color-oyster-blue);
+    box-shadow: 0 0 8px var(--color-oyster-blue);
+    animation: pulse-bullet 1.5s ease-in-out infinite;
+    width: 8px;
+    height: 8px;
+  }
+
+  .phase-item.pending {
+    opacity: 0.35;
+  }
+
+  .phase-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: color 0.3s ease;
+  }
+
+  .phase-item.active .phase-label {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .phase-item.completed .phase-label {
+    color: var(--color-success);
+  }
+
+  @keyframes pulse-bullet {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.25); opacity: 1; }
   }
 
   .progress-text {
     font-size: 0.85rem;
     color: var(--color-text-secondary);
+  }
+
+  .error-text {
+    color: #f87171 !important;
+    text-shadow: 0 0 10px rgba(248, 113, 113, 0.2);
+    font-weight: 500;
   }
 
   .progress-bar-container {
@@ -1174,6 +1453,119 @@
     flex-direction: column;
     gap: 0.5rem;
     text-align: left;
+  }
+
+  .merge-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .merge-card-option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.85rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+    outline: none;
+  }
+
+  .merge-card-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--card-theme-color, var(--color-oyster-blue));
+    opacity: 0.4;
+    transition: opacity 0.25s ease, width 0.25s ease;
+  }
+
+  .merge-card-option:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .merge-card-option:hover::before {
+    opacity: 0.8;
+  }
+
+  .merge-card-option.active {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--card-theme-color, var(--color-oyster-blue));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 12px rgba(var(--card-theme-color), 0.15);
+  }
+
+  .merge-card-option.active::before {
+    opacity: 1;
+    width: 6px;
+  }
+
+  .card-option-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-option-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--card-theme-color);
+  }
+
+  .card-option-title {
+    font-size: 0.825rem;
+    font-weight: 700;
+    color: white;
+  }
+
+  .card-option-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .card-option-stat, .card-option-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+  }
+
+  .card-option-stat strong {
+    color: white;
+  }
+
+  .card-option-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 0.4rem;
+    margin-top: 0.15rem;
+  }
+
+  .file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
 
   .config-label {

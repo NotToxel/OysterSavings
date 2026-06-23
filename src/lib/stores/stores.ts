@@ -26,6 +26,9 @@ export const cards = writable<CardState[]>([]);
 /** Active card ID — 'combined' shows aggregated data */
 export const activeCardId = writable<string>('combined');
 
+/** Store indicating if card switching is currently happening to show spinner/yield loop */
+export const isSwitchingCard = writable<boolean>(false);
+
 /** "What-If" fare type override for Combined view */
 export const combinedFareTypeOverride = writable<FareType>('none');
 
@@ -433,9 +436,9 @@ export const savingsResult = derived(
 );
 
 export const combinedSimulation = derived(
-  [cards, dailyCapResults, weeklyCapResults, useAlternativeFares],
-  ([$cards, $dailyCapResults, $weeklyCapResults, $useAlternativeFares]) => {
-    if ($cards.length <= 1) return null;
+  [cards, activeCardId, dailyCapResults, weeklyCapResults, useAlternativeFares],
+  ([$cards, $activeCardId, $dailyCapResults, $weeklyCapResults, $useAlternativeFares]) => {
+    if ($activeCardId !== 'combined' || $cards.length <= 1) return null;
 
     const discountNames: Record<FareType, string> = {
       none: 'Adult PAYG',
@@ -460,10 +463,12 @@ export const combinedSimulation = derived(
 
     // 2. Calculate simulated standard (Adult) split spend
     let standardSplitSpend = 0;
+    const cardStdCaps = new Map<string, DayCapResult[]>();
     for (const card of $cards) {
       const stdFares = calculateAllFares(card.classifiedJourneys, 'none', $useAlternativeFares);
       const stdFaresForCap = stdFares.map(f => ({ ...f, actualCharge: f.expectedFare }));
       const stdCaps = calculateDailyCaps(stdFaresForCap, 'none');
+      cardStdCaps.set(card.id, stdCaps);
       const stdWeekly = calculateWeeklyCaps(stdCaps, 'none');
       standardSplitSpend += stdWeekly.reduce((sum, w) => sum + w.totalSpend, 0);
     }
@@ -474,6 +479,53 @@ export const combinedSimulation = derived(
     const stdCapsCombined = calculateDailyCaps(stdFaresCombinedForCap, 'none');
     const stdWeeklyCombined = calculateWeeklyCaps(stdCapsCombined, 'none');
     const standardCombinedSpend = stdWeeklyCombined.reduce((sum, w) => sum + w.totalSpend, 0);
+
+    // Find consolidation days: where combined daily standard spend is less than sum of split daily standard spend
+    const consolidationDays: Array<{
+      date: string;
+      dateObj: Date;
+      splitSpend: number;
+      combinedSpend: number;
+      saving: number;
+      journeys: Array<MultiCardClassifiedJourney>;
+    }> = [];
+
+    for (const combDay of stdCapsCombined) {
+      let splitSpend = 0;
+      for (const card of $cards) {
+        const cardDay = cardStdCaps.get(card.id)?.find(d => d.date === combDay.date);
+        if (cardDay) {
+          splitSpend += cardDay.totalSpend;
+        }
+      }
+
+      const diff = Math.round((splitSpend - combDay.totalSpend) * 100) / 100;
+      if (diff > 0.01) {
+        const dayJourneys: MultiCardClassifiedJourney[] = [];
+        for (const card of $cards) {
+          const cardJourneys = card.classifiedJourneys.filter(j => j.raw.dateStr === combDay.date);
+          for (const j of cardJourneys) {
+            dayJourneys.push({
+              ...j,
+              cardId: card.id,
+              cardName: card.name,
+              cardColor: card.color
+            });
+          }
+        }
+        dayJourneys.sort((a, b) => (a.raw.startTime || '').localeCompare(b.raw.startTime || ''));
+
+        consolidationDays.push({
+          date: combDay.date,
+          dateObj: combDay.dateObj,
+          splitSpend: Math.round(splitSpend * 100) / 100,
+          combinedSpend: Math.round(combDay.totalSpend * 100) / 100,
+          saving: diff,
+          journeys: dayJourneys
+        });
+      }
+    }
+    consolidationDays.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
     const runSimulationForDiscount = (discount: FareType) => {
       const bestFaresCombined = calculateAllFares(classified, discount, $useAlternativeFares);
@@ -591,6 +643,8 @@ export const combinedSimulation = derived(
       actualTotalSpend: Math.round(actualTotalSpend * 100) / 100,
       standardSplitSpend: Math.round(standardSplitSpend * 100) / 100,
       standardCombinedSpend: Math.round(standardCombinedSpend * 100) / 100,
+      consolidationDays,
+      consolidationBenefit: Math.max(0, Math.round((standardSplitSpend - standardCombinedSpend) * 100) / 100),
     };
   }
 );

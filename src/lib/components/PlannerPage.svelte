@@ -1220,7 +1220,7 @@
     // Monthly conversion factor based on 30.31 days per month (avg matching weekly * 4.33)
     const monthsInPeriod = durationDays / 30.31;
 
-    const totalPayg = $forecastResult.totalPaygCapped;
+    const totalPayg = $forecastResult.totalPaygFareTypeCapped;
 
     // Scale monthly PAYG for the table display
     const monthlyPayg = totalPayg / (monthsInPeriod || 1);
@@ -1715,9 +1715,20 @@
         const tcPeriodResult = calculateTravelcardPeriodCost(startDate, endDate, tcWeekly, tcMonthly, tcAnnual);
         const oddPeriodCost = tcPeriodResult.cost + uncoveredTcSpend;
 
+        const formattedPlanStart = startDate.toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short"
+        });
+        const formattedPlanEnd = endDate.toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short"
+        });
+
         rawOptions.push({
           id: `travelcard_odd_${zone}`,
-          label: `${tcLabelPrefix} Odd-Period Travelcard (${zone}) — ${tcPeriodResult.label}`,
+          label: `${tcLabelPrefix} Odd-Period Travelcard (${zone}) — ${formattedPlanStart} to ${formattedPlanEnd} (${tcPeriodResult.label})`,
           monthlyRate: tcMonthly,
           strikeThroughRate: strikeThroughMonthly,
           periodCost: oddPeriodCost,
@@ -1963,103 +1974,68 @@
           });
         }
 
-        // --- Mid-Planning Period Travelcard Options (Optimized) ---
-        let bestMidWeeklyCost = Infinity;
-        let bestMidWeeklyStart: Date | null = null;
-        let bestMidWeeklyWeeks = 1;
-        let bestMidWeeklyEnd: Date | null = null;
+        // --- Mid-Planning Period Travelcard Options (Unified & Optimized) ---
+        let bestMidPeriodCost = Infinity;
+        let bestMidPeriodStart: Date | null = null;
+        let bestMidPeriodEnd: Date | null = null;
+        let bestMidPeriodResult: any = null;
 
-        for (let w = 1; w <= maxWeeks; w++) {
-          for (const tcStart of uniqueTravelDates) {
-            const startDayIndex = daysBetween(startDate, tcStart);
-            if (startDayIndex <= 0) continue; // must start after planning period begins
-            if (startDayIndex > durationDays - w * 7) continue; // must fit
+        for (let i = 0; i < uniqueTravelDates.length; i++) {
+          const tcStart = uniqueTravelDates[i];
+          const startDayIndex = daysBetween(startDate, tcStart);
+          if (startDayIndex < 0) continue; // must start in planning period
 
-            const tcEnd = new Date(tcStart);
-            tcEnd.setDate(tcStart.getDate() + w * 7 - 1);
+          for (let j = i; j < uniqueTravelDates.length; j++) {
+            const tcEnd = uniqueTravelDates[j];
+            const endDayIndex = daysBetween(startDate, tcEnd);
+            if (endDayIndex >= durationDays) continue; // must fit in planning period
 
-            const tcCost = w * tcWeekly;
+            const totalDaysCovered = daysBetween(tcStart, tcEnd) + 1;
+            if (totalDaysCovered < 7) continue; // travelcard must be at least 7 days
+
+            // Is it a strict sub-interval of the planning period?
+            const isStrictSubInterval = (tcStart.getTime() > startDate.getTime()) || (tcEnd.getTime() < endDate.getTime());
+            if (!isStrictSubInterval) continue;
+
+            const tcPeriodResult = calculateTravelcardPeriodCost(tcStart, tcEnd, tcWeekly, tcMonthly, tcAnnual);
+            if (tcPeriodResult.cost <= 0) continue;
+
+            const tcCost = tcPeriodResult.cost;
             const hybridSpend = evaluateHybrid(tcStart, tcEnd);
-            
             const totalCost = tcCost + hybridSpend;
-            if (totalCost < bestMidWeeklyCost) {
-              bestMidWeeklyCost = totalCost;
-              bestMidWeeklyStart = tcStart;
-              bestMidWeeklyEnd = tcEnd;
-              bestMidWeeklyWeeks = w;
+
+            if (totalCost < bestMidPeriodCost) {
+              bestMidPeriodCost = totalCost;
+              bestMidPeriodStart = tcStart;
+              bestMidPeriodEnd = tcEnd;
+              bestMidPeriodResult = tcPeriodResult;
             }
           }
         }
 
-        // If the best weekly mid-period start is found and is cheaper than total PAYG, push it as a special option
-        if (bestMidWeeklyStart && bestMidWeeklyCost < totalPayg) {
-          const formattedStart = bestMidWeeklyStart.toLocaleDateString("en-GB", {
+        // If the best mid-period start is found and is cheaper than total PAYG, push it as a special option
+        if (bestMidPeriodStart && bestMidPeriodEnd && bestMidPeriodResult && bestMidPeriodCost < totalPayg) {
+          const formattedStart = bestMidPeriodStart.toLocaleDateString("en-GB", {
             weekday: "short",
             day: "numeric",
             month: "short"
           });
-          const weeksLabel = bestMidWeeklyWeeks === 1 ? '1 Week' : `${bestMidWeeklyWeeks} Weeks`;
+          const formattedEnd = bestMidPeriodEnd.toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "short"
+          });
           rawOptions.push({
-            id: `mid_period_weekly_${zone}`,
-            label: `🔑 Mid-Period Travelcard (${zone}) — Start on ${formattedStart} (${weeksLabel})`,
+            id: `mid_period_optimized_${zone}`,
+            label: `🔑 Mid-Period Travelcard (${zone}) — ${formattedStart} to ${formattedEnd} (${bestMidPeriodResult.label})`,
             monthlyRate: null,
             strikeThroughRate: null,
-            periodCost: bestMidWeeklyCost,
+            periodCost: bestMidPeriodCost,
             color: "#e11d48", // Rose accent color
             isPass: true,
-            category: 'mid_period_weekly',
-            startDateStr: formattedStart
-          });
-        }
-
-        // Monthly Mid-Period Search
-        let bestMidMonthlyCost = Infinity;
-        let bestMidMonthlyStart: Date | null = null;
-        let bestMidMonthlyMonths = 1;
-        let bestMidMonthlyEnd: Date | null = null;
-
-        const maxMonthsSearch = Math.max(1, wholeMonths);
-        for (let m = 1; m <= maxMonthsSearch; m++) {
-          for (const tcStart of uniqueTravelDates) {
-            const startDayIndex = daysBetween(startDate, tcStart);
-            if (startDayIndex <= 0) continue;
-            
-            const tcEnd = advanceByMonths(tcStart, m);
-            tcEnd.setDate(tcEnd.getDate() - 1);
-
-            if (tcStart > endDate) continue;
-
-            const tcCost = m * tcMonthly;
-            const hybridSpend = evaluateHybrid(tcStart, tcEnd);
-
-            const totalCost = tcCost + hybridSpend;
-            if (totalCost < bestMidMonthlyCost) {
-              bestMidMonthlyCost = totalCost;
-              bestMidMonthlyStart = tcStart;
-              bestMidMonthlyEnd = tcEnd;
-              bestMidMonthlyMonths = m;
-            }
-          }
-        }
-
-        // If the best monthly mid-period start is found and is cheaper than total PAYG, push it as a special option
-        if (bestMidMonthlyStart && bestMidMonthlyCost < totalPayg) {
-          const formattedStart = bestMidMonthlyStart.toLocaleDateString("en-GB", {
-            weekday: "short",
-            day: "numeric",
-            month: "short"
-          });
-          const monthsLabel = bestMidMonthlyMonths === 1 ? '1 Month' : `${bestMidMonthlyMonths} Months`;
-          rawOptions.push({
-            id: `mid_period_monthly_${zone}`,
-            label: `🔑 Mid-Period Travelcard (${zone}) — Start on ${formattedStart} (${monthsLabel})`,
-            monthlyRate: null,
-            strikeThroughRate: null,
-            periodCost: bestMidMonthlyCost,
-            color: "#db2777", // Pink accent color
-            isPass: true,
-            category: 'mid_period_monthly',
-            startDateStr: formattedStart
+            category: 'mid_period_optimized',
+            startDateStr: formattedStart,
+            endDateStr: formattedEnd
           });
         }
       }
@@ -2392,6 +2368,8 @@
 
   function quickAddOnDate(d: Date) {
     resetForm();
+    syncWithPlanStart = false;
+    syncWithPlanEnd = false;
     newIntervalType = "none";
     newRuleDate = formatInputDate(d);
     newRuleEndDate = formatInputDate(d);
@@ -3934,9 +3912,12 @@
                   const val = e.currentTarget.value;
                   if (val === "none") {
                     newIntervalType = "none";
+                    newRuleEndDate = newRuleDate;
+                    syncWithPlanEnd = false;
                   } else {
                     newIntervalType = "weeks";
                     newRuleEndDate = planEnd;
+                    syncWithPlanEnd = true;
                   }
                 }}
               >
@@ -4501,10 +4482,10 @@
                   {#if activeRetryInfo}
                     {#if activeRetryInfo.status === 'timeout'}
                       ⏱️ Request timed out. Retrying attempt {activeRetryInfo.attempt + 1}/{activeRetryInfo.maxRetries}...
-                    {:else if activeRetryInfo.status === 'retrying'}
+                    {:else if activeRetryInfo.status === 'retrying' || activeRetryInfo.attempt > 1}
                       🔄 Slow connection. Retrying TfL API (Attempt {activeRetryInfo.attempt}/{activeRetryInfo.maxRetries})...
                     {:else}
-                      🔍 Querying TfL Live API (Attempt {activeRetryInfo.attempt}/{activeRetryInfo.maxRetries})...
+                      🔍 Querying TfL Live API...
                     {/if}
                   {:else}
                     🔍 Querying TfL Live API...

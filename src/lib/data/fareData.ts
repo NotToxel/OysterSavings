@@ -536,22 +536,20 @@ export function isCapPeakForStation(
 
   const totalMinutes = hours * 60 + minutes;
 
-  // Morning peak window: 06:30–09:29 (390–569 minutes)
-  const isMorningPeak = totalMinutes >= 390 && totalMinutes < 570;
+  // Capping Peak (Anytime) window: 04:30 to 09:29 (270 to 569 minutes)
+  const isCappingPeakWindow = totalMinutes >= 270 && totalMinutes < 570;
 
-  if (isMorningPeak) {
-    // Check if origin station has an off-peak cap exception
+  if (isCappingPeakWindow) {
+    // Check if origin station has an off-peak cap exception (cutoff time before 09:30)
     const cutoff = getOffpeakCapCutoff(originName);
     if (cutoff !== null && totalMinutes >= cutoff) {
-      // Tap-in is at or after the station's cut-off → counts as off-peak cap
+      // Tap-in is at or after the station's cutoff time → counts as off-peak cap
       return false;
     }
-    return true; // Standard morning peak cap
+    return true; // Standard morning/pre-09:30 peak cap
   }
 
-  // Evening peak window: 16:00–18:59 (960–1139 minutes)
-  const isEveningPeak = totalMinutes >= 960 && totalMinutes < 1140;
-  return isEveningPeak;
+  return false; // All other times (including evening peak 16:00-19:00) count towards off-peak cap
 }
 
 // Local YYYY-MM-DD date formatter

@@ -1,13 +1,20 @@
 <script lang="ts">
-  import { cards, activeCardId, isDemoMode } from '$lib/stores/stores';
+  import { cards, activeCardId, isDemoMode, isSwitchingCard } from '$lib/stores/stores';
 
   let { onAddData }: { onAddData?: () => void } = $props();
 
   let showSelector = $derived($cards.length > 1);
-  let showAddButton = $derived($cards.length >= 1 && $cards.length < 3);
+  let showAddButton = $derived($cards.length >= 1);
 
   function selectCard(id: string) {
-    $activeCardId = id;
+    if ($activeCardId === id) return;
+    $isSwitchingCard = true;
+    setTimeout(() => {
+      $activeCardId = id;
+      setTimeout(() => {
+        $isSwitchingCard = false;
+      }, 50);
+    }, 50);
   }
 </script>
 

@@ -118,14 +118,8 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
 
     let maxZoneRange = getMaxZoneRange(journeys);
 
-    // Determine cap type: use the first rail journey's origin name + time for exception-aware lookup
-    let isPeakDay = false;
-    const sortedForCap = [...journeys].sort((a, b) => (a.journey.raw.startTime || '').localeCompare(b.journey.raw.startTime || ''));
-    const firstRailForCap = sortedForCap.find(j => !j.journey.isBus);
-    if (firstRailForCap) {
-      const fj = firstRailForCap.journey;
-      isPeakDay = isCapPeakForStation(fj.raw.date, fj.raw.startTime, fj.origin);
-    }
+    // Determine cap type: the day is peak if at least one rail journey on that day is peak
+    const isPeakDay = journeys.some(j => !j.journey.isBus && j.journey.isCapPeak);
     
     // Detect if this is a simulation (meaning the actualCharge values are expected/concession fares, not CSV values)
     const isSimulated = journeys.some((j) => j.actualCharge !== j.journey.raw.charge);
