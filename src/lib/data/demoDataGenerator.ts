@@ -551,16 +551,16 @@ function processDemoCard(csvContent: string, profileId: string, cardIndex: numbe
   // Calculate Fares
   const fares = calculateAllFares(classified);
 
+  // Detect discount
+  const discount = detectActiveDiscount(classified);
+
   // Cap Analysis
-  const dailyCaps = calculateDailyCaps(fares);
-  const weeklyCaps = calculateWeeklyCaps(dailyCaps);
+  const dailyCaps = calculateDailyCaps(fares, discount);
+  const weeklyCaps = calculateWeeklyCaps(dailyCaps, discount);
   const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
 
   // Detect Commuting Patterns
   const patterns = detectCommutePatterns(classified);
-
-  // Detect discount
-  const discount = detectActiveDiscount(classified);
 
   const cardColor = CARD_COLORS[cardIndex % CARD_COLORS.length];
 

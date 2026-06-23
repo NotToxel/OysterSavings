@@ -343,8 +343,8 @@
       await new Promise(r => setTimeout(r, 100));
 
       const fares = calculateAllFares(classifiedPreview);
-      const dailyCaps = calculateDailyCaps(fares);
-      const weeklyCaps = calculateWeeklyCaps(dailyCaps);
+      const dailyCaps = calculateDailyCaps(fares, previewDiscount);
+      const weeklyCaps = calculateWeeklyCaps(dailyCaps, previewDiscount);
       const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
       const patterns = detectCommutePatterns(classifiedPreview);
 

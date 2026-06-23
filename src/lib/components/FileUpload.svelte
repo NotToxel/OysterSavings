@@ -99,9 +99,12 @@
       // Calculate fares
       const fares = calculateAllFares(classified);
 
+      // Detect active discount on this card
+      const discount = detectActiveDiscount(classified);
+
       // Cap analysis
-      const dailyCaps = calculateDailyCaps(fares);
-      const weeklyCaps = calculateWeeklyCaps(dailyCaps);
+      const dailyCaps = calculateDailyCaps(fares, discount);
+      const weeklyCaps = calculateWeeklyCaps(dailyCaps, discount);
       const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
 
       progressText = 'Detecting recurring commute patterns...';
@@ -110,9 +113,6 @@
 
       // Detect commute patterns
       const patterns = detectCommutePatterns(classified);
-
-      // Detect active discount on this card
-      const discount = detectActiveDiscount(classified);
 
       // Determine card index based on existing cards
       const existingCards = $cards;

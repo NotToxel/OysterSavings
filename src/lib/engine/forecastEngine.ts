@@ -30,6 +30,39 @@ import {
   isStPancrasToStratford,
 } from '../data/fareData';
 
+function getAdjustedZoneRange(
+  originZone: number | null,
+  destinationZone: number | null,
+  mode: string,
+  isPeak: boolean,
+  baseFare: number
+): string {
+  if (originZone === null || destinationZone === null) return 'Z1';
+  let zr = getZoneRange(originZone, destinationZone);
+  if (mode === 'bus') return zr;
+
+  let z1 = originZone;
+  let z2 = destinationZone;
+  if (z1 > z2) {
+    const tmp = z1;
+    z1 = z2;
+    z2 = tmp;
+  }
+
+  // Check if we went through higher zones
+  if (z1 > 1 && z2 > 1) {
+    for (let zCand = z1 - 1; zCand >= 1; zCand--) {
+      const candidateRange = `Z${zCand}-${Math.max(zCand, z2)}`;
+      const candFare = lookupFare(candidateRange, isPeak, mode);
+      if (baseFare >= candFare - 0.05) {
+        z1 = zCand;
+      }
+    }
+  }
+
+  return z1 === z2 ? `Z${z1}` : `Z${z1}-${z2}`;
+}
+
 export interface ForecastDay {
   date: Date;
   dateStr: string;
@@ -175,12 +208,17 @@ export function runForecast(
       const dNaptan = j.destinationStationName ? getStationInfo(j.destinationStationName)?.naptanId : null;
       const isException = isStPancrasToStratford(oNaptan, dNaptan, j.originStationName, j.destinationStationName);
 
+      let finalZoneRange = zoneRange;
+      if (j.originZone !== null && j.destinationZone !== null && j.mode !== 'bus') {
+        finalZoneRange = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, fare);
+      }
+
       if (!isException) {
-        const parts = zoneRange.replace('Z', '').split('-');
+        const parts = finalZoneRange.replace('Z', '').split('-');
         const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
         if (spread > maxZoneSpread) {
           maxZoneSpread = spread;
-          maxZoneRange = zoneRange;
+          maxZoneRange = finalZoneRange;
         }
       }
     }
@@ -420,7 +458,16 @@ export function runForecast(
       if (isStPancrasToStratford(oNaptan, dNaptan, j.originStationName, j.destinationStationName)) {
         continue;
       }
-      const zr = getZoneRange(j.originZone, j.destinationZone);
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const staticZr = getZoneRange(j.originZone, j.destinationZone);
+      let baseFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(staticZr, isPeakFare, j.mode);
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        const basePeak = j.exactBaseFarePeak ?? j.exactFarePeak;
+        const baseOffPeak = j.exactBaseFareOffPeak ?? j.exactFareOffPeak;
+        baseFare = isPeakFare ? basePeak : baseOffPeak;
+      }
+      const zr = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, baseFare);
       const parts = zr.replace('Z', '').split('-');
       const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
       if (spread > maxSpread) { maxSpread = spread; maxRange = zr; }
@@ -765,11 +812,17 @@ export function simulatePlannedJourneysSpend(
 
       totalFare += passFare;
 
-      const parts = zoneRange.replace('Z', '').split('-');
+      let rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
+      }
+      const adjustedZoneRange = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, rawFare);
+
+      const parts = adjustedZoneRange.replace('Z', '').split('-');
       const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
       if (spread > maxZoneSpread) {
         maxZoneSpread = spread;
-        maxZoneRange = zoneRange;
+        maxZoneRange = adjustedZoneRange;
       }
     }
 
@@ -958,11 +1011,17 @@ export function simulateHybridPlannedJourneysSpend(
 
       totalFare += fare;
 
-      const parts = zoneRange.replace('Z', '').split('-');
+      let rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
+      }
+      const adjustedZoneRange = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, rawFare);
+
+      const parts = adjustedZoneRange.replace('Z', '').split('-');
       const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
       if (spread > maxZoneSpread) {
         maxZoneSpread = spread;
-        maxZoneRange = zoneRange;
+        maxZoneRange = adjustedZoneRange;
       }
     }
 

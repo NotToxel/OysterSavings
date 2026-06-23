@@ -107,7 +107,7 @@ export function calculateFareTypeSavings(
   const baseFares = calculateAllFares(journeys, fareType, useAlternativeFares);
 
   // 1. Actual Scenario (what the CSV says)
-  const actualCaps = calculateDailyCaps(baseFares);
+  const actualCaps = calculateDailyCaps(baseFares, fareType);
   let totalActual = 0;
   for (const day of actualCaps) totalActual += day.totalSpend;
 

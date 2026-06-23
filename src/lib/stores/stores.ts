@@ -99,8 +99,8 @@ export function mergeIntoCard(cardId: string, newRawJourneys: ParsedJourney[]): 
   const filtered = filterJourneys(deduped);
   const classified = classifyAll(filtered.valid);
   const fares = calculateAllFares(classified);
-  const dailyCaps = calculateDailyCaps(fares);
-  const weeklyCaps = calculateWeeklyCaps(dailyCaps);
+  const dailyCaps = calculateDailyCaps(fares, card.selectedFareType);
+  const weeklyCaps = calculateWeeklyCaps(dailyCaps, card.selectedFareType);
   const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
   const patterns = detectCommutePatterns(classified);
   const detectedDiscount = detectActiveDiscount(classified);
@@ -379,7 +379,15 @@ export const selectedFareType = {
   set(value: FareType) {
     const currentActiveCard = get(activeCard);
     if (currentActiveCard) {
-      updateCard(currentActiveCard.id, { selectedFareType: value });
+      const dailyCaps = calculateDailyCaps(currentActiveCard.fareResults, value);
+      const weeklyCaps = calculateWeeklyCaps(dailyCaps, value);
+      const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
+      updateCard(currentActiveCard.id, { 
+        selectedFareType: value,
+        dailyCapResults: dailyCaps,
+        weeklyCapResults: weeklyCaps,
+        capSummary: capSummaryResult
+      });
     } else {
       combinedFareTypeOverride.set(value);
     }
@@ -392,7 +400,15 @@ export const selectedFareType = {
     const currentActiveCard = get(activeCard);
     if (currentActiveCard) {
       const newVal = fn(currentActiveCard.selectedFareType);
-      updateCard(currentActiveCard.id, { selectedFareType: newVal });
+      const dailyCaps = calculateDailyCaps(currentActiveCard.fareResults, newVal);
+      const weeklyCaps = calculateWeeklyCaps(dailyCaps, newVal);
+      const capSummaryResult = getCapSummary(dailyCaps, weeklyCaps);
+      updateCard(currentActiveCard.id, { 
+        selectedFareType: newVal,
+        dailyCapResults: dailyCaps,
+        weeklyCapResults: weeklyCaps,
+        capSummary: capSummaryResult
+      });
     } else {
       combinedFareTypeOverride.update(fn);
     }

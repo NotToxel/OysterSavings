@@ -4879,6 +4879,10 @@
   {@const showHighlights = validZones.length > 0 && Math.min(...validZones) !== Math.max(...validZones)}
   {@const minZone = validZones.length > 0 ? Math.min(...validZones) : 0}
   {@const maxZone = validZones.length > 0 ? Math.max(...validZones) : 0}
+  {@const rangeStr = (week.maxRange || week.maxZoneRange || '')}
+  {@const parts = rangeStr.replace('Z', '').split('-')}
+  {@const capMinZone = parts.length > 0 ? parseInt(parts[0], 10) : 0}
+  {@const capExpanded = capMinZone > 0 && minZone > 0 && capMinZone < minZone}
   <div
     class="weekly-cap-hovercard"
     class:interactable={!isDesktop || weeklyCapTooltipData.pinned}
@@ -4933,6 +4937,15 @@
           </div>
         {/if}
       </div>
+
+      {#if capExpanded}
+        <div class="warning-notice-box" style="margin-top: 0.65rem; background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.25);">
+          <span class="notice-bullet" style="color: #fb923c;">💡</span>
+          <span class="notice-text" style="color: rgba(255, 255, 255, 0.85);">
+            Cap range includes <strong>Zone {capMinZone}</strong> because journeys routed through a higher zone than the stations visited (Min Station Zone: {minZone}).
+          </span>
+        </div>
+      {/if}
 
       <div class="stations-visited-section">
         <span class="section-title">Stations Visited</span>

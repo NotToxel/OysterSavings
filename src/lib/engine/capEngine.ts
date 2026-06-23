@@ -17,6 +17,9 @@ import {
   getOutsideZoneWeeklyCap,
   isStPancrasToStratford,
   isCapPeakForStation,
+  getZoneRange,
+  lookupFare,
+  calculateDiscountedFare,
 } from '../data/fareData';
 
 export interface DayCapResult {
@@ -64,7 +67,7 @@ function groupByDay(fareResults: FareResult[]): Map<string, FareResult[]> {
 }
 
 // Get the widest zone range for a set of journeys (determines which cap applies)
-function getMaxZoneRange(journeys: FareResult[]): string {
+function getMaxZoneRange(journeys: FareResult[], railcardType: FareType = 'none'): string {
   let minZone = 99;
   let maxZone = 0;
   let hasRail = false;
@@ -85,8 +88,36 @@ function getMaxZoneRange(journeys: FareResult[]): string {
 
     hasRail = true;
     const parts = range.replace('Z', '').split('-');
-    const z1 = parseInt(parts[0], 10);
-    const z2 = parts.length > 1 ? parseInt(parts[1], 10) : z1;
+    let z1 = parseInt(parts[0], 10);
+    let z2 = parts.length > 1 ? parseInt(parts[1], 10) : z1;
+
+    // Check if the journey actually went through a higher zone (e.g., Zone 1)
+    // than origin/destination stations.
+    if (z1 > 1 && z2 > 1) {
+      const isPeak = j.journey.isPeak;
+      // Get the fare to compare (raw charge if historical, or expectedFare if planned)
+      const fareToCompare = j.journey.raw.charge > 0 ? j.journey.raw.charge : j.expectedFare;
+
+      for (let zCand = z1 - 1; zCand >= 1; zCand--) {
+        const candidateRange = `Z${zCand}-${Math.max(zCand, z2)}`;
+        const candFare = lookupFare(candidateRange, isPeak, j.journey.mode);
+        const discountedCandFare = calculateDiscountedFare(
+          candFare,
+          railcardType,
+          isPeak,
+          false,
+          j.journey.originZone ?? undefined,
+          j.journey.destinationZone ?? undefined,
+          j.journey.mode,
+          j.journey.originNaptan || j.journey.origin,
+          j.journey.destinationNaptan || j.journey.destination
+        );
+
+        if (fareToCompare >= discountedCandFare - 0.05) {
+          z1 = zCand;
+        }
+      }
+    }
 
     minZone = Math.min(minZone, z1, z2);
     maxZone = Math.max(maxZone, z1, z2);
@@ -116,7 +147,7 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
       j.journey.destination
     ));
 
-    let maxZoneRange = getMaxZoneRange(journeys);
+    let maxZoneRange = getMaxZoneRange(journeys, railcardType);
 
     // Determine cap type: the day is peak if at least one rail journey on that day is peak
     const isPeakDay = journeys.some(j => !j.journey.isBus && j.journey.isCapPeak);
@@ -334,7 +365,7 @@ export function calculateWeeklyCaps(dailyResults: DayCapResult[], railcardType: 
 
     // Widest zone range across the week
     const allJourneys = days.flatMap((d) => d.journeys);
-    const maxZoneRange = getMaxZoneRange(allJourneys);
+    const maxZoneRange = getMaxZoneRange(allJourneys, railcardType);
     const hasRail = allJourneys.some((j) => !j.journey.isBus && !isStPancrasToStratford(
       j.journey.originNaptan,
       j.journey.destinationNaptan,
