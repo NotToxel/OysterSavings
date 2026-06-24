@@ -100,3 +100,13 @@ When regenerating the core station list using the utility scripts [fetchStations
 
 These overrides are hardcoded into [buildDatabase.cjs](./scripts/buildDatabase.cjs) to prevent regression during station database updates.
 </details>
+
+<details>
+<summary>🚌 Capping Priority & Mixed Mode Rules</summary>
+
+### Bus Capping vs. Mixed Capping Priority
+When simulating or parsing daily spends, bus/tram journeys and rail journeys must respect both independent and combined caps:
+1.  **Independent Bus Cap**: Bus/tram journeys are capped first at the daily bus cap (e.g. `BUS_DAILY_CAP` = £5.25).
+2.  **Overall Daily Cap Contribution**: Capped bus spend contributes to the overall mixed daily cap (e.g. £8.90 for Z1-2). The combined spend of all journeys (capped bus spend + rail spend) must never exceed the overall daily cap.
+3.  **Overall Cap Crossover**: If the passenger hits the overall daily cap via rail first, subsequent bus journeys must be capped to £0.00, as the total spend cannot exceed the overall daily limit.
+</details>

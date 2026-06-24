@@ -18,6 +18,7 @@ import {
   STUDENT_TRAVELCARD_ANNUAL,
   STUDENT_PHOTOCARD_FEE,
   isPeakJourney,
+  isCapPeakForStation,
   getRepresentativeTime,
   formatLocalDate,
   parseLocalDate,
@@ -158,7 +159,7 @@ export function runForecast(
 
     for (const j of journeys) {
       const repTime = getRepresentativeTime(j.timePeriod);
-      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const isPeakFare = j.mode === 'bus' ? false : isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
 
       // Calculate raw single fare — prefer station-specific API fares when available
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
@@ -223,12 +224,11 @@ export function runForecast(
       }
     }
 
-    // Determine cap type for this day — if any journey is flagged useOffpeakCap, treat as off-peak cap day
-    // (useOffpeakCap means peak fare but off-peak cap, so the day's cap threshold is off-peak)
     const isPeakDay = journeys.some(j => {
+      if (j.mode === 'bus') return false; // bus journeys are never peak
       if (j.useOffpeakCap) return false; // explicitly off-peak cap
       const repTime = getRepresentativeTime(j.timePeriod);
-      return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      return isCapPeakForStation(j.date, repTime, j.originStationName);
     }) && !journeys.every(j => j.useOffpeakCap);
     
     if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
@@ -269,7 +269,7 @@ export function runForecast(
 
     for (const j of sortedJourneys) {
       const repTime = getRepresentativeTime(j.timePeriod);
-      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const isPeakFare = j.mode === 'bus' ? false : isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
 
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
       let fare: number;
@@ -459,7 +459,7 @@ export function runForecast(
         continue;
       }
       const repTime = getRepresentativeTime(j.timePeriod);
-      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const isPeakFare = j.mode === 'bus' ? false : isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
       const staticZr = getZoneRange(j.originZone, j.destinationZone);
       let baseFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(staticZr, isPeakFare, j.mode);
       if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
@@ -744,18 +744,60 @@ export function simulatePlannedJourneysSpend(
   const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean; dailyCap: number }[] = [];
 
   for (const [dateStr, journeys] of dayMap) {
-    let totalFare = 0;
-    let totalRailFare = 0;
-    let totalBusFare = 0;
     let maxZoneSpread = 0;
     let maxZoneRange = 'Z1';
     let hasRail = false;
 
     for (const j of journeys) {
       const repTime = getRepresentativeTime(j.timePeriod);
-      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const isPeakFare = j.mode === 'bus' ? false : isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
-      
+
+      let rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
+      }
+      const adjustedZoneRange = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, rawFare);
+
+      if (j.mode !== 'bus') {
+        hasRail = true;
+        const parts = adjustedZoneRange.replace('Z', '').split('-');
+        const spread = parts.length > 1 ? parseInt(parts[1], 10) - parseInt(parts[0], 10) : 0;
+        if (spread > maxZoneSpread) {
+          maxZoneSpread = spread;
+          maxZoneRange = adjustedZoneRange;
+        }
+      }
+    }
+
+    // Determine cap type for this day — if any journey is flagged useOffpeakCap, treat as off-peak cap day
+    const isPeakDay = journeys.some(j => {
+      if (j.useOffpeakCap) return false;
+      const repTime = getRepresentativeTime(j.timePeriod);
+      return isCapPeakForStation(j.date, repTime, j.originStationName);
+    }) && !journeys.every(j => j.useOffpeakCap);
+
+    if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
+      maxZoneRange = 'Z1-2';
+    }
+
+    const dailyBusCap = getDailyBusCap(fareType);
+    let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : dailyBusCap;
+    const ozDailyCap = getOutsideZoneDailyCapForJourneys(journeys, fareType, isPeakDay);
+    if (ozDailyCap !== null) dailyCap = ozDailyCap;
+
+    // Apply daily capping sequentially to the planned journeys of the day
+    const sortedJourneys = [...journeys].sort((a, b) => (a.timePeriod || '').localeCompare(b.timePeriod || ''));
+    let runningSpend = 0;
+    let runningBusSpend = 0;
+    let dayCappedBus = 0;
+    let dayCappedRail = 0;
+
+    for (const j of sortedJourneys) {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = j.mode === 'bus' ? false : isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const zoneRange = getZoneRange(j.originZone, j.destinationZone);
+
       let baseFare: number;
       if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
         if (activeFareType !== undefined && fareType === activeFareType) {
@@ -804,53 +846,44 @@ export function simulatePlannedJourneysSpend(
       }
 
       if (j.mode === 'bus') {
-        totalBusFare += passFare;
+        let busPart = passFare;
+        if (runningBusSpend >= dailyBusCap) {
+          busPart = 0;
+        } else if (runningBusSpend + passFare > dailyBusCap) {
+          busPart = dailyBusCap - runningBusSpend;
+        }
+
+        let finalFare = busPart;
+        if (runningSpend >= dailyCap) {
+          finalFare = 0;
+        } else if (runningSpend + busPart > dailyCap) {
+          finalFare = dailyCap - runningSpend;
+        }
+
+        runningBusSpend += finalFare;
+        runningSpend += finalFare;
+        dayCappedBus += finalFare;
       } else {
-        totalRailFare += passFare;
-        hasRail = true;
-      }
+        let finalFare = passFare;
+        if (runningSpend >= dailyCap) {
+          finalFare = 0;
+        } else if (runningSpend + passFare > dailyCap) {
+          finalFare = dailyCap - runningSpend;
+        }
 
-      totalFare += passFare;
-
-      let rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
-      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
-        rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
-      }
-      const adjustedZoneRange = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, rawFare);
-
-      const parts = adjustedZoneRange.replace('Z', '').split('-');
-      const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
-      if (spread > maxZoneSpread) {
-        maxZoneSpread = spread;
-        maxZoneRange = adjustedZoneRange;
+        runningSpend += finalFare;
+        dayCappedRail += finalFare;
       }
     }
-
-    // Determine cap type for this day — if any journey is flagged useOffpeakCap, treat as off-peak cap day
-    const isPeakDay = journeys.some(j => {
-      if (j.useOffpeakCap) return false;
-      const repTime = getRepresentativeTime(j.timePeriod);
-      return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
-    }) && !journeys.every(j => j.useOffpeakCap);
-
-    if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
-      maxZoneRange = 'Z1-2';
-    }
-
-    const dailyBusCap = getDailyBusCap(fareType);
-    const cappedBus = Math.min(totalBusFare, dailyBusCap);
-    let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, fareType) : dailyBusCap;
-    const ozDailyCap = getOutsideZoneDailyCapForJourneys(journeys, fareType, isPeakDay);
-    if (ozDailyCap !== null) dailyCap = ozDailyCap;
 
     days.push({
       date: journeys[0].date,
       dateStr,
-      totalFare: totalRailFare + cappedBus,
+      totalFare: runningSpend,
       maxZoneRange,
       isPeakDay,
-      cappedBusFare: cappedBus,
-      cappedRailFare: totalRailFare,
+      cappedBusFare: dayCappedBus,
+      cappedRailFare: dayCappedRail,
       hasRail,
       dailyCap
     });
@@ -932,9 +965,6 @@ export function simulateHybridPlannedJourneysSpend(
   const days: { date: Date; dateStr: string; totalFare: number; maxZoneRange: string; isPeakDay: boolean; isTcActive: boolean; cappedBusFare?: number; cappedRailFare?: number; hasRail?: boolean; dailyCap: number }[] = [];
 
   for (const [dateStr, journeys] of dayMap) {
-    let totalFare = 0;
-    let totalRailFare = 0;
-    let totalBusFare = 0;
     let maxZoneSpread = 0;
     let maxZoneRange = 'Z1';
     let hasRail = false;
@@ -954,9 +984,53 @@ export function simulateHybridPlannedJourneysSpend(
 
     for (const j of journeys) {
       const repTime = getRepresentativeTime(j.timePeriod);
-      const isPeakFare = isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const isPeakFare = j.mode === 'bus' ? false : isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
       const zoneRange = getZoneRange(j.originZone, j.destinationZone);
-      
+
+      let rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
+      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
+        rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
+      }
+      const adjustedZoneRange = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, rawFare);
+
+      if (j.mode !== 'bus') {
+        hasRail = true;
+        const parts = adjustedZoneRange.replace('Z', '').split('-');
+        const spread = parts.length > 1 ? parseInt(parts[1], 10) - parseInt(parts[0], 10) : 0;
+        if (spread > maxZoneSpread) {
+          maxZoneSpread = spread;
+          maxZoneRange = adjustedZoneRange;
+        }
+      }
+    }
+
+    const isPeakDay = journeys.some(j => {
+      if (j.mode === 'bus') return false;
+      const repTime = getRepresentativeTime(j.timePeriod);
+      return isCapPeakForStation(j.date, repTime, j.originStationName);
+    });
+
+    if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
+      maxZoneRange = 'Z1-2';
+    }
+
+    const activeDailyBusCap = getDailyBusCap(activeFareType);
+    let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, activeFareType) : activeDailyBusCap;
+    const ozDailyCap = getOutsideZoneDailyCapForJourneys(journeys, activeFareType, isPeakDay);
+    if (ozDailyCap !== null) dailyCap = ozDailyCap;
+
+    // Apply daily capping sequentially to the planned journeys of the day
+    const sortedJourneys = [...journeys].sort((a, b) => (a.timePeriod || '').localeCompare(b.timePeriod || ''));
+    let runningSpend = 0;
+    let runningBusSpend = 0;
+    let dayCappedBus = 0;
+    let dayCappedRail = 0;
+
+    for (const j of sortedJourneys) {
+      const repTime = getRepresentativeTime(j.timePeriod);
+      const isPeakFare = j.mode === 'bus' ? false : isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
+      const zoneRange = getZoneRange(j.originZone, j.destinationZone);
+
       let baseFare: number;
       if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
         if (activeGlobalFareType !== undefined && activeFareType === activeGlobalFareType) {
@@ -1003,52 +1077,45 @@ export function simulateHybridPlannedJourneysSpend(
       }
 
       if (j.mode === 'bus') {
-        totalBusFare += fare;
+        let busPart = fare;
+        if (runningBusSpend >= activeDailyBusCap) {
+          busPart = 0;
+        } else if (runningBusSpend + fare > activeDailyBusCap) {
+          busPart = activeDailyBusCap - runningBusSpend;
+        }
+
+        let finalFare = busPart;
+        if (runningSpend >= dailyCap) {
+          finalFare = 0;
+        } else if (runningSpend + busPart > dailyCap) {
+          finalFare = dailyCap - runningSpend;
+        }
+
+        runningBusSpend += finalFare;
+        runningSpend += finalFare;
+        dayCappedBus += finalFare;
       } else {
-        totalRailFare += fare;
-        hasRail = true;
-      }
+        let finalFare = fare;
+        if (runningSpend >= dailyCap) {
+          finalFare = 0;
+        } else if (runningSpend + fare > dailyCap) {
+          finalFare = dailyCap - runningSpend;
+        }
 
-      totalFare += fare;
-
-      let rawFare = j.mode === 'bus' ? BUS_SINGLE_FARE : lookupFare(zoneRange, isPeakFare, j.mode);
-      if (j.isAdvancedMode && j.exactFarePeak !== undefined && j.exactFareOffPeak !== undefined) {
-        rawFare = isPeakFare ? (j.exactBaseFarePeak ?? j.exactFarePeak) : (j.exactBaseFareOffPeak ?? j.exactFareOffPeak);
-      }
-      const adjustedZoneRange = getAdjustedZoneRange(j.originZone, j.destinationZone, j.mode, isPeakFare, rawFare);
-
-      const parts = adjustedZoneRange.replace('Z', '').split('-');
-      const spread = parts.length > 1 ? parseInt(parts[1]) - parseInt(parts[0]) : 0;
-      if (spread > maxZoneSpread) {
-        maxZoneSpread = spread;
-        maxZoneRange = adjustedZoneRange;
+        runningSpend += finalFare;
+        dayCappedRail += finalFare;
       }
     }
-
-    const isPeakDay = journeys.some(j => {
-      const repTime = getRepresentativeTime(j.timePeriod);
-      return isPeakJourney(j.date, repTime, j.originZone, j.destinationZone);
-    });
-
-    if (maxZoneRange === 'Z1' || maxZoneRange === 'Z2') {
-      maxZoneRange = 'Z1-2';
-    }
-
-    const activeDailyBusCap = getDailyBusCap(activeFareType);
-    const cappedBus = Math.min(totalBusFare, activeDailyBusCap);
-    let dailyCap = hasRail ? lookupDailyCap(maxZoneRange, isPeakDay, activeFareType) : activeDailyBusCap;
-    const ozDailyCap = getOutsideZoneDailyCapForJourneys(journeys, activeFareType, isPeakDay);
-    if (ozDailyCap !== null) dailyCap = ozDailyCap;
 
     days.push({
       date: firstJourneyDate,
       dateStr,
-      totalFare: totalRailFare + cappedBus,
+      totalFare: runningSpend,
       maxZoneRange,
       isPeakDay,
       isTcActive,
-      cappedBusFare: cappedBus,
-      cappedRailFare: totalRailFare,
+      cappedBusFare: dayCappedBus,
+      cappedRailFare: dayCappedRail,
       hasRail,
       dailyCap
     });

@@ -2263,29 +2263,51 @@
     else modeLabel = "Bus/Tram";
 
     let timeLabel = "";
-    if (isWeekend) {
-      timeLabel = newIsReturn ? "Weekend Off-Peak Return" : "Weekend Off-Peak";
-    } else {
-      if (newTimePeriod === "06:30-09:30") {
-        timeLabel = "Morning Peak";
-      } else if (newTimePeriod === "16:00-19:00") {
-        timeLabel = "Evening Peak";
-      } else if (newTimePeriod === "04:30-06:29") {
-        timeLabel = "Early Off-Peak";
-      } else if (newTimePeriod === "09:31-15:59") {
-        timeLabel = "Day Off-Peak";
+    if (newMode === "bus") {
+      if (isWeekend) {
+        timeLabel = newIsReturn ? "Weekend Return" : "Weekend";
       } else {
-        timeLabel = "Night Off-Peak";
-      }
-
-      if (newIsReturn) {
-        if (
-          newTimePeriod === "06:30-09:30" &&
-          newReturnTimePeriod === "16:00-19:00"
-        ) {
-          timeLabel = "Peak Return";
+        if (newTimePeriod === "06:30-09:30") {
+          timeLabel = "Morning";
+        } else if (newTimePeriod === "16:00-19:00") {
+          timeLabel = "Evening";
+        } else if (newTimePeriod === "04:30-06:29") {
+          timeLabel = "Early Morning";
+        } else if (newTimePeriod === "09:31-15:59") {
+          timeLabel = "Daytime";
         } else {
+          timeLabel = "Night";
+        }
+
+        if (newIsReturn) {
           timeLabel = `${timeLabel} Return`;
+        }
+      }
+    } else {
+      if (isWeekend) {
+        timeLabel = newIsReturn ? "Weekend Off-Peak Return" : "Weekend Off-Peak";
+      } else {
+        if (newTimePeriod === "06:30-09:30") {
+          timeLabel = "Morning Peak";
+        } else if (newTimePeriod === "16:00-19:00") {
+          timeLabel = "Evening Peak";
+        } else if (newTimePeriod === "04:30-06:29") {
+          timeLabel = "Early Off-Peak";
+        } else if (newTimePeriod === "09:31-15:59") {
+          timeLabel = "Day Off-Peak";
+        } else {
+          timeLabel = "Night Off-Peak";
+        }
+
+        if (newIsReturn) {
+          if (
+            newTimePeriod === "06:30-09:30" &&
+            newReturnTimePeriod === "16:00-19:00"
+          ) {
+            timeLabel = "Peak Return";
+          } else {
+            timeLabel = `${timeLabel} Return`;
+          }
         }
       }
     }
@@ -2303,9 +2325,9 @@
       const stationStr = newIsReturn
         ? `${originName} ↔ ${destName}`
         : `${originName} → ${destName}`;
-      defaultName = `${timeLabel} Commute (${stationStr})`;
+      defaultName = `${timeLabel} ${journeyType} (${stationStr})`;
     } else if (newMode === "bus") {
-      defaultName = `${timeLabel} ${modeLabel} ${journeyType}`;
+      defaultName = `${modeLabel} ${journeyType}`;
     } else {
       const zoneStr = newIsReturn
         ? `Z${newOriginZone}↔Z${newDestZone}`
@@ -2914,9 +2936,11 @@
                           ? "↔"
                           : "→"}Z{rule.destinationZone} •
                       {/if}
-                      {rule.timePeriod}{rule.isReturn
-                        ? ` (+${rule.returnTimePeriod})`
-                        : ""} •
+                      {#if rule.mode !== "bus"}
+                        {rule.timePeriod}{rule.isReturn
+                          ? ` (+${rule.returnTimePeriod})`
+                          : ""} •
+                      {/if}
                       {rule.daysOfWeek
                         .map(
                           (d) => ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][d],
@@ -3112,9 +3136,11 @@
                         ? "↔"
                         : "→"}Z{rule.destinationZone}
                     {/if}
-                    • {rule.timePeriod}{rule.isReturn
-                      ? ` (+${rule.returnTimePeriod})`
-                      : ""}
+                    {#if rule.mode !== "bus"}
+                      • {rule.timePeriod}{rule.isReturn
+                        ? ` (+${rule.returnTimePeriod})`
+                        : ""}
+                    {/if}
                   </div>
                     <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.3rem; flex-wrap: wrap;">
                       {#if isDisabled}
@@ -3258,10 +3284,12 @@
                 </div>
                 <div class="pattern-detail">
                   {pattern.frequency}x/week •
-                  {pattern.timePeriod.includes("06:30") ||
-                  pattern.timePeriod.includes("16:00")
-                    ? "Peak"
-                    : "Off-Peak"} •
+                  {#if pattern.mode !== "bus"}
+                    {pattern.timePeriod.includes("06:30") ||
+                    pattern.timePeriod.includes("16:00")
+                      ? "Peak"
+                      : "Off-Peak"} •
+                  {/if}
                   {Math.round(pattern.confidence * 100)}% confidence
                 </div>
               </div>
@@ -3699,22 +3727,20 @@
               </select>
             {/if}
 
-            {#if defMode !== "bus"}
-              <label
-                class="setting-label"
-                for="def-time-period"
-                style="margin-top: 0.25rem;">Default Time</label
-              >
-              <select
-                class="input-field"
-                id="def-time-period"
-                bind:value={defTimePeriod}
-              >
-                {#each TIME_PERIODS as t}
-                  <option value={t.value}>{t.label}</option>
-                {/each}
-              </select>
-            {/if}
+            <label
+              class="setting-label"
+              for="def-time-period"
+              style="margin-top: 0.25rem;">Default Time</label
+            >
+            <select
+              class="input-field"
+              id="def-time-period"
+              bind:value={defTimePeriod}
+            >
+              {#each TIME_PERIODS as t}
+                <option value={t.value}>{t.label}</option>
+              {/each}
+            </select>
 
             {#if !$globalAdvancedMode}
               <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">

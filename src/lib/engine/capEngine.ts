@@ -305,7 +305,7 @@ export function calculateDailyCaps(fareResults: FareResult[], railcardType: Fare
     const capHit = (dailyCap > 0 && totalSpend >= dailyCap * 0.95) || (dailyBusCap > 0 && runningBusSpend >= dailyBusCap * 0.95) || journeys.some((j) => j.journey.isCapHit);
     const savedByCap = capHit ? Math.max(0, (uncappedRailSpend + uncappedBusSpend) - totalSpend) : 0;
     
-    const capType = capHit ? (isPeakDay ? 'peak' : 'off-peak') : (isPeakDay ? 'peak' : 'off-peak');
+    const capType = hasRail ? (isPeakDay ? 'peak' : 'off-peak') : 'none';
 
     results.push({
       date: dateStr,
