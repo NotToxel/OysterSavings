@@ -377,14 +377,23 @@ select option {
 /* Tab navigation */
 .tab-nav {
   display: flex;
-  gap: 2px;
+  gap: 4px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 4px;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tab-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.875rem;
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 500;
@@ -393,6 +402,8 @@ select option {
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab-btn:hover {

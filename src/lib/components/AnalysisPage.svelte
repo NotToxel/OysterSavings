@@ -1070,12 +1070,12 @@
                         {#each group.journeys as j}
                           <div
                             class="timeline-node flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4"
-                            style="position: relative; padding: 0.5rem 0.75rem 0.5rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor ||
+                            style="position: relative; padding: 0.5rem 0.75rem 0.5rem 1.75rem; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid {j.cardColor ||
                               'var(--color-oyster-blue)'}; border-radius: 4px;"
                           >
                             <!-- Colored dot on the line -->
                             <div
-                              style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor ||
+                              style="position: absolute; left: 6px; top: 14px; width: 9px; height: 9px; border-radius: 50%; background: {j.cardColor ||
                                 'var(--color-oyster-blue)'}; border: 2px solid var(--color-bg); box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"
                             ></div>
 
@@ -1237,7 +1237,7 @@
           )}
           <div
             class="glass-card split-column"
-            style="flex: 1 1 350px; min-width: 320px; padding: 1.25rem 1rem; border-color: {card.color}20; background: rgba(255,255,255,0.01); position: relative; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;"
+            style="flex: 1 1 320px; min-width: 0; width: 100%; padding: 1.25rem 1rem; border-color: {card.color}20; background: rgba(255,255,255,0.01); position: relative; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;"
           >
             <!-- Column glow -->
             <div
@@ -1624,7 +1624,7 @@
 
                 <div
                   class="savings-cards"
-                  style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 0.5rem;"
+                  style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.5rem;"
                 >
                   <div
                     class="stat-card"
@@ -2807,7 +2807,7 @@
   }
 
   .page-title {
-    font-size: 1.75rem;
+    font-size: clamp(1.35rem, 4vw, 1.75rem);
     font-weight: 800;
     letter-spacing: -0.02em;
     margin-bottom: 1rem;
@@ -2819,6 +2819,19 @@
     gap: 0.5rem;
     flex-wrap: wrap;
     margin-bottom: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .filter-pills {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 0.25rem;
+    }
+    .filter-pills::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   .filter-pill {
@@ -2834,6 +2847,8 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .filter-pill:hover {
@@ -2855,11 +2870,19 @@
   /* Table */
   .table-container {
     margin-top: 0.5rem;
+    width: 100%;
+    overflow: hidden;
   }
   .table-scroll {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     max-height: 600px;
     overflow-y: auto;
+    width: 100%;
+  }
+
+  .data-table {
+    min-width: 620px;
   }
 
   .data-table th {
@@ -2917,8 +2940,14 @@
   }
 
   .savings-settings {
-    padding: 1.5rem;
+    padding: 1.25rem;
   }
+  @media (min-width: 768px) {
+    .savings-settings {
+      padding: 1.5rem;
+    }
+  }
+
   .settings-title {
     font-size: 1rem;
     font-weight: 600;
@@ -2940,19 +2969,22 @@
 
   .cost-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap;
   }
   .cost-btn {
-    flex: 1;
-    padding: 0.5rem;
+    flex: 1 1 auto;
+    min-width: 60px;
+    padding: 0.45rem 0.6rem;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--color-border);
     border-radius: 8px;
     color: var(--color-text-secondary);
-    font-size: 0.75rem;
+    font-size: 0.725rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
   }
   .cost-btn:hover {
     border-color: var(--color-border-accent);
@@ -2967,6 +2999,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-wrap: wrap;
   }
 
   .toggle-label {
@@ -2976,9 +3009,14 @@
 
   /* Savings results */
   .savings-hero {
-    padding: 1.5rem;
+    padding: 1.25rem;
     text-align: center;
     margin-bottom: 1rem;
+  }
+  @media (min-width: 768px) {
+    .savings-hero {
+      padding: 1.5rem;
+    }
   }
 
   .savings-hero-label {
@@ -2988,9 +3026,10 @@
   }
 
   .savings-hero-value {
-    font-size: 2.5rem;
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
     font-weight: 900;
     letter-spacing: -0.03em;
+    word-break: break-word;
   }
 
   .savings-hero-value.green {
@@ -3004,6 +3043,7 @@
     font-size: 0.8rem;
     color: var(--color-text-muted);
     margin-top: 0.375rem;
+    line-height: 1.4;
   }
 
   .savings-hero.positive {
@@ -3014,17 +3054,38 @@
   }
 
   .savings-cards {
-    gap: 0.75rem;
+    gap: 0.5rem;
     margin-bottom: 1rem;
   }
 
+  @media (min-width: 640px) {
+    .savings-cards {
+      gap: 0.75rem;
+    }
+  }
+
+  .savings-cards .stat-card {
+    padding: 0.85rem;
+  }
+
+  @media (min-width: 768px) {
+    .savings-cards .stat-card {
+      padding: 1.25rem;
+    }
+  }
+
   .savings-cards .stat-value {
-    font-size: 1.25rem;
+    font-size: clamp(1.05rem, 3vw, 1.25rem);
   }
 
   /* Break-even */
   .break-even-card {
-    padding: 1.5rem;
+    padding: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .break-even-card {
+      padding: 1.5rem;
+    }
   }
   .break-even-card h3 {
     font-size: 1rem;
@@ -3039,6 +3100,7 @@
     padding: 0.5rem 0;
     font-size: 0.85rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    gap: 0.5rem;
   }
 
   .be-row.highlight {
@@ -3074,12 +3136,32 @@
 
   /* Cap analysis */
   .cap-summary-grid {
-    gap: 1rem;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
   }
 
+  @media (min-width: 640px) {
+    .cap-summary-grid {
+      gap: 1rem;
+    }
+  }
+
+  .cap-summary-grid .stat-card {
+    padding: 0.85rem;
+  }
+
+  @media (min-width: 768px) {
+    .cap-summary-grid .stat-card {
+      padding: 1.25rem;
+    }
+  }
+
+  .cap-summary-grid .stat-value {
+    font-size: clamp(1.2rem, 3.5vw, 1.75rem);
+  }
+
   .cap-summary-grid .stat-total {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 400;
     color: var(--color-text-muted);
   }
@@ -3178,5 +3260,12 @@
   .pagination-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
+  }
+
+  /* Responsive layout tweaks */
+  @media (max-width: 640px) {
+    .breakdown-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

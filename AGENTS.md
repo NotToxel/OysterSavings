@@ -71,6 +71,9 @@ To maintain a consistent and visible build release sequence, you must adhere to 
     *   **Minor version** (the second digit, e.g., from `1.18.0` to `1.19.0`): Increment for major features or changes.
 4.  **Typings**: Any global variable added must be registered in [app.d.ts](./src/app.d.ts) to prevent TypeScript check errors.
 
+> [!CAUTION]
+> **Approval Required — Version Bumps & Git Commits**: You MUST NOT increment the version in `package.json` or run any `git commit`, `git push`, or equivalent VCS commands without **explicit user approval first**. After completing a task, propose the version bump and commit message for the user to review. Only proceed after the user has clearly confirmed.
+
 ### Hardcoding Guidelines
 Always try to avoid hardcoding values which will need to be changed (such as version strings, release dates, or structural constants). Resolve them dynamically or import them from a single source of truth configurations where possible.
 *   *Approved Exception (TfL Fare Rates Date)*: The date when TfL fares last rose is maintained as a constant `TFL_FARES_LAST_ROSE` inside [fareData.ts](./src/lib/data/fareData.ts). If you ever update the fare tables with new data, you MUST update this date constant to match the release date of the new rates as long as the user confirms that it was the latest official fare rise and not just fixing wrong existing data.

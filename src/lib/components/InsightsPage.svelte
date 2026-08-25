@@ -2225,6 +2225,7 @@
     flex-direction: column;
     gap: 0.15rem;
     text-align: left;
+    min-width: 0;
   }
 
   .np-date {
@@ -2236,6 +2237,7 @@
   .np-route {
     font-size: 0.8rem;
     color: var(--color-text-primary);
+    word-break: break-word;
   }
 
   .np-savings {
@@ -2243,6 +2245,7 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 0.15rem;
+    flex-shrink: 0;
   }
 
   .np-saving-val {
@@ -2256,4 +2259,63 @@
     color: var(--color-text-muted);
   }
 
+  /* Responsive styling for Insights */
+  .student-comparison-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-top: 0.75rem;
+  }
+
+  .student-table {
+    min-width: 480px;
+    width: 100%;
+  }
+
+  @media (max-width: 640px) {
+    .near-peak-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .np-savings {
+      align-items: flex-start;
+      width: 100%;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      padding-top: 0.35rem;
+    }
+
+    .anomaly-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+
+    .anomaly-charge {
+      align-self: flex-end;
+    }
+
+    .bar-labels {
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    .personas-header-bar {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .student-prompt-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .student-prompt-header .student-btn {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+  }
 </style>

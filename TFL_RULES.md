@@ -70,7 +70,8 @@ Different concession cards and railcards modify the standard Adult single fares 
 
 ### 👦 11-15 Zip Oyster Card (Under 16 Concession)
 * **Bus & Tram**: Completely **free** (£0.00) and does not count towards caps.
-* **Rail Travel**: Standard child rate applies (which varies per journey, e.g. flat rate of **£1.05 Peak / £0.95 Off-Peak** on TfL rail services within Zones 1-6, and **50% off** standard adult fare elsewhere).
+* **Tube & TfL Rail (Zones 1-6)**: Flat child fares apply (Peak: **£1.05**, Off-Peak: **£0.95**).
+* **National Rail**: Child rates vary by journey (calculated as **50% off** standard adult fares, rounded down to the nearest 5p).
 
 ### 🎓 16+ Zip Oyster Card
 * **Bus & Tram**: Completely **free** (£0.00) and does not count towards caps.

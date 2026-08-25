@@ -24,6 +24,17 @@
   let showWalkthrough = $state(false);
   let showDemoProfiles = $state(false);
   let walkthroughStep = $state(1);
+  let loadingDemoProfileId = $state<string | null>(null);
+  let loadingProfileName = $state<string>("");
+
+  const stepTitles = [
+    "Sign In",
+    "Select Card",
+    "View History",
+    "Select Dates",
+    "Export CSV",
+    "Upload",
+  ];
 
   function startAnalysis() {
     showWalkthrough = true;
@@ -47,6 +58,19 @@
     showWalkthrough = false;
     showDemoProfiles = false;
     walkthroughStep = 1;
+  }
+
+  function handleLoadDemo(profileId: string, profileName: string) {
+    if (loadingDemoProfileId) return;
+    loadingDemoProfileId = profileId;
+    loadingProfileName = profileName;
+    setTimeout(() => {
+      try {
+        loadDemoData(profileId);
+      } finally {
+        loadingDemoProfileId = null;
+      }
+    }, 40);
   }
 
   const demoProfiles = [
@@ -153,8 +177,17 @@
                       </div>
                     </div>
                     <p class="demo-description">{profile.description}</p>
-                    <button class="btn-primary btn-demo-load" onclick={() => loadDemoData(profile.id)}>
-                      ⚡ Load {profile.name}'s Log
+                    <button
+                      class="btn-primary btn-demo-load"
+                      disabled={loadingDemoProfileId !== null}
+                      onclick={() => handleLoadDemo(profile.id, profile.name)}
+                    >
+                      {#if loadingDemoProfileId === profile.id}
+                        <span class="inline-spinner"></span>
+                        Loading {profile.name}...
+                      {:else}
+                        ⚡ Load {profile.name}'s Log
+                      {/if}
                     </button>
                   </div>
                 {/each}
@@ -259,7 +292,7 @@
     {:else}
       <!-- Walkthrough Section -->
       <section class="walkthrough-section animate-slide-up">
-        <div class="walkthrough-card glass-card p-6 md:p-10">
+        <div class="walkthrough-card glass-card">
           <!-- Back & Progress Header -->
           <div class="walkthrough-header">
             <button class="btn-back" onclick={resetWalkthrough}>
@@ -278,43 +311,54 @@
             </div>
           </div>
 
-          <!-- Walkthrough Progress Steps -->
-          <div class="walkthrough-steps-nav">
-            <button class="step-nav-item" class:active={walkthroughStep === 1} class:completed={walkthroughStep > 1} onclick={() => walkthroughStep = 1}>
-              <span class="step-nav-num">1</span>
-              <span class="step-nav-text hidden md:block">Sign In</span>
-            </button>
-            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 1}></div>
-            <button class="step-nav-item" class:active={walkthroughStep === 2} class:completed={walkthroughStep > 2} onclick={() => walkthroughStep = 2}>
-              <span class="step-nav-num">2</span>
-              <span class="step-nav-text hidden md:block">Select Card</span>
-            </button>
-            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 2}></div>
-            <button class="step-nav-item" class:active={walkthroughStep === 3} class:completed={walkthroughStep > 3} onclick={() => walkthroughStep = 3}>
-              <span class="step-nav-num">3</span>
-              <span class="step-nav-text hidden md:block">View History</span>
-            </button>
-            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 3}></div>
-            <button class="step-nav-item" class:active={walkthroughStep === 4} class:completed={walkthroughStep > 4} onclick={() => walkthroughStep = 4}>
-              <span class="step-nav-num">4</span>
-              <span class="step-nav-text hidden md:block">Select Dates</span>
-            </button>
-            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 4}></div>
-            <button class="step-nav-item" class:active={walkthroughStep === 5} class:completed={walkthroughStep > 5} onclick={() => walkthroughStep = 5}>
-              <span class="step-nav-num">5</span>
-              <span class="step-nav-text hidden md:block">Export CSV</span>
-            </button>
-            <div class="step-nav-line mb-0 md:mb-5" class:completed={walkthroughStep > 5}></div>
-            <button class="step-nav-item" class:active={walkthroughStep === 6} onclick={() => walkthroughStep = 6}>
-              <span class="step-nav-num">6</span>
-              <span class="step-nav-text hidden md:block">Upload</span>
-            </button>
+          <!-- Redesigned Walkthrough Progress Stepper -->
+          <div class="walkthrough-stepper-container">
+            <div class="stepper-track-bg">
+              <div
+                class="stepper-track-fill"
+                style="width: {((walkthroughStep - 1) / 5) * 100}%;"
+              ></div>
+            </div>
+            <div class="stepper-items">
+              {#each [
+                { step: 1, title: "Sign In" },
+                { step: 2, title: "Select Card" },
+                { step: 3, title: "View History" },
+                { step: 4, title: "Select Dates" },
+                { step: 5, title: "Export CSV" },
+                { step: 6, title: "Upload" }
+              ] as s}
+                <button
+                  type="button"
+                  class="stepper-btn"
+                  class:active={walkthroughStep === s.step}
+                  class:completed={walkthroughStep > s.step}
+                  onclick={() => (walkthroughStep = s.step)}
+                  aria-label="Step {s.step}: {s.title}"
+                >
+                  <span class="stepper-circle">
+                    {#if walkthroughStep > s.step}
+                      ✓
+                    {:else}
+                      {s.step}
+                    {/if}
+                  </span>
+                  <span class="stepper-label">{s.title}</span>
+                </button>
+              {/each}
+            </div>
+          </div>
+
+          <!-- Mobile Step Banner -->
+          <div class="mobile-step-banner md:hidden">
+            <span class="mobile-step-badge">Step {walkthroughStep} of 6</span>
+            <span class="mobile-step-name">{stepTitles[walkthroughStep - 1]}</span>
           </div>
 
           <!-- Step Content -->
           <div class="step-content-container">
             {#if walkthroughStep === 1}
-              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
+              <div class="step-pane animate-fade-in">
                 <div class="step-desc">
                   <h2>1. Sign in to your TfL Account</h2>
                   <p>Visit the official Transport for London (TfL) account portal and sign in with your registered email address and password.</p>
@@ -328,7 +372,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 2}
-              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
+              <div class="step-pane animate-fade-in">
                 <div class="step-desc">
                   <h2>2. Select Your Travel Card</h2>
                   <p>From the Dashboard main screen, click <strong>Go to Oyster</strong> or <strong>Go to contactless</strong> depending on which payment card you use for travel.</p>
@@ -339,7 +383,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 3}
-              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
+              <div class="step-pane animate-fade-in">
                 <div class="step-desc">
                   <h2>3. Go to Journey History</h2>
                   <p>On your travel card overview page, locate the <strong>Journeys</strong> card or sidebar menu and select <strong>View journey history</strong>.</p>
@@ -350,7 +394,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 4}
-              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
+              <div class="step-pane animate-fade-in">
                 <div class="step-desc">
                   <h2>4. Choose Date Range</h2>
                   <p>Select your desired date range from the dropdown menu (or specify a custom range using the date picker) and click <strong>Submit</strong> to load the journey records.</p>
@@ -361,7 +405,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 5}
-              <div class="step-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
+              <div class="step-pane animate-fade-in">
                 <div class="step-desc">
                   <h2>5. Download CSV Statement</h2>
                   <p>Scroll down to the bottom of the journey records table and click the <strong>Download CSV format</strong> button to download your travel history file.</p>
@@ -372,7 +416,7 @@
                 </div>
               </div>
             {:else if walkthroughStep === 6}
-              <div class="step-pane upload-pane animate-fade-in grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr] gap-6 md:gap-10 items-center min-h-0 md:min-h-[320px]">
+              <div class="step-pane upload-pane animate-fade-in">
                 <div class="step-desc-centered">
                   <h2>6. Upload and Optimize!</h2>
                   <p>Drag your downloaded CSV file here or click to browse. Fares are fetched directly from TfL to safely compute your savings.</p>
@@ -400,8 +444,17 @@
                           </div>
                         </div>
                         <p class="demo-description">{profile.description}</p>
-                        <button class="btn-primary btn-demo-load" onclick={() => loadDemoData(profile.id)}>
-                          ⚡ Load {profile.name}'s Log
+                        <button
+                          class="btn-primary btn-demo-load"
+                          disabled={loadingDemoProfileId !== null}
+                          onclick={() => handleLoadDemo(profile.id, profile.name)}
+                        >
+                          {#if loadingDemoProfileId === profile.id}
+                            <span class="inline-spinner"></span>
+                            Loading {profile.name}...
+                          {:else}
+                            ⚡ Load {profile.name}'s Log
+                          {/if}
                         </button>
                       </div>
                     {/each}
@@ -523,6 +576,20 @@
       </div>
     </section>
   {/if}
+
+  <!-- Demo Profile Loading Overlay -->
+  {#if loadingDemoProfileId}
+    <div class="demo-loading-overlay animate-fade-in" role="status" aria-live="polite">
+      <div class="demo-loading-box glass-card">
+        <div class="tfl-roundel-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-bar"></div>
+        </div>
+        <h3 class="loading-title">Loading {loadingProfileName}'s Commute...</h3>
+        <p class="loading-desc">Simulating journeys, capping rules, and calculating TfL fare savings</p>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -558,7 +625,7 @@
   }
 
   .hero-title {
-    font-size: 3rem;
+    font-size: clamp(2rem, 6vw, 3rem);
     font-weight: 900;
     line-height: 1.1;
     letter-spacing: -0.03em;
@@ -573,7 +640,7 @@
   }
 
   .hero-subtitle {
-    font-size: 1.1rem;
+    font-size: clamp(0.95rem, 3vw, 1.1rem);
     color: var(--color-text-secondary);
     max-width: 600px;
     margin: 0 auto 2rem;
@@ -601,7 +668,6 @@
     cursor: default;
   }
 
-
   /* How it works */
   .how-it-works {
     margin-top: 3rem;
@@ -614,7 +680,6 @@
     margin-bottom: 1.5rem;
     color: var(--color-text-secondary);
   }
-
 
   .step-card {
     text-align: center;
@@ -661,6 +726,8 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .dashboard-title {
@@ -770,11 +837,9 @@
     color: var(--color-oyster-blue);
   }
 
-
-
   /* Demo Profiles Grid and Cards */
   .demo-profiles-container {
-    margin-top: 3.5rem;
+    margin-top: 2rem;
     text-align: center;
   }
 
@@ -909,13 +974,30 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: white;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  .btn-demo-load:hover {
+  .btn-demo-load:hover:not(:disabled) {
     background: var(--profile-accent);
     border-color: var(--profile-accent);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     transform: translateY(-1px);
+  }
+
+  .inline-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   /* Hero actions */
@@ -994,14 +1076,21 @@
 
   /* Walkthrough Section */
   .walkthrough-section {
-    margin: 1.5rem 0;
+    margin: 1rem 0 2.5rem;
   }
 
   .walkthrough-card {
-    padding: 2.5rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .walkthrough-card {
+      padding: 2.5rem;
+      gap: 2rem;
+    }
   }
 
   .walkthrough-header {
@@ -1009,7 +1098,7 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--color-border);
-    padding-bottom: 1.25rem;
+    padding-bottom: 1rem;
   }
 
   .btn-back {
@@ -1068,29 +1157,52 @@
     font-size: 0.85rem;
   }
 
-  /* Timeline navigation */
-  .walkthrough-steps-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 600px;
-    margin: 0 auto;
+  /* Redesigned Progress Stepper */
+  .walkthrough-stepper-container {
+    position: relative;
     width: 100%;
+    max-width: 620px;
+    margin: 0.5rem auto 0;
   }
 
-  .step-nav-item {
+  .stepper-track-bg {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    z-index: 0;
+    border-radius: 999px;
+  }
+
+  .stepper-track-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #009fe3, #10b981);
+    border-radius: 999px;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .stepper-items {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .stepper-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    background: transparent;
+    gap: 0.375rem;
+    background: none;
     border: none;
     cursor: pointer;
-    position: relative;
-    z-index: 2;
+    padding: 0;
   }
 
-  .step-nav-num {
+  .stepper-circle {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -1099,61 +1211,105 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     font-weight: 700;
     color: var(--color-text-secondary);
-    transition: all 0.3s ease;
-    position: relative;
-    z-index: 3;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 0 3px #0a0e1a;
   }
 
-  .step-nav-text {
-    font-size: 0.75rem;
+  .stepper-label {
+    font-size: 0.725rem;
     font-weight: 500;
     color: var(--color-text-muted);
-    transition: all 0.3s ease;
+    transition: color 0.2s ease;
+    white-space: nowrap;
   }
 
-  .step-nav-item.active .step-nav-num {
+  .stepper-btn.active .stepper-circle {
     border-color: var(--color-oyster-blue);
     background: var(--color-oyster-blue);
     color: white;
-    box-shadow: 0 0 15px rgba(0, 159, 227, 0.4);
+    box-shadow: 0 0 0 3px #0a0e1a, 0 0 16px rgba(0, 159, 227, 0.5);
+    transform: scale(1.08);
   }
 
-  .step-nav-item.active .step-nav-text {
+  .stepper-btn.active .stepper-label {
     color: var(--color-text-primary);
     font-weight: 600;
   }
 
-  .step-nav-item.completed .step-nav-num {
+  .stepper-btn.completed .stepper-circle {
     border-color: var(--color-success);
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(16, 185, 129, 0.15);
     color: var(--color-success);
   }
 
-  .step-nav-line {
-    flex-grow: 1;
-    height: 2px;
-    background: var(--color-border);
-    margin: 0 -2px;
-    margin-bottom: 20px;
-    position: relative;
-    z-index: 1;
-    transition: background 0.3s ease;
+  .stepper-btn.completed .stepper-label {
+    color: var(--color-text-secondary);
   }
 
-  .step-nav-line.completed {
-    background: var(--color-success);
+  /* Mobile Stepper Adjustments */
+  @media (max-width: 640px) {
+    .stepper-track-bg {
+      top: 14px;
+      left: 14px;
+      right: 14px;
+    }
+
+    .stepper-circle {
+      width: 28px;
+      height: 28px;
+      font-size: 0.75rem;
+      box-shadow: 0 0 0 2px #0a0e1a;
+    }
+
+    .stepper-label {
+      display: none;
+    }
+  }
+
+  .mobile-step-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+  }
+
+  .mobile-step-badge {
+    font-size: 0.725rem;
+    font-weight: 700;
+    color: var(--color-oyster-blue);
+    background: rgba(0, 159, 227, 0.1);
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+  }
+
+  .mobile-step-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
   }
 
   /* Pane layouts */
   .step-pane {
     display: grid;
-    grid-template-columns: 1.2fr 1.8fr;
-    gap: 2.5rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
     align-items: center;
-    min-height: 320px;
+  }
+
+  @media (min-width: 768px) {
+    .step-pane {
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 2.5rem;
+      min-height: 320px;
+    }
   }
 
   .step-desc {
@@ -1161,22 +1317,23 @@
   }
 
   .step-desc h2 {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
     font-weight: 800;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     letter-spacing: -0.02em;
     color: white;
   }
 
   .step-desc p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--color-text-secondary);
     line-height: 1.6;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
   }
 
   .walkthrough-external-btn {
     text-decoration: none;
+    display: inline-flex;
   }
 
   .external-icon {
@@ -1193,10 +1350,11 @@
     position: relative;
     border-radius: 12px;
     border: 1px solid var(--color-border);
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.3);
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
+    width: 100%;
   }
 
   .step-screenshot-wrapper:hover {
@@ -1207,6 +1365,8 @@
   .step-screenshot {
     width: 100%;
     height: auto;
+    max-height: 360px;
+    object-fit: contain;
     display: block;
     transition: transform 0.5s ease;
   }
@@ -1219,7 +1379,7 @@
     font-size: 0.75rem;
     color: var(--color-text-muted);
     padding: 0.5rem 1rem;
-    background: rgba(10, 14, 26, 0.8);
+    background: rgba(10, 14, 26, 0.9);
     border-top: 1px solid var(--color-border);
     text-align: center;
   }
@@ -1238,14 +1398,14 @@
   }
 
   .step-desc-centered h2 {
-    font-size: 1.5rem;
+    font-size: clamp(1.25rem, 4vw, 1.5rem);
     font-weight: 800;
     margin-bottom: 0.5rem;
     color: white;
   }
 
   .step-desc-centered p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--color-text-secondary);
     line-height: 1.5;
   }
@@ -1257,14 +1417,15 @@
     width: 100%;
   }
 
-  /* Footer action actions */
+  /* Footer actions */
   .walkthrough-footer-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-top: 1px solid var(--color-border);
-    padding-top: 1.5rem;
-    margin-top: 1rem;
+    padding-top: 1.25rem;
+    margin-top: 0.5rem;
+    gap: 0.5rem;
   }
 
   .walkthrough-dots {
@@ -1292,6 +1453,75 @@
     background: var(--color-text-muted);
   }
 
-  /* Responsive styling */
+  /* Demo Loading Overlay */
+  .demo-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 26, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
 
+  .demo-loading-box {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid rgba(0, 159, 227, 0.3);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 159, 227, 0.2);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .tfl-roundel-spinner {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 0.5rem;
+  }
+
+  .spinner-ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 4px solid rgba(0, 159, 227, 0.2);
+    border-top-color: var(--color-oyster-blue);
+    border-right-color: #6f4390;
+    animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+  }
+
+  .spinner-bar {
+    position: absolute;
+    top: 50%;
+    left: -4px;
+    right: -4px;
+    height: 10px;
+    background: linear-gradient(90deg, #009fe3, #e7710d);
+    border-radius: 4px;
+    transform: translateY(-50%);
+    box-shadow: 0 0 10px rgba(0, 159, 227, 0.4);
+  }
+
+  .loading-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+  }
+
+  .loading-desc {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
 </style>
