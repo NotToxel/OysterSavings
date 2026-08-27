@@ -653,7 +653,7 @@
     {#if $activeCardId === "combined" && $cards.length > 1}
       <div
         class="view-switcher"
-        style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); width: fit-content;"
+        style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); width: 100%; max-width: 100%; flex-wrap: wrap;"
       >
         <button
           class="switch-btn"

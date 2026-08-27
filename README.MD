@@ -17,18 +17,30 @@ Instead of exposing immediate upload boxes, the landing page uses a **Generate A
 ![OysterSavings Walkthrough Flow](static/images/readme/walkthrough_active.png)
 
 ### 2. Deep Fare & Savings Analysis
-- **Daily Cap Analytics**: Track how many days you hit the TfL daily cap and how much you saved.
-- **Filter and Classifier**: Auto-excludes failed taps, duplicates, or system refunds, and classifies trips by transport mode (Underground, Overground, Rail, Bus).
-- **Missed Discount Finder**: Estimates prospective savings from Railcards (16-25, 26-30, Senior, etc.) or Oyster photocards.
+Explore detailed historical travel habits across dedicated subtabs:
+- **💡 Insights & Commuter Personas**: Identifies travel patterns (peak/off-peak balance, commuter personas, top journeys, and time-of-day heatmaps).
+- **💰 Discounted Fares & Missed Savings**: Simulates what your historical journeys would have cost with concessions or a **National Railcard (16-25, 26-30, Senior, Disabled, Gold Card)**, providing an exact break-even trip analysis.
+- **📊 Cap Analytics**: Visualizes how often you hit TfL daily and weekly caps with interactive progress bars.
+- **🚆 Journeys Log**: Clean, filterable table classifying trips by transport mode (Underground, Elizabeth Line, Overground, Rail, Bus & Tram) with auto-filtered failed taps and refunds.
 
-![OysterSavings Deep Fare Analysis](static/images/readme/analysis_tab.png)
+#### Insights & Commuter Personas
+![OysterSavings Insights Dashboard](static/images/readme/analysis_insights.png)
+
+#### Discounted Fares & Railcard Savings Simulator
+![OysterSavings Railcard Savings Simulator](static/images/readme/analysis_savings.png)
+
+#### Daily & Weekly Cap Analysis
+![OysterSavings Cap Analysis](static/images/readme/analysis_caps.png)
+
+#### Clean Categorized Journeys Table
+![OysterSavings Journeys Table](static/images/readme/analysis_journeys.png)
 
 ### 3. Future Commuter Routine Planner
-- Allows users to model their weekly commutes (origin/destination zones, specific time periods, and transport modes), synced optionally with overall planning dates.
-- Generates a future travel forecast, recommending whether a weekly or monthly card fits their budget.
-- Integrates client-side TfL API queries to resolve exact advanced routes and station-to-station fares.
+- Model upcoming travel routines (origin/destination stations or zones, time periods, return trips, and custom recurrence frequencies).
+- Apply **concession or National Railcard discounts** to forecast future PAYG spend vs. weekly, monthly, odd-period, and annual Travelcard passes.
+- Integrates client-side TfL API queries to resolve exact advanced routes and live station-to-station fares.
 
-![OysterSavings Commuter Routine Planner](static/images/readme/planner_tab.png)
+![OysterSavings Commuter Routine Planner with Railcard Applied](static/images/readme/planner_tab.png)
 
 ### 4. Product Comparison Engine
 - Cross-compares Pay-As-You-Go (PAYG) costs, weekly Caps, and weekly/monthly/annual Travelcards across specific zone ranges to identify exactly where your money goes. Supports custom concession profiles (18+ Student, Zip cards, Disabled, Jobcentre Plus) with isolated card fee evaluations and interactive, glowing filter chips.
@@ -76,6 +88,12 @@ npm run build
 Validate the compiled production build locally:
 ```bash
 npm run preview
+```
+
+### 5. Automated Documentation Screenshots
+Re-generate high-DPI screenshots of all core tabs and walkthrough flows for the README:
+```bash
+npm run screenshots
 ```
 
 ---

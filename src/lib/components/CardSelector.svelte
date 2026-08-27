@@ -19,9 +19,9 @@
 </script>
 
 {#if showSelector || showAddButton}
-  <div class="card-selector flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-5 flex-wrap" class:multi={showSelector}>
+  <div class="card-selector flex flex-wrap items-center gap-2 mb-5" class:multi={showSelector}>
     {#if showSelector}
-      <div class="card-pills flex flex-row flex-nowrap md:flex-wrap overflow-x-auto md:overflow-x-visible gap-[4px] bg-white/3 rounded-xl p-[4px]">
+      <div class="card-pills flex flex-wrap items-center gap-1.5 bg-white/3 rounded-xl p-1 max-w-full">
         {#each $cards as card}
           <button
             class="card-pill"
@@ -30,7 +30,7 @@
             style="--card-accent: {card.color}"
           >
             <span class="card-dot" style="background: {card.color}"></span>
-            <span class="card-pill-label max-w-[120px] md:max-w-[180px] truncate">{card.name}</span>
+            <span class="card-pill-label">{card.name}</span>
           </button>
         {/each}
         <button
@@ -39,7 +39,7 @@
           onclick={() => selectCard('combined')}
         >
           <span class="card-dot combined-dot"></span>
-          <span class="card-pill-label max-w-[120px] md:max-w-[180px] truncate">Combined</span>
+          <span class="card-pill-label">Combined</span>
         </button>
       </div>
     {/if}
@@ -62,20 +62,29 @@
 {/if}
 
 <style>
+  .card-selector {
+    width: 100%;
+  }
+
+  .card-pills {
+    box-sizing: border-box;
+  }
+
   .card-pill {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.4rem 0.85rem;
+    padding: 0.4rem 0.75rem;
     border-radius: 8px;
     font-size: 0.78rem;
     font-weight: 500;
     color: var(--color-text-secondary);
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
     transition: all 0.25s ease;
     white-space: nowrap;
+    max-width: 100%;
   }
 
   .card-pill:hover:not(.active) {
@@ -106,8 +115,14 @@
     background: linear-gradient(135deg, #009FE3, #6f4390) !important;
   }
 
+  .card-pill-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .add-card-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     padding: 0.4rem 0.85rem;
@@ -133,5 +148,24 @@
     cursor: not-allowed;
     border-color: rgba(255, 255, 255, 0.05);
     color: var(--color-text-muted);
+  }
+
+  @media (max-width: 640px) {
+    .card-selector {
+      gap: 0.5rem;
+    }
+    .card-pills {
+      width: 100%;
+    }
+    .card-pill {
+      flex: 1 1 auto;
+      justify-content: center;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.75rem;
+    }
+    .add-card-btn {
+      width: 100%;
+      justify-content: center;
+    }
   }
 </style>

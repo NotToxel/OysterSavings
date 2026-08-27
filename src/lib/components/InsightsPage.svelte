@@ -1315,9 +1315,9 @@
       <div class="column">
         <!-- Network Mode Share -->
         <div class="glass-card share-card animate-fade-in">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 class="card-title" style="margin: 0;">🚇 Network Mode Share</h3>
-            <div class="legend-container" style="display: flex; gap: 0.75rem; font-size: 0.72rem; font-weight: 600; color: var(--color-text-secondary);">
+            <div class="legend-container" style="display: flex; gap: 0.75rem; font-size: 0.72rem; font-weight: 600; color: var(--color-text-secondary); flex-wrap: wrap;">
               <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
                 <span style="width: 8px; height: 8px; border-radius: 2px; background: var(--color-oyster-blue);"></span> Trips
               </span>
@@ -1494,12 +1494,22 @@
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     align-items: start;
+    width: 100%;
+  }
+
+  @media (max-width: 900px) {
+    .insights-grid {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
   }
 
   .column {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
+    min-width: 0;
   }
 
   .card-title {
@@ -2273,6 +2283,37 @@
   }
 
   @media (max-width: 640px) {
+    .personas-container-card,
+    .stats-card-large,
+    .journeys-card,
+    .savings-tips-card,
+    .share-card,
+    .penalty-card {
+      padding: 1.25rem 1rem;
+    }
+
+    .projections-bar {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .grid-stats {
+      gap: 0.5rem;
+    }
+
+    .metric {
+      padding: 0.75rem;
+    }
+
+    .metric-val {
+      font-size: 1.25rem;
+    }
+
+    .persona-item-row {
+      padding: 0.85rem;
+      gap: 0.75rem;
+    }
+
     .near-peak-item {
       flex-direction: column;
       align-items: flex-start;
