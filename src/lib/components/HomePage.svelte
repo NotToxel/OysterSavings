@@ -1241,8 +1241,10 @@
 
   .stepper-btn.completed .stepper-circle {
     border-color: var(--color-success);
-    background: rgba(16, 185, 129, 0.15);
+    background-color: #0b221d;
+    background-color: color-mix(in srgb, var(--color-success) 16%, #0a0e1a);
     color: var(--color-success);
+    box-shadow: 0 0 0 3px #0a0e1a;
   }
 
   .stepper-btn.completed .stepper-label {
@@ -1261,6 +1263,11 @@
       width: 28px;
       height: 28px;
       font-size: 0.75rem;
+      box-shadow: 0 0 0 2px #0a0e1a;
+    }
+
+    .stepper-btn.completed .stepper-circle,
+    .stepper-btn.active .stepper-circle {
       box-shadow: 0 0 0 2px #0a0e1a;
     }
 
