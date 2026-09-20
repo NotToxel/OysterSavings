@@ -836,7 +836,9 @@ export function simulatePlannedJourneysSpend(
         mode: j.mode,
         originZone: j.originZone,
         destinationZone: j.destinationZone,
-        isPeak: isPeakFare
+        isPeak: isPeakFare,
+        originStationName: j.originStationName,
+        destinationStationName: j.destinationStationName,
       };
 
       if (productType === 'bus_pass') {
@@ -1070,7 +1072,9 @@ export function simulateHybridPlannedJourneysSpend(
           mode: j.mode,
           originZone: j.originZone,
           destinationZone: j.destinationZone,
-          isPeak: isPeakFare
+          isPeak: isPeakFare,
+          originStationName: j.originStationName,
+          destinationStationName: j.destinationStationName,
         };
         // Travelcard coverage applies
         fare = getTravelcardJourneyFare(mockJourneyForPass, tcZoneRange, baseFare, activeFareType);

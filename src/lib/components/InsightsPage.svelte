@@ -21,7 +21,7 @@
     STUDENT_BUS_PASS_MONTHLY,
     calculateTravelcardPeriodCost,
   } from "$lib/data/fareData";
-  import { getZoneColor } from "$lib/data/stationService";
+  import { getZoneColor, journeyUsesContactlessOnlyStation } from "$lib/data/stationService";
   import {
     calculateExpectedFare,
     calculateFareTypeFare,
@@ -350,9 +350,25 @@
     }
   });
 
+  let hasContactlessOnlyJourneys = $derived(
+    $classifiedJourneys.some(journeyUsesContactlessOnlyStation),
+  );
+  let hasOysterEligibleRailJourneys = $derived(
+    $classifiedJourneys.some((journey) =>
+      !journey.isBus
+      && journey.mode !== 'tram'
+      && !journeyUsesContactlessOnlyStation(journey),
+    ),
+  );
+  let contactlessOnlySpend = $derived(
+    $classifiedJourneys
+      .filter(journeyUsesContactlessOnlyStation)
+      .reduce((sum, journey) => sum + journey.raw.charge, 0),
+  );
+
   // Check if any student travelcard options save money vs the detected PAYG spend
   let hasStudentSavings = $derived.by(() => {
-    if (!travelProfile || !analysisDates) return false;
+    if (!travelProfile || !analysisDates || !hasOysterEligibleRailJourneys) return false;
     const baseline = detectedPaygSpend;
     const zone = travelProfile.topZone;
     const weeks = travelProfile.weeks || 1;
@@ -360,11 +376,11 @@
 
     // Student Weekly Travelcard
     const weeklyRate = STUDENT_TRAVELCARD_WEEKLY[zone] || 0;
-    const weeklyCost = weeklyRate > 0 ? weeklyRate * weeks : Infinity;
+    const weeklyCost = weeklyRate > 0 ? weeklyRate * weeks + contactlessOnlySpend : Infinity;
 
     // Student Monthly Travelcard
     const monthlyRate = STUDENT_TRAVELCARD_MONTHLY[zone] || 0;
-    const monthlyCost = monthlyRate > 0 ? monthlyRate * months : Infinity;
+    const monthlyCost = monthlyRate > 0 ? monthlyRate * months + contactlessOnlySpend : Infinity;
 
     // Student Odd-Period Travelcard
     const oddPeriodResult = calculateTravelcardPeriodCost(
@@ -374,7 +390,7 @@
       STUDENT_TRAVELCARD_MONTHLY[zone] || 0,
       STUDENT_TRAVELCARD_ANNUAL[zone] || 0
     );
-    const oddPeriodCost = oddPeriodResult.cost > 0 ? oddPeriodResult.cost : Infinity;
+    const oddPeriodCost = oddPeriodResult.cost > 0 ? oddPeriodResult.cost + contactlessOnlySpend : Infinity;
 
     return (
       weeklyCost < baseline ||
@@ -532,7 +548,7 @@
       ? STUDENT_TRAVELCARD_MONTHLY[zone] || 0
       : TRAVELCARD_MONTHLY[zone] || 0;
 
-    if (weeks > 0 && weeklyRate > 0) {
+    if (hasOysterEligibleRailJourneys && weeks > 0 && weeklyRate > 0) {
       let totalWeeklyTcCost = 0;
       let totalPaygSpend = 0;
 
@@ -545,12 +561,13 @@
         totalPaygSpend += w.totalSpend;
       }
 
+      totalWeeklyTcCost += contactlessOnlySpend;
       const tcSaving = totalPaygSpend - totalWeeklyTcCost;
       if (tcSaving > 0) {
         tips.push({
           id: "travelcard",
           title: `Get a Weekly Travelcard (${zone})`,
-          desc: `Your weekly travel patterns are dense enough that a Weekly Travelcard for ${zone} would have saved you £${tcSaving.toFixed(2)} over ${weeks} weeks compared to pay-as-you-go.`,
+          desc: `Your weekly travel patterns are dense enough that a Weekly Travelcard for ${zone} would have saved you £${tcSaving.toFixed(2)} over ${weeks} weeks compared to pay-as-you-go.${hasContactlessOnlyJourneys ? ' Contactless-only journeys are costed separately at their full PAYG price.' : ''}`,
           saving: tcSaving,
           severity: tcSaving > 20 ? "high" : "medium",
           badge: "🎫",
@@ -559,14 +576,14 @@
 
       if (weeks >= 4 && monthlyRate > 0) {
         const months = weeks / 4.33;
-        const totalMonthlyTcCost = monthlyRate * Math.ceil(months);
+        const totalMonthlyTcCost = monthlyRate * Math.ceil(months) + contactlessOnlySpend;
         const monthlyTcSaving = totalSpend - totalMonthlyTcCost;
 
         if (monthlyTcSaving > 0) {
           tips.push({
             id: "travelcard_monthly",
             title: `Get a Monthly Travelcard (${zone})`,
-            desc: `Based on your ${weeks} weeks of history, buying a Monthly Travelcard for ${zone} would have saved you £${monthlyTcSaving.toFixed(2)} in total.`,
+            desc: `Based on your ${weeks} weeks of history, buying a Monthly Travelcard for ${zone} would have saved you £${monthlyTcSaving.toFixed(2)} in total.${hasContactlessOnlyJourneys ? ' Contactless-only journeys are costed separately at their full PAYG price.' : ''}`,
             saving: monthlyTcSaving,
             severity: monthlyTcSaving > 30 ? "high" : "medium",
             badge: "💳",
@@ -1231,7 +1248,7 @@
                         {@const weeks = travelProfile.weeks || 1}
                         {@const weeklyCost =
                           STUDENT_TRAVELCARD_WEEKLY[travelProfile.topZone] *
-                          weeks}
+                          weeks + contactlessOnlySpend}
                         {@const saving = travelProfile.totalSpend - weeklyCost}
                         <tr>
                           <td>Student Weekly Travelcard</td>
@@ -1253,7 +1270,7 @@
                           Math.ceil(travelProfile.weeks / 4.33) || 1}
                         {@const monthlyCost =
                           STUDENT_TRAVELCARD_MONTHLY[travelProfile.topZone] *
-                          months}
+                          months + contactlessOnlySpend}
                         {@const saving = travelProfile.totalSpend - monthlyCost}
                         <tr>
                           <td>Student Monthly Travelcard</td>
@@ -1278,7 +1295,7 @@
                           STUDENT_TRAVELCARD_MONTHLY[travelProfile.topZone],
                           STUDENT_TRAVELCARD_ANNUAL[travelProfile.topZone] || 0
                         )}
-                        {@const oddPeriodCost = oddPeriodResult.cost}
+                        {@const oddPeriodCost = oddPeriodResult.cost + contactlessOnlySpend}
                         {@const saving = travelProfile.totalSpend - oddPeriodCost}
                         {#if oddPeriodCost > 0}
                           <tr>
@@ -1303,6 +1320,9 @@
                   <p class="student-disclaimer">
                     Prices exclude any Oyster card/photocard application fees.
                     Boundary fares may apply outside {travelProfile.topZone}.
+                    {#if hasContactlessOnlyJourneys}
+                      Contactless-only journeys are included separately at their full PAYG cost because an Oyster Travelcard cannot be used for them.
+                    {/if}
                   </p>
                 </div>
               {/if}

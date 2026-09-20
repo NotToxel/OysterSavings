@@ -1,5 +1,6 @@
 // Savings Engine — fare type comparison, break-even analysis
 import type { ClassifiedJourney } from './journeyClassifier';
+import { journeyUsesContactlessOnlyStation } from '../data/stationService';
 import { calculateExpectedFare, calculateFareTypeFare, calculateAllFares, type FareResult } from './fareCalculator';
 import { calculateDailyCaps, calculateWeeklyCaps, type DayCapResult } from './capEngine';
 import {
@@ -53,6 +54,8 @@ export interface DaySavingBreakdown {
 
 export interface ProductComparisonResult {
   zoneRange: string;
+  travelcardEligible: boolean;
+  hasContactlessOnlyJourneys: boolean;
   weeklyPayg: number;
   weeklyPaygFareType: number;
   weeklyPaygRailcard: number;
@@ -207,6 +210,12 @@ export function calculateProductComparison(
   includeStudentPhotocardFee: boolean,
   useAlternativeFares: boolean = false
 ): ProductComparisonResult[] {
+  const hasContactlessOnlyJourneys = journeys.some(journeyUsesContactlessOnlyStation);
+  const travelcardEligible = journeys.some((journey) =>
+    !journey.isBus
+    && journey.mode !== 'tram'
+    && !journeyUsesContactlessOnlyStation(journey),
+  );
   const effectiveFareTypeCost = (fareType === 'none' || fareType === 'jobcentre' || fareType === 'zip_11_15' || fareType === 'zip_16_17' || fareType === 'railcard') ? 0 : fareTypeCost;
   
   let cardCost = 0;
@@ -346,6 +355,8 @@ export function calculateProductComparison(
 
     results.push({
       zoneRange,
+      travelcardEligible,
+      hasContactlessOnlyJourneys,
       weeklyPayg,
       weeklyPaygFareType: paygFareTypeCostWeekly,
       weeklyPaygRailcard: paygRailcardCostWeekly,
@@ -370,16 +381,16 @@ export function calculateProductComparison(
         ['PAYG', weeklyPayg],
         ['PAYG + Fare Type', paygFareTypeCostWeekly],
         ['PAYG + Railcard', paygRailcardCostWeekly],
-        ['Travelcard', weeklyTcWithCard],
-        ['Student Travelcard', studentWeeklyTcWithCard],
+        ['Travelcard', travelcardEligible ? weeklyTcWithCard : 0],
+        ['Student Travelcard', travelcardEligible ? studentWeeklyTcWithCard : 0],
         ['Bus & Tram Pass', round2(weeklyBusPassCost)],
       ]),
       bestMonthly: getBest([
         ['PAYG', round2(weeklyPaygRaw * 4.33)],
         ['PAYG + Fare Type', paygFareTypeCostMonthly],
         ['PAYG + Railcard', paygRailcardCostMonthly],
-        ['Travelcard', monthlyTcWithCard],
-        ['Student Travelcard', studentMonthlyTcWithCard],
+        ['Travelcard', travelcardEligible ? monthlyTcWithCard : 0],
+        ['Student Travelcard', travelcardEligible ? studentMonthlyTcWithCard : 0],
         ['Bus & Tram Pass', round2(monthlyBusPassCost)],
         ['Student Bus Pass', round2(monthlyStudentBusPassCost)],
       ]),
@@ -387,8 +398,8 @@ export function calculateProductComparison(
         ['PAYG', round2(weeklyPaygRaw * 52)],
         ['PAYG + Fare Type', paygFareTypeCostAnnual],
         ['PAYG + Railcard', paygRailcardCostAnnual],
-        ['Travelcard', annualTcWithCard],
-        ['Student Travelcard', studentAnnualTcWithCard],
+        ['Travelcard', travelcardEligible ? annualTcWithCard : 0],
+        ['Student Travelcard', travelcardEligible ? studentAnnualTcWithCard : 0],
         ['Bus & Tram Pass', round2(annualBusPassCost)],
         ['Student Bus Pass', round2(annualStudentBusPassCost)],
       ]),

@@ -210,7 +210,7 @@
           Analyze your TfL travel history, discover missed discount savings, and forecast the most cost-effective ticket combinations.
         </p>
 
-        <div class="hero-actions flex flex-col md:flex-row justify-center gap-4 mb-10 animate-fade-in" style="animation-delay: 0.1s">
+        <div class="hero-actions flex flex-col md:flex-row justify-center gap-4 mb-10">
           <button class="btn-primary btn-lg w-full md:w-auto justify-center" onclick={startAnalysis}>
             📊 Generate Analysis
           </button>
@@ -227,7 +227,7 @@
           </a>
         </div>
 
-        <div class="hero-features animate-fade-in" style="animation-delay: 0.2s">
+        <div class="hero-features">
           <div class="feature-pill">
             <span class="feature-icon">📊</span>
             <span>Fare Analysis</span>

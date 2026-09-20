@@ -25,7 +25,7 @@
     lookupDailyCap,
     lookupWeeklyCap,
   } from "$lib/data/fareData";
-  import { getZoneColor } from "$lib/data/stationService";
+  import { getZoneColor, journeyUsesContactlessOnlyStation } from "$lib/data/stationService";
   import InsightsPage from "./InsightsPage.svelte";
   import CardSelector from "./CardSelector.svelte";
   import AddCardDialog from "./AddCardDialog.svelte";
@@ -180,6 +180,10 @@
 
   let topZoneComparison = $derived(
     $productComparison.find((c) => c.zoneRange === topZone),
+  );
+
+  let hasContactlessOnlyJourneys = $derived(
+    $classifiedJourneys.some(journeyUsesContactlessOnlyStation),
   );
 
   let filteredJourneys = $derived.by(() => {
@@ -1590,7 +1594,18 @@
               </div>
             </div>
 
-            {#if $selectedFareType === "student" && topZoneComparison}
+            {#if $selectedFareType === "student" && hasContactlessOnlyJourneys}
+              <div class="glass-card travelcard-eligibility-notice" role="note">
+                <strong>{topZoneComparison?.travelcardEligible ? 'Contactless-only journeys are charged separately.' : 'Student Travelcards are not available for these journeys.'}</strong>
+                {#if topZoneComparison?.travelcardEligible}
+                  Student Travelcard comparisons cover the Oyster-eligible journeys only. Journeys involving a contactless-only Elizabeth line or National Rail station are included separately at the full contactless PAYG cost.
+                {:else}
+                  Every rail journey in this history involves a contactless-only station, so none can be completed with an Oyster Travelcard. Use contactless PAYG for these journeys.
+                {/if}
+              </div>
+            {/if}
+
+            {#if $selectedFareType === "student" && topZoneComparison?.travelcardEligible}
               {@const weeklySaving =
                 topZoneComparison.weeklyPayg -
                 topZoneComparison.weeklyStudentTravelcard}

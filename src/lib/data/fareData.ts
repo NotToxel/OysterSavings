@@ -3,7 +3,7 @@
 
 import sampledZoneFaresData from './sampledZoneFares.json';
 const exactFares: Record<string, { peak: number, offPeak: number }> = sampledZoneFaresData as any;
-import { getStationByNaptan, getStationInfo } from './stationService';
+import { getStationByNaptan, getStationInfo, journeyUsesContactlessOnlyStation } from './stationService';
 
 export type ZoneRange =
   | 'Z1'
@@ -621,11 +621,20 @@ export function getTravelcardJourneyFare(
     destinationNaptan?: string | null;
     origin?: string | null;
     destination?: string | null;
+    originStationName?: string | null;
+    destinationStationName?: string | null;
   },
   tcZoneRange: string,
   baseFare: number,
   fareType: FareType
 ): number {
+  // Oyster products cannot be presented at contactless-only stations. A
+  // Travelcard therefore contributes nothing to this journey; it must be paid
+  // separately using contactless PAYG.
+  if (journeyUsesContactlessOnlyStation(journey)) {
+    return baseFare;
+  }
+
   if (isStPancrasToStratford(
     journey.originNaptan,
     journey.destinationNaptan,

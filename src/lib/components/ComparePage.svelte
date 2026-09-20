@@ -17,6 +17,7 @@
     type FareType
   } from '$lib/data/fareData';
   import { Chart, registerables } from 'chart.js';
+  import { journeyUsesContactlessOnlyStation } from '$lib/data/stationService';
 
   Chart.register(...registerables);
 
@@ -63,6 +64,16 @@
 
   let isNoDiscount = $derived($selectedFareType === 'none' || $selectedFareType === 'student');
   let hasCardCosts = $derived($selectedFareType !== 'none');
+  let hasContactlessOnlyJourneys = $derived(
+    $classifiedJourneys.some(journeyUsesContactlessOnlyStation),
+  );
+  let travelcardEligible = $derived(
+    $classifiedJourneys.some((journey) =>
+      !journey.isBus
+      && journey.mode !== 'tram'
+      && !journeyUsesContactlessOnlyStation(journey),
+    ),
+  );
 
   // Derive discount description badge
   let discountBadge = $derived.by(() => {
@@ -127,23 +138,23 @@
       if (visibleProducts.paygStandard) options.push(['PAYG', comp.weeklyPayg]);
       if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.weeklyPaygFareType]);
       if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.weeklyPaygRailcard]);
-      if (visibleProducts.travelcardStandard) options.push(['Travelcard', comp.weeklyTravelcard]);
-      if (visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.weeklyStudentTravelcard]);
+      if (travelcardEligible && visibleProducts.travelcardStandard) options.push(['Travelcard', comp.weeklyTravelcard]);
+      if (travelcardEligible && visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.weeklyStudentTravelcard]);
       if (visibleProducts.busPassStandard) options.push(['Bus & Tram Pass', comp.weeklyBusPass]);
     } else if (activeSpan === 'monthly') {
       if (visibleProducts.paygStandard) options.push(['PAYG', comp.monthlyPayg]);
       if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.monthlyPaygFareType]);
       if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.monthlyPaygRailcard]);
-      if (visibleProducts.travelcardStandard) options.push(['Travelcard', comp.monthlyTravelcard]);
-      if (visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.monthlyStudentTravelcard]);
+      if (travelcardEligible && visibleProducts.travelcardStandard) options.push(['Travelcard', comp.monthlyTravelcard]);
+      if (travelcardEligible && visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.monthlyStudentTravelcard]);
       if (visibleProducts.busPassStandard) options.push(['Bus & Tram Pass', comp.monthlyBusPass]);
       if (visibleProducts.busPassStudent) options.push(['Student Bus Pass', comp.monthlyStudentBusPass]);
     } else {
       if (visibleProducts.paygStandard) options.push(['PAYG', comp.annualPayg]);
       if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.annualPaygFareType]);
       if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.annualPaygRailcard]);
-      if (visibleProducts.travelcardStandard) options.push(['Travelcard', comp.annualTravelcard]);
-      if (visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.annualStudentTravelcard]);
+      if (travelcardEligible && visibleProducts.travelcardStandard) options.push(['Travelcard', comp.annualTravelcard]);
+      if (travelcardEligible && visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.annualStudentTravelcard]);
       if (visibleProducts.busPassStandard) options.push(['Bus & Tram Pass', comp.annualBusPass]);
       if (visibleProducts.busPassStudent) options.push(['Student Bus Pass', comp.annualStudentBusPass]);
     }
@@ -256,14 +267,14 @@
         });
       }
 
-      if (visibleProducts.travelcardStandard) {
+      if (travelcardEligible && visibleProducts.travelcardStandard) {
         ds.push({
           label: tcLabel, data: getValues(tcKey),
           backgroundColor: 'rgba(231, 113, 13, 0.7)', borderColor: '#e7710d', borderWidth: 1
         });
       }
 
-      if (visibleProducts.travelcardStudent) {
+      if (travelcardEligible && visibleProducts.travelcardStudent) {
         const vals = getValues(studentKey);
         if (vals.some((v: number) => v > 0)) {
           ds.push({
@@ -505,6 +516,7 @@
       </button>
       {/if}
 
+      {#if travelcardEligible}
       <button 
         type="button" 
         class="product-chip travelcard-standard" 
@@ -524,6 +536,7 @@
         <span class="product-dot" style="background: #10b981;"></span>
         <span>Student Travelcard</span>
       </button>
+      {/if}
 
       <button 
         type="button" 
@@ -548,6 +561,17 @@
       {/if}
     </div>
   </div>
+
+  {#if hasContactlessOnlyJourneys && travelSummary}
+    <div class="glass-card travelcard-eligibility-notice" role="note">
+      <strong>{travelcardEligible ? 'Contactless-only journeys are charged separately.' : 'Travelcards excluded from these recommendations.'}</strong>
+      {#if travelcardEligible}
+        Travelcard recommendations apply only to journeys between Oyster-eligible stations. Journeys involving a contactless-only Elizabeth line or National Rail station remain charged at the full contactless PAYG cost.
+      {:else}
+        Every rail journey in this history involves a contactless-only station and cannot be completed with an Oyster Travelcard, so Travelcards are not recommendation candidates.
+      {/if}
+    </div>
+  {/if}
 
   <!-- High-visibility Recommendation Banner -->
   {#if travelSummary && bestOption}
@@ -668,7 +692,7 @@
               {/each}
             </tr>
           {/if}
-          {#if visibleProducts.travelcardStandard}
+          {#if travelcardEligible && visibleProducts.travelcardStandard}
           <tr>
             <td class="product-name"><span class="product-dot" style="background: #e7710d;"></span> Travelcard</td>
             {#each matrixZones as zone}
@@ -676,7 +700,7 @@
             {/each}
           </tr>
           {/if}
-          {#if visibleProducts.travelcardStudent}
+          {#if travelcardEligible && visibleProducts.travelcardStudent}
           <tr>
             <td class="product-name"><span class="product-dot" style="background: #10b981;"></span> Student Travelcard</td>
             {#each matrixZones as zone}

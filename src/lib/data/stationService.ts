@@ -560,6 +560,39 @@ export function getStationByNaptan(naptanId: string): { key: string; info: Stati
 }
 
 /**
+ * Whether a rail journey touches a station where Oyster products, including
+ * Travelcards, cannot be used. Accepts either station names or NaPTAN IDs so
+ * imported history and planner journeys can share the same eligibility check.
+ */
+export function journeyUsesContactlessOnlyStation(journey: {
+  isBus?: boolean;
+  mode?: string | null;
+  origin?: string | null;
+  destination?: string | null;
+  originStationName?: string | null;
+  destinationStationName?: string | null;
+  originNaptan?: string | null;
+  destinationNaptan?: string | null;
+}): boolean {
+  if (journey.isBus || journey.mode === 'bus' || journey.mode === 'tram') return false;
+
+  const identifiers = [
+    journey.originNaptan,
+    journey.destinationNaptan,
+    journey.originStationName,
+    journey.destinationStationName,
+    journey.origin,
+    journey.destination,
+  ];
+
+  return identifiers.some((identifier) => {
+    if (!identifier) return false;
+    return getStationByNaptan(identifier)?.info.contactlessOnly === true
+      || getStationInfo(identifier)?.contactlessOnly === true;
+  });
+}
+
+/**
  * Get all stations as a sorted list (for full autocomplete dropdown)
  */
 export function getAllStationsForSearch(): StationSearchResult[] {

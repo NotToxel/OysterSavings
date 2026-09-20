@@ -61,6 +61,7 @@
     getZoneColor,
     getStationByNaptan,
     getStationInfo,
+    journeyUsesContactlessOnlyStation,
     type StationSearchResult,
     type StationInfo,
   } from "$lib/data/stationService";
@@ -1307,6 +1308,11 @@
     }
 
     const hasBusJourneys = $plannedJourneys.some((j) => j.mode === "bus");
+    const hasContactlessOnlyJourneys = $plannedJourneys.some(journeyUsesContactlessOnlyStation);
+    const travelcardEligible = $plannedJourneys.some((journey) =>
+      journey.mode !== 'bus'
+      && !journeyUsesContactlessOnlyStation(journey),
+    );
 
     // Generalize pricing logic based on selected fare type
     const tcFareType = $selectedFareType;
@@ -1570,7 +1576,7 @@
     const isUnderOneMonth = durationDays < oneMonthDays;
 
     // 3. Travelcards
-    for (const zone of zoneRanges) {
+    for (const zone of travelcardEligible ? zoneRanges : []) {
       const stdWeekly = TRAVELCARD_WEEKLY[zone] || 0;
       const stdMonthly = TRAVELCARD_MONTHLY[zone] || 0;
       const stdAnnual = TRAVELCARD_ANNUAL[zone] || 0;
@@ -1625,7 +1631,9 @@
             mode: j.mode,
             originZone: j.originZone,
             destinationZone: j.destinationZone,
-            isPeak: isPeakJourney(j.date, getRepresentativeTime(j.timePeriod), j.originZone, j.destinationZone)
+            isPeak: isPeakJourney(j.date, getRepresentativeTime(j.timePeriod), j.originZone, j.destinationZone),
+            originStationName: j.originStationName,
+            destinationStationName: j.destinationStationName,
           };
           const tcFare = getTravelcardJourneyFare(mockJourneyForPass, zone, tcBaseFare, passFareType);
 
@@ -2160,6 +2168,8 @@
       monthlyPayg,
       paygOption,
       options,
+      hasContactlessOnlyJourneys,
+      travelcardEligible,
     };
   });
 
@@ -2947,7 +2957,7 @@
                         )
                         .join(",")}
                     </div>
-                    <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.3rem; flex-wrap: wrap;">
+                    <div class="rule-meta" style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.3rem; flex-wrap: wrap;">
                       {#if isDisabled}
                         <span 
                           class="disabled-status-badge"
@@ -3142,7 +3152,7 @@
                         : ""}
                     {/if}
                   </div>
-                    <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.3rem; flex-wrap: wrap;">
+                    <div class="rule-meta" style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.3rem; flex-wrap: wrap;">
                       {#if isDisabled}
                         <span 
                           class="disabled-status-badge"
@@ -3367,6 +3377,17 @@
               <strong>{studentComparison.durationDays}-day</strong>
               period ({studentComparison.monthsInPeriodText}):
             </p>
+
+            {#if studentComparison.hasContactlessOnlyJourneys}
+              <div class="travelcard-eligibility-notice" role="note">
+                <strong>{studentComparison.travelcardEligible ? 'Contactless-only journeys are charged separately.' : 'Travelcards are not available for this plan.'}</strong>
+                {#if studentComparison.travelcardEligible}
+                  Travelcard recommendations cover only journeys between Oyster-eligible stations. Journeys involving a contactless-only Elizabeth line or National Rail station are included separately at the full contactless PAYG cost.
+                {:else}
+                  Every planned rail journey involves a contactless-only station, so none can be completed with an Oyster Travelcard. Use contactless PAYG for these journeys.
+                {/if}
+              </div>
+            {/if}
 
             <div
               style="display: flex; justify-content: center; margin-top: 0.75rem; margin-bottom: 0.25rem;"
@@ -4766,7 +4787,7 @@
 
               {#if advancedMode && newMode !== "bus" && $selectedFareType !== 'none' && ((selectedOriginStation?.info.contactlessOnly) || (selectedDestStation?.info.contactlessOnly))}
                 <div class="warning-box" style="margin-top: 0.65rem; padding: 0.65rem; border-radius: 8px; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.25); font-size: 0.78rem; color: #ef4444; line-height: 1.4;">
-                  ⚠️ Elizabeth line stations west of Shenfield are contactless-only and do not accept concession/discount fares. Please change the fare type to Contactless (Adult) to use this station.
+                  ⚠️ Elizabeth line stations from Iver to Reading are contactless-only and do not accept Oyster cards. Change the fare type to Adult / Contactless to use this station.
                 </div>
               {/if}
 
@@ -5454,27 +5475,45 @@
   }
 
   .rule-card {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
     padding: 0.5rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
+  .rule-info {
+    display: contents;
+  }
+
   .rule-name {
+    grid-column: 1;
+    min-width: 0;
     font-size: 0.8rem;
     font-weight: 600;
+    overflow-wrap: anywhere;
   }
   .rule-detail {
+    grid-column: 1;
+    min-width: 0;
     font-size: 0.7rem;
     color: var(--color-text-muted);
     margin-top: 0.125rem;
+    overflow-wrap: anywhere;
+  }
+
+  .rule-meta {
+    grid-column: 1 / -1;
+    min-width: 0;
   }
 
   .rule-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    margin-left: 0.5rem;
   }
 
   .rules-list {
@@ -6176,7 +6215,9 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    width: max-content;
+    width: fit-content;
+    max-width: 100%;
+    white-space: normal;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   }
 
