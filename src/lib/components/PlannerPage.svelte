@@ -23,6 +23,7 @@
     runForecast,
     simulatePlannedJourneysSpend,
     simulateHybridPlannedJourneysSpend,
+    type ForecastDay,
   } from "$lib/engine/forecastEngine";
   import {
     getZoneRange,
@@ -183,6 +184,16 @@
     pinned?: boolean;
   } | null>(null);
 
+  // Daily cap and journey summary tooltip state
+  let dailyCapTooltipData = $state<{
+    visible: boolean;
+    x: number;
+    y: number;
+    placement: 'above' | 'below';
+    day: ForecastDay;
+    pinned?: boolean;
+  } | null>(null);
+
   let isDesktop = $state(true);
 
   $effect(() => {
@@ -196,7 +207,7 @@
   });
 
   $effect(() => {
-    const anyTooltipPinned = (weeklyCapTooltipData?.pinned || fareTooltipData?.pinned || warningTooltipData?.pinned || oddPeriodTooltipData?.pinned);
+    const anyTooltipPinned = (weeklyCapTooltipData?.pinned || dailyCapTooltipData?.pinned || fareTooltipData?.pinned || warningTooltipData?.pinned || oddPeriodTooltipData?.pinned);
     if (anyTooltipPinned) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -391,26 +402,87 @@
     }
   }
 
-  function handleGlobalBackdropPointerDown(e: PointerEvent) {
-    const hovercard = document.querySelector(
-      '.weekly-cap-hovercard, .fare-hovercard, .warning-hovercard, .odd-period-hovercard'
-    );
-    if (hovercard) {
-      const rect = hovercard.getBoundingClientRect();
-      const leeway = 16;
-      const x = e.clientX;
-      const y = e.clientY;
-      const insideWithLeeway = 
-        x >= rect.left - leeway &&
-        x <= rect.right + leeway &&
-        y >= rect.top - leeway &&
-        y <= rect.bottom + leeway;
-      
-      if (insideWithLeeway) {
+  function showDailyCapTooltip(target: HTMLElement, day: ForecastDay | undefined, isHover: boolean) {
+    if (!day) return;
+
+    if (isHover && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const placement = rect.top > window.innerHeight - rect.bottom ? 'above' : 'below';
+    dailyCapTooltipData = {
+      visible: true,
+      x: calculateTooltipX(target, 380),
+      y: placement === 'above' ? rect.top : rect.bottom,
+      placement,
+      day,
+      pinned: !isHover,
+    };
+  }
+
+  function hideDailyCapTooltip(event?: Event, force = false) {
+    if (event && event.type === 'mouseleave' && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
+    if (dailyCapTooltipData) {
+      if (!force && dailyCapTooltipData.pinned && event?.type === 'mouseleave') {
         return;
       }
+      dailyCapTooltipData.visible = false;
+      dailyCapTooltipData.pinned = false;
     }
+  }
+
+  function handleDailyCapClick(target: HTMLElement, day: ForecastDay | undefined) {
+    if (dailyCapTooltipData?.visible && dailyCapTooltipData.pinned) {
+      hideDailyCapTooltip(undefined, true);
+    } else {
+      showDailyCapTooltip(target, day, false);
+    }
+  }
+
+  function getPlannedJourneyFare(journey: PlannedJourney): number {
+    const isPeak = isPeakJourney(
+      journey.date,
+      getRepresentativeTime(journey.timePeriod),
+      journey.originZone,
+      journey.destinationZone,
+    );
+    if (
+      journey.isAdvancedMode &&
+      journey.exactFarePeak !== undefined &&
+      journey.exactFareOffPeak !== undefined
+    ) {
+      return isPeak ? journey.exactFarePeak : journey.exactFareOffPeak;
+    }
+    return getEstimatedFare(
+      journey.originZone,
+      journey.destinationZone,
+      journey.timePeriod,
+      journey.mode,
+      $selectedFareType,
+      journey.date,
+    );
+  }
+
+  function getPlannedJourneyRoute(journey: PlannedJourney): string {
+    if (journey.originStationName && journey.destinationStationName) {
+      return `${journey.originStationName} → ${journey.destinationStationName}`;
+    }
+    return journey.ruleName;
+  }
+
+  function getJourneyModeLabel(mode: PlannedJourney['mode']): string {
+    if (mode === 'bus') return 'Bus / tram';
+    if (mode === 'national_rail') return 'National Rail';
+    if (mode === 'nr_tube') return 'Rail + Tube';
+    return 'Tube / rail';
+  }
+
+  function handleGlobalBackdropPointerDown() {
     hideWeeklyCapTooltip(undefined, true);
+    hideDailyCapTooltip(undefined, true);
     hideFareTooltip(undefined, true);
     hideWarningTooltip(undefined, true);
     hideOddPeriodTooltip(undefined, true);
@@ -421,6 +493,7 @@
     if (!target) return;
     if (
       target.closest('.weekly-cap-hovercard') ||
+      target.closest('.daily-cap-hovercard') ||
       target.closest('.fare-hovercard') ||
       target.closest('.warning-hovercard') ||
       target.closest('.odd-period-hovercard')
@@ -428,6 +501,7 @@
       return;
     }
     hideWeeklyCapTooltip(undefined, true);
+    hideDailyCapTooltip(undefined, true);
     hideFareTooltip(undefined, true);
     hideWarningTooltip(undefined, true);
     hideOddPeriodTooltip(undefined, true);
@@ -462,6 +536,7 @@
         hideFareTooltip();
         hideWarningTooltip();
         hideWeeklyCapTooltip();
+        hideDailyCapTooltip();
       });
     }
   });
@@ -3599,6 +3674,11 @@
                   dateKey <= planEnd}
                 role="button"
                 tabindex="0"
+                aria-label={`${day.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}${dayJourneys.length > 0 ? `, ${dayJourneys.length} planned ${dayJourneys.length === 1 ? 'journey' : 'journeys'}, £${forecast?.cappedFareFareType.toFixed(2) ?? '0.00'} after caps` : ', no planned journeys'}. Press Enter to add a journey.`}
+                onmouseenter={(e) => showDailyCapTooltip(e.currentTarget, forecast, true)}
+                onmouseleave={(e) => hideDailyCapTooltip(e)}
+                onfocus={(e) => showDailyCapTooltip(e.currentTarget, forecast, true)}
+                onblur={(e) => hideDailyCapTooltip(e)}
                 onclick={() => quickAddOnDate(day.date)}
                 onkeydown={(e) => {
                   if (e.key === "Enter") quickAddOnDate(day.date);
@@ -3617,6 +3697,20 @@
                   >
                     ✕
                   </button>
+                  {#if forecast}
+                    <button
+                      type="button"
+                      class="day-details-btn"
+                      aria-label={`Show cap and journey details for ${day.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`}
+                      title="View daily cap and journey details"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        handleDailyCapClick(e.currentTarget, forecast);
+                      }}
+                    >
+                      i
+                    </button>
+                  {/if}
                   <div class="day-journey-count max-xl:text-[0.6rem]">
                     <span class="max-[440px]:hidden">{dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}</span>
                     <span class="hidden max-[440px]:inline">{dayJourneys.length}x</span>
@@ -4897,7 +4991,7 @@
   </div>
 {/if}
 
-{#if weeklyCapTooltipData?.pinned || fareTooltipData?.pinned || warningTooltipData?.pinned || oddPeriodTooltipData?.pinned}
+{#if weeklyCapTooltipData?.pinned || dailyCapTooltipData?.pinned || fareTooltipData?.pinned || warningTooltipData?.pinned || oddPeriodTooltipData?.pinned}
   <button 
     type="button"
     class="tooltip-backdrop" 
@@ -4905,6 +4999,107 @@
     onpointerdown={handleGlobalBackdropPointerDown}
     style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99998; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); touch-action: none; border: none; padding: 0; cursor: default;"
   ></button>
+{/if}
+
+{#if dailyCapTooltipData && dailyCapTooltipData.visible}
+  {@const day = dailyCapTooltipData.day}
+  {@const dailyCap = day.fareTypeDailyCap}
+  {@const busCap = day.fareTypeDailyBusCap}
+  {@const busSpend = day.cappedBusFareFareType ?? 0}
+  {@const railSpend = day.dailyCapEligibleRailFareFareType}
+  {@const combinedProgress = dailyCap > 0 ? Math.min(day.dailyCapEligibleFareFareType / dailyCap, 1) : 0}
+  {@const busProgress = busCap > 0 ? Math.min(busSpend / busCap, 1) : 0}
+  {@const railProgress = dailyCap > 0 ? Math.min(railSpend / dailyCap, 1) : 0}
+  {@const savedByDailyCap = Math.max(0, day.totalFareFareType - day.dailyCappedFareFareType)}
+  {@const savedByWeeklyCap = Math.max(0, day.dailyCappedFareFareType - day.cappedFareFareType)}
+  <div
+    class="daily-cap-hovercard"
+    class:interactable={!isDesktop || dailyCapTooltipData.pinned}
+    class:pinned={dailyCapTooltipData.pinned}
+    class:below={dailyCapTooltipData.placement === 'below'}
+    style="position: fixed; left: {dailyCapTooltipData.pinned ? '50%' : dailyCapTooltipData.x + 'px'}; top: {dailyCapTooltipData.pinned ? '50%' : dailyCapTooltipData.y + 'px'}; transform: {dailyCapTooltipData.pinned ? 'translate(-50%, -50%)' : dailyCapTooltipData.placement === 'above' ? 'translate(-50%, -100%) translateY(-10px)' : 'translate(-50%, 0) translateY(10px)'}; max-height: {dailyCapTooltipData.pinned ? 'calc(100vh - 32px)' : dailyCapTooltipData.placement === 'above' ? `min(620px, ${Math.max(120, dailyCapTooltipData.y - 22)}px)` : `min(620px, ${Math.max(120, window.innerHeight - dailyCapTooltipData.y - 22)}px)`}; z-index: 99999;"
+    role="dialog"
+    aria-label="Daily cap and journey details"
+  >
+    <div class="hovercard-header">
+      <div class="daily-hovercard-heading">
+        <span class="hovercard-title">Daily Cap Details</span>
+        <span class="daily-hovercard-date">
+          {day.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </span>
+      </div>
+      {#if day.isTotalCapHitFareType}
+        <span class="hovercard-status-badge capped">Combined cap hit</span>
+      {:else if day.isBusCapHitFareType}
+        <span class="hovercard-status-badge capped">Bus cap hit</span>
+      {:else}
+        <span class="hovercard-status-badge progress">Below cap</span>
+      {/if}
+    </div>
+
+    <div class="hovercard-divider"></div>
+
+    <div class="daily-spend-summary">
+      <div>
+        <span class="metric-label">Projected spend</span>
+        <span class="daily-total-spend">£{day.cappedFareFareType.toFixed(2)}</span>
+      </div>
+      <div class="daily-before-cap">
+        <span class="metric-label">Before caps</span>
+        <span>£{day.totalFareFareType.toFixed(2)}</span>
+      </div>
+      {#if savedByDailyCap > 0 || savedByWeeklyCap > 0}
+        <span class="daily-saving">
+          {#if savedByDailyCap > 0}£{savedByDailyCap.toFixed(2)} saved by daily caps{/if}
+          {#if savedByDailyCap > 0 && savedByWeeklyCap > 0} · {/if}
+          {#if savedByWeeklyCap > 0}£{savedByWeeklyCap.toFixed(2)} saved by weekly caps{/if}
+        </span>
+      {/if}
+    </div>
+
+    <div class="daily-cap-breakdown" aria-label="Daily cap breakdown">
+      <div class="daily-cap-row">
+        <div class="daily-cap-row-header">
+          <span><strong>Tube &amp; rail</strong> <span class="cap-context">towards combined cap</span></span>
+          <span>£{railSpend.toFixed(2)} / £{dailyCap.toFixed(2)}</span>
+        </div>
+        <div class="daily-cap-track"><span class="daily-cap-fill rail" style={`width: ${railProgress * 100}%`}></span></div>
+      </div>
+      <div class="daily-cap-row">
+        <div class="daily-cap-row-header">
+          <span><strong>Bus &amp; tram</strong> <span class="cap-context">independent cap</span></span>
+          <span>£{busSpend.toFixed(2)} / £{busCap.toFixed(2)}</span>
+        </div>
+        <div class="daily-cap-track"><span class="daily-cap-fill bus" class:capped={day.isBusCapHitFareType} style={`width: ${busProgress * 100}%`}></span></div>
+      </div>
+      <div class="daily-cap-row combined">
+        <div class="daily-cap-row-header">
+          <span><strong>Combined PAYG</strong> <span class="cap-context">daily cap</span></span>
+          <span>£{day.dailyCapEligibleFareFareType.toFixed(2)} / £{dailyCap.toFixed(2)}</span>
+        </div>
+        <div class="daily-cap-track"><span class="daily-cap-fill combined" class:capped={day.isTotalCapHitFareType} style={`width: ${combinedProgress * 100}%`}></span></div>
+      </div>
+    </div>
+
+    <div class="daily-journeys-section">
+      <div class="daily-journeys-heading">
+        <span class="section-title">Journey summary</span>
+        <span>{day.journeys.length} {day.journeys.length === 1 ? 'journey' : 'journeys'}</span>
+      </div>
+      <div class="daily-journey-list">
+        {#each day.journeys as journey}
+          <div class="daily-journey-item">
+            <div class="daily-journey-main">
+              <span class="daily-journey-route">{getPlannedJourneyRoute(journey)}</span>
+              <span class="daily-journey-meta">{journey.timePeriod} · {getJourneyModeLabel(journey.mode)}</span>
+            </div>
+            <span class="daily-journey-fare">£{getPlannedJourneyFare(journey).toFixed(2)}</span>
+          </div>
+        {/each}
+      </div>
+      <p class="daily-cap-note">Journey fares are shown before capping. Tube and rail count towards the combined cap; some special rail routes are excluded. Projected spend also reflects any weekly cap.</p>
+    </div>
+  </div>
 {/if}
 
 {#if weeklyCapTooltipData && weeklyCapTooltipData.visible}
@@ -5057,8 +5252,9 @@
 {/if}
 
 <style>
-  /* Weekly cap premium hovercard */
-  .weekly-cap-hovercard {
+  /* Cap detail hovercards */
+  .weekly-cap-hovercard,
+  .daily-cap-hovercard {
     background: linear-gradient(135deg, rgba(10, 14, 26, 0.99), rgba(17, 24, 39, 0.99));
     border: 1px solid var(--color-border);
     border-top: 3px solid var(--color-oyster-blue);
@@ -5077,12 +5273,14 @@
 
   .fare-hovercard.interactable,
   .weekly-cap-hovercard.interactable,
+  .daily-cap-hovercard.interactable,
   .warning-hovercard.interactable,
   .odd-period-hovercard.interactable {
     pointer-events: auto !important;
   }
 
-  .weekly-cap-hovercard::after {
+  .weekly-cap-hovercard::after,
+  .daily-cap-hovercard::after {
     content: '';
     position: absolute;
     top: 100%;
@@ -5091,6 +5289,203 @@
     border-width: 6px;
     border-style: solid;
     border-color: rgba(17, 24, 39, 0.99) transparent transparent transparent;
+  }
+
+  .daily-cap-hovercard {
+    width: 380px;
+    max-width: calc(100vw - 24px);
+    max-height: min(620px, calc(100vh - 32px));
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .daily-cap-hovercard.below::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent rgba(17, 24, 39, 0.99) transparent;
+  }
+
+  .daily-hovercard-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+  }
+
+  .daily-hovercard-date {
+    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+
+  .daily-spend-summary {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 0.3rem 1rem;
+    margin: 0.85rem 0;
+  }
+
+  .daily-spend-summary > div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .daily-total-spend {
+    color: var(--color-oyster-blue-light);
+    font-size: 1.35rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .daily-before-cap {
+    align-items: flex-end;
+    color: var(--color-text-secondary);
+    font-size: 0.86rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .daily-saving {
+    grid-column: 1 / -1;
+    color: #34d399;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  .daily-cap-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.72rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+  }
+
+  .daily-cap-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .daily-cap-row.combined {
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .daily-cap-row-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--color-text-secondary);
+    font-size: 0.69rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .daily-cap-row-header strong {
+    color: var(--color-text-primary);
+    font-weight: 650;
+  }
+
+  .cap-context {
+    color: var(--color-text-muted);
+    font-size: 0.62rem;
+  }
+
+  .daily-cap-track {
+    height: 5px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+  }
+
+  .daily-cap-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .daily-cap-fill.rail {
+    background: var(--color-oyster-blue);
+  }
+
+  .daily-cap-fill.bus {
+    background: var(--color-bus-red);
+  }
+
+  .daily-cap-fill.combined {
+    background: var(--color-warning);
+  }
+
+  .daily-cap-fill.capped {
+    background: var(--color-success);
+  }
+
+  .daily-journeys-section {
+    margin-top: 0.9rem;
+  }
+
+  .daily-journeys-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.45rem;
+    color: var(--color-text-muted);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .daily-journey-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 190px;
+    overflow-y: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .daily-journey-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .daily-journey-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 0.15rem;
+  }
+
+  .daily-journey-route {
+    color: var(--color-text-primary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .daily-journey-meta {
+    color: var(--color-text-muted);
+    font-size: 0.62rem;
+  }
+
+  .daily-journey-fare {
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .daily-cap-note {
+    margin: 0.6rem 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.62rem;
+    line-height: 1.45;
   }
 
   .hovercard-status-badge {
@@ -6367,7 +6762,7 @@
   }
 
   @media (max-width: 768px) {
-    .fare-hovercard, .weekly-cap-hovercard, .warning-hovercard, .odd-period-hovercard {
+    .fare-hovercard, .weekly-cap-hovercard, .daily-cap-hovercard, .warning-hovercard, .odd-period-hovercard {
       position: fixed !important;
       left: 50% !important;
       top: 50% !important;
@@ -6377,13 +6772,14 @@
       max-height: 85vh;
       overflow-y: auto;
     }
-    .fare-hovercard::after, .weekly-cap-hovercard::after, .warning-hovercard::after, .odd-period-hovercard::after {
+    .fare-hovercard::after, .weekly-cap-hovercard::after, .daily-cap-hovercard::after, .warning-hovercard::after, .odd-period-hovercard::after {
       display: none !important;
     }
   }
 
   /* Hide tooltip triangle arrow when pinned (centered modal popup) */
   .weekly-cap-hovercard.pinned::after,
+  .daily-cap-hovercard.pinned::after,
   .warning-hovercard.pinned::after,
   .odd-period-hovercard.pinned::after,
   .fare-hovercard.pinned::after {
@@ -6730,6 +7126,49 @@
     color: #ffffff;
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
     transform: scale(1.1);
+  }
+
+  .day-details-btn {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    z-index: 5;
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(0, 159, 227, 0.28);
+    border-radius: 50%;
+    background: rgba(0, 159, 227, 0.12);
+    color: var(--color-oyster-blue-light);
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: help;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .calendar-cell:hover .day-details-btn,
+  .calendar-cell:focus-within .day-details-btn,
+  .day-details-btn:focus-visible {
+    opacity: 1;
+  }
+
+  .day-details-btn:hover,
+  .day-details-btn:focus-visible {
+    border-color: rgba(0, 159, 227, 0.6);
+    outline: none;
+    background: rgba(0, 159, 227, 0.26);
+    box-shadow: 0 4px 12px rgba(0, 159, 227, 0.2);
+  }
+
+  @media (hover: none), (max-width: 768px) {
+    .day-details-btn {
+      opacity: 1;
+    }
   }
 
   .mobile-layout-add-btn {

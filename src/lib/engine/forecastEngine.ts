@@ -71,6 +71,11 @@ export interface ForecastDay {
   totalFare: number;
   totalFareFareType: number;
   dailyCap: number;
+  fareTypeDailyCap: number;
+  fareTypeDailyBusCap: number;
+  dailyCappedFareFareType: number;
+  dailyCapEligibleFareFareType: number;
+  dailyCapEligibleRailFareFareType: number;
   cappedFare: number;
   cappedFareFareType: number;
   capHit: boolean;
@@ -410,6 +415,11 @@ export function runForecast(
       totalFare: round2(totalFare),
       totalFareFareType: round2(totalFareFareType),
       dailyCap,
+      fareTypeDailyCap,
+      fareTypeDailyBusCap,
+      dailyCappedFareFareType: round2(runningSpendFareType + dayExceptionSpendFareType),
+      dailyCapEligibleFareFareType: round2(runningSpendFareType),
+      dailyCapEligibleRailFareFareType: round2(dayCappedRailFareType - dayExceptionSpendFareType),
       cappedFare: round2(runningSpend + dayExceptionSpend),
       cappedFareFareType: round2(runningSpendFareType + dayExceptionSpendFareType),
       capHit,
