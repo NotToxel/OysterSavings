@@ -71,6 +71,33 @@ async function capture() {
       fullPage: false,
     });
 
+    // Capture the finished illustrative comparison, not a partly counted fare.
+    console.log('[INFO] Capturing desktop and mobile sample comparisons...');
+    const journeyChoices = page.getByRole('group', { name: 'Choose sample journeys' });
+    const fareChoices = page.getByRole('group', { name: 'Choose a sample comparison' });
+    await page.locator('.journey-vignette').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    await journeyChoices.getByRole('button', { name: 'Daily Tube + bus' }).click();
+    await page.locator('.monthly-example .savings-replay').waitFor({ state: 'visible', timeout: 30000 });
+    const ledgerCount = await page.locator('.ledger-heading span').innerText();
+    if (!/^(\d+) \/ \1$/.test(ledgerCount)) {
+      throw new Error(`Desktop comparison was captured before all journeys arrived: ${ledgerCount}`);
+    }
+    await page.locator('.journey-vignette').screenshot({
+      path: path.join(outputDir, 'sample_comparison_desktop.png'),
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await fareChoices.getByRole('button', { name: '18+ Student' }).click();
+    await page.locator('.monthly-example .savings-replay').waitFor({ state: 'visible', timeout: 30000 });
+    // Keep the sticky header from occluding an element taller than the viewport.
+    await page.addStyleTag({ content: '.top-bar { position: relative !important; }' });
+    await page.locator('.journey-vignette').screenshot({
+      path: path.join(outputDir, 'sample_comparison_mobile.png'),
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(baseUrl, { waitUntil: 'networkidle' });
+
     // 2. Walkthrough Active Step
     console.log('[2/7] Opening Walkthrough & Capturing -> walkthrough_active.png');
     const startAnalysisBtn = page.locator('button:has-text("Generate Analysis")').first();
@@ -88,19 +115,10 @@ async function capture() {
     await page.goto(baseUrl, { waitUntil: 'networkidle' });
     await page.waitForTimeout(500);
 
-    const browseDemoBtn = page.locator('button:has-text("Browse Demo Profiles"), button:has-text("Try Demo Profiles")').first();
-    if (await browseDemoBtn.isVisible()) {
-      await browseDemoBtn.click();
-      await page.waitForTimeout(400);
-    }
-
-    const loadSarahBtn = page.locator('button:has-text("Load Sarah")').first();
-    if (await loadSarahBtn.isVisible()) {
-      await loadSarahBtn.click();
-    } else {
-      const anyDemoBtn = page.locator('.btn-demo-load').first();
-      await anyDemoBtn.click();
-    }
+    await page.getByRole('button', { name: 'Generate Analysis' }).click();
+    await page.getByRole('button', { name: 'Explore with sample journeys' }).click();
+    await page.locator('.btn-demo-load').first().waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: /Load Sarah's Log/ }).click();
 
     await page.waitForSelector('.stat-card, .analysis-page, .report-header, .insights-page', { timeout: 8000 });
     await page.waitForTimeout(1500);
@@ -179,16 +197,20 @@ async function capture() {
       await page.waitForTimeout(600);
     }
 
-    // Set Planning Period to full current month (e.g. 2026-08-01 to 2026-08-31) so all weeks are active
+    // Set the planning period to the current calendar month so all weeks are active.
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
     const startInput = page.locator('#plan-start');
     if (await startInput.isVisible()) {
-      await startInput.fill('2026-08-01');
+      await startInput.fill(`${year}-${month}-01`);
       await startInput.evaluate(e => e.dispatchEvent(new Event('change', { bubbles: true })));
       await page.waitForTimeout(300);
     }
     const endInput = page.locator('#plan-end');
     if (await endInput.isVisible()) {
-      await endInput.fill('2026-08-31');
+      await endInput.fill(`${year}-${month}-${String(lastDay).padStart(2, '0')}`);
       await endInput.evaluate(e => e.dispatchEvent(new Event('change', { bubbles: true })));
       await page.waitForTimeout(400);
     }
@@ -203,9 +225,9 @@ async function capture() {
       }
     }
 
-    // Add a couple of distinct one-off journeys (e.g. weekend theater trip & Sunday bus trip)
-    // 1. One-off Tube trip on Saturday Aug 15
-    console.log('[INFO] Adding One-off Tube Journey on Saturday Aug 15...');
+    // Add a couple of distinct one-off journeys.
+    // 1. One-off Tube trip on the 15th
+    console.log('[INFO] Adding One-off Tube Journey on the 15th...');
     const day15Cell = page.locator('.calendar-cell').filter({ has: page.locator('.day-number:has-text("15")') }).first();
     if (await day15Cell.isVisible()) {
       await day15Cell.click();
@@ -259,8 +281,8 @@ async function capture() {
       await page.waitForTimeout(400);
     }
 
-    // 2. One-off Bus Trip on Sunday Aug 16
-    console.log('[INFO] Adding One-off Bus Journey on Sunday Aug 16...');
+    // 2. One-off Bus trip on the 16th
+    console.log('[INFO] Adding One-off Bus Journey on the 16th...');
     const day16Cell = page.locator('.calendar-cell').filter({ has: page.locator('.day-number:has-text("16")') }).first();
     if (await day16Cell.isVisible()) {
       await day16Cell.click();

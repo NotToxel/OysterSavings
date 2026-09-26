@@ -51,13 +51,6 @@
 </svelte:head>
 
 <div class="app-container">
-  <!-- Ambient background effects -->
-  <div class="ambient-bg">
-    <div class="ambient-orb orb-1"></div>
-    <div class="ambient-orb orb-2"></div>
-    <div class="ambient-orb orb-3"></div>
-  </div>
-
   <!-- Top nav bar -->
   <header class="top-bar">
     {#if $isDemoMode}
@@ -78,8 +71,8 @@
       </div>
     {/if}
     <div class="top-bar-inner max-md:flex-wrap max-md:justify-center">
-      <button class="logo" onclick={() => navigateTo('home')}>
-        <span class="logo-icon">🦪</span>
+      <button class="logo" aria-label="OysterSavings home" onclick={() => navigateTo('home')}>
+        <span class="logo-icon" aria-hidden="true">🦪</span>
         <span class="logo-text">Oyster<span class="logo-accent">Savings</span></span>
       </button>
 
@@ -89,18 +82,16 @@
             <button
               class="nav-pill"
               class:active={$currentPage === item.id}
+              aria-current={$currentPage === item.id ? 'page' : undefined}
               onclick={() => navigateTo(item.id)}
             >
-              <span class="nav-icon">{item.icon}</span>
-              <span class="nav-label max-md:hidden">{item.label}</span>
+              <span class="nav-icon" aria-hidden="true">{item.icon}</span>
+              <span class="nav-label">{item.label}</span>
             </button>
           {/if}
         {/each}
       </nav>
 
-      <div class="nav-badge max-md:hidden">
-        <span class="privacy-badge">🔒 Privacy Protected</span>
-      </div>
     </div>
   </header>
 
@@ -141,59 +132,9 @@
   .app-container {
     position: relative;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
-  }
-
-  /* Ambient background */
-  .ambient-bg {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  .ambient-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.15;
-  }
-
-  .orb-1 {
-    width: 600px;
-    height: 600px;
-    background: #009FE3;
-    top: -200px;
-    right: -100px;
-    animation: float 20s ease-in-out infinite;
-  }
-
-  .orb-2 {
-    width: 500px;
-    height: 500px;
-    background: #6f4390;
-    bottom: -150px;
-    left: -100px;
-    animation: float 25s ease-in-out infinite reverse;
-  }
-
-  .orb-3 {
-    width: 300px;
-    height: 300px;
-    background: #e7710d;
-    top: 50%;
-    left: 50%;
-    animation: float 30s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(30px, -40px); }
-    50% { transform: translate(-20px, 30px); }
-    75% { transform: translate(40px, 20px); }
   }
 
   /* Top bar */
@@ -201,19 +142,17 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(10, 14, 26, 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: #0a0f1b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .top-bar-inner {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0.75rem 1.5rem;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
   }
 
@@ -225,6 +164,7 @@
     border: none;
     cursor: pointer;
     padding: 0;
+    justify-self: start;
   }
 
   .logo-icon {
@@ -239,10 +179,7 @@
   }
 
   .logo-accent {
-    background: linear-gradient(135deg, #009FE3, #6f4390);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--color-oyster-blue-light);
   }
 
   .nav-pills {
@@ -251,6 +188,7 @@
     background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
     padding: 4px;
+    justify-self: center;
   }
 
   .nav-pill {
@@ -276,27 +214,11 @@
 
   .nav-pill.active {
     color: white;
-    background: linear-gradient(135deg, #009FE3 0%, #0078ab 100%);
-    box-shadow: 0 2px 12px rgba(0, 159, 227, 0.35);
+    background: var(--color-oyster-blue-dark);
   }
 
   .nav-icon {
     font-size: 0.9rem;
-  }
-
-  .nav-badge {
-    display: flex;
-    align-items: center;
-  }
-
-  .privacy-badge {
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.15);
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-    font-weight: 500;
   }
 
   /* Main content */
@@ -468,9 +390,9 @@
 
   @media (max-width: 480px) {
     .top-bar-inner {
-      flex-direction: column !important;
+      display: grid !important;
+      grid-template-columns: 1fr !important;
       align-items: center !important;
-      justify-content: center !important;
       gap: 0.5rem !important;
       padding: 0.75rem 1rem !important;
     }
@@ -479,12 +401,22 @@
       justify-content: center !important;
       margin: 0 auto !important;
     }
-    .nav-badge {
-      display: none !important;
-    }
     .nav-pills {
       width: 100% !important;
       justify-content: center !important;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-pills::-webkit-scrollbar {
+      display: none;
+    }
+    .nav-pill {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 0.55rem 0.85rem;
+    }
+    .nav-icon {
+      display: none;
     }
   }
 </style>

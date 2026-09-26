@@ -164,11 +164,20 @@
   class:processing={isProcessing}
   role="button"
   tabindex="0"
+  aria-label="Upload a TfL journey history CSV file"
+  aria-describedby="upload-file-hint"
+  aria-busy={isProcessing}
+  aria-disabled={isProcessing}
   ondragover={handleDragOver}
   ondragleave={handleDragLeave}
   ondrop={handleDrop}
   onclick={() => { if (!isProcessing) document.getElementById('file-input')?.click(); }}
-  onkeydown={(e) => { if (e.key === 'Enter' && !isProcessing) document.getElementById('file-input')?.click(); }}
+  onkeydown={(e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && !isProcessing) {
+      e.preventDefault();
+      document.getElementById('file-input')?.click();
+    }
+  }}
 >
   <input
     type="file"
@@ -179,7 +188,7 @@
   />
 
   {#if isProcessing}
-    <div class="upload-processing">
+    <div class="upload-processing" role="status" aria-live="polite">
       <div class="oyster-scanner">
         <div class="oyster-card-silhouette">
           <div class="oyster-circle circle-1"></div>
@@ -265,7 +274,7 @@
     <p class="upload-text">
       <strong>Drop your TfL CSV file here</strong> or click to browse
     </p>
-    <p class="upload-hint">
+    <p class="upload-hint" id="upload-file-hint">
       Accepts standard TfL Oyster export files (.csv)
     </p>
   {/if}
@@ -292,7 +301,7 @@
 {/if}
 
 {#if localParseErrors.length > 0}
-  <div class="error-box" style="margin-top: 1rem;">
+  <div class="error-box" role="alert" style="margin-top: 1rem;">
     {#each localParseErrors as error}
       <p>⚠️ {error}</p>
     {/each}
@@ -562,7 +571,7 @@
   }
 
   .progress-bar-container {
-    width: 240px;
+    width: min(240px, 100%);
     height: 8px;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 9999px;
