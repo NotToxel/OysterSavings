@@ -27,6 +27,11 @@ export interface RecurrenceRule {
   exactFareOffPeak?: number;
   exactBaseFarePeak?: number;   // Cached API base adult fare
   exactBaseFareOffPeak?: number;
+  returnExactFarePeak?: number;
+  returnExactFareOffPeak?: number;
+  returnExactBaseFarePeak?: number;
+  returnExactBaseFareOffPeak?: number;
+  returnRouteDescription?: string;
   isAdvancedMode?: boolean;
   routeDescription?: string;
   useOffpeakCap?: boolean; // Peak fare, but journey counts towards off-peak daily cap (exception stations)
@@ -152,16 +157,16 @@ export function generatePlannedJourneys(rules: RecurrenceRule[]): PlannedJourney
             destinationZone: rule.originZone,
             mode: rule.mode,
             timePeriod: rule.returnTimePeriod,
-            // Advanced Mode: reverse direction fares are same
+            // Reverse fares are queried independently; missing values use the zone estimate.
             ...(rule.isAdvancedMode && {
               isAdvancedMode: true,
-              exactFarePeak: rule.exactFarePeak,
-              exactFareOffPeak: rule.exactFareOffPeak,
-              exactBaseFarePeak: rule.exactBaseFarePeak,
-              exactBaseFareOffPeak: rule.exactBaseFareOffPeak,
+              exactFarePeak: rule.returnExactFarePeak,
+              exactFareOffPeak: rule.returnExactFareOffPeak,
+              exactBaseFarePeak: rule.returnExactBaseFarePeak,
+              exactBaseFareOffPeak: rule.returnExactBaseFareOffPeak,
               originStationName: rule.destinationStationName,
               destinationStationName: rule.originStationName,
-              routeDescription: rule.routeDescription,
+              routeDescription: rule.returnRouteDescription,
             }),
           });
         }

@@ -44,8 +44,8 @@
   let railcardTieReady = $state(true);
   let ledgerStep = $state(defaultSampleTransactions.length);
   let savingsPlaying = $state(false);
-  let weeklyResultReady = $state(false);
-  let previewComplete = $state(false);
+  let weeklyResultReady = $state(true);
+  let previewComplete = $state(true);
   let reducePreviewMotion = $state(false);
   let savingsTimer: number | undefined;
   let ledgerTimer: number | undefined;
@@ -205,44 +205,35 @@
   function selectSampleComparison(comparison: SampleScenarioId) {
     if (activeSampleComparison === comparison) return;
     activeSampleComparison = comparison;
-    void playSavingsPreview();
+    void tick().then(showFinalPreview);
   }
 
   function selectSamplePattern(pattern: SamplePatternId) {
     if (activeSamplePattern === pattern) return;
     activeSamplePattern = pattern;
-    void playSavingsPreview();
+    void tick().then(showFinalPreview);
   }
 
-  function startSavingsWhenVisible(node: HTMLElement) {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      savingsWeek = repeatedWeeks;
-      monthExtraDaysShown = true;
-      railcardTieReady = true;
-      ledgerStep = sampleComparison.transactions.length;
-      weeklyResultReady = true;
-      previewComplete = true;
-      return;
-    }
+  function showFinalPreview() {
+    savingsRunId += 1;
+    if (savingsTimer !== undefined) window.clearInterval(savingsTimer);
+    if (ledgerTimer !== undefined) window.clearInterval(ledgerTimer);
+    savingsPlaying = false;
+    savingsWeek = repeatedWeeks;
+    monthExtraDaysShown = true;
+    railcardTieReady = true;
+    ledgerStep = sampleTransactions.length;
+    weeklyResultReady = true;
+    previewComplete = true;
+  }
 
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        observer.disconnect();
-        void playSavingsPreview();
-      }
-    }, { threshold: 0.55 });
-    observer.observe(node);
-
-    return {
-      destroy() {
-        observer.disconnect();
-        savingsRunId += 1;
-        if (savingsTimer !== undefined) window.clearInterval(savingsTimer);
-        if (ledgerTimer !== undefined) window.clearInterval(ledgerTimer);
-        savingsTimer = undefined;
-        ledgerTimer = undefined;
-      },
-    };
+  function startSavingsWhenVisible(_node: HTMLElement) {
+    showFinalPreview();
+    return { destroy() {
+      savingsRunId += 1;
+      if (savingsTimer !== undefined) window.clearInterval(savingsTimer);
+      if (ledgerTimer !== undefined) window.clearInterval(ledgerTimer);
+    } };
   }
 
   const stepTitles = [
@@ -277,7 +268,7 @@
   async function openUpload() {
     showUpload = true;
     await tick();
-    uploadSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    uploadSection?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
     uploadSection
       ?.querySelector<HTMLElement>('[role="button"]')
       ?.focus({ preventScroll: true });
@@ -495,7 +486,7 @@
         </div>
       </section>
     {:else if !showWalkthrough}
-      <main class="first-run animate-fade-in">
+      <div class="first-run animate-fade-in">
         <LandingRouteBackground />
         <section class="first-run-intro" aria-labelledby="first-run-title">
           <h1 id="first-run-title">Find the cheapest way to pay for your TfL travel.</h1>
@@ -510,24 +501,16 @@
               aria-controls="upload-journey-history"
               onclick={openUpload}
             >
-              Generate Analysis
+              Upload TfL CSV
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12h14" />
                 <path d="m13 6 6 6-6 6" />
               </svg>
             </button>
-            <a
-              class="github-cta"
-              href="https://github.com/NotToxel/OysterSavings"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.99c.85 0 1.71.12 2.51.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.6c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />
-              </svg>
-              View on GitHub
-            </a>
+            <button class="github-cta" onclick={openDemoProfiles}>Try sample analysis</button>
           </div>
+
+          <div class="start-help"><button class="text-action" onclick={openExportGuide}>Need your CSV? Export guide</button><p>Your file is processed in this browser. Only fare lookups go to TfL. Uploaded history clears when you refresh.</p></div>
 
           <div class="journey-vignette" aria-label="Sample journey analysis and recommendation" use:startSavingsWhenVisible>
             <div class="journey-map">
@@ -814,7 +797,7 @@
             </li>
           </ol>
         </section>
-      </main>
+      </div>
     {:else}
       <!-- Walkthrough Section -->
       <section class="walkthrough-section animate-slide-up">
@@ -1131,6 +1114,8 @@
 </div>
 
 <style>
+  .start-help { margin: 1rem auto 2rem; max-width: 42rem; color: var(--color-text-secondary); font-size: 0.85rem; line-height: 1.6; }
+  .start-help p { margin-top: 0.5rem; }
   .home-page {
     max-width: 900px;
     margin: 0 auto;
@@ -1200,8 +1185,7 @@
     border: 1px solid #0aa9ef;
   }
 
-  .generate-analysis svg,
-  .github-cta svg {
+  .generate-analysis svg {
     width: 18px;
     height: 18px;
     flex: 0 0 auto;

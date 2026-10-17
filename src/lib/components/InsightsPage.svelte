@@ -1089,13 +1089,13 @@
           </div>
           <div class="projections-bar flex flex-col md:flex-row gap-2 md:gap-4 border-t border-white/5 pt-4">
             <div class="projection">
-              <span class="proj-label">Projected Monthly</span>
+              <span class="proj-label">Recorded spend · monthly projection</span>
               <span class="proj-val"
                 >£{travelProfile.projectedMonthly.toFixed(2)}</span
               >
             </div>
             <div class="projection">
-              <span class="proj-label">Projected Annual</span>
+              <span class="proj-label">Recorded spend · annual projection</span>
               <span class="proj-val"
                 >£{travelProfile.projectedAnnual.toLocaleString()}</span
               >
@@ -1140,8 +1140,8 @@
             <div class="no-tips">
               <span class="tip-success-icon">✨</span>
               <p>
-                Your travel patterns are already highly optimized! No additional
-                savings found.
+                No additional journey-pattern tips found. Check the ticket recommendation
+                above for product costs and discount scenarios.
               </p>
             </div>
           {:else}
@@ -1213,7 +1213,7 @@
                 <div class="student-text">
                   <span class="student-title">Are you a Student?</span>
                   <span class="student-sub"
-                    >We detected regular travel to university campuses.</span
+                    >If you qualify for a Student Oyster photocard, explore its Travelcard prices.</span
                   >
                 </div>
                 <button

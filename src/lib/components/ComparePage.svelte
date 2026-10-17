@@ -5,6 +5,8 @@
     fareTypeCost, capSummary, weeklyCapResults,
     cards
   } from '$lib/stores/stores';
+  import RecommendationSummary from './RecommendationSummary.svelte';
+  import { recommendProduct } from '$lib/engine/productRecommendation';
   import CardSelector from './CardSelector.svelte';
   import AddCardDialog from './AddCardDialog.svelte';
 
@@ -128,93 +130,11 @@
     };
   });
 
-  // Dynamic best option calculator that respects visibility toggles
+  // Recommendations use eligibility independently of chart presentation.
   function getDynamicBestForZone(zone: string): string {
-    const comp = $productComparison.find((c: any) => c.zoneRange === zone);
-    if (!comp) return 'N/A';
-
-    const options: [string, number][] = [];
-    if (activeSpan === 'weekly') {
-      if (visibleProducts.paygStandard) options.push(['PAYG', comp.weeklyPayg]);
-      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.weeklyPaygFareType]);
-      if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.weeklyPaygRailcard]);
-      if (travelcardEligible && visibleProducts.travelcardStandard) options.push(['Travelcard', comp.weeklyTravelcard]);
-      if (travelcardEligible && visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.weeklyStudentTravelcard]);
-      if (visibleProducts.busPassStandard) options.push(['Bus & Tram Pass', comp.weeklyBusPass]);
-    } else if (activeSpan === 'monthly') {
-      if (visibleProducts.paygStandard) options.push(['PAYG', comp.monthlyPayg]);
-      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.monthlyPaygFareType]);
-      if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.monthlyPaygRailcard]);
-      if (travelcardEligible && visibleProducts.travelcardStandard) options.push(['Travelcard', comp.monthlyTravelcard]);
-      if (travelcardEligible && visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.monthlyStudentTravelcard]);
-      if (visibleProducts.busPassStandard) options.push(['Bus & Tram Pass', comp.monthlyBusPass]);
-      if (visibleProducts.busPassStudent) options.push(['Student Bus Pass', comp.monthlyStudentBusPass]);
-    } else {
-      if (visibleProducts.paygStandard) options.push(['PAYG', comp.annualPayg]);
-      if (visibleProducts.paygConcession && !isNoDiscount && $selectedFareType !== 'railcard') options.push([concessionName, comp.annualPaygFareType]);
-      if (visibleProducts.paygRailcard) options.push(['PAYG + Railcard', comp.annualPaygRailcard]);
-      if (travelcardEligible && visibleProducts.travelcardStandard) options.push(['Travelcard', comp.annualTravelcard]);
-      if (travelcardEligible && visibleProducts.travelcardStudent) options.push(['Student Travelcard', comp.annualStudentTravelcard]);
-      if (visibleProducts.busPassStandard) options.push(['Bus & Tram Pass', comp.annualBusPass]);
-      if (visibleProducts.busPassStudent) options.push(['Student Bus Pass', comp.annualStudentBusPass]);
-    }
-
-    const valid = options.filter(([, v]) => v > 0);
-    if (valid.length === 0) return 'N/A';
-    valid.sort((a, b) => a[1] - b[1]);
-    return valid[0][0];
+    const comparison = $productComparison.find(item => item.zoneRange === zone);
+    return comparison ? recommendProduct(comparison, activeSpan, $selectedFareType, concessionName)?.name ?? 'N/A' : 'N/A';
   }
-
-  // Best option for current time span (respecting dynamic selection)
-  let bestOption = $derived.by(() => {
-    if ($productComparison.length === 0 || !travelSummary) return null;
-
-    const comp = $productComparison.find(c => c.zoneRange === travelSummary.topZone)
-      ?? $productComparison[0];
-
-    const span = activeSpan;
-    const best = getDynamicBestForZone(comp.zoneRange);
-
-    const paygCost = span === 'weekly' ? comp.weeklyPayg
-      : span === 'monthly' ? comp.monthlyPayg
-      : comp.annualPayg;
-
-    const rcCost = span === 'weekly' ? comp.weeklyPaygFareType
-      : span === 'monthly' ? comp.monthlyPaygFareType
-      : comp.annualPaygFareType;
-
-    const railcardCost = span === 'weekly' ? comp.weeklyPaygRailcard
-      : span === 'monthly' ? comp.monthlyPaygRailcard
-      : comp.annualPaygRailcard;
-
-    const tcCost = span === 'weekly' ? comp.weeklyTravelcard
-      : span === 'monthly' ? comp.monthlyTravelcard
-      : comp.annualTravelcard;
-
-    const studentTcCost = span === 'weekly' ? comp.weeklyStudentTravelcard
-      : span === 'monthly' ? comp.monthlyStudentTravelcard
-      : comp.annualStudentTravelcard;
-
-    const busCost = span === 'weekly' ? comp.weeklyBusPass
-      : span === 'monthly' ? comp.monthlyBusPass
-      : comp.annualBusPass;
-
-    const studentBusCost = span === 'weekly' ? 0
-      : span === 'monthly' ? comp.monthlyStudentBusPass
-      : comp.annualStudentBusPass;
-
-    return {
-      best,
-      zoneRange: comp.zoneRange,
-      payg: paygCost,
-      fareType: rcCost,
-      paygRailcard: railcardCost,
-      travelcard: tcCost,
-      studentTravelcard: studentTcCost,
-      busPass: busCost,
-      studentBusPass: studentBusCost
-    };
-  });
 
   // Chart data
   let chartData = $derived.by(() => {
@@ -373,12 +293,12 @@
           },
           scales: {
             x: {
-              ticks: { color: '#64748b', font: { family: 'Inter', size: 12 } },
+              ticks: { color: '#94a3b8', font: { family: 'Inter', size: 12 } },
               grid: { color: 'rgba(255, 255, 255, 0.04)' },
             },
             y: {
               ticks: {
-                color: '#64748b',
+                color: '#94a3b8',
                 font: { family: 'Inter', size: 11 },
                 callback: (val: any) => `£${val}`,
               },
@@ -437,11 +357,13 @@
 
   <p class="page-subtitle">See how PAYG, Travelcards, and concession discounts compare based on your actual travel patterns</p>
 
+  <RecommendationSummary span={activeSpan} />
+
   <!-- Settings bar -->
   <div class="glass-card settings-bar">
     <div class="settings-row flex flex-col md:flex-row items-start md:items-center gap-6 flex-wrap">
       <div class="setting-inline">
-        <label class="setting-label-inline" for="compare-fare-type">Simulate with</label>
+        <label class="setting-label-inline" for="compare-fare-type">Your eligible discount</label>
         <select class="input-field compact-select w-full md:w-[240px]" id="compare-fare-type" bind:value={$selectedFareType}>
           {#each fareTypeOptions as opt}
             <option value={opt.value}>{opt.label}</option>
@@ -469,7 +391,7 @@
 
     <div class="discount-badge" style="justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.5rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <span class="badge-dot" style="background: {isNoDiscount ? '#64748b' : '#009FE3'};"></span>
+        <span class="badge-dot" style="background: {isNoDiscount ? '#94a3b8' : '#009FE3'};"></span>
         <span>{discountBadge}</span>
       </div>
       {#if $selectedFareType === 'railcard' || $selectedFareType === 'disabled'}
@@ -482,12 +404,13 @@
 
   <!-- Dynamic product toggles -->
   <div class="glass-card toggles-bar" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
-    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-secondary); display: block; margin-bottom: 0.75rem; letter-spacing: 0.05em;">👁️ Visible Products in Chart & Table</span>
+    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-secondary); display: block; margin-bottom: 0.75rem; letter-spacing: 0.05em;">Show in chart and table (does not change recommendation)</span>
     <div class="toggles-grid">
       <button 
         type="button" 
         class="product-chip payg-standard" 
-        class:active={visibleProducts.paygStandard} 
+        class:active={visibleProducts.paygStandard}
+        aria-pressed={visibleProducts.paygStandard}
         onclick={() => visibleProducts.paygStandard = !visibleProducts.paygStandard}
       >
         <span class="product-dot" style="background: #009FE3;"></span>
@@ -497,7 +420,8 @@
       <button 
         type="button" 
         class="product-chip payg-railcard" 
-        class:active={visibleProducts.paygRailcard} 
+        class:active={visibleProducts.paygRailcard}
+        aria-pressed={visibleProducts.paygRailcard}
         onclick={() => visibleProducts.paygRailcard = !visibleProducts.paygRailcard}
       >
         <span class="product-dot" style="background: #8b5cf6;"></span>
@@ -508,7 +432,8 @@
       <button 
         type="button" 
         class="product-chip payg-concession" 
-        class:active={visibleProducts.paygConcession} 
+        class:active={visibleProducts.paygConcession}
+        aria-pressed={visibleProducts.paygConcession}
         onclick={() => visibleProducts.paygConcession = !visibleProducts.paygConcession}
       >
         <span class="product-dot" style="background: #6f4390;"></span>
@@ -520,7 +445,8 @@
       <button 
         type="button" 
         class="product-chip travelcard-standard" 
-        class:active={visibleProducts.travelcardStandard} 
+        class:active={visibleProducts.travelcardStandard}
+        aria-pressed={visibleProducts.travelcardStandard}
         onclick={() => visibleProducts.travelcardStandard = !visibleProducts.travelcardStandard}
       >
         <span class="product-dot" style="background: #e7710d;"></span>
@@ -530,7 +456,8 @@
       <button 
         type="button" 
         class="product-chip travelcard-student" 
-        class:active={visibleProducts.travelcardStudent} 
+        class:active={visibleProducts.travelcardStudent}
+        aria-pressed={visibleProducts.travelcardStudent}
         onclick={() => visibleProducts.travelcardStudent = !visibleProducts.travelcardStudent}
       >
         <span class="product-dot" style="background: #10b981;"></span>
@@ -541,7 +468,8 @@
       <button 
         type="button" 
         class="product-chip buspass-standard" 
-        class:active={visibleProducts.busPassStandard} 
+        class:active={visibleProducts.busPassStandard}
+        aria-pressed={visibleProducts.busPassStandard}
         onclick={() => visibleProducts.busPassStandard = !visibleProducts.busPassStandard}
       >
         <span class="product-dot" style="background: #DC241F;"></span>
@@ -552,7 +480,8 @@
       <button 
         type="button" 
         class="product-chip buspass-student" 
-        class:active={visibleProducts.busPassStudent} 
+        class:active={visibleProducts.busPassStudent}
+        aria-pressed={visibleProducts.busPassStudent}
         onclick={() => visibleProducts.busPassStudent = !visibleProducts.busPassStudent}
       >
         <span class="product-dot" style="background: #DC241F; opacity: 0.5;"></span>
@@ -570,61 +499,6 @@
       {:else}
         Every rail journey in this history involves a contactless-only station and cannot be completed with an Oyster Travelcard, so Travelcards are not recommendation candidates.
       {/if}
-    </div>
-  {/if}
-
-  <!-- High-visibility Recommendation Banner -->
-  {#if travelSummary && bestOption}
-    <div class="glass-card recommendation-banner flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center animate-fade-in">
-      <div class="banner-icon">💡</div>
-      <div class="banner-content">
-        <span class="banner-tag">Our Recommendation</span>
-        <h2 class="banner-title">
-          Use {
-            bestOption.best === 'PAYG' ? 'Pay As You Go (Adult)' :
-            bestOption.best === 'PAYG + Railcard' ? 'PAYG + National Railcard' :
-            bestOption.best
-          } for {bestOption.zoneRange}
-        </h2>
-        <p class="banner-desc">
-          Based on your travel history of <strong>{travelSummary.journeys}</strong> journeys in <strong>{travelSummary.weeks}</strong> weeks,
-          the cheapest option for your most common zone range ({travelSummary.topZone}) is 
-          <strong>{
-            bestOption.best === 'PAYG' ? 'PAYG (Adult)' :
-            bestOption.best === 'PAYG + Railcard' ? 'PAYG + National Railcard' :
-            bestOption.best
-          }</strong>.
-          This will cost you approximately 
-          <strong>
-            £{
-              bestOption.best === 'PAYG' ? bestOption.payg.toFixed(2) : 
-              bestOption.best === concessionName ? bestOption.fareType.toFixed(2) : 
-              bestOption.best === 'PAYG + Railcard' ? bestOption.paygRailcard.toFixed(2) :
-              bestOption.best === 'Travelcard' ? bestOption.travelcard.toFixed(2) :
-              bestOption.best === 'Student Travelcard' ? bestOption.studentTravelcard.toFixed(2) :
-              bestOption.best === 'Bus & Tram Pass' ? bestOption.busPass.toFixed(2) :
-              bestOption.best === 'Student Bus Pass' ? (bestOption.studentBusPass ? bestOption.studentBusPass.toFixed(2) : '0.00') :
-              '0.00'
-            }
-          </strong> {getSpanLabel()}.
-        </p>
-      </div>
-      <div class="banner-action text-left md:text-right min-w-0 md:min-w-[140px] flex-shrink-0">
-        <span class="action-label">Estimated Cost</span>
-        <span class="action-price">
-          £{
-            bestOption.best === 'PAYG' ? bestOption.payg.toFixed(2) : 
-            bestOption.best === concessionName ? bestOption.fareType.toFixed(2) : 
-            bestOption.best === 'PAYG + Railcard' ? bestOption.paygRailcard.toFixed(2) :
-            bestOption.best === 'Travelcard' ? bestOption.travelcard.toFixed(2) :
-            bestOption.best === 'Student Travelcard' ? bestOption.studentTravelcard.toFixed(2) :
-            bestOption.best === 'Bus & Tram Pass' ? bestOption.busPass.toFixed(2) :
-            bestOption.best === 'Student Bus Pass' ? (bestOption.studentBusPass ? bestOption.studentBusPass.toFixed(2) : '0.00') :
-            '0.00'
-          }
-        </span>
-        <span class="action-period">{getSpanLabel()}</span>
-      </div>
     </div>
   {/if}
 
@@ -656,8 +530,9 @@
   </div>
 
   <!-- Dynamic cost table -->
-  <div class="glass-card" style="padding: 0; overflow: hidden; margin-top: 1.5rem;">
-    <div style="overflow-x: auto;">
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex (The scroll region must be keyboard focusable to expose columns on narrow screens.) -->
+  <div class="glass-card comparison-table" role="region" aria-label="Product costs by zone. Scroll horizontally to compare all zones." tabindex="0">
+    <div>
       <table class="data-table">
         <thead>
           <tr>
@@ -859,6 +734,11 @@
 </div>
 
 <style>
+  .comparison-table { padding: 0; overflow-x: auto; margin-top: 1.5rem; }
+  @media (max-width: 767px) {
+    .setting-inline { width: 100%; min-width: 0; flex-direction: column; align-items: stretch; }
+    .setting-inline .compact-select { width: 100%; min-width: 0; }
+  }
   .compare-page { max-width: 1100px; margin: 0 auto; }
 
   .page-title {
@@ -1039,80 +919,6 @@
     filter: drop-shadow(0 0 4px currentColor);
   }
 
-  /* Recommendation Banner */
-  .recommendation-banner {
-    background: linear-gradient(135deg, rgba(0, 159, 227, 0.12), rgba(139, 92, 246, 0.15));
-    border: 1px solid rgba(139, 92, 246, 0.35);
-    padding: 1.5rem;
-    border-radius: 16px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    gap: 1.25rem;
-    align-items: center;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  }
-
-  .banner-icon {
-    font-size: 2.5rem;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
-    flex-shrink: 0;
-  }
-
-  .banner-content {
-    flex: 1;
-  }
-
-  .banner-tag {
-    font-size: 0.725rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #8b5cf6;
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .banner-title {
-    font-size: 1.35rem;
-    font-weight: 800;
-    margin: 0 0 0.5rem 0;
-    color: #fff;
-  }
-
-  .banner-desc {
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-    line-height: 1.5;
-    margin: 0;
-  }
-
-  .banner-action {
-    text-align: right;
-    min-width: 140px;
-    flex-shrink: 0;
-  }
-
-  .action-label {
-    font-size: 0.725rem;
-    color: var(--color-text-muted);
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .action-price {
-    font-size: 1.75rem;
-    font-weight: 900;
-    color: #8b5cf6;
-    display: block;
-    line-height: 1;
-  }
-
-  .action-period {
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
-    font-weight: 500;
-  }
-
   /* Controls row */
   .controls-row {
     display: flex;
@@ -1166,7 +972,7 @@
   }
 
   .best-cell {
-    color: #8b5cf6;
+    color: #bda4ff;
     font-weight: 700;
     font-family: var(--font-sans) !important;
     font-size: 0.75rem;

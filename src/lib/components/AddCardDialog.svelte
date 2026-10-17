@@ -34,6 +34,7 @@
   // Processing state
   let progressText = $state('');
   let progressPercent = $state(0);
+  let uploadError = $state('');
   let hasError = $state(false);
 
   // Merge state
@@ -65,6 +66,7 @@
     classifiedPreview = [];
     progressText = '';
     progressPercent = 0;
+    uploadError = '';
     hasError = false;
     selectedMergeCardId = '';
     mergeResult = null;
@@ -103,58 +105,70 @@
     const input = e.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       handleFile(input.files[0]);
+      input.value = '';
     }
   }
 
   async function handleFile(file: File) {
-    if (!file.name.endsWith('.csv')) return;
+    uploadError = '';
+    if (!file.name.toLowerCase().endsWith('.csv')) { uploadError = 'Choose a TfL journey history CSV file.'; return; }
+    try {
 
-    previewFileName = file.name;
-    step = 'preview';
+      previewFileName = file.name;
+      step = 'preview';
 
-    const content = await file.text();
-    const parseResult = parseCSV(content);
-    parsedJourneys = parseResult.journeys;
+      const content = await file.text();
+      const parseResult = parseCSV(content);
+      parsedJourneys = parseResult.journeys;
 
-    const filtered = filterJourneys(parseResult.journeys);
-    const classified = classifyAll(filtered.valid);
-    classifiedPreview = classified;
-
-    previewJourneyCount = filtered.valid.length;
-    previewFilteredCount = filtered.excluded.length;
-
-    // Date range
-    if (classified.length > 0) {
-      const dates = classified.map(j => j.raw.date.getTime());
-      const minDate = new Date(Math.min(...dates));
-      const maxDate = new Date(Math.max(...dates));
-      const fmt = (d: Date) => {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-      };
-      previewDateRange = `${fmt(minDate)} – ${fmt(maxDate)}`;
-    }
-
-    // Detect discount
-    previewDiscount = detectActiveDiscount(classified);
-    previewDiscountLabel = discountLabels[previewDiscount] || 'Standard adult fares';
-
-    step = 'decide';
-    if ($cards.length > 0) {
-      selectedMergeCardId = $cards[0].id;
-      if ($cards.length >= MAX_CARDS) {
-        addMode = 'merge';
-      } else {
-        // Pre-select addMode based on conflict detection
-        const firstCardClash = detectMergeClash(classified, parseResult.journeys, $cards[0]);
-        if (firstCardClash) {
-          addMode = 'new';
-        } else {
-          addMode = 'merge';
-        }
+      const filtered = filterJourneys(parseResult.journeys);
+      if (filtered.valid.length === 0) {
+        uploadError = parseResult.errors[0] ?? 'No usable journeys found. Export a date range containing journeys from TfL.';
+        step = 'upload';
+        return;
       }
-    } else {
-      addMode = 'new';
+      const classified = classifyAll(filtered.valid);
+      classifiedPreview = classified;
+
+      previewJourneyCount = filtered.valid.length;
+      previewFilteredCount = filtered.excluded.length;
+
+      // Date range
+      if (classified.length > 0) {
+        const dates = classified.map(j => j.raw.date.getTime());
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+        const fmt = (d: Date) => {
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+        };
+        previewDateRange = `${fmt(minDate)} – ${fmt(maxDate)}`;
+      }
+
+      // Detect discount
+      previewDiscount = detectActiveDiscount(classified);
+      previewDiscountLabel = discountLabels[previewDiscount] || 'Standard adult fares';
+
+      step = 'decide';
+      if ($cards.length > 0) {
+        selectedMergeCardId = $cards[0].id;
+        if ($cards.length >= MAX_CARDS) {
+          addMode = 'merge';
+        } else {
+          // Pre-select addMode based on conflict detection
+          const firstCardClash = detectMergeClash(classified, parseResult.journeys, $cards[0]);
+          if (firstCardClash) {
+            addMode = 'new';
+          } else {
+            addMode = 'merge';
+          }
+        }
+      } else {
+        addMode = 'new';
+      }
+    } catch {
+      uploadError = 'This file could not be read. Export a fresh TfL CSV and try again.';
+      step = 'upload';
     }
   }
 
@@ -409,6 +423,7 @@
       </div>
 
       <div class="dialog-body">
+        {#if uploadError}<p role="alert">{uploadError}</p>{/if}
         {#if step === 'upload' || step === 'preview'}
           <!-- Upload zone -->
           <div

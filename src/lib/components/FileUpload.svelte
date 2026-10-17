@@ -13,6 +13,15 @@
   import { generateCardId, generateCardName, CARD_COLORS, MAX_CARDS } from '$lib/stores/cardTypes';
   import type { CardState } from '$lib/stores/cardTypes';
 
+  let pendingCard = $state<CardState | null>(null);
+  let imported = $state(false);
+  function openResults() {
+    if (!pendingCard) return;
+    addCard(pendingCard);
+    pendingCard = null;
+    $currentPage = 'analysis';
+  }
+  let importWarnings = $state<string[]>([]);
   let isDragOver = $state(false);
   let isProcessing = $state(false);
   let filterSummary = $state<ReturnType<typeof getFilterSummary> | null>(null);
@@ -46,11 +55,17 @@
     const input = e.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       processFile(input.files[0]);
+      input.value = '';
     }
   }
 
   async function processFile(file: File) {
-    if (!file.name.endsWith('.csv')) {
+    pendingCard = null;
+    imported = false;
+    importWarnings = [];
+    localParseErrors = [];
+    filterSummary = null;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
       localParseErrors = ['Please upload a CSV file'];
       return;
     }
@@ -66,6 +81,11 @@
       await new Promise(resolve => setTimeout(resolve, 150));
 
       const parseResult = parseCSV(content);
+      importWarnings = parseResult.errors;
+      if (parseResult.journeys.length === 0) {
+        localParseErrors = parseResult.errors.length ? parseResult.errors : ['No journeys found. Export a date range containing journeys from TfL and try again.'];
+        return;
+      }
 
       progressText = 'Filtering invalid and empty rows...';
       progressPercent = 35;
@@ -79,6 +99,10 @@
       progressPercent = 50;
       await new Promise(resolve => setTimeout(resolve, 150));
 
+      if (filtered.valid.length === 0) {
+        localParseErrors = ['No usable journeys remain after filtering. Choose a TfL export containing completed journeys.'];
+        return;
+      }
       // Classify
       const classified = classifyAll(filtered.valid);
 
@@ -143,13 +167,13 @@
         duplicatesRemoved: 0,
       };
 
-      addCard(card);
+      pendingCard = card;
 
       progressText = 'Analysis complete!';
       progressPercent = 100;
 
-      // Auto-navigate to analysis
-      setTimeout(() => { $currentPage = 'analysis'; }, 600);
+      // Let users review the import counts before opening their results.
+      imported = true;
     } catch (err) {
       localParseErrors = [`Error processing file: ${err}`];
     } finally {
@@ -280,6 +304,12 @@
   {/if}
 </div>
 
+{#if imported}
+  <div class="import-complete" role="status"><strong>Journey history ready.</strong>
+    <button class="btn-primary" onclick={openResults}>See my recommendation →</button>
+  </div>
+{/if}
+
 {#if filterSummary}
   <div class="filter-summary animate-slide-up" style="margin-top: 1rem;">
     <div class="filter-header">
@@ -300,6 +330,12 @@
   </div>
 {/if}
 
+{#if imported && importWarnings.length > 0}
+  <details class="import-warnings"><summary>{importWarnings.length} import warnings — review skipped rows</summary>
+    {#each importWarnings as warning}<p>{warning}</p>{/each}
+  </details>
+{/if}
+
 {#if localParseErrors.length > 0}
   <div class="error-box" role="alert" style="margin-top: 1rem;">
     {#each localParseErrors as error}
@@ -309,6 +345,9 @@
 {/if}
 
 <style>
+  .import-complete { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+  .import-complete button { min-height: 44px; }
+  .import-warnings { color: var(--color-text-secondary); margin: 1rem 0; line-height: 1.6; }
   .upload-icon {
     display: flex;
     justify-content: center;

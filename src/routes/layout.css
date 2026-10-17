@@ -34,7 +34,7 @@
   /* Text */
   --color-text-primary: #f1f5f9;
   --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  --color-text-muted: #94a3b8;
   --color-text-accent: #009FE3;
 
   /* Borders */
@@ -55,6 +55,11 @@
   /* Fonts */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
+
+/* Shared keyboard and touch affordances */
+:focus-visible { outline: 2px solid var(--color-oyster-blue-light); outline-offset: 4px; }
+button, summary { touch-action: manipulation; }
+::selection { background: var(--color-oyster-blue-dark); color: white; }
 
 /* Base styles */
 * {
@@ -363,7 +368,7 @@ select option {
   padding: 0.5rem 0.75rem;
   color: var(--color-text-primary);
   font-size: 0.875rem;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   width: 100%;
 }
 

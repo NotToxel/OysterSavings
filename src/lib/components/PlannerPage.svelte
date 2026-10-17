@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
+  import ForecastSummary from './ForecastSummary.svelte';
+  import { selectDirectionalFare } from '$lib/engine/directionalFare';
+  import { modalFocus } from '$lib/actions/modalFocus';
   import {
     classifiedJourneys,
     detectedPatterns,
@@ -87,6 +90,7 @@
   let currentDetectedPatterns = $derived(plannerCard ? plannerCard.detectedPatterns : []);
 
   let showRecurrenceModal = $state(false);
+  let showScheduleOptions = $state(false);
   let isMouseDownOnOverlay = false;
   let showActiveRoutines = $state(true);
   let showOneOffJourneys = $state(true);
@@ -553,75 +557,41 @@
   });
 
   // Background task to automatically update saved rules with actual TfL API fares if they were estimated/unavailable before
+  let ruleFareSyncId = 0;
   async function syncRuleFaresWithApi() {
-    let updatedAny = false;
+    const syncId = ++ruleFareSyncId;
     const currentRules = [...$recurrenceRules];
-
-    for (let i = 0; i < currentRules.length; i++) {
-      const rule = currentRules[i];
-      if (rule.isAdvancedMode && rule.originStation && rule.destinationStation) {
-        try {
-          const zoneRange = getZoneRange(rule.originZone, rule.destinationZone);
-          const fallback = {
-            peak: lookupFare(zoneRange, true, rule.mode),
-            offPeak: lookupFare(zoneRange, false, rule.mode)
-          };
-          
-          const result = await lookupStationFare(rule.originStation, rule.destinationStation, fallback, $useAlternativeFares, rule.mode, $selectedFareType);
-          
-          if (result.isFromApi) {
-            let targetPeak = result.peak;
-            let targetOffPeak = result.offPeak;
-            let targetBasePeak = result.basePeak;
-            let targetBaseOffPeak = result.baseOffPeak;
-            let targetDesc = result.routeDescription;
-
-            // If the rule already has a route description, try to match it in result.options
-            if (rule.routeDescription && result.options) {
-              const matchedOpt = result.options.find(o => o.routeDescription === rule.routeDescription);
-              if (matchedOpt) {
-                targetPeak = matchedOpt.peak;
-                targetOffPeak = matchedOpt.offPeak;
-                targetDesc = matchedOpt.routeDescription;
-                
-                if (result.baseOptions) {
-                  const matchedBase = result.baseOptions.find(o => o.routeDescription === rule.routeDescription);
-                  if (matchedBase) {
-                    targetBasePeak = matchedBase.peak;
-                    targetBaseOffPeak = matchedBase.offPeak;
-                  }
-                }
-              }
-            }
-
-            // Check if exact fare is missing or different
-            if (
-              rule.exactFarePeak !== targetPeak || 
-              rule.exactFareOffPeak !== targetOffPeak ||
-              rule.exactBaseFarePeak !== targetBasePeak ||
-              rule.exactBaseFareOffPeak !== targetBaseOffPeak ||
-              rule.routeDescription !== targetDesc
-            ) {
-              currentRules[i] = {
-                ...rule,
-                exactFarePeak: targetPeak,
-                exactFareOffPeak: targetOffPeak,
-                exactBaseFarePeak: targetBasePeak,
-                exactBaseFareOffPeak: targetBaseOffPeak,
-                routeDescription: targetDesc
-              };
-              updatedAny = true;
-            }
-          }
-        } catch (e) {
-          console.error(`Failed to background sync fare for rule: ${rule.name}`, e);
-        }
-      }
+    const cheapest = $useAlternativeFares;
+    const fareType = $selectedFareType;
+    const updates = new Map<string, Partial<RecurrenceRule>>();
+    for (const rule of currentRules) {
+      if (!rule.isAdvancedMode || !rule.originStation || !rule.destinationStation) continue;
+      const zones = getZoneRange(rule.originZone, rule.destinationZone);
+      const fallback = { peak: lookupFare(zones, true, rule.mode), offPeak: lookupFare(zones, false, rule.mode) };
+      const [outboundResult, returnResult] = await Promise.all([
+        lookupStationFare(rule.originStation, rule.destinationStation, fallback, cheapest, rule.mode, fareType),
+        rule.isReturn ? lookupStationFare(rule.destinationStation, rule.originStation, fallback, cheapest, rule.mode, fareType) : Promise.resolve(null),
+      ]);
+      if (syncId !== ruleFareSyncId) return;
+      const outbound = selectDirectionalFare(outboundResult, rule.routeDescription, cheapest);
+      const inbound = returnResult ? selectDirectionalFare(returnResult, rule.returnRouteDescription || rule.routeDescription, cheapest) : null;
+      const values: Partial<RecurrenceRule> = {
+        exactFarePeak: outbound.isFromApi ? outbound.peak : undefined,
+        exactFareOffPeak: outbound.isFromApi ? outbound.offPeak : undefined,
+        exactBaseFarePeak: outbound.isFromApi ? outbound.basePeak : undefined,
+        exactBaseFareOffPeak: outbound.isFromApi ? outbound.baseOffPeak : undefined,
+        routeDescription: outbound.routeDescription,
+        returnExactFarePeak: inbound?.isFromApi ? inbound.peak : undefined,
+        returnExactFareOffPeak: inbound?.isFromApi ? inbound.offPeak : undefined,
+        returnExactBaseFarePeak: inbound?.isFromApi ? inbound.basePeak : undefined,
+        returnExactBaseFareOffPeak: inbound?.isFromApi ? inbound.baseOffPeak : undefined,
+        returnRouteDescription: inbound?.routeDescription,
+      };
+      if (Object.entries(values).some(([key, value]) => rule[key as keyof RecurrenceRule] !== value)) updates.set(rule.id, values);
     }
-
-    if (updatedAny) {
-      $recurrenceRules = currentRules;
-      regenerate(); // regenerate planned journeys and forecast spend
+    if (syncId === ruleFareSyncId && updates.size > 0) {
+      $recurrenceRules = $recurrenceRules.map(rule => updates.has(rule.id) ? { ...rule, ...updates.get(rule.id) } : rule);
+      regenerate();
     }
   }
 
@@ -757,6 +727,10 @@
   let showDestDropdown = $state(false);
   let advancedFareLoading = $state(false);
   let advancedFareResult = $state<ApiFareResult | null>(null);
+  let returnFareResult = $state<ApiFareResult | null>(null);
+  let returnRouteChoice = $state('');
+  let advancedRequestId = 0;
+
 
   let outsideZoneCapDetails = $derived.by(() => {
     let oNaptan = selectedOriginStation?.info.naptanId;
@@ -808,6 +782,7 @@
   let selectedPeakFare = $state<number>(0);
   let selectedOffPeakFare = $state<number>(0);
   let selectedRouteDescription = $state<string>("");
+  let selectedReturnFare = $derived(returnFareResult ? selectDirectionalFare(returnFareResult, returnRouteChoice || selectedRouteDescription, $useAlternativeFares) : null);
 
   let selectedBasePeakFare = $derived.by(() => {
     if (advancedFareResult && advancedFareResult.isFromApi && 'baseOptions' in advancedFareResult && advancedFareResult.baseOptions) {
@@ -1060,40 +1035,40 @@
   }
 
   async function fetchAdvancedFare() {
-    if (
-      !selectedOriginStation?.info.naptanId ||
-      !selectedDestStation?.info.naptanId
-    ) {
-      advancedFareResult = null;
+    const requestId = ++advancedRequestId;
+    const origin = selectedOriginStation;
+    const destination = selectedDestStation;
+    const withReturn = newIsReturn;
+    const cheapest = $useAlternativeFares;
+    const fareType = $selectedFareType;
+    advancedFareResult = null;
+    returnFareResult = null;
+    if (!origin?.info.naptanId || !destination?.info.naptanId || !advancedMode || newMode === 'bus') {
+      advancedFareLoading = false;
       return;
     }
-    advancedFareLoading = true;
-    const resolvedMode = determineModeFromStations(
-      selectedOriginStation,
-      selectedDestStation,
-    );
+    const mode = determineModeFromStations(origin, destination);
     const fallback = {
-      peak: lookupFare(
-        getZoneRange(newOriginZone, newDestZone),
-        true,
-        resolvedMode
-      ),
-      offPeak: lookupFare(
-        getZoneRange(newOriginZone, newDestZone),
-        false,
-        resolvedMode
-      ),
+      peak: lookupFare(getZoneRange(origin.info.zone, destination.info.zone), true, mode),
+      offPeak: lookupFare(getZoneRange(origin.info.zone, destination.info.zone), false, mode),
     };
     advancedFareLoading = true;
-    advancedFareResult = await lookupStationFare(
-      selectedOriginStation.info.naptanId,
-      selectedDestStation.info.naptanId,
-      fallback,
-      $useAlternativeFares,
-      resolvedMode,
-      $selectedFareType,
-    );
-    advancedFareLoading = false;
+    try {
+      const [outbound, inbound] = await Promise.all([
+        lookupStationFare(origin.info.naptanId, destination.info.naptanId, fallback, cheapest, mode, fareType),
+        withReturn ? lookupStationFare(destination.info.naptanId, origin.info.naptanId, fallback, cheapest, mode, fareType) : Promise.resolve(null),
+      ]);
+      if (requestId !== advancedRequestId) return;
+      advancedFareResult = outbound;
+      returnFareResult = inbound;
+    } catch {
+      if (requestId !== advancedRequestId) return;
+      const estimate: ApiFareResult = { ...fallback, basePeak: fallback.peak, baseOffPeak: fallback.offPeak, isFromApi: false, reason: 'api_error' };
+      advancedFareResult = estimate;
+      returnFareResult = withReturn ? estimate : null;
+    } finally {
+      if (requestId === advancedRequestId) advancedFareLoading = false;
+    }
   }
 
   function getEstimatedFare(
@@ -1187,24 +1162,11 @@
     return outbound;
   });
 
-  let advancedTotalFare = $derived.by(() => {
-    if (!selectedOriginStation || !selectedDestStation || !advancedFareResult) return 0;
-    const dateObj = modalReferenceDate || parseLocalDate(planStart);
-    
-    // Outbound
-    const outboundRepTime = getRepresentativeTime(newTimePeriod);
-    const isOutboundPeak = isPeakJourney(dateObj, outboundRepTime, newOriginZone, newDestZone);
-    const outboundFare = isOutboundPeak ? selectedPeakFare : selectedOffPeakFare;
-    
-    if (!newIsReturn) return outboundFare;
-    
-    // Return
-    const returnRepTime = getRepresentativeTime(newReturnTimePeriod);
-    const isReturnPeak = isPeakJourney(dateObj, returnRepTime, newOriginZone, newDestZone);
-    const returnFare = isReturnPeak ? selectedPeakFare : selectedOffPeakFare;
-    
-    return outboundFare + returnFare;
-  });
+  let outboundPreviewIsPeak = $derived(isPeakJourney(modalReferenceDate, getRepresentativeTime(newTimePeriod), newOriginZone, newDestZone));
+  let returnPreviewIsPeak = $derived(isPeakJourney(modalReferenceDate, getRepresentativeTime(newReturnTimePeriod), newDestZone, newOriginZone));
+  let outboundPreviewFare = $derived(outboundPreviewIsPeak ? selectedPeakFare : selectedOffPeakFare);
+  let returnPreviewFare = $derived(selectedReturnFare ? (returnPreviewIsPeak ? selectedReturnFare.peak : selectedReturnFare.offPeak) : null);
+  let advancedTotalFare = $derived(outboundPreviewFare + (newIsReturn ? returnPreviewFare ?? 0 : 0));
 
   // Date range for planning
   let plannerRecalculating = $state(false);
@@ -2465,6 +2427,13 @@
               }),
           }),
       }),
+      ...(newIsReturn && selectedReturnFare?.isFromApi && {
+        returnExactFarePeak: selectedReturnFare.peak,
+        returnExactFareOffPeak: selectedReturnFare.offPeak,
+        returnExactBaseFarePeak: selectedReturnFare.basePeak,
+        returnExactBaseFareOffPeak: selectedReturnFare.baseOffPeak,
+        returnRouteDescription: selectedReturnFare.routeDescription,
+      }),
     };
 
     if (editRuleId) {
@@ -2485,6 +2454,9 @@
 
   function editRule(rule: RecurrenceRule) {
     editRuleId = rule.id;
+    showScheduleOptions = true;
+    returnRouteChoice = rule.returnRouteDescription ?? '';
+    returnFareResult = null;
     newRuleName = rule.name;
     newOriginZone = rule.originZone;
     newDestZone = rule.destinationZone;
@@ -2646,9 +2618,9 @@
   function handleBlur(e: FocusEvent) {
     const target = e.target as HTMLInputElement;
     if (!target.value) {
-      if (target.id === "plan-start") {
+      if (target.id.endsWith("plan-start")) {
         target.value = planStart;
-      } else if (target.id === "plan-end") {
+      } else if (target.id.endsWith("plan-end")) {
         target.value = planEnd;
       }
     }
@@ -2734,6 +2706,10 @@
   }
 
   function resetForm() {
+    showScheduleOptions = false;
+    returnRouteChoice = '';
+    returnFareResult = null;
+    advancedRequestId += 1;
     editRuleId = null;
     newRuleName = "";
     newOriginZone = defOriginZone;
@@ -2893,6 +2869,66 @@
     {/if}
   </div>
 
+  {#if $recurrenceRules.length === 0}
+    <section class="planner-quick-start glass-card" aria-labelledby="quick-start-title">
+      <div class="quick-start-copy">
+        <h2 id="quick-start-title">What does your commute cost?</h2>
+        <p>Add your route, travel days and return time for a cost estimate.</p>
+      </div>
+      <div class="quick-start-actions">
+        <button class="btn-primary" onclick={() => { resetForm(); newRuleName = 'Commute'; newIsReturn = true; showRecurrenceModal = true; }}>Set up my commute</button>
+        {#if currentDetectedPatterns.length > 0}<button class="btn-secondary" onclick={() => activeMobileTab = 'schedules'}>Review detected routines</button>{/if}
+      </div>
+    </section>
+  {/if}
+
+  {#snippet planningPeriodFields(prefix: string)}
+        <div class="date-inputs">
+          <label class="setting-label" for={`${prefix}plan-start`}>Start</label>
+          <input
+            type="date"
+            class="input-field"
+            id={`${prefix}plan-start`}
+            value={planStart}
+            onchange={handleStartChange}
+            onblur={handleBlur}
+            onkeydown={handleKeyDown}
+            min={minDateStr}
+            max={maxDateStr}
+          />
+          <label
+            class="setting-label"
+            for={`${prefix}plan-end`}
+            style="margin-top: 0.5rem;">End</label
+          >
+          <input
+            type="date"
+            class="input-field"
+            id={`${prefix}plan-end`}
+            value={planEnd}
+            onchange={handleEndChange}
+            onblur={handleBlur}
+            onkeydown={handleKeyDown}
+            min={minDateStr}
+            max={maxDateStr}
+          />
+          <div class="preset-buttons">
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1w')}>+1W</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1m')}>+1M</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('3m')}>+3M</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('6m')}>+6M</button>
+            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1y')}>+1Y</button>
+          </div>
+        </div>
+  {/snippet}
+
+  <details class="planning-period glass-card hidden max-xl:block">
+    <summary><span><strong>Planning period</strong><span class="period-range">{parseLocalDate(planStart).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – {parseLocalDate(planEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span></span><svg class="period-chevron" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg></summary>
+    <div class="period-controls">
+      {@render planningPeriodFields("mobile-")}
+    </div>
+  </details>
+
   <!-- Mobile Tab Switcher -->
   <div class="mobile-tabs-container hidden max-xl:flex">
     <button
@@ -2924,48 +2960,10 @@
   <div class="planner-layout active-tab-{activeMobileTab}">
     <!-- Sidebar: Rules & patterns -->
     <div class="planner-sidebar">
-      <!-- Date range -->
-      <div class="glass-card sidebar-section">
+      <div class="glass-card sidebar-section planning-period-desktop max-xl:hidden">
         <h3 class="sidebar-title">📅 Planning Period</h3>
-        <div class="date-inputs">
-          <label class="setting-label" for="plan-start">Start</label>
-          <input
-            type="date"
-            class="input-field"
-            id="plan-start"
-            value={planStart}
-            onchange={handleStartChange}
-            onblur={handleBlur}
-            onkeydown={handleKeyDown}
-            min={minDateStr}
-            max={maxDateStr}
-          />
-          <label
-            class="setting-label"
-            for="plan-end"
-            style="margin-top: 0.5rem;">End</label
-          >
-          <input
-            type="date"
-            class="input-field"
-            id="plan-end"
-            value={planEnd}
-            onchange={handleEndChange}
-            onblur={handleBlur}
-            onkeydown={handleKeyDown}
-            min={minDateStr}
-            max={maxDateStr}
-          />
-          <div class="preset-buttons">
-            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1w')}>+1W</button>
-            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1m')}>+1M</button>
-            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('3m')}>+3M</button>
-            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('6m')}>+6M</button>
-            <button type="button" class="btn-preset" onclick={() => setPlanningPeriod('1y')}>+1Y</button>
-          </div>
-        </div>
+        {@render planningPeriodFields("")}
       </div>
-
       <div class="glass-card sidebar-section">
         <div
           style="display: flex; justify-content: space-between; align-items: center;"
@@ -3071,7 +3069,7 @@
                           🚫 Concession Disabled
                         </span>
                       {:else}
-                        {@const isEstimate = !rule.isAdvancedMode || rule.exactFarePeak === undefined || rule.exactFareOffPeak === undefined}
+                        {@const isEstimate = !rule.isAdvancedMode || rule.exactFarePeak === undefined || rule.exactFareOffPeak === undefined || (rule.isReturn && (rule.returnExactFarePeak === undefined || rule.returnExactFareOffPeak === undefined))}
                         {@const retryInfo = getRuleRetryInfo(rule)}
                         {#if retryInfo}
                           <span class="rule-syncing-indicator" title="Currently fetching live fare from TfL API...">
@@ -3266,7 +3264,7 @@
                           🚫 Concession Disabled
                         </span>
                       {:else}
-                        {@const isEstimate = !rule.isAdvancedMode || rule.exactFarePeak === undefined || rule.exactFareOffPeak === undefined}
+                        {@const isEstimate = !rule.isAdvancedMode || rule.exactFarePeak === undefined || rule.exactFareOffPeak === undefined || (rule.isReturn && (rule.returnExactFarePeak === undefined || rule.returnExactFareOffPeak === undefined))}
                         {@const retryInfo = getRuleRetryInfo(rule)}
                         {#if retryInfo}
                           <span class="rule-syncing-indicator" title="Currently fetching live fare from TfL API...">
@@ -3395,32 +3393,20 @@
     <div class="calendar-area">
       <!-- Forecast summary -->
       {#if $forecastResult}
-        <div class="glass-card forecast-summary flex justify-around gap-4 max-xl:grid max-sm:grid-cols-1 max-xl:grid-cols-2 max-xl:gap-5">
-          <div class="forecast-stat">
-            <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]">Standard PAYG</span>
-            <span class="forecast-value max-xl:text-[1.75rem]"
-              >£{$forecastResult.totalPaygCapped.toFixed(2)}</span
-            >
-          </div>
-          <div class="forecast-stat">
-            <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]"
-              >{#if $selectedFareType === "none"}Adult / Contactless{:else}With {fareTypeShortName}
-                Discount{/if}</span
-            >
-            <span class="forecast-value green max-xl:text-[1.75rem]"
-              >£{$forecastResult.totalPaygFareTypeCapped.toFixed(2)}</span
-            >
-          </div>
-          <div class="forecast-stat highlight max-xl:col-span-2 max-sm:col-span-1 max-xl:border-t max-xl:border-[rgba(255,255,255,0.08)] max-xl:pt-3">
-            <span class="forecast-label max-xl:whitespace-normal max-xl:text-[0.75rem]">Potential Saving</span>
-            <span class="forecast-value green large max-xl:text-[2.25rem]">
-              £{(
-                $forecastResult.totalPaygCapped -
-                $forecastResult.totalPaygFareTypeCapped
-              ).toFixed(2)}
-            </span>
-          </div>
-        </div>
+        <ForecastSummary
+          standardCost={$forecastResult.totalPaygCapped}
+          selectedCost={$forecastResult.totalPaygFareTypeCapped}
+          fareType={$selectedFareType}
+          fareTypeName={fareTypeShortName}
+          period={`${parseLocalDate(planStart).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} – ${parseLocalDate(planEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+          onchangeFareType={async () => {
+            activeMobileTab = 'settings';
+            await tick();
+            const select = document.getElementById('sel-fare-type');
+            select?.scrollIntoView({ block: 'center' });
+            select?.focus({ preventScroll: true });
+          }}
+        />
 
         {#if studentComparison}
           <div
@@ -3681,7 +3667,7 @@
                 onblur={(e) => hideDailyCapTooltip(e)}
                 onclick={() => quickAddOnDate(day.date)}
                 onkeydown={(e) => {
-                  if (e.key === "Enter") quickAddOnDate(day.date);
+                  if (e.key === "Enter" && e.target === e.currentTarget) quickAddOnDate(day.date);
                 }}
                 style="cursor: pointer;"
               >
@@ -3697,44 +3683,33 @@
                   >
                     ✕
                   </button>
-                  {#if forecast}
-                    <button
-                      type="button"
-                      class="day-details-btn"
-                      aria-label={`Show cap and journey details for ${day.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`}
-                      title="View daily cap and journey details"
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        handleDailyCapClick(e.currentTarget, forecast);
-                      }}
-                    >
-                      i
-                    </button>
-                  {/if}
                   <div class="day-journey-count max-xl:text-[0.6rem]">
                     <span class="max-[440px]:hidden">{dayJourneys.length} trip{dayJourneys.length > 1 ? "s" : ""}</span>
                     <span class="hidden max-[440px]:inline">{dayJourneys.length}x</span>
                   </div>
                   {#if forecast}
-                    <div class="day-spend max-xl:text-[0.65rem]">
-                      £{forecast.cappedFareFareType.toFixed(2)}
-                    </div>
-                    <div class="mini-cap-bar" style="display: flex; gap: 0; background: rgba(255, 255, 255, 0.1); overflow: hidden; border-radius: 2px; height: 4px; margin-top: 0.25rem;">
+                    <button type="button" class="day-spend-details"
+                      aria-label={`Show cap and journey details for ${day.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}, £${forecast.cappedFareFareType.toFixed(2)}`}
+                      onclick={(e) => { e.stopPropagation(); handleDailyCapClick(e.currentTarget, forecast); }}
+                    >
+                      <span class="day-spend-value">£{forecast.cappedFareFareType.toFixed(2)}</span>
+                    <span class="mini-cap-bar" aria-hidden="true" style="display: flex; gap: 0; background: rgba(255, 255, 255, 0.1); overflow: hidden; border-radius: 2px; height: 3px;">
                       {#if forecast.busProgressFareType && forecast.busProgressFareType > 0}
-                        <div
+                        <span
                           class="mini-cap-fill-bus"
                           style="width: {forecast.busProgressFareType * 100}%; background: {forecast.isBusCapHitFareType || forecast.capHitFareType ? '#10b981' : '#e0311a'}; height: 100%; transition: width 0.3s ease;"
                           title="Bus Spend: £{forecast.cappedBusFareFareType?.toFixed(2)}"
-                        ></div>
+                        ></span>
                       {/if}
                       {#if forecast.railProgressFareType && forecast.railProgressFareType > 0}
-                        <div
+                        <span
                           class="mini-cap-fill-rail"
                           style="width: {forecast.railProgressFareType * 100}%; background: {getCapColor(forecast.capProgressFareType)}; height: 100%; transition: width 0.3s ease;"
                           title="Rail/Tube Spend: £{forecast.cappedRailFareFareType?.toFixed(2)}"
-                        ></div>
+                        ></span>
                       {/if}
-                    </div>
+                    </span>
+                    </button>
                     {#if forecast.isTotalCapHitFareType}
                       <div class="cap-hit-label max-xl:text-[0.5rem]">
                         <span class="max-sm:hidden">Cap Hit ✓</span>
@@ -4119,8 +4094,10 @@
         if (e.key === "Escape") showRecurrenceModal = false;
       }}
       role="dialog"
+      aria-modal="true"
+      use:modalFocus
       tabindex="-1"
-      aria-label="Add recurring routine"
+      aria-label={editRuleId ? "Edit travel routine" : "Add travel routine or journey"}
     >
       <div class="modal-content glass-card">
         <div class="modal-header">
@@ -4137,11 +4114,13 @@
           </h2>
           <button
             class="modal-close"
+            aria-label="Close routine setup"
             onclick={() => (showRecurrenceModal = false)}>✕</button
           >
         </div>
 
         <div class="modal-body">
+          <p class="setup-intro">Choose your route, travel times and commute days. Routines repeat weekly across your planning period by default.</p>
           <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
             <div class="form-group">
               <label class="setting-label" for="modal-journey-type"
@@ -4203,68 +4182,6 @@
             {/if}
           </div>
 
-          {#if newIntervalType !== "none"}
-            <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
-                  <label class="setting-label" for="modal-start-date" style="margin-bottom: 0;">Start Date</label>
-                  <button
-                    type="button"
-                    class="mini-sync-toggle"
-                    class:active={syncWithPlanStart}
-                    onclick={() => syncWithPlanStart = !syncWithPlanStart}
-                  >
-                    <span class="sync-icon">{syncWithPlanStart ? '🔗' : '🔓'}</span>
-                    {syncWithPlanStart ? 'Synced' : 'Custom'}
-                  </button>
-                </div>
-                {#if syncWithPlanStart}
-                  <div class="input-field-placeholder" style="padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--color-border); color: var(--color-text-muted); font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.35rem; box-sizing: border-box; cursor: not-allowed;">
-                    <span style="opacity: 0.7;">📅</span> {planStart ? new Date(planStart).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} (Synced)
-                  </div>
-                {:else}
-                  <input
-                    type="date"
-                    class="input-field"
-                    id="modal-start-date"
-                    bind:value={newRuleDate}
-                    onblur={handleModalBlur}
-                    min={minDateStr}
-                    max={maxDateStr}
-                  />
-                {/if}
-              </div>
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
-                  <label class="setting-label" for="modal-end-date" style="margin-bottom: 0;">End Date</label>
-                  <button
-                    type="button"
-                    class="mini-sync-toggle"
-                    class:active={syncWithPlanEnd}
-                    onclick={() => syncWithPlanEnd = !syncWithPlanEnd}
-                  >
-                    <span class="sync-icon">{syncWithPlanEnd ? '🔗' : '🔓'}</span>
-                    {syncWithPlanEnd ? 'Synced' : 'Custom'}
-                  </button>
-                </div>
-                {#if syncWithPlanEnd}
-                  <div class="input-field-placeholder" style="padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--color-border); color: var(--color-text-muted); font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.35rem; box-sizing: border-box; cursor: not-allowed;">
-                    <span style="opacity: 0.7;">📅</span> {planEnd ? new Date(planEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} (Synced)
-                  </div>
-                {:else}
-                  <input
-                    type="date"
-                    class="input-field"
-                    id="modal-end-date"
-                    bind:value={newRuleEndDate}
-                    onblur={handleModalBlur}
-                    min={minDateStr}
-                    max={maxDateStr}
-                  />
-                {/if}
-              </div>
-            </div>
-          {/if}
 
           {#if advancedMode}
             <!-- Segmented Control binary toggle for Advanced Mode -->
@@ -4677,6 +4594,74 @@
               </div>
             </div>
 
+            <section class="schedule-settings">
+              <button type="button" class="schedule-options" aria-expanded={showScheduleOptions} aria-controls="routine-schedule-settings" onclick={() => showScheduleOptions = !showScheduleOptions}>
+                <span><span class="schedule-options-title">Dates &amp; repeat</span><span class="schedule-options-summary">Every {newIntervalValue === 1 ? '' : newIntervalValue + ' '}{newIntervalValue === 1 ? newIntervalType.replace(/s$/, '') : newIntervalType} · {parseLocalDate(syncWithPlanStart ? planStart : newRuleDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – {parseLocalDate(syncWithPlanEnd ? planEnd : newRuleEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span></span>
+                <svg class:expanded={showScheduleOptions} aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            {#if showScheduleOptions}
+              <div id="routine-schedule-settings" class="schedule-settings-fields">
+            <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
+                  <label class="setting-label" for="modal-start-date" style="margin-bottom: 0;">Start Date</label>
+                  <button
+                    type="button"
+                    class="mini-sync-toggle"
+                    class:active={syncWithPlanStart}
+                    onclick={() => syncWithPlanStart = !syncWithPlanStart}
+                  >
+                    <span class="sync-icon">{syncWithPlanStart ? '🔗' : '🔓'}</span>
+                    {syncWithPlanStart ? 'Synced' : 'Custom'}
+                  </button>
+                </div>
+                {#if syncWithPlanStart}
+                  <div class="input-field-placeholder" style="padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--color-border); color: var(--color-text-muted); font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.35rem; box-sizing: border-box; cursor: not-allowed;">
+                    <span style="opacity: 0.7;">📅</span> {planStart ? new Date(planStart).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} (Synced)
+                  </div>
+                {:else}
+                  <input
+                    type="date"
+                    class="input-field"
+                    id="modal-start-date"
+                    bind:value={newRuleDate}
+                    onblur={handleModalBlur}
+                    min={minDateStr}
+                    max={maxDateStr}
+                  />
+                {/if}
+              </div>
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.25rem;">
+                  <label class="setting-label" for="modal-end-date" style="margin-bottom: 0;">End Date</label>
+                  <button
+                    type="button"
+                    class="mini-sync-toggle"
+                    class:active={syncWithPlanEnd}
+                    onclick={() => syncWithPlanEnd = !syncWithPlanEnd}
+                  >
+                    <span class="sync-icon">{syncWithPlanEnd ? '🔗' : '🔓'}</span>
+                    {syncWithPlanEnd ? 'Synced' : 'Custom'}
+                  </button>
+                </div>
+                {#if syncWithPlanEnd}
+                  <div class="input-field-placeholder" style="padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--color-border); color: var(--color-text-muted); font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.35rem; box-sizing: border-box; cursor: not-allowed;">
+                    <span style="opacity: 0.7;">📅</span> {planEnd ? new Date(planEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} (Synced)
+                  </div>
+                {:else}
+                  <input
+                    type="date"
+                    class="input-field"
+                    id="modal-end-date"
+                    bind:value={newRuleEndDate}
+                    onblur={handleModalBlur}
+                    min={minDateStr}
+                    max={maxDateStr}
+                  />
+                {/if}
+              </div>
+            </div>
+
             <div class="form-row grid grid-cols-1 xl:grid-cols-2 gap-6 max-xl:gap-3">
               <div class="form-group">
                 <label class="setting-label" for="modal-interval-value"
@@ -4707,6 +4692,9 @@
                 </select>
               </div>
             </div>
+              </div>
+            {/if}
+            </section>
           {/if}
 
           <div class="form-group" style="margin-top: 0.5rem;">
@@ -4736,8 +4724,9 @@
                 </span>
               {:else if selectedOriginStation && selectedDestStation && selectedOriginStation.info.naptanId !== selectedDestStation.info.naptanId && advancedFareResult}
                 {@const fareResult = advancedFareResult}
-                <div class="advanced-fare-preview-layout" style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%;">
-                  <div class="retrieved-fares-row" style="display: flex; align-items: center; gap: 0.3rem;">
+                <div class="advanced-fare-preview-layout">
+                  <div class="retrieved-fares-row">
+                    <h4>Fare preview</h4>
                     {#if fareResult.isFromApi}
                       <button
                         type="button"
@@ -4753,7 +4742,7 @@
                             showFareTooltip(e.currentTarget, true, selectedBasePeakFare, selectedPeakFare, selectedBaseOffPeakFare, selectedOffPeakFare, false);
                           }
                         }}
-                      >✓ TfL API</button>
+                      >✓ TfL fares</button>
                     {:else}
                       <button
                         type="button"
@@ -4771,10 +4760,8 @@
                         }}
                       >⚠️ Estimated</button>
                     {/if}
-                    Peak: <strong>£{selectedPeakFare.toFixed(2)}</strong>
-                    <span style="margin: 0 0.3rem; color: var(--color-text-muted);">|</span>
-                    Off-Peak: <strong>£{selectedOffPeakFare.toFixed(2)}</strong>
                   </div>
+                  <p class="fare-reference-rates">Outbound rates: peak £{selectedPeakFare.toFixed(2)} · off-peak £{selectedOffPeakFare.toFixed(2)}</p>
 
                   {#if !fareResult.isFromApi && fareResult.reason}
                     <div class="fare-fallback-reason" style="font-size: 0.72rem; color: var(--color-danger); margin-top: 0.15rem; display: flex; align-items: center; gap: 0.2rem;">
@@ -4831,9 +4818,23 @@
                     </div>
                   {/if}
 
-                  <div class="estimated-total-row" style="font-size: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 0.35rem; margin-top: 0.15rem;">
-                    {fareResult.isFromApi ? "Actual Fare" : "Estimated Fare"}: <strong>£{advancedTotalFare.toFixed(2)}</strong>
+                  {#if newIsReturn && returnFareResult?.isFromApi && returnFareResult.options && returnFareResult.options.length > 1}
+                    <label class="setting-label" for="return-route-choice">Return route</label>
+                    <select id="return-route-choice" class="input-field" value={selectedReturnFare?.routeDescription} onchange={(e) => returnRouteChoice = e.currentTarget.value}>
+                      {#each returnFareResult.options as option}<option value={option.routeDescription}>{option.routeDescription}</option>{/each}
+                    </select>
+                  {/if}
+                  <div class="fare-leg-breakdown">
+                    <p class="preview-date">Single fares for {modalReferenceDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}.</p>
+                    <div><span><b class="fare-leg-label">Outbound</b><span class="fare-leg-route">{selectedOriginStation.info.name} → {selectedDestStation.info.name}</span><small>Z{newOriginZone} → Z{newDestZone} · {newTimePeriod} · {outboundPreviewIsPeak ? 'Peak' : 'Off-peak'}</small></span><strong>£{outboundPreviewFare.toFixed(2)}</strong></div>
+                    {#if newIsReturn && selectedReturnFare}
+                      <div><span><b class="fare-leg-label">Return</b><span class="fare-leg-route">{selectedDestStation.info.name} → {selectedOriginStation.info.name}</span><small>Z{newDestZone} → Z{newOriginZone} · {newReturnTimePeriod} · {returnPreviewIsPeak ? 'Peak' : 'Off-peak'} · {selectedReturnFare.isFromApi ? 'TfL fare' : 'Zone estimate'}</small></span><strong>£{returnPreviewFare?.toFixed(2)}</strong></div>
+                    {/if}
                   </div>
+                  <div class="estimated-total-row">
+                    <span>{newIsReturn ? "Return journey total" : "Single journey total"}<small>Before daily caps</small></span><strong>£{advancedTotalFare.toFixed(2)}</strong>
+                  </div>
+                  <p class="fare-cap-note">Daily caps are applied in your forecast.</p>
                 </div>
               {:else if !selectedOriginStation || !selectedDestStation}
                 <span
@@ -4843,7 +4844,7 @@
                   fare
                 </span>
               {/if}
-              {#if newIsReturn}
+              {#if newIsReturn && (newMode === "bus" || !advancedMode)}
                 <span
                   style="font-size: 0.75rem; color: var(--color-text-muted);"
                 >
@@ -4902,7 +4903,7 @@
           <button
             class="btn-primary"
             onclick={saveRule}
-            disabled={(newIntervalType !== "none" && newDays.length === 0) || (advancedMode && newMode !== "bus" && (!selectedOriginStation || !selectedDestStation || selectedOriginStation.info.naptanId === selectedDestStation.info.naptanId || ($selectedFareType !== 'none' && (selectedOriginStation.info.contactlessOnly || selectedDestStation.info.contactlessOnly))))}
+            disabled={advancedFareLoading || (newIntervalType !== "none" && newDays.length === 0) || (advancedMode && newMode !== "bus" && (!selectedOriginStation || !selectedDestStation || selectedOriginStation.info.naptanId === selectedDestStation.info.naptanId || ($selectedFareType !== 'none' && (selectedOriginStation.info.contactlessOnly || selectedDestStation.info.contactlessOnly))))}
             >{editRuleId ? "Save Routine" : "Add Routine"}</button
           >
         </div>
@@ -5252,6 +5253,56 @@
 {/if}
 
 <style>
+  .planning-period { margin-bottom: 1.25rem; }
+  .planning-period summary { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding: 1rem 1.25rem; cursor: pointer; min-height: 56px; }
+  .period-range { margin-left: 1rem; color: var(--color-text-secondary); font-size: 0.875rem; }
+  .period-chevron { flex-shrink: 0; color: var(--color-text-secondary); }
+  .planning-period summary::-webkit-details-marker { display: none; }
+  .planning-period summary:hover { background: var(--color-bg-glass-hover); }
+  .planning-period summary:focus-visible { outline: 2px solid var(--color-oyster-blue-light); outline-offset: 3px; border-radius: 12px; }
+  .planning-period[open] .period-chevron { transform: rotate(180deg); }
+  .period-controls { padding: 0 1.25rem 1.25rem; }
+  .period-controls .date-inputs { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.75rem; align-items: center; }
+  .period-controls .preset-buttons { grid-column: 1 / -1; }
+  .advanced-fare-preview-layout { display: flex; flex-direction: column; width: 100%; text-align: left; }
+  .retrieved-fares-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .retrieved-fares-row h4 { margin: 0; font-size: 0.95rem; font-weight: 650; color: var(--color-text-primary); }
+  .fare-reference-rates { margin: 0.4rem 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--color-text-secondary); }
+  .fare-leg-breakdown { margin-top: 0.9rem; font-size: 0.85rem; }
+  .fare-leg-breakdown > div { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.85rem 0; }
+  .fare-leg-breakdown > div + div { border-top: 1px solid var(--color-border); }
+  .fare-leg-label { display: block; font-size: 0.8rem; color: var(--color-text-primary); font-weight: 600; }
+  .fare-leg-route { display: block; margin-top: 0.25rem; line-height: 1.4; color: var(--color-text-primary); overflow-wrap: anywhere; }
+  .fare-leg-breakdown > div > strong { font-size: 1rem; color: var(--color-text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fare-leg-breakdown small { display: block; margin-top: 0.25rem; font-size: 0.72rem; line-height: 1.5; color: var(--color-text-secondary); }
+  .preview-date { margin: 0; font-size: 0.8rem; color: var(--color-text-secondary); line-height: 1.5; }
+  .estimated-total-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-top: 1px solid var(--color-border); padding-top: 1rem; margin-top: 0.15rem; color: var(--color-text-primary); font-size: 0.9rem; font-weight: 600; }
+  .estimated-total-row small { display: block; margin-top: 0.2rem; font-size: 0.72rem; color: var(--color-text-secondary); font-weight: 400; }
+  .estimated-total-row > strong { font-size: 1.4rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fare-cap-note { margin: 0.75rem 0 0; color: var(--color-text-secondary); font-size: 0.75rem; line-height: 1.5; }
+  @media (max-width: 640px) { .period-range { display: block; margin: 0.25rem 0 0; } .period-controls .date-inputs { grid-template-columns: auto minmax(0, 1fr); } }
+  .planner-quick-start { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+  .quick-start-copy { min-width: 0; }
+  .quick-start-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 0.75rem; flex-shrink: 0; }
+  .planner-quick-start h2 { font-size: 1.25rem; font-weight: 700; }
+  .planner-quick-start p { color: var(--color-text-secondary); line-height: 1.6; margin: 0.375rem 0 0; max-width: 65ch; }
+  .setup-intro { color: var(--color-text-secondary); line-height: 1.6; margin: 0.75rem 0 1rem; max-width: 65ch; }
+  .planner-quick-start button { min-height: 44px; white-space: nowrap; }
+  .schedule-settings { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); margin: 0.25rem 0 1.25rem; }
+  .schedule-options { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-height: 64px; padding: 0.85rem 0; background: transparent; border: 0; color: var(--color-text-primary); text-align: left; font: inherit; cursor: pointer; }
+  .schedule-options-title { display: block; font-size: 0.9rem; font-weight: 600; }
+  .schedule-options-summary { display: block; margin-top: 0.3rem; font-size: 0.78rem; line-height: 1.5; color: var(--color-text-secondary); }
+  .schedule-options svg { flex-shrink: 0; color: var(--color-text-secondary); }
+  .schedule-options svg.expanded { transform: rotate(180deg); }
+  .schedule-options:hover .schedule-options-title { color: var(--color-oyster-blue-light); }
+  .schedule-options:focus-visible { outline: 2px solid var(--color-oyster-blue-light); outline-offset: 3px; border-radius: 4px; }
+  .schedule-settings-fields { padding: 0.5rem 0 0; }
+  .modal-close { min-width: 44px; min-height: 44px; }
+  @media (max-width: 767px) {
+    .planner-quick-start { align-items: stretch; flex-direction: column; gap: 1rem; }
+    .quick-start-actions { flex-direction: column; align-items: stretch; }
+    .planner-quick-start button { width: 100%; justify-content: center; white-space: normal; }
+  }
   /* Cap detail hovercards */
   .weekly-cap-hovercard,
   .daily-cap-hovercard {
@@ -6011,70 +6062,6 @@
     margin-top: 0.125rem;
   }
 
-  .forecast-summary {
-    border-color: rgba(16, 185, 129, 0.2);
-    margin-bottom: 1.25rem;
-    padding: 1.25rem;
-  }
-  @media (max-width: 640px) {
-    .forecast-summary {
-      padding: 0.75rem;
-    }
-  }
-  .forecast-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border: none;
-    padding: 0;
-    margin: 0;
-    text-align: center;
-  }
-  .forecast-stat.highlight {
-    background: transparent;
-  }
-  .forecast-label {
-    font-size: 0.85rem;
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    font-weight: 600;
-    white-space: normal;
-    text-align: center;
-  }
-  @media (min-width: 1280px) {
-    .forecast-label {
-      white-space: nowrap;
-    }
-  }
-  .forecast-value {
-    font-weight: 600;
-    font-family: monospace;
-    font-size: 1.5rem;
-  }
-  .forecast-value.green {
-    color: #34d399;
-  }
-  .forecast-value.large {
-    font-size: 2rem;
-    font-weight: 900;
-  }
-  @media (min-width: 640px) {
-    .forecast-value {
-      font-size: 1.75rem;
-    }
-    .forecast-value.large {
-      font-size: 2.25rem;
-    }
-  }
-  @media (min-width: 1280px) {
-    .forecast-value {
-      font-size: 2rem;
-    }
-    .forecast-value.large {
-      font-size: 2.5rem;
-    }
-  }
-
   /* Calendar area */
   .calendar-nav {
     display: flex;
@@ -6114,15 +6101,8 @@
 
   .day-journey-count {
     font-size: 0.65rem;
-    color: var(--color-oyster-blue);
+    color: var(--color-text-secondary);
     font-weight: 500;
-  }
-
-  .day-spend {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin-top: 0.125rem;
   }
 
   .mini-cap-bar {
@@ -7128,48 +7108,11 @@
     transform: scale(1.1);
   }
 
-  .day-details-btn {
-    position: absolute;
-    right: 4px;
-    bottom: 4px;
-    z-index: 5;
-    display: inline-flex;
-    width: 18px;
-    height: 18px;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: 1px solid rgba(0, 159, 227, 0.28);
-    border-radius: 50%;
-    background: rgba(0, 159, 227, 0.12);
-    color: var(--color-oyster-blue-light);
-    font-size: 0.65rem;
-    font-weight: 800;
-    line-height: 1;
-    cursor: help;
-    opacity: 0;
-    transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-  }
-
-  .calendar-cell:hover .day-details-btn,
-  .calendar-cell:focus-within .day-details-btn,
-  .day-details-btn:focus-visible {
-    opacity: 1;
-  }
-
-  .day-details-btn:hover,
-  .day-details-btn:focus-visible {
-    border-color: rgba(0, 159, 227, 0.6);
-    outline: none;
-    background: rgba(0, 159, 227, 0.26);
-    box-shadow: 0 4px 12px rgba(0, 159, 227, 0.2);
-  }
-
-  @media (hover: none), (max-width: 768px) {
-    .day-details-btn {
-      opacity: 1;
-    }
-  }
+  .day-spend-details { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 5px; width: 100%; min-height: 32px; padding: 3px 0; border: 0; border-radius: 4px; background: transparent; color: var(--color-text-primary); font: inherit; cursor: pointer; text-align: left; }
+  .day-spend-value { font-size: 0.72rem; font-weight: 650; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .day-spend-details .mini-cap-bar { width: 100%; margin-top: 0; flex-shrink: 0; }
+  @media (max-width: 440px) { .day-spend-value { font-size: 0.65rem; } }
+  .day-spend-details:hover { background: var(--color-bg-glass-hover); }
 
   .mobile-layout-add-btn {
     display: none !important;

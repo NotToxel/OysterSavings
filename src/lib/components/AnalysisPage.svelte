@@ -26,6 +26,7 @@
     lookupWeeklyCap,
   } from "$lib/data/fareData";
   import { getZoneColor, journeyUsesContactlessOnlyStation } from "$lib/data/stationService";
+  import RecommendationSummary from './RecommendationSummary.svelte';
   import InsightsPage from "./InsightsPage.svelte";
   import CardSelector from "./CardSelector.svelte";
   import AddCardDialog from "./AddCardDialog.svelte";
@@ -581,11 +582,14 @@
       </div>
     {/if}
 
+    <RecommendationSummary showCompareAction />
+
     <!-- Tab navigation -->
     <div class="tab-nav" style="margin-bottom: 1.5rem; opacity: {$isSwitchingCard ? 0.35 : 1}; pointer-events: {$isSwitchingCard ? 'none' : 'auto'}; transition: opacity 0.2s;">
     <button
       class="tab-btn"
       class:active={activeTab === "insights"}
+      aria-pressed={activeTab === "insights"}
       onclick={() => (activeTab = "insights")}
     >
       💡 Insights
@@ -593,6 +597,7 @@
     <button
       class="tab-btn"
       class:active={activeTab === "journeys"}
+      aria-pressed={activeTab === "journeys"}
       onclick={() => (activeTab = "journeys")}
     >
       🚆 Journeys
@@ -600,6 +605,7 @@
     <button
       class="tab-btn"
       class:active={activeTab === "savings"}
+      aria-pressed={activeTab === "savings"}
       onclick={() => (activeTab = "savings")}
     >
       💰 Discounted Fares
@@ -607,6 +613,7 @@
     <button
       class="tab-btn"
       class:active={activeTab === "caps"}
+      aria-pressed={activeTab === "caps"}
       onclick={() => (activeTab = "caps")}
     >
       📊 Cap Analysis

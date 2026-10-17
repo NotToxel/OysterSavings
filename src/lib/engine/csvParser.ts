@@ -76,6 +76,12 @@ export function parseCSV(csvContent: string): ParseResult {
     });
   }
 
+  const requiredColumns = ['Date', 'Start Time', 'Journey/Action', 'Charge'];
+  const missing = requiredColumns.filter(column => !result.meta.fields?.includes(column));
+  if (missing.length > 0) {
+    return { journeys: [], errors: [`This file is missing TfL columns: ${missing.join(', ')}. Export your journey history as CSV from TfL and try again.`], totalRows: result.data.length };
+  }
+
   const journeys: ParsedJourney[] = [];
 
   for (let i = 0; i < result.data.length; i++) {

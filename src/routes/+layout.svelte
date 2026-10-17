@@ -1,9 +1,26 @@
 <script lang="ts">
   import './layout.css';
-  import { currentPage, hasData, isDemoMode, resetData, reportGeneratedAt, cards } from '$lib/stores/stores';
+  import { onMount } from 'svelte';
+  import { currentPage, hasData, isDemoMode, resetData, reportGeneratedAt, cards, weeklyCapResults } from '$lib/stores/stores';
   import { TFL_FARES_LAST_ROSE } from '$lib/data/fareData';
 
   let { children } = $props();
+
+  onMount(() => {
+    const pages = ['home', 'analysis', 'compare', 'planner', 'faq'] as const;
+    function restoreView() {
+      const page = window.location.hash.slice(1);
+      $currentPage = pages.includes(page as typeof pages[number]) ? page as typeof pages[number] : 'home';
+    }
+    restoreView();
+    window.addEventListener('hashchange', restoreView);
+    const unsubscribe = currentPage.subscribe(page => {
+      if (window.location.hash.slice(1) !== page) {
+        if (page !== 'home' || window.location.hash) window.location.hash = page;
+      }
+    });
+    return () => { unsubscribe(); window.removeEventListener('hashchange', restoreView); };
+  });
 
   const navItems = [
     { id: 'home' as const, label: 'Upload', icon: '📂' },
@@ -61,7 +78,7 @@
             {#if $cards.length > 1}
               Running in <strong>Demo Mode</strong> with Alex's multi-card travel profile (2 cards loaded).
             {:else}
-              Running in <strong>Demo Mode</strong> with a pre-configured 5-week travel routine.
+              Running in <strong>Demo Mode</strong> with {$weeklyCapResults.length} weeks of sample travel.
             {/if}
           </span>
         </div>
@@ -103,6 +120,7 @@
   <!-- Footer -->
   <footer class="app-footer">
     <p>Privacy protected: the only network requests made by this application are directly to TfL.</p>
+    <p><a href="https://github.com/NotToxel/OysterSavings" target="_blank" rel="noopener noreferrer">View source on GitHub</a></p>
     <p class="footer-disclaimer">
       Powered by TfL Open Data. This website is not affiliated with Transport for London.
     </p>
@@ -157,6 +175,7 @@
   }
 
   .logo {
+    min-height: 44px;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -192,6 +211,7 @@
   }
 
   .nav-pill {
+    min-height: 44px;
     display: flex;
     align-items: center;
     gap: 0.375rem;
@@ -329,7 +349,7 @@
   }
 
   .footer-github-icon {
-    opacity: 0.7;
+    opacity: 1;
   }
 
   .meta-build-info:hover .footer-github-icon {
@@ -360,31 +380,35 @@
     margin-top: 0.25rem;
     color: var(--color-text-muted);
     font-size: 0.75rem;
-    opacity: 0.85;
+    opacity: 1;
   }
 
   .footer-copyright {
     margin-top: 0.25rem;
     color: var(--color-text-muted);
     font-size: 0.7rem;
-    opacity: 0.7;
+    opacity: 1;
   }
 
   .footer-disclaimer {
     margin-top: 0.25rem;
     color: var(--color-text-muted);
     font-size: 0.7rem;
-    opacity: 0.85;
+    opacity: 1;
   }
 
   /* Override tooltip properties specifically for build metadata */
   :global(.meta-build-info.tooltip::after) {
-    white-space: pre !important;
+    white-space: pre-line !important;
+    overflow-wrap: anywhere;
     text-align: left !important;
     font-family: var(--font-sans);
     line-height: 1.6 !important;
     width: max-content !important;
-    max-width: none !important;
+    max-width: min(24rem, calc(100vw - 2rem)) !important;
+    left: auto !important;
+    right: 0;
+    transform: none !important;
     padding: 0.5rem 0.85rem !important;
   }
 
@@ -412,7 +436,7 @@
     }
     .nav-pill {
       flex: 0 0 auto;
-      min-height: 42px;
+      min-height: 44px;
       padding: 0.55rem 0.85rem;
     }
     .nav-icon {

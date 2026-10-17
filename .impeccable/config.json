@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "src/routes/layout.css"
+        ],
+        "createdAt": "2026-10-17T17:01:48.390Z",
+        "reason": "Agent review: the only matching border is .tfl-switching-spinner, a rotating circular progress indicator whose contrasting top segment communicates loading; it is not a rounded card accent."
+      }
+    ]
+  }
+}
