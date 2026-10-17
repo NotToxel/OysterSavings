@@ -1,41 +1,35 @@
 <script lang="ts">
   import './layout.css';
   import { onMount } from 'svelte';
-  import { currentPage, hasData, isDemoMode, resetData, reportGeneratedAt, cards, weeklyCapResults } from '$lib/stores/stores';
+  import { goto, afterNavigate } from '$app/navigation';
+  import { resolve } from '$app/paths';
+  import { page } from '$app/state';
+  import { navigation, legacyRoutes } from '$lib/navigation';
+  import { hasData, isDemoMode, resetData, reportGeneratedAt, cards, weeklyCapResults } from '$lib/stores/stores';
   import { TFL_FARES_LAST_ROSE } from '$lib/data/fareData';
 
   let { children } = $props();
 
   onMount(() => {
-    const pages = ['home', 'analysis', 'compare', 'planner', 'faq'] as const;
-    function restoreView() {
-      const page = window.location.hash.slice(1);
-      $currentPage = pages.includes(page as typeof pages[number]) ? page as typeof pages[number] : 'home';
+    function migrateLegacyLink() {
+      const key = window.location.hash.slice(1);
+      const target = Object.hasOwn(legacyRoutes, key) ? legacyRoutes[key] : undefined;
+      if (target) void goto(resolve(target), { replaceState: true });
     }
-    restoreView();
-    window.addEventListener('hashchange', restoreView);
-    const unsubscribe = currentPage.subscribe(page => {
-      if (window.location.hash.slice(1) !== page) {
-        if (page !== 'home' || window.location.hash) window.location.hash = page;
-      }
-    });
-    return () => { unsubscribe(); window.removeEventListener('hashchange', restoreView); };
+    migrateLegacyLink();
+    window.addEventListener('hashchange', migrateLegacyLink);
+    return () => window.removeEventListener('hashchange', migrateLegacyLink);
   });
 
-  const navItems = [
-    { id: 'home' as const, label: 'Upload', icon: '📂' },
-    { id: 'analysis' as const, label: 'Analysis', icon: '📊' },
-    { id: 'compare' as const, label: 'Compare', icon: '⚖️' },
-    { id: 'planner' as const, label: 'Planner', icon: '📅' },
-    { id: 'faq' as const, label: 'FAQ', icon: '❓' },
-  ];
-
-  function navigateTo(page: typeof $currentPage) {
-    $currentPage = page;
-  }
+  afterNavigate(() => {
+    const title = document.querySelector<HTMLElement>('main h1');
+    title?.setAttribute('tabindex', '-1');
+    title?.focus({ preventScroll: true });
+  });
 
   function handleExitDemo() {
     resetData();
+    void goto(resolve('/'));
   }
 
   function formatDateTime(isoString: string) {
@@ -88,23 +82,25 @@
       </div>
     {/if}
     <div class="top-bar-inner max-md:flex-wrap max-md:justify-center">
-      <button class="logo" aria-label="OysterSavings home" onclick={() => navigateTo('home')}>
+      <a class="logo" aria-label="OysterSavings overview" href={resolve('/')}>
         <span class="logo-icon" aria-hidden="true">🦪</span>
         <span class="logo-text">Oyster<span class="logo-accent">Savings</span></span>
-      </button>
+      </a>
 
-      <nav class="nav-pills max-md:order-3 max-md:w-full max-md:justify-center">
-        {#each navItems as item}
-          {#if item.id === 'home' || item.id === 'planner' || item.id === 'faq' || $hasData}
-            <button
-              class="nav-pill"
-              class:active={$currentPage === item.id}
-              aria-current={$currentPage === item.id ? 'page' : undefined}
-              onclick={() => navigateTo(item.id)}
-            >
-              <span class="nav-icon" aria-hidden="true">{item.icon}</span>
-              <span class="nav-label">{item.label}</span>
-            </button>
+      <nav class="nav-pills" aria-label="Main navigation">
+        {#each navigation as item}
+          {#if $hasData || (item.href !== '/analysis/' && item.href !== '/compare/')}
+          <a
+            class="nav-pill"
+            class:active={page.url.pathname === resolve(item.href)}
+            aria-current={page.url.pathname === resolve(item.href) ? 'page' : undefined}
+            href={resolve(item.href)}
+          >
+            <svg class="nav-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d={item.iconPath} />
+            </svg>
+            <span class="nav-label">{item.label}</span>
+          </a>
           {/if}
         {/each}
       </nav>
@@ -113,7 +109,7 @@
   </header>
 
   <!-- Main content -->
-  <main class="main-content max-md:p-4">
+  <main class="main-content max-md:p-4" tabindex="-1">
     {@render children()}
   </main>
 
@@ -133,7 +129,7 @@
     </p>
     {#if $hasData}
       <div class="report-meta-footer">
-        <span>Generated with <a href="/" onclick={(e) => { e.preventDefault(); navigateTo('home'); }} class="footer-link">OysterSavings</a></span>
+        <span>Generated with <a href={resolve('/')} class="footer-link">OysterSavings</a></span>
         <span class="meta-divider">•</span>
         <div class="meta-build-info tooltip" data-tooltip={buildTooltipText}>
           <svg class="footer-github-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -169,12 +165,13 @@
     margin: 0 auto;
     padding: 0.75rem 1.5rem;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     gap: 1rem;
   }
 
   .logo {
+    text-decoration: none;
     min-height: 44px;
     display: flex;
     align-items: center;
@@ -211,6 +208,7 @@
   }
 
   .nav-pill {
+    text-decoration: none;
     min-height: 44px;
     display: flex;
     align-items: center;
@@ -223,11 +221,11 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: color 0.2s ease, background-color 0.2s ease;
     white-space: nowrap;
   }
 
-  .nav-pill:hover:not(:disabled) {
+  .nav-pill:hover:not(.active) {
     color: var(--color-text-primary);
     background: rgba(255, 255, 255, 0.05);
   }
@@ -238,7 +236,14 @@
   }
 
   .nav-icon {
-    font-size: 0.9rem;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .nav-pill:focus-visible, .logo:focus-visible {
+    outline: 2px solid var(--color-oyster-blue-light);
+    outline-offset: 3px;
   }
 
   /* Main content */
@@ -412,7 +417,7 @@
     padding: 0.5rem 0.85rem !important;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 1100px) {
     .top-bar-inner {
       display: grid !important;
       grid-template-columns: 1fr !important;
@@ -435,12 +440,24 @@
       display: none;
     }
     .nav-pill {
-      flex: 0 0 auto;
       min-height: 44px;
-      padding: 0.55rem 0.85rem;
+      padding: 0.55rem 0.35rem;
+      font-size: clamp(0.7rem, 3vw, 0.8rem);
+      justify-content: center;
+      flex: 1 1 auto;
+    }
+
+  }
+
+  @media (max-width: 600px) {
+    .nav-pill {
+      flex-direction: column;
+      gap: 4px;
+      padding: 0.5rem 0.3rem;
     }
     .nav-icon {
-      display: none;
+      width: 16px;
+      height: 16px;
     }
   }
 </style>

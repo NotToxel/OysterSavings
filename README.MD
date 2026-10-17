@@ -73,6 +73,14 @@ npm run preview
 
 Regenerate the README screenshots with `npm run screenshots`. The script launches a local Vite server and saves images to `static/images/readme/`.
 
+## Navigation and static hosting
+
+Overview (`/`), Analysis (`/analysis/`), Compare (`/compare/`), Planner (`/planner/`) and Help (`/help/`) use SvelteKit client-side routing. Import journey history from Overview. Analysis and Compare appear once CSV or sample journeys are loaded; direct visits without data return to Overview.
+
+`npm run build` generates a directory entry page for each route in `public/`. Serve that directory with a static host that supports directory indexes; no catch-all rewrite is needed for these pages. Old links such as `/#analysis` and `/#faq` are replaced with their corresponding paths in the browser.
+
+Imported journey history remains in memory and is not included in links. A refresh, new tab or another browser starts without those results, so links to Analysis or Compare return to Overview until journeys are loaded.
+
 ## Built with
 
 Svelte 5, SvelteKit, TypeScript, Vite, Tailwind CSS, PapaParse and Chart.js. All app scripts and assets are bundled locally.

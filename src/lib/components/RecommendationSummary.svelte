@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { classifiedJourneys, productComparison, selectedFareType, currentPage, weeklyCapResults } from '$lib/stores/stores';
+  import { resolve } from '$app/paths';
+  import { classifiedJourneys, productComparison, selectedFareType, weeklyCapResults } from '$lib/stores/stores';
   import { FARE_TYPES } from '$lib/data/fareData';
   import { recommendProduct, type ComparisonSpan } from '$lib/engine/productRecommendation';
 
@@ -29,7 +30,7 @@
         <p>Use the comparison settings to choose a discount and include available card fees.</p>
       </details>
     </div>
-    {#if showCompareAction}<button class="btn-primary" onclick={() => $currentPage = 'compare'}>Compare ticket options →</button>{/if}
+    {#if showCompareAction}<a class="btn-primary" href={resolve('/compare/')}>Compare ticket options →</a>{/if}
   </section>
 {/if}
 
@@ -40,6 +41,6 @@
   strong { color: var(--color-text-primary); }
   .context, details { color: var(--color-text-secondary); font-size: 0.875rem; }
   summary { cursor: pointer; padding: 0.65rem 0; color: var(--color-oyster-blue-light); }
-  button { flex-shrink: 0; min-height: 44px; }
-  @media (max-width: 767px) { .recommendation-summary { flex-direction: column; } button { width: 100%; justify-content: center; } }
+  .btn-primary { text-decoration: none; flex-shrink: 0; min-height: 44px; }
+  @media (max-width: 767px) { .recommendation-summary { flex-direction: column; } .btn-primary { width: 100%; justify-content: center; } }
 </style>

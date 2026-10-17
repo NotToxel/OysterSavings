@@ -7,7 +7,7 @@ import { calculateDailyCaps, calculateWeeklyCaps, getCapSummary } from '../engin
 import { detectCommutePatterns } from '../engine/recurrenceEngine';
 import { detectActiveDiscount } from '../engine/savingsEngine';
 import {
-  addCard, cards, currentPage
+  addCard, cards
 } from '../stores/stores';
 import { generateCardId, generateCardName, CARD_COLORS } from '../stores/cardTypes';
 import type { CardState } from '../stores/cardTypes';
@@ -606,9 +606,6 @@ export function loadDemoData(profileId: string = 'sarah'): void {
       const cardIndex = existingCards.length;
       processDemoCard(csvContent, profileId, cardIndex);
     }
-
-    // Auto navigate to analysis
-    currentPage.set('analysis');
   } catch (err) {
     console.error(`Failed to load demo travel history: ${err}`);
   }

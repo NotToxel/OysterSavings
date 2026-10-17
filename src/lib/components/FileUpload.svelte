@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { parseCSV } from '$lib/engine/csvParser';
   import { filterJourneys, getFilterSummary } from '$lib/engine/journeyFilter';
   import { classifyAll } from '$lib/engine/journeyClassifier';
@@ -8,7 +10,7 @@
   import { detectCommutePatterns } from '$lib/engine/recurrenceEngine';
   import { detectActiveDiscount } from '$lib/engine/savingsEngine';
   import {
-    addCard, cards, currentPage, parseErrors as parseErrorsStore
+    addCard, cards, parseErrors as parseErrorsStore
   } from '$lib/stores/stores';
   import { generateCardId, generateCardName, CARD_COLORS, MAX_CARDS } from '$lib/stores/cardTypes';
   import type { CardState } from '$lib/stores/cardTypes';
@@ -19,7 +21,7 @@
     if (!pendingCard) return;
     addCard(pendingCard);
     pendingCard = null;
-    $currentPage = 'analysis';
+    void goto(resolve('/analysis/'));
   }
   let importWarnings = $state<string[]>([]);
   let isDragOver = $state(false);

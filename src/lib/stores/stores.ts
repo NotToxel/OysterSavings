@@ -786,12 +786,6 @@ export interface ApiRetryInfo {
 export const apiRetryStatus = writable<Record<string, ApiRetryInfo>>({});
 
 // ──────────────────────────────────────────────────────────────
-// Navigation
-// ──────────────────────────────────────────────────────────────
-
-export const currentPage = writable<'home' | 'analysis' | 'planner' | 'compare' | 'faq'>('home');
-
-// ──────────────────────────────────────────────────────────────
 // Derived convenience stores
 // ──────────────────────────────────────────────────────────────
 
@@ -819,5 +813,4 @@ export function resetData() {
   plannedJourneys.set([]);
   forecastResult.set(null);
   reportGeneratedAt.set('');
-  currentPage.set('home');
 }

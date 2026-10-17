@@ -1002,7 +1002,7 @@
       <div class="empty-icon">💡</div>
       <h2>No Travel Data Uploaded</h2>
       <p>
-        Please go to the Upload page and load your TfL Oyster CSV history to
+        Please go to Overview and load your TfL Oyster CSV history to
         view comprehensive insights.
       </p>
     </div>

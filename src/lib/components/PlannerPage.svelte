@@ -3772,15 +3772,6 @@
           These settings apply when adding one-off journeys from the calendar.
         </p>
         <div class="date-inputs">
-          {#if $globalAdvancedMode}
-            <div
-              class="advanced-sidebar-notice"
-              style="margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; background: rgba(0, 114, 206, 0.1); border: 1px dashed rgba(0, 114, 206, 0.35); border-radius: 6px; font-size: 0.7rem; color: var(--color-oyster-blue); line-height: 1.4;"
-            >
-              🚇 Station fares will be queried using the selected mode & time.
-            </div>
-          {/if}
-
           <div class="default-settings-inputs">
             <span class="setting-label" style="display: block; margin-bottom: 0.25rem;">Default Mode</span>
             {#if $globalAdvancedMode}

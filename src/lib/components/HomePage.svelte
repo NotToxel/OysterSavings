@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { tick } from "svelte";
   import { fade, fly } from "svelte/transition";
   import FileUpload from "./FileUpload.svelte";
@@ -13,7 +15,6 @@
     excludedJourneys,
     dailyCapResults,
     capSummary,
-    currentPage,
     analysisPeriodText,
   } from "$lib/stores/stores";
   import { loadDemoData } from "$lib/data/demoDataGenerator";
@@ -356,6 +357,7 @@
     setTimeout(() => {
       try {
         loadDemoData(profileId);
+        void goto(resolve('/analysis/'));
       } finally {
         loadingDemoProfileId = null;
       }
@@ -501,7 +503,7 @@
               aria-controls="upload-journey-history"
               onclick={openUpload}
             >
-              Upload TfL CSV
+              Import journey history
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12h14" />
                 <path d="m13 6 6 6-6 6" />
@@ -510,7 +512,7 @@
             <button class="github-cta" onclick={openDemoProfiles}>Try sample analysis</button>
           </div>
 
-          <div class="start-help"><button class="text-action" onclick={openExportGuide}>Need your CSV? Export guide</button><p>Your file is processed in this browser. Only fare lookups go to TfL. Uploaded history clears when you refresh.</p></div>
+          <div class="start-help"><button class="text-action" onclick={openExportGuide}>Need your CSV? Export guide</button></div>
 
           <div class="journey-vignette" aria-label="Sample journey analysis and recommendation" use:startSavingsWhenVisible>
             <div class="journey-map">
@@ -735,7 +737,7 @@
           >
             <div class="upload-shell-header">
               <div>
-                <h2 id="upload-heading">Upload journey history</h2>
+                <h2 id="upload-heading">Import journey history</h2>
                 <p>Most analyses take a few minutes, including live fare checks with TfL.</p>
               </div>
               <span class="local-processing">Processed locally</span>
@@ -1032,7 +1034,7 @@
             import("$lib/stores/stores").then((m) => m.resetData());
           }}
         >
-          ↻ New Upload
+          ↻ Import new history
         </button>
       </div>
 
@@ -1062,7 +1064,7 @@
 
       <!-- Quick actions -->
       <div class="quick-actions">
-        <button class="action-card" onclick={() => ($currentPage = "analysis")}>
+        <a class="action-card" href={resolve('/analysis/')}>
           <div class="action-icon">📊</div>
           <div class="action-content">
             <h3>Journey Analysis</h3>
@@ -1072,8 +1074,8 @@
             </p>
           </div>
           <span class="action-arrow">→</span>
-        </button>
-        <button class="action-card" onclick={() => ($currentPage = "planner")}>
+        </a>
+        <a class="action-card" href={resolve('/planner/')}>
           <div class="action-icon">📅</div>
           <div class="action-content">
             <h3>Journey Planner</h3>
@@ -1082,8 +1084,8 @@
             </p>
           </div>
           <span class="action-arrow">→</span>
-        </button>
-        <button class="action-card" onclick={() => ($currentPage = "compare")}>
+        </a>
+        <a class="action-card" href={resolve('/compare/')}>
           <div class="action-icon">⚖️</div>
           <div class="action-content">
             <h3>Product Comparison</h3>
@@ -1093,7 +1095,7 @@
             </p>
           </div>
           <span class="action-arrow">→</span>
-        </button>
+        </a>
       </div>
     </section>
   {/if}
@@ -1115,7 +1117,6 @@
 
 <style>
   .start-help { margin: 1rem auto 2rem; max-width: 42rem; color: var(--color-text-secondary); font-size: 0.85rem; line-height: 1.6; }
-  .start-help p { margin-top: 0.5rem; }
   .home-page {
     max-width: 900px;
     margin: 0 auto;
@@ -1972,6 +1973,7 @@
   }
 
   .action-card {
+    text-decoration: none;
     display: flex;
     align-items: center;
     gap: 1rem;

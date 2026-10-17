@@ -12,8 +12,7 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter({
 			pages: 'public',
-			assets: 'public',
-			fallback: 'index.html'
+			assets: 'public'
 		})
 	}
 };
